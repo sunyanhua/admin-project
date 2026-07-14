@@ -60,7 +60,7 @@ dist-test
   - `README.md` 中的项目介绍
   - `SITEMAP.md` 中的项目名称
   - `index.html` 的 `<title>` 标签
-	  - **所有三个 `.env.*` 文件必须设置 `VITE_PROJECT_ID=[项目文件夹]`**（多项目同域名部署时隔离 localStorage）
+  - **所有三个 `.env.*` 文件必须设置 `VITE_PROJECT_ID=[项目文件夹]`**（多项目同域名部署时隔离 localStorage）
   - `src/pages/Dashboard.tsx`、`src/pages/Login.tsx`、`src/components/layout/MainLayout.tsx` 中的标题文字
 
 **⚠️ 文本替换注意事项**

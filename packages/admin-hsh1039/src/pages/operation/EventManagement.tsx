@@ -140,6 +140,8 @@ const EventManagement = () => {
       title: '操作', key: 'action', width: 240, fixed: 'right' as const,
       render: (_: any, r: Product) => (
         <Space size="small" className="action-buttons">
+          <Button type="link" size="small" icon={<EditOutlined />}
+            onClick={() => handleEdit(r)}>编辑</Button>
           <Button type="link" size="small" icon={<SettingOutlined />}
             onClick={() => {
               if (r.is_listed === true) {
@@ -151,8 +153,6 @@ const EventManagement = () => {
             }}>
             配置
           </Button>
-          <Button type="link" size="small" icon={<EditOutlined />}
-            onClick={() => handleEdit(r)}>编辑</Button>
           <Button type="link" size="small" danger icon={<DeleteOutlined />}
             onClick={() => confirmDelete({ name: r.title, deleteFn: () => productApi.deleteProduct(r.id), onSuccess: refresh })}>
             删除

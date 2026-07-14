@@ -361,7 +361,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                 onChange={(v) => setBatchStatus(v)} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <Button type="primary" onClick={() => {
+              <Button onClick={() => {
                 if (selectedRowKeys.length === 0) { warning('请先选择SKU行'); return; }
                 if (batchEnabled.price) batchUpdate('price', batchPrice);
                 if (batchEnabled.stock) batchUpdate('stock', batchStock);
