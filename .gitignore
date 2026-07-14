@@ -1,45 +1,49 @@
-# 搭子计划 - 管理后台 (Admin) 专用忽略规则
+# ====== 1039俱乐部+ 管理后台 Monorepo — Git 忽略规则 ======
 
-# 1. 构建产物 (Build Outputs)
-# 拦截 React 项目打包生成的静态资源目录
-/dist/
-/build/
-/out/
-/.next/
-
-# 2. 依赖与日志 (Dependencies & Logs)
-# 双重保险：拦截该目录下的 Node 依赖
+# ====== 1. 依赖 ======
 node_modules/
-test-results/
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# 3. 本地环境配置文件 (Local Environment)
-# 遵循项目 *.local.* 命名规范，保护 API Key 和测试环境地址
-.env
+# ====== 2. 构建产物 ======
+dist/
+dist-test/
+**/dist-test/
+build/
+out/
+.next/
+.vite/
+.parcel-cache
+*.tsbuildinfo
+
+# ====== 3. 本地环境（仅忽略本地覆盖文件） ======
+# .env.development / .env.test / .env.production 是公共配置，需要提交
+# 只有 .env.local 是本地私密配置（API Key、本地端口等）
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-*.local.*
 
-# 4. 调试与缓存 (Debug & Cache)
-# 拦截编辑器插件及构建工具生成的临时缓存
-.eslintcache
-.stylelintcache
-.cache/
-.vite/
-.parcel-cache
-
-# 5. 系统与 IDE 文件
+# ====== 4. IDE / 编辑器 ======
+.vscode/
+!.vscode/extensions.json
+.idea/
 .DS_Store
 Thumbs.db
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-.idea/
 *.suo
 *.ntvs*
 *.njsproj
+
+# ====== 5. 缓存 ======
+.eslintcache
+.stylelintcache
+.cache/
+test-results/
+
+# ====== 6. AI / 工具 ======
+.claude/
+.claudeignore
+*.zip
