@@ -10,6 +10,7 @@ pnpm-debug.log*
 
 # ====== 2. 构建产物 ======
 dist/
+**/dist/
 dist-test/
 **/dist-test/
 build/
