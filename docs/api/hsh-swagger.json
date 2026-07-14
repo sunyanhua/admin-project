@@ -11233,8 +11233,9 @@
                     "type": "string"
                 },
                 "price": {
-                    "description": "价格（元），必须 > 0",
+                    "description": "价格（元），必须 ≥ 0",
                     "type": "number",
+                    "minimum": 0,
                     "example": 99
                 },
                 "refund_base_time": {
@@ -11534,7 +11535,8 @@
                     "type": "string"
                 },
                 "price": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0
                 },
                 "refund_base_time": {
                     "description": "nil=不更新, \"\"=清空, 非空=RFC3339",
