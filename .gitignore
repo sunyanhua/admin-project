@@ -1,4 +1,4 @@
-# ====== 1039俱乐部+ 管理后台 Monorepo — Git 忽略规则 ======
+# ====== Admin Workspaces（管理后台多项目库）— Git 忽略规则 ======
 
 # ====== 1. 依赖 ======
 node_modules/
