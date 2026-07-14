@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { authApi } from '@/api/services/auth';
-import { getAccessToken, setTokens, clearTokens } from '@/api';
+import { getAccessToken, setTokens, clearTokens, cancelRefreshScheduler, ADMIN_USER_KEY } from '@/api';
 
 interface MenuItem {
   name: string;
@@ -62,12 +62,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const isAuthenticated = !!user;
 
-  // 检查登录状态（GET /admin/v1/login + Bearer Token）
-  // 响应格式与登录一致: { token, admin: { id, username, real_name, roles } }
+  // 检查登录状态，绝不清除有效 token（仅 401 时失败）
   const checkAuth = async () => {
     const token = getAccessToken();
     if (!token) {
-      setUser(null);
+      // 无 token → 尝试从 localStorage 恢复用户
+      const cached = localStorage.getItem(ADMIN_USER_KEY);
+      if (cached) {
+        try { setUser(JSON.parse(cached)); } catch { setUser(null); }
+      } else {
+        setUser(null);
+      }
       setMenu([]);
       setPage([]);
       setIsLoading(false);
@@ -78,7 +83,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoading(true);
       const response: any = await authApi.getLoginStatus();
 
-      // 优先从 admin 字段（新接口），兜底 user 字段（旧接口）
+      // 服务器可能在 checkAuth 时下发新 token
+      if (response?.token) {
+        setTokens(response.token, '', response.expires_in || 7200);
+      }
+
       const admin = response?.admin;
       if (admin) {
         const roleList: string[] = admin.roles?.map((r: any) =>
@@ -95,27 +104,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(userData);
         setMenu(response?.menu || []);
         setPage(response?.page || []);
-        localStorage.setItem('admin_user', JSON.stringify(userData));
+        localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(userData));
       } else if (response?.user) {
         setUser(response.user);
         setMenu(response.menu || []);
         setPage(response.page || []);
-        localStorage.setItem('admin_user', JSON.stringify(response.user));
+        localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(response.user));
       } else {
-        setUser(null);
-        setMenu([]);
-        setPage([]);
+        // 响应无预期字段 → 降级用 localStorage 缓存，不清空用户
+        const cached = localStorage.getItem(ADMIN_USER_KEY);
+        if (cached) {
+          try { setUser(JSON.parse(cached)); } catch { /* ignore */ }
+        }
       }
     } catch (err: any) {
-      // 仅 401 时才清除 token（真正的过期），其他错误保留登录状态避免误登出
+      // 仅 401 时才清除 token（真正的过期）
       if (err?.response?.status === 401) {
         clearTokens();
-        localStorage.removeItem('admin_user');
+        localStorage.removeItem(ADMIN_USER_KEY);
         setUser(null);
         setMenu([]);
         setPage([]);
+        return;
       }
-      // 网络瞬时错误不处理，保持当前状态
+      // 网络瞬时错误 → 从 localStorage 恢复，不丢登录态
+      const cached = localStorage.getItem(ADMIN_USER_KEY);
+      if (cached) {
+        try { setUser(JSON.parse(cached)); } catch { /* ignore */ }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -131,8 +147,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw new Error('登录失败：服务器未返回访问令牌');
     }
 
-    // 存储 token（拦截器后续请求会自动携带）
-    setTokens(accessToken, '');
+    // 存储 token 并记录过期时间（支持主动续期）
+    setTokens(accessToken, '', loginRes?.expires_in || 7200);
 
     // 将服务端 admin 对象映射到前端 User 结构
     if (!loginRes?.admin) {
@@ -155,7 +171,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser(userData);
     setMenu([]);
     setPage([]);
-    localStorage.setItem('admin_user', JSON.stringify(userData));
+    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(userData));
   };
 
   // 登出
@@ -163,9 +179,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await authApi.logout();
     } finally {
-      // 清除本地登录信息
+      cancelRefreshScheduler();
       clearTokens();
-      localStorage.removeItem('admin_user');
+      localStorage.removeItem(ADMIN_USER_KEY);
       setUser(null);
       setMenu([]);
       setPage([]);
@@ -175,7 +191,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // 监听storage变化（多标签页同步）
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'admin_user') {
+      if (e.key === ADMIN_USER_KEY) {
         if (e.newValue) {
           setUser(JSON.parse(e.newValue));
         } else {

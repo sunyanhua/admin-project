@@ -60,6 +60,7 @@ dist-test
   - `README.md` 中的项目介绍
   - `SITEMAP.md` 中的项目名称
   - `index.html` 的 `<title>` 标签
+	  - **所有三个 `.env.*` 文件必须设置 `VITE_PROJECT_ID=[项目文件夹]`**（多项目同域名部署时隔离 localStorage）
   - `src/pages/Dashboard.tsx`、`src/pages/Login.tsx`、`src/components/layout/MainLayout.tsx` 中的标题文字
 
 **⚠️ 文本替换注意事项**
@@ -90,6 +91,7 @@ dist-test
 复制完成后，必须验证以下内容：
 - [ ] 项目文件夹存在且包含所有必要文件
 - [ ] 所有 `.env.*` 文件中的项目名称和端口已正确更新
+- [ ] 所有 `.env.*` 文件中的 `VITE_PROJECT_ID` 已设置为项目文件夹名
 - [ ] `CLAUDE.md`、`README.md`、`SITEMAP.md`、`index.html` 中的项目名称已替换
 - [ ] `dist`、`dist-test` 等文件夹不存在于新项目中
 - [ ] 确认根目录有 `node_modules`（依赖由 workspaces 统一管理）
@@ -103,6 +105,7 @@ dist-test
 | `搭子计划` | `[新项目名称]` |
 | `admin-template` | `[新项目文件夹]` |
 | `3100`（如需） | `[新端口]` |
+| `VITE_PROJECT_ID=[源项目ID]` | `VITE_PROJECT_ID=[新项目文件夹]` |
 
 ### 注意事项
 
@@ -110,7 +113,8 @@ dist-test
 2. **接口文档** - `docs/openapi.json` 需要手动替换为新项目的接口文档
 3. **环境变量** - 检查 `.env.*` 文件中的 API 地址是否需要修改
 4. **依赖安装** - 本项目使用 npm workspaces，依赖统一在根目录管理，**各子项目不需要也禁止安装 node_modules**。如果子项目中有 node_modules，请删除。
-5. **编码问题** - 如果发现文件出现乱码（�字符），必须立即重新复制源项目并使用正确方法替换文本
+5. **VITE_PROJECT_ID** — 多项目部署在同一域名下时，VITE_PROJECT_ID 用于隔离各项目的 localStorage（登录态不互串）。复制项目时必须设置。详见步骤 2。
+6. **编码问题** - 如果发现文件出现乱码（�字符），必须立即重新复制源项目并使用正确方法替换文本
 
 ---
 
