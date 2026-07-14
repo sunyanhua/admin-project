@@ -1,0 +1,38 @@
+/* ====== ScrollableModal 统一弹窗标准 ====== */
+
+.scrollable-modal .ant-modal-body {
+  padding: 10px 0;
+}
+
+/* 弹窗内部布局容器 */
+.sm-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 78vh;
+  overflow: hidden;
+}
+
+/* 顶部 header（Steps 等可选） */
+.sm-header {
+  flex-shrink: 0;
+  margin-bottom: 15px;
+  padding: 0 24px;
+}
+
+/* 内容滚动区 */
+.sm-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 16px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* 底部按钮区 */
+.sm-footer {
+  flex-shrink: 0;
+  padding: 12px 0 0 0;
+  text-align: right;
+}

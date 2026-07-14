@@ -1,0 +1,174 @@
+/* 左侧Logo样式 */
+.logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  overflow: hidden;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo-image {
+  height: 40px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  transition: all 0.3s;
+}
+
+.logo-collapsed {
+  height: 32px;
+}
+
+.logo-text {
+  margin-left: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ant-layout-sider-collapsed .logo {
+  padding: 0 8px;
+}
+
+.ant-layout-sider-collapsed .logo-text {
+  display: none;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--space-lg);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  max-width: 150px;
+  overflow: hidden;
+}
+
+.header-logo-image {
+  height: 32px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--border-radius-sm);
+  transition: background-color 0.3s;
+}
+
+.user-info:hover {
+  background-color: rgba(0, 0, 0, 0.025);
+}
+
+.username {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+/* 响应式设计 - PC端为主，兼容移动端 */
+/* 平板设备 (≥768px) */
+@media (max-width: 768px) {
+  .header-content {
+    padding: 0 8px;
+  }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .username {
+    display: none; /* 在小屏幕上隐藏用户名 */
+  }
+
+  .user-info {
+    padding: 4px;
+  }
+
+  .header-logo-image {
+    height: 28px;
+  }
+
+  .header-logo {
+    max-width: 120px;
+  }
+}
+
+/* 手机设备 (≥375px) */
+@media (max-width: 576px) {
+  .logo-image {
+    height: 36px;
+    max-width: 100%;
+  }
+
+  .header-content {
+    padding: 0 4px;
+  }
+
+  /* 侧边栏折叠时显示更简洁 */
+  .ant-layout-sider-collapsed .logo-image {
+    height: 30px;
+    max-width: 60px;
+  }
+
+  .header-logo-image {
+    height: 24px;
+    max-width: 100%;
+  }
+
+  .header-logo {
+    max-width: 100px;
+  }
+
+  .logo-mobile {
+    height: 45px;
+    max-width: 100%;
+  }
+}
+
+/* 超小屏幕设备 */
+@media (max-width: 375px) {
+  .logo-image {
+    height: 32px;
+    max-width: 100%;
+  }
+
+  .ant-layout-sider-collapsed .logo-image {
+    height: 28px;
+    max-width: 60px;
+  }
+
+  .header-logo-image {
+    height: 20px;
+    max-width: 100%;
+  }
+
+  .header-logo {
+    max-width: 80px;
+  }
+
+  .logo-mobile {
+    height: 40px;
+    max-width: 100%;
+  }
+}
