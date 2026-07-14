@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { Steps, Button, Space, Form, Input, Select, Switch, InputNumber, Result } from 'antd';
+import { Steps, Button, Space, Form, Input, Select, Switch, InputNumber } from 'antd';
 import { CheckCircleOutlined } from '@ant-design/icons';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import { productApi, Product } from '../../api/services/product';
+import { productApi } from '../../api/services/product';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
 import MultiImageUpload from '@/components/common/MultiImageUpload';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
-import SkuConfigPanel, { SkuConfigPanelHandle } from './SkuConfigPanel';
+import SkuConfigWizard, { SkuConfigWizardHandle } from './SkuConfigWizard';
 
 interface CategoryOption { id: number; name: string; }
 
@@ -33,11 +33,12 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
 }) => {
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [productId, setProductId] = useState<number>(0);
   const [productTitle, setProductTitle] = useState('');
   const [hasAgreement, setHasAgreement] = useState(false);
   const [form] = Form.useForm();
-  const skuPanelRef = useRef<SkuConfigPanelHandle>(null);
+  const wizardRef = useRef<SkuConfigWizardHandle>(null);
   const { success, error: showError } = useAppNotification();
 
   // 重置状态
@@ -51,8 +52,9 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
     }
   }, [visible, form]);
 
-  // Step 1: 创建活动
+  // Step 1: 创建活动（已创建则直接前进）
   const handleStep1 = async () => {
+    if (productId > 0) { setCurrent(1); return; }
     try {
       const values = await form.validateFields();
       setLoading(true);
@@ -79,7 +81,6 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
         sort_order: values.sort_order ?? 0,
       });
 
-      // createProduct 返回 { id, title, ... }
       const newId = res?.id || 0;
       if (!newId) {
         showError('活动创建失败：未获取到活动ID');
@@ -91,23 +92,28 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
       success('活动信息已保存');
       setCurrent(1);
     } catch (err: any) {
-      if (err?.errorFields) return; // 表单校验失败，不提示
+      if (err?.errorFields) return;
       showError(err?.response?.data?.message || err?.message || '活动创建失败');
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 2: 保存项目配置
-  const handleStep2 = async () => {
-    const ok = await skuPanelRef.current?.save();
-    if (ok) setCurrent(2);
-  };
+  // Step 2: 项目配置 → 下一步
+  const handleWizardNext = () => wizardRef.current?.goNext();
 
-  // Step 3: 完成
-  const handleFinish = () => {
-    onClose();
-    onSuccess?.();
+  // Step 2 → 回退 Step 1
+  const handleWizardPrev = () => wizardRef.current?.goPrev();
+
+  // Step 3: 完成（全量保存）
+  const handleWizardFinish = async () => {
+    setSaving(true);
+    const ok = await wizardRef.current?.finish();
+    setSaving(false);
+    if (ok) {
+      onClose();
+      onSuccess?.();
+    }
   };
 
   const handleCancel = () => {
@@ -156,40 +162,34 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
     </Form>
   );
 
-  // ====== Step 2 内容 ======
-  const step2Content = (
-    <SkuConfigPanel ref={skuPanelRef} productId={productId} />
-  );
-
-  // ====== Step 3 内容 ======
-  const step3Content = (
-    <Result
-      status="success"
-      title="活动已就绪！"
-      subTitle={`"${productTitle}" 的基础信息和项目配置已保存。上架管理功能即将上线。`}
-    />
-  );
-
   return (
     <ScrollableModal
       title="添加活动"
       open={visible}
       onCancel={handleCancel}
-      width={900}
+      width={960}
       destroyOnHidden
       header={<Steps current={current} items={steps} />}
       footer={
         <Space>
           <Button onClick={handleCancel}>{current === 2 ? '关闭' : '取消'}</Button>
           {current === 0 && <Button type="primary" loading={loading} onClick={handleStep1}>下一步</Button>}
-          {current === 1 && <Button type="primary" onClick={handleStep2}>下一步</Button>}
-          {current === 2 && <Button type="primary" icon={<CheckCircleOutlined />} onClick={handleFinish}>完成</Button>}
+          {current === 1 && <Button onClick={() => setCurrent(0)}>上一步</Button>}
+          {current === 1 && <Button type="primary" onClick={handleWizardNext}>下一步</Button>}
+          {current === 2 && <Button onClick={handleWizardPrev}>上一步</Button>}
+          {current === 2 && <Button type="primary" icon={<CheckCircleOutlined />} loading={saving} onClick={handleWizardFinish}>完成</Button>}
         </Space>
       }
     >
       {current === 0 && step1Content}
-      {current === 1 && step2Content}
-      {current === 2 && step3Content}
+      {(current === 1 || current === 2) && (
+        <SkuConfigWizard
+          ref={wizardRef}
+          productId={productId}
+          stepLabels={['项目配置', '上架管理']}
+          onStepChange={(s) => setCurrent(s + 1)}
+        />
+      )}
     </ScrollableModal>
   );
 };

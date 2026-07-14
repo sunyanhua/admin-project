@@ -12,6 +12,7 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import EventEditModal from '@/components/operation/EventEditModal';
 import SkuConfigModal from '@/components/operation/SkuConfigModal';
+import SkuPriceModal from '@/components/operation/SkuPriceModal';
 import EventWizardModal from '@/components/operation/EventWizardModal';
 
 interface CategoryOption {
@@ -27,9 +28,10 @@ const EventManagement = () => {
   const [values, setValues] = useState<Record<string, any>>({});
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [configModalVisible, setConfigModalVisible] = useState(false);
+  const [priceModalVisible, setPriceModalVisible] = useState(false);
   const [configProduct, setConfigProduct] = useState<Product | null>(null);
   const [wizardVisible, setWizardVisible] = useState(false);
-  const { success, error: showError } = useAppNotification();
+  const { success } = useAppNotification();
 
   // 点击编辑时从接口拉取完整详情
   const handleEdit = async (record: Product) => {
@@ -144,12 +146,8 @@ const EventManagement = () => {
             onClick={() => handleEdit(r)}>编辑</Button>
           <Button type="link" size="small" icon={<SettingOutlined />}
             onClick={() => {
-              if (r.is_listed === true) {
-                showError('请先下架商品，再进行配置管理');
-                return;
-              }
               setConfigProduct(r);
-              setConfigModalVisible(true);
+              setPriceModalVisible(true);
             }}>
             配置
           </Button>
@@ -177,6 +175,15 @@ const EventManagement = () => {
       <EventEditModal visible={editModalVisible} mode={editMode} event={selectedEvent}
         categoryOptions={categoryOptions} loadingDetail={loadingDetail}
         onClose={() => { setEditModalVisible(false); setSelectedEvent(null); }} onSuccess={refresh} />
+
+      <SkuPriceModal visible={priceModalVisible}
+        productId={configProduct?.id || 0} productTitle={configProduct?.title || ''}
+        onClose={() => { setPriceModalVisible(false); setConfigProduct(null); }}
+        onSuccess={refresh}
+        onEnterFullConfig={() => {
+          setPriceModalVisible(false);
+          setConfigModalVisible(true);
+        }} />
 
       <SkuConfigModal visible={configModalVisible}
         productId={configProduct?.id || 0} productTitle={configProduct?.title || ''}

@@ -7,14 +7,14 @@ import { productApi } from '../../api/services/product';
 import { useAppNotification } from '@/hooks/useAppNotification';
 
 // ---- Types ----
-interface SpecValue { id?: number; value: string; }
-interface SpecGroup { id?: number; name: string; values: SpecValue[]; is_time_type?: boolean; }
-interface SkuRow {
+export interface SpecValue { id?: number; value: string; }
+export interface SpecGroup { id?: number; name: string; values: SpecValue[]; is_time_type?: boolean; }
+export interface SkuRow {
   key: string; spec_indices: string; specText: string;
   price: number; stock: number; status: number; skuId?: number;
 }
 
-function cartesian(arrays: string[][]): string[][] {
+export function cartesian(arrays: string[][]): string[][] {
   if (arrays.length === 0) return [[]];
   const [first, ...rest] = arrays;
   return cartesian(rest).flatMap((combo) => first.map((v) => [v, ...combo]));
@@ -22,6 +22,12 @@ function cartesian(arrays: string[][]): string[][] {
 
 export interface SkuConfigPanelHandle {
   save: () => Promise<boolean>;
+  /** 获取当前 specs 和编辑中的 SKU 数据（key 为 specText，如 "票种:成人票 | 日期:2026-07-01"） */
+  getState: () => {
+    specs: SpecGroup[];
+    /** specText → 编辑数据（价格/限额/上架），key 格式保证与保存时一致 */
+    editedSkus: Record<string, Partial<SkuRow>>;
+  };
 }
 
 export interface SkuConfigPanelProps {
@@ -30,10 +36,12 @@ export interface SkuConfigPanelProps {
   onSaved?: () => void;
   /** 自定义底部按钮 */
   renderFooter?: (opts: { saving: boolean; handleSave: () => Promise<boolean> }) => React.ReactNode;
+  /** 从向导返回时恢复的快照数据（有值时跳过 API 加载） */
+  initialState?: { specs: SpecGroup[]; editedSkus: Record<string, Partial<SkuRow>> } | null;
 }
 
 const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
-  function SkuConfigPanel({ productId, onSaved, renderFooter }, ref) {
+  function SkuConfigPanel({ productId, onSaved, renderFooter, initialState }, ref) {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const originalSpecIdsRef = useRef<number[]>([]);
@@ -50,26 +58,36 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
     const { success, error: showError, warning } = useAppNotification();
 
     useEffect(() => {
-      if (productId) {
-        setLoading(true);
-        setEditedSkus({});
-        Promise.all([
-          productApi.getSpecs(productId).catch(() => []),
-          productApi.getSkus(productId).catch(() => []),
-        ]).then(([specsRes, skusRes]: any[]) => {
-          const loadedSpecs = (Array.isArray(specsRes) ? specsRes : []) as SpecGroup[];
-          setSpecs(loadedSpecs);
-          originalSpecIdsRef.current = loadedSpecs.map((s) => s.id).filter(Boolean) as number[];
-          const list: any[] = Array.isArray(skusRes) ? skusRes : (skusRes?.list || []);
-          setLoadedSkus(list.map((s: any) => ({
-            key: String(s.id || Math.random()), spec_indices: s.spec_indices || '',
-            specText: s.spec_text || s.spec_indices || '', price: s.price || 0,
-            stock: s.stock || 0, status: s.status ?? 1, skuId: s.id,
-          })));
-        }).catch(() => { setSpecs([]); setLoadedSkus([]); })
-        .finally(() => setLoading(false));
+      if (!productId) return;
+
+      if (initialState) {
+        // 从向导返回时恢复快照，不调 API
+        setSpecs(initialState.specs);
+        originalSpecIdsRef.current = initialState.specs.map((s) => s.id).filter(Boolean) as number[];
+        setEditedSkus(initialState.editedSkus);
+        setLoadedSkus([]);
+        setLoading(false);
+        return;
       }
-    }, [productId]);
+
+      setLoading(true);
+      setEditedSkus({});
+      Promise.all([
+        productApi.getSpecs(productId).catch(() => []),
+        productApi.getSkus(productId).catch(() => []),
+      ]).then(([specsRes, skusRes]: any[]) => {
+        const loadedSpecs = (Array.isArray(specsRes) ? specsRes : []) as SpecGroup[];
+        setSpecs(loadedSpecs);
+        originalSpecIdsRef.current = loadedSpecs.map((s) => s.id).filter(Boolean) as number[];
+        const list: any[] = Array.isArray(skusRes) ? skusRes : (skusRes?.list || []);
+        setLoadedSkus(list.map((s: any) => ({
+          key: String(s.id || Math.random()), spec_indices: s.spec_indices || '',
+          specText: s.spec_text || s.spec_indices || '', price: s.price || 0,
+          stock: s.stock || 0, status: s.status ?? 1, skuId: s.id,
+        })));
+      }).catch(() => { setSpecs([]); setLoadedSkus([]); })
+      .finally(() => setLoading(false));
+    }, [productId, initialState]);
 
     const generatedSkus = useMemo((): SkuRow[] => {
       if (specs.length === 0) return [];
@@ -83,7 +101,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
           return (val?.id ? String(val.id) : String(vi >= 0 ? vi : i));
         }).join('_');
         const existing = loadedSkus.find((s) => s.spec_indices === indices);
-        const edits = editedSkus[indices] || {};
+        const edits = editedSkus[specText] || {};
         return { key: `gen-${idx}`, spec_indices: indices, specText,
           price: edits.price ?? existing?.price ?? 0, stock: edits.stock ?? existing?.stock ?? 0,
           status: edits.status ?? existing?.status ?? 1, skuId: existing?.skuId };
@@ -114,13 +132,13 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
     const updateSku = (key: string, field: string, value: any) => {
       const row = generatedSkus.find((r) => r.key === key);
       if (!row) return;
-      setEditedSkus((prev) => ({ ...prev, [row.spec_indices]: { ...(prev[row.spec_indices] || {}), [field]: value } }));
+      setEditedSkus((prev) => ({ ...prev, [row.specText]: { ...(prev[row.specText] || {}), [field]: value } }));
     };
 
     const batchUpdate = (field: string, value: any) => {
       if (selectedRowKeys.length === 0) { warning('请先选择SKU行'); return; }
-      const indicesSet = new Set(generatedSkus.filter((r) => selectedRowKeys.includes(r.key)).map((r) => r.spec_indices));
-      setEditedSkus((prev) => { const next = { ...prev }; indicesSet.forEach((k) => { next[k] = { ...(next[k] || {}), [field]: value }; }); return next; });
+      const textSet = new Set(generatedSkus.filter((r) => selectedRowKeys.includes(r.key)).map((r) => r.specText));
+      setEditedSkus((prev) => { const next = { ...prev }; textSet.forEach((k) => { next[k] = { ...(next[k] || {}), [field]: value }; }); return next; });
     };
 
     const handleSave = async (): Promise<boolean> => {
@@ -153,14 +171,10 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
         const freshSpecs = (await productApi.getSpecs(productId).catch(() => [])) as any[];
         const freshList: any[] = Array.isArray(freshSpecs) ? freshSpecs : [];
 
-        // 4. 全量重建 SKU
+        // 4. 全量重建 SKU（editedSkus 用 specText 做 key，直接查找）
         if (payload.length > 0 && freshList.length > 0) {
-          // 用 specText（规格值名称组合）在 generatedSkus 中查找用户编辑的价格/限额
-          const skuByText = new Map<string, SkuRow>();
-          for (const row of generatedSkus) { skuByText.set(row.specText, row); }
-
           const valueArrays = freshList.map((s: any) => (s.values || []).map((v: any) => v.value || '?'));
-          const skuList: { price: number; spec_indices: string; stock?: number }[] = [];
+          const skuList: { price: number; spec_indices: string; stock?: number; status?: number }[] = [];
 
           for (const combo of cartesian(valueArrays)) {
             const idParts: string[] = [];
@@ -171,8 +185,13 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
               idParts.push(String(val?.id ?? 0));
               return `${s.name || '?'}:${val?.value || combo[si]}`;
             }).join(' | ');
-            const row = skuByText.get(specText);
-            skuList.push({ spec_indices: idParts.join('_'), price: row?.price || 0, stock: row?.stock || undefined });
+            const edits = editedSkus[specText] || {};
+            skuList.push({
+              spec_indices: idParts.join('_'),
+              price: edits.price ?? 0,
+              stock: edits.stock ?? 0,
+              status: edits.status ?? 1,
+            });
           }
           if (skuList.length > 0) { await productApi.batchCreateSkus(productId, skuList); }
         }
@@ -182,7 +201,10 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
       finally { setSaving(false); }
     };
 
-    useImperativeHandle(ref, () => ({ save: handleSave }), [handleSave]);
+    useImperativeHandle(ref, () => ({
+      save: handleSave,
+      getState: () => ({ specs, editedSkus }),
+    }), [handleSave, specs, editedSkus]);
 
     const skuColumns: ColumnsType<SkuRow> = [
       { title: '规格组合', dataIndex: 'specText', key: 'specText', width: 200 },
@@ -230,51 +252,51 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                 }} />
               <Input value={spec.name} placeholder="请输入项目名称，如：票种" style={{ width: 260 }} onChange={(e) => updateSpecName(si, e.target.value)} maxLength={32} />
             </div>
-            {/* 3 列网格布局 */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: 8,
-              marginBottom: 8,
-              paddingLeft: 16,
-              paddingRight: 0,
-            }}>
-              {spec.values.map((v, vi) => spec.is_time_type ? (
-                <DatePicker key={vi}
-                  value={v.value ? dayjs(v.value) : null}
-                  style={{ width: '100%' }}
-                  placeholder="选择日期"
-                  suffixIcon={
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 1, display: 'inline-block' }} />
-                      <DeleteOutlined
-                        hidden={spec.values.length <= 1}
-                        style={{
-                          color: '#ff4d4f',
-                          cursor: 'pointer',
-                          fontSize: 12,
-                          display: spec.values.length > 1 ? 'inline' : 'none',
-                        }}
-                        onClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
-                          removeSpecValue(si, vi);
-                        }}
-                      />
-                    </span>
-                  }
-                  onChange={(_, dateStr) => updateSpecValue(si, vi, typeof dateStr === 'string' ? dateStr : '')}
-                />
-              ) : (
-                <Input key={vi} value={v.value} placeholder="如：成人票" style={{ flex: 1 }}
-                  onChange={(e) => updateSpecValue(si, vi, e.target.value)} maxLength={64}
-                  suffix={spec.values.length > 1 ? (
-                    <DeleteOutlined style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 12 }}
-                      onClick={() => removeSpecValue(si, vi)} />
-                  ) : undefined}
-                />
-              ))}
+            {/* 3 列网格 + 添加按钮 — 整体与上方下拉框左对齐 */}
+            <div style={{ paddingLeft: 55 }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 8,
+                marginBottom: 8,
+              }}>
+                {spec.values.map((v, vi) => spec.is_time_type ? (
+                  <DatePicker key={vi}
+                    value={v.value ? dayjs(v.value) : null}
+                    style={{ width: '100%' }}
+                    placeholder="选择日期"
+                    suffixIcon={
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 1, display: 'inline-block' }} />
+                        <DeleteOutlined
+                          hidden={spec.values.length <= 1}
+                          style={{
+                            color: '#ff4d4f',
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            display: spec.values.length > 1 ? 'inline' : 'none',
+                          }}
+                          onClick={(e: React.MouseEvent) => {
+                            e.stopPropagation();
+                            removeSpecValue(si, vi);
+                          }}
+                        />
+                      </span>
+                    }
+                    onChange={(_, dateStr) => updateSpecValue(si, vi, typeof dateStr === 'string' ? dateStr : '')}
+                  />
+                ) : (
+                  <Input key={vi} value={v.value} placeholder="如：成人票" style={{ flex: 1 }}
+                    onChange={(e) => updateSpecValue(si, vi, e.target.value)} maxLength={64}
+                    suffix={spec.values.length > 1 ? (
+                      <DeleteOutlined style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 12 }}
+                        onClick={() => removeSpecValue(si, vi)} />
+                    ) : undefined}
+                  />
+                ))}
+              </div>
+              <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => addSpecValue(si)}>添加项目值</Button>
             </div>
-            <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={() => addSpecValue(si)} style={{ marginLeft: 16 }}>添加项目值</Button>
           </div>
         ))}
         <Button type="dashed" icon={<PlusOutlined />} onClick={addSpec} style={{ marginBottom: 16, width: '100%' }}>添加规格项目</Button>

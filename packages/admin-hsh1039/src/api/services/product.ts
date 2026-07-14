@@ -103,6 +103,16 @@ export const productApi = {
     return request.put(`/admin/v1/mall/products/${id}/sort-order`, { sort_order });
   },
 
+  // 商品到期时间 — PUT /admin/v1/mall/products/{id}/expiry
+  updateProductExpiry: (id: number, expiry: string | null) => {
+    return request.put(`/admin/v1/mall/products/${id}/expiry`, { expiry });
+  },
+
+  // 商品生效时间 — PUT /admin/v1/mall/products/{id}/usable
+  updateProductUsable: (id: number, usable: string | null) => {
+    return request.put(`/admin/v1/mall/products/${id}/usable`, { usable });
+  },
+
   // ====== Specs ======
 
   // 查询规格组 — GET /admin/v1/mall/products/{id}/specs
@@ -137,6 +147,7 @@ export const productApi = {
   // Body: { skus: [{ price, spec_indices, stock?, sku_code? }] }
   batchCreateSkus: (productId: number, skus: {
     price: number; spec_indices: string; stock?: number; sku_code?: string;
+    status?: number; usable?: string | null; expiry?: string | null;
   }[]) => {
     return request.post(`/admin/v1/mall/products/${productId}/skus`, { skus });
   },
@@ -151,6 +162,16 @@ export const productApi = {
   // 删除单个SKU — DELETE /admin/v1/mall/products/{id}/skus/{sku_id}
   deleteSku: (productId: number, skuId: number) => {
     return request.delete(`/admin/v1/mall/products/${productId}/skus/${skuId}`);
+  },
+
+  // SKU到期时间 — PUT /admin/v1/mall/products/{id}/skus/{sku_id}/expiry
+  updateSkuExpiry: (productId: number, skuId: number, expiry: string | null) => {
+    return request.put(`/admin/v1/mall/products/${productId}/skus/${skuId}/expiry`, { expiry });
+  },
+
+  // SKU生效时间 — PUT /admin/v1/mall/products/{id}/skus/{sku_id}/usable
+  updateSkuUsable: (productId: number, skuId: number, usable: string | null) => {
+    return request.put(`/admin/v1/mall/products/${productId}/skus/${skuId}/usable`, { usable });
   },
 
   // 清空商品全部SKU — DELETE /admin/v1/mall/products/{id}/skus
