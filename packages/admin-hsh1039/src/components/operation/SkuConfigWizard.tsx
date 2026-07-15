@@ -1,5 +1,7 @@
 import { useState, useRef, useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
 import { Button, Switch, Radio, Select, Table, DatePicker, TimePicker, InputNumber, Divider } from 'antd';
+import ExtraInfoEditor, { ExtraInfoData } from './ExtraInfoEditor';
+import type { ExtraInfoGroup } from './ExtraInfoEditor';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import SkuConfigPanel, {
@@ -71,6 +73,25 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const [batchExpiryDays, setBatchExpiryDays] = useState<number>(0);
   const [batchExpiryTime, setBatchExpiryTime] = useState<Dayjs | null>(null);
 
+  // 报名附加信息
+  const [extraInfo, setExtraInfo] = useState<ExtraInfoData>({ mode: 'none', groups: [] });
+  // 各 SKU 的附加信息配置（仅 individual 模式）：spec_indices → [{groupKey, count}]
+  const [extraFieldSkus, setExtraFieldSkus] = useState<Record<string, { groupKey: string; count: number }[]>>({});
+  // 附加信息分配批量设置
+  const [efBatchMode, setEfBatchMode] = useState(false);
+  const [efBatchSelectedKeys, setEfBatchSelectedKeys] = useState<string[]>([]);
+  const [efBatchEnabled, setEfBatchEnabled] = useState<Record<string, boolean>>({});
+  const [efBatchValues, setEfBatchValues] = useState<Record<string, number>>({});
+  const [efBatchSpecFilters, setEfBatchSpecFilters] = useState<Record<number, string>>({});
+
+  // 敏感字段检测
+  const hasSensitive = useMemo(() => {
+    if (extraInfo.mode === 'none' || extraInfo.groups.length === 0) return false;
+    return extraInfo.groups.some((g) =>
+      g.fields.some((f) => f.format === 'mobile' || f.label === '身份证号' || f.label === '手机号'),
+    );
+  }, [extraInfo]);
+
   const dateSpecIndex = useMemo(() => wizardSpecs.findIndex((s) => s.is_time_type), [wizardSpecs]);
   const hasDateSpec = dateSpecIndex >= 0;
 
@@ -84,6 +105,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       setExpiryMode('unified');
       setSelectedRowKeys([]);
       setBatchMode(false);
+      setExtraInfo({ mode: 'none', groups: [] });
+      setExtraFieldSkus({});
       productApi.getProductDetail(productId).then((detail: any) => {
         setIsListed(detail?.is_listed === true);
         if (detail?.usable) setUnifiedUsable(dayjs(detail.usable));
@@ -176,8 +199,40 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     });
   };
 
+  // ---- 附加信息分配批量应用 ----
+  const applyEfBatch = () => {
+    if (efBatchSelectedKeys.length === 0) { warning('请先选择SKU行'); return; }
+    const selectedSkus = step2Skus.filter((r) => efBatchSelectedKeys.includes(r.key));
+    setExtraFieldSkus((prev) => {
+      const next = { ...prev };
+      for (const row of selectedSkus) {
+        const existing = prev[row.spec_indices] || [];
+        const merged = new Map<string, number>();
+        for (const e of existing) merged.set(e.groupKey, e.count);
+        for (const g of extraInfo.groups) {
+          if (efBatchEnabled[g.key] && efBatchValues[g.key] != null) {
+            const val = efBatchValues[g.key];
+            if (val > 0) merged.set(g.key, val);
+            else merged.delete(g.key);
+          }
+        }
+        next[row.spec_indices] = Array.from(merged.entries()).map(([groupKey, count]) => ({ groupKey, count }));
+      }
+      return next;
+    });
+  };
+
   const handleFinish = async (): Promise<boolean> => {
     if (!productId) return false;
+
+    // 统一模式必须且仅需1个附加信息库
+    if (extraInfo.mode === 'unified' && extraInfo.groups.length !== 1) {
+      warning(extraInfo.groups.length === 0
+        ? '全部项目统一下，请先添加一个附加信息库'
+        : '全部项目统一下，仅需一个附加信息库，请删除多余信息库');
+      return false;
+    }
+
     try {
       setSaving(true);
 
@@ -217,9 +272,28 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           const text = step2IndicesToText.get(oldIndices);
           if (text) textToStep2.set(text, edits);
         }
+        // 同样为 extraFieldSkus 建立 specText 桥接
+        const textToExtraFields = new Map<string, { groupKey: string; count: number }[]>();
+        for (const [oldIndices, cfg] of Object.entries(extraFieldSkus)) {
+          const text = step2IndicesToText.get(oldIndices);
+          if (text) textToExtraFields.set(text, cfg);
+        }
 
         const valueArrays = freshList.map((s: any) => (s.values || []).map((v: any) => v.value || '?'));
-        const skuList: { price: number; spec_indices: string; stock?: number; status?: number; usable?: string | null; expiry?: string | null }[] = [];
+        // 附加信息 — 统一模式取全部 groups，单独模式按 SKU 各自配置+数量展开
+        const isExtraUnified = extraInfo.mode === 'unified';
+        const unifiedExtraFields = isExtraUnified
+          ? extraInfo.groups.map((g) => ({
+            name: g.name,
+            config: g.fields.map(({ key, preset, ...rest }) => rest),
+          }))
+          : null;
+
+        const skuList: {
+          price: number; spec_indices: string; stock?: number; status?: number;
+          usable?: string | null; expiry?: string | null;
+          additional_fields_config?: any;
+        }[] = [];
 
         for (const combo of cartesian(valueArrays)) {
           const idParts: string[] = [];
@@ -243,7 +317,31 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
             usable = s2e.usable && s2e.usable !== '' ? s2e.usable : null;
             expiry = s2e.expiry && s2e.expiry !== '' ? s2e.expiry : null;
           }
-          skuList.push({ spec_indices: idParts.join('_'), price: wEdits.price ?? 0, stock: wEdits.stock ?? 0, status: wEdits.status ?? 1, usable, expiry });
+          // 附加信息配置
+          let afc = null;
+          if (unifiedExtraFields) {
+            afc = unifiedExtraFields;
+          } else if (extraInfo.mode === 'individual') {
+            const skuCfg = textToExtraFields.get(specText);
+            if (skuCfg && skuCfg.length > 0) {
+              // 展开为 [{name:'成人1', config}, {name:'成人2', config}]
+              afc = [];
+              for (const c of skuCfg) {
+                const g = extraInfo.groups.find((grp) => grp.key === c.groupKey);
+                if (!g || c.count <= 0) continue;
+                const strippedConfig = g.fields.map(({ key, preset, ...rest }) => rest);
+                for (let i = 1; i <= c.count; i++) {
+                  afc.push({
+                    name: c.count > 1 ? `${g.name}${i}` : g.name,
+                    config: strippedConfig,
+                  });
+                }
+              }
+              if (afc.length === 0) afc = null;
+            }
+          }
+
+          skuList.push({ spec_indices: idParts.join('_'), price: wEdits.price ?? 0, stock: wEdits.stock ?? 0, status: wEdits.status ?? 1, usable, expiry, additional_fields_config: afc });
         }
         if (skuList.length > 0) await productApi.batchCreateSkus(productId, skuList);
       }
@@ -254,6 +352,25 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       } else {
         await productApi.updateProductUsable(productId, null);
         await productApi.updateProductExpiry(productId, null);
+      }
+
+      // 7. 保存附加信息配置到产品
+      // 格式: [{name, config: [{name, type, required, format?, options?}]}]
+      const toStorageGroup = (g: ExtraInfoGroup) => ({
+        name: g.name,
+        config: g.fields.map(({ key, preset, ...rest }) => rest),
+      });
+
+      if (extraInfo.mode !== 'none' && extraInfo.groups.length > 0) {
+        await productApi.updateProduct(productId, {
+          additional_fields_config: extraInfo.groups.map(toStorageGroup),
+          additional_fields_has_sensitive: hasSensitive,
+        });
+      } else {
+        await productApi.updateProduct(productId, {
+          additional_fields_config: null,
+          additional_fields_has_sensitive: false,
+        });
       }
 
       await productApi.updateListStatus(productId, isListed);
@@ -425,6 +542,135 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                   rowSelection={batchMode ? { columnWidth: 32, selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys as string[]) } : undefined} />
               </div>
             </>
+          )}
+
+          <Divider />
+          <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
+
+          {/* SKU 附加信息配置表格（仅"各项目单独设置"时显示） */}
+          {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <span style={{ fontWeight: 600 }}>SKU 附加信息配置（{step2Skus.length} 种）</span>
+                    <Button type="link" size="small" onClick={() => {
+                      const next = !efBatchMode;
+                      setEfBatchMode(next);
+                      if (next) {
+                        setEfBatchSelectedKeys(step2Skus.map((s) => s.key));
+                        setEfBatchSpecFilters({});
+                        const en: Record<string, boolean> = {};
+                        const vals: Record<string, number> = {};
+                        for (const g of extraInfo.groups) { en[g.key] = true; vals[g.key] = 0; }
+                        setEfBatchEnabled(en);
+                        setEfBatchValues(vals);
+                      } else {
+                        setEfBatchSelectedKeys([]);
+                        setEfBatchSpecFilters({});
+                      }
+                    }}>
+                      {efBatchMode ? '收起批量设置' : '批量设置'}
+                    </Button>
+                  </div>
+
+                  {/* 批量设置面板 */}
+                  {efBatchMode && (
+                    <div style={{ border: '1px solid #d9d9d9', borderRadius: 6, padding: 12, marginBottom: 12, background: '#f5f5f5' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 600 }}>批量设置</span>
+                        {extraInfo.groups.map((g) => (
+                          <label key={g.key} style={{ fontSize: 13, cursor: 'pointer' }}>
+                            <input type="checkbox" checked={efBatchEnabled[g.key] || false} style={{ marginRight: 4 }}
+                              onChange={(e) => setEfBatchEnabled((prev) => ({ ...prev, [g.key]: e.target.checked }))} />
+                            {g.name}
+                          </label>
+                        ))}
+                      </div>
+
+                      {/* 筛选区 */}
+                      {wizardSpecs.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+                          {wizardSpecs.map((spec, si) => (
+                            <Select key={si} allowClear placeholder={`全部${spec.name || `规格${si + 1}`}`} value={efBatchSpecFilters[si]}
+                              options={spec.values.filter((v) => v.value).map((v) => ({ label: v.value, value: v.value }))}
+                              onChange={(val) => {
+                                setEfBatchSpecFilters((prev) => ({ ...prev, [si]: val }));
+                                const allFilters = { ...efBatchSpecFilters, [si]: val };
+                                const newKeys: string[] = [];
+                                for (const row of step2Skus) {
+                                  const parts = row.specText.split(' | ');
+                                  let match = true;
+                                  for (const [k, filterVal] of Object.entries(allFilters)) {
+                                    if (filterVal && parts[Number(k)]?.split(':')[1] !== filterVal) { match = false; break; }
+                                  }
+                                  if (match) newKeys.push(row.key);
+                                }
+                                setEfBatchSelectedKeys(newKeys);
+                              }} />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 设置区 — 禁用项变灰 */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 8 }}>
+                        {extraInfo.groups.map((g) => (
+                          <InputNumber key={g.key} min={0} max={99}
+                            value={efBatchValues[g.key] ?? 0} prefix={g.name}
+                            disabled={!efBatchEnabled[g.key]}
+                            style={{ width: '100%', opacity: efBatchEnabled[g.key] ? 1 : 0.5 }}
+                            onChange={(v) => setEfBatchValues((prev) => ({ ...prev, [g.key]: v ?? 0 }))} />
+                        ))}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <Button onClick={applyEfBatch}>应用设置</Button>
+                        <span style={{ color: '#999', fontSize: 12 }}>已选 {efBatchSelectedKeys.length} 项</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SKU 表格：规格组合 + 每信息库一列（数量） */}
+                  <div style={{ background: '#fff', borderRadius: 4, border: '1px solid #d9d9d9', overflow: 'hidden' }}>
+                    <Table rowKey="key" size="small" pagination={false} scroll={{ y: 280 }}
+                      dataSource={step2Skus}
+                      rowSelection={efBatchMode ? { columnWidth: 32, selectedRowKeys: efBatchSelectedKeys, onChange: (keys) => setEfBatchSelectedKeys(keys as string[]) } : undefined}
+                      columns={[
+                        { title: '规格组合', dataIndex: 'specText', key: 'specText', width: 200 },
+                        ...extraInfo.groups.map((g) => ({
+                          title: g.name,
+                          key: g.key,
+                          width: 120,
+                          render: (_: any, r: Step2SkuRow) => {
+                            const cfg = extraFieldSkus[r.spec_indices] || [];
+                            const entry = cfg.find((c) => c.groupKey === g.key);
+                            return (
+                              <InputNumber min={0} max={99} size="small" style={{ width: 70 }}
+                                value={entry?.count || 0}
+                                onChange={(val) => {
+                                  setExtraFieldSkus((prev) => {
+                                    const next = { ...prev };
+                                    const cur = [...(next[r.spec_indices] || [])];
+                                    const idx = cur.findIndex((c) => c.groupKey === g.key);
+                                    if (idx >= 0) {
+                                      if (val === 0 || val == null) cur.splice(idx, 1);
+                                      else cur[idx] = { groupKey: g.key, count: val };
+                                    } else if (val && val > 0) {
+                                      cur.push({ groupKey: g.key, count: val });
+                                    }
+                                    next[r.spec_indices] = cur;
+                                    return next;
+                                  });
+                                }} />
+                            );
+                          },
+                        })),
+                      ]}
+                    />
+                  </div>
+                  <div style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
+                    注：数量为 0 表示该 SKU 不要求填写此附加信息库
+                  </div>
+                  <Divider />
+            </div>
           )}
 
           <Divider />

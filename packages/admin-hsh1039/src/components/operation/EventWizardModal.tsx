@@ -117,6 +117,8 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
   };
 
   const handleCancel = () => {
+    // 活动已创建，通知列表刷新
+    if (productId > 0) onSuccess?.();
     onClose();
   };
 

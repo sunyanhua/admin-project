@@ -64,14 +64,13 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
           detail: desc.detail || '',
           hasagreement: desc.hasagreement || false,
           agreement: desc.agreement || '',
-          is_listed: event.is_listed === true,
           is_visible: event.is_visible !== false,
           sort_order: event.sort_order ?? 0,
         });
       } else {
         form.resetFields();
         setHasAgreement(false);
-        form.setFieldsValue({ is_visible: true, sort_order: 0, is_listed: false });
+        form.setFieldsValue({ is_visible: true, sort_order: 0 });
       }
     }
   }, [visible, event, isCreate, form]);
@@ -113,7 +112,6 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
           cover_image: values.cover_image || undefined,
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
           detail_desc,
-          is_listed: values.is_listed,
           is_visible: values.is_visible,
           sort_order: values.sort_order ?? undefined,
         });
@@ -189,12 +187,6 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
         {hasAgreement && (
           <Form.Item label="报名协议内容" name="agreement">
             <RichTextEditor placeholder="请输入报名协议内容" />
-          </Form.Item>
-        )}
-
-        {!isCreate && (
-          <Form.Item label="上架/下架" name="is_listed" valuePropName="checked">
-            <Switch checkedChildren="上架" unCheckedChildren="下架" />
           </Form.Item>
         )}
 

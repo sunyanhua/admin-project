@@ -60,6 +60,8 @@ export interface UpdateProductData {
   sort_order?: number;
   keywords?: string;
   brand_id?: number;
+  additional_fields_config?: any | null;
+  additional_fields_has_sensitive?: boolean;
 }
 
 export const productApi = {
@@ -148,6 +150,7 @@ export const productApi = {
   batchCreateSkus: (productId: number, skus: {
     price: number; spec_indices: string; stock?: number; sku_code?: string;
     status?: number; usable?: string | null; expiry?: string | null;
+    additional_fields_config?: any | null;
   }[]) => {
     return request.post(`/admin/v1/mall/products/${productId}/skus`, { skus });
   },
