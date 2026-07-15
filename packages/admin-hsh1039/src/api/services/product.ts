@@ -160,6 +160,8 @@ export const productApi = {
   // 编辑单个SKU — PUT /admin/v1/mall/products/{id}/skus/{sku_id}
   updateSku: (productId: number, skuId: number, data: {
     price?: number; stock?: number; status?: number; sku_code?: string;
+    usable?: string | null; expiry?: string | null;
+    additional_fields_config?: any | null;
   }) => {
     return request.put(`/admin/v1/mall/products/${productId}/skus/${skuId}`, data);
   },

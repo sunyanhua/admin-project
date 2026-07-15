@@ -110,12 +110,12 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       name: g.name || '',
       fields: (g.config || []).map((f: any, fi: number) => ({
         key: `f_restore_${fi}_${Date.now()}`,
-        label: f.name || '',
+        label: f.label || '',
         type: f.type || 'text',
         required: f.required === true,
         format: f.format || '',
         options: f.options || undefined,
-        preset: presetNames.includes(f.name),
+        preset: presetNames.includes(f.label),
       })),
     }));
     return { mode: groups.length === 1 ? 'unified' : 'individual', groups };
@@ -344,6 +344,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         const unifiedExtraFields = isExtraUnified
           ? extraInfo.groups.map((g) => ({
             name: g.name,
+            num: 1,
             config: g.fields.map(({ key, preset, ...rest }) => rest),
           }))
           : null;
@@ -389,18 +390,16 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           } else if (extraInfo.mode === 'individual') {
             const skuCfg = textToExtraFields.get(specText);
             if (skuCfg && skuCfg.length > 0) {
-              // 展开为 [{name:'成人1', config}, {name:'成人2', config}]
+              // 格式: [{name, num, config}], num>=1
               afc = [];
               for (const c of skuCfg) {
                 const g = extraInfo.groups.find((grp) => grp.key === c.groupKey);
                 if (!g || c.count <= 0) continue;
-                const strippedConfig = g.fields.map(({ key, preset, ...rest }) => rest);
-                for (let i = 1; i <= c.count; i++) {
-                  afc.push({
-                    name: c.count > 1 ? `${g.name}${i}` : g.name,
-                    config: strippedConfig,
-                  });
-                }
+                afc.push({
+                  name: g.name,
+                  num: c.count,
+                  config: g.fields.map(({ key, preset, ...rest }) => rest),
+                });
               }
               if (afc.length === 0) afc = null;
             }
@@ -614,11 +613,10 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>报名附加信息</div>
             <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
-          </div>
 
-          {/* SKU 附加信息配置表格（仅"各项目单独设置"时显示） */}
-          {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
-            <div style={{ marginTop: 16 }}>
+            {/* SKU 附加信息配置表格（仅"各项目单独设置"时显示） */}
+            {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
+              <div style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <span style={{ fontWeight: 600 }}>SKU 附加信息配置（{step2Skus.length} 种）</span>
                     <Button type="link" size="small" onClick={() => {
@@ -740,6 +738,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                   </div>
             </div>
           )}
+
+          </div>
 
           <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
 
