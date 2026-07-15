@@ -84,6 +84,7 @@ const sidebarMenuConfig: Record<string, any[]> = {
       icon: <SettingOutlined />,
       label: '配置管理',
       children: [
+        { key: '/operation/page-config', icon: <FileTextOutlined />, label: '页面配置管理' },
         { key: '/operation/categories', icon: <UnorderedListOutlined />, label: '运营分类管理', hide: true },
         { key: '/operation/banners', icon: <PictureOutlined />, label: '轮播图管理' },
         { key: '/operation/agreements', icon: <FileTextOutlined />, label: '协议文档' },

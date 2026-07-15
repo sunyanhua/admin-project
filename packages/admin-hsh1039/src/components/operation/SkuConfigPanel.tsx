@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, forwardRef, useImperativeHandle, useCallback } from 'react';
-import { Button, Select, Table, Input, InputNumber, Switch, Divider, Popconfirm, DatePicker } from 'antd';
+import { Button, Select, Table, Input, InputNumber, Switch, Popconfirm, DatePicker } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -45,6 +45,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const originalSpecIdsRef = useRef<number[]>([]);
+    const loadedPidRef = useRef<number>(0);
     const [specs, setSpecs] = useState<SpecGroup[]>([]);
     const [loadedSkus, setLoadedSkus] = useState<SkuRow[]>([]);
     const [editedSkus, setEditedSkus] = useState<Record<string, Partial<SkuRow>>>({});
@@ -69,6 +70,10 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
         setLoading(false);
         return;
       }
+
+      // ref 防 StrictMode 双重触发
+      if (loadedPidRef.current === productId) return;
+      loadedPidRef.current = productId;
 
       setLoading(true);
       setEditedSkus({});
@@ -231,7 +236,8 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
 
     return (
       <div>
-        <div style={{ fontWeight: 600, marginBottom: 8 }}>规格项目</div>
+        <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>规格项目</div>
         {specs.map((spec, si) => (
           <div key={si} style={{ border: '1px solid #e8e8e8', borderRadius: 4, padding: 12, marginBottom: 12, background: '#f5f5f5', position: 'relative' }}>
             <Popconfirm title="确定删除此规格组？" onConfirm={() => removeSpec(si)}>
@@ -299,12 +305,18 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
             </div>
           </div>
         ))}
-        <Button type="dashed" icon={<PlusOutlined />} onClick={addSpec} style={{ marginBottom: 16, width: '100%' }}>添加规格项目</Button>
-        <Divider />
+        <Button type="dashed" icon={<PlusOutlined />} onClick={addSpec} style={{ marginBottom: 0, width: '100%' }}>添加规格项目</Button>
+        </div>
+
+        <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+
+        {/* ====== SKU 组合 ====== */}
+        <div style={{ background: '#fafafa', borderLeft: '3px solid #722ed1', borderRadius: 4, padding: '12px 14px' }}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#722ed1' }}>SKU 组合</div>
 
         {/* SKU 标题行 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontWeight: 600 }}>SKU 组合（{generatedSkus.length} 种）</span>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>共 {generatedSkus.length} 种</span>
           <Button type="link" size="small" onClick={() => toggleBatchMode(!batchMode)}>
             {batchMode ? '收起批量设置' : '批量设置'}
           </Button>
@@ -399,6 +411,8 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
         <Table loading={loading} rowKey="key" columns={skuColumns} dataSource={generatedSkus} size="small" pagination={false} scroll={{ y: 300 }}
           rowSelection={batchMode ? { columnWidth: 32, selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys as string[]) } : undefined} />
         {renderFooter?.({ saving, handleSave })}
+        </div>
+
         </div>
       </div>
     );

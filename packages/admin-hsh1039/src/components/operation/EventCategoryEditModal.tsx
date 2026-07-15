@@ -39,7 +39,7 @@ const EventCategoryEditModal: React.FC<EventCategoryEditModalProps> = ({
         });
       } else {
         form.resetFields();
-        form.setFieldsValue({ is_listed: true, is_visible: true });
+        form.setFieldsValue({ is_listed: true, is_visible: true, sort_order: 0 });
       }
     }
   }, [visible, category, isCreate, form]);
@@ -48,7 +48,19 @@ const EventCategoryEditModal: React.FC<EventCategoryEditModalProps> = ({
     try {
       setLoading(true);
       if (isCreate) {
-        await categoryApi.createMallCategory({ name: values.name, parent_id: 1 });
+        // 创建后通过 update 设置上下架和权重
+        const created: any = await categoryApi.createMallCategory({
+          name: values.name,
+          parent_id: 1,
+          sort_order: values.sort_order ?? 0,
+        });
+        if (created?.id) {
+          await categoryApi.updateMallCategory(created.id, {
+            is_listed: values.is_listed,
+            is_visible: values.is_visible,
+            sort_order: values.sort_order ?? 0,
+          });
+        }
         success('分类创建成功');
       } else {
         if (!category) return;
@@ -84,19 +96,15 @@ const EventCategoryEditModal: React.FC<EventCategoryEditModalProps> = ({
         <Form.Item label="分类名称" name="name" rules={[{ required: true, message: '请输入分类名称' }, { max: 64, message: '最多64个字符' }]}>
           <Input placeholder="请输入分类名称" />
         </Form.Item>
-        {!isCreate && (
-          <>
-            <Form.Item label="上架/下架" name="is_listed" valuePropName="checked">
-              <Switch checkedChildren="上架" unCheckedChildren="下架" />
-            </Form.Item>
-            <Form.Item label="显示/隐藏" name="is_visible" valuePropName="checked">
-              <Switch checkedChildren="显示" unCheckedChildren="隐藏" />
-            </Form.Item>
-            <Form.Item label="权重" name="sort_order" rules={[{ required: true, message: '请输入权重' }, { type: 'integer', message: '请输入整数' }]} extra="权重越大排序越靠前，默认为0">
-              <InputNumber min={0} precision={0} style={{ width: '100%' }} />
-            </Form.Item>
-          </>
-        )}
+        <Form.Item label="上架/下架" name="is_listed" valuePropName="checked">
+          <Switch checkedChildren="上架" unCheckedChildren="下架" />
+        </Form.Item>
+        <Form.Item label="显示/隐藏" name="is_visible" valuePropName="checked">
+          <Switch checkedChildren="显示" unCheckedChildren="隐藏" />
+        </Form.Item>
+        <Form.Item label="权重" name="sort_order" rules={[{ required: true, message: '请输入权重' }, { type: 'integer', message: '请输入整数' }]} extra="权重越大排序越靠前，默认为0">
+          <InputNumber min={0} precision={0} style={{ width: '100%' }} />
+        </Form.Item>
       </Form>
     </ScrollableModal>
   );

@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-14 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-15 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -178,6 +178,7 @@ urn:bizmall:<module>:<action>
 | GET | `/admin/v1/mall/products/{id}` | 查询商品详情（后台） | AdminAuth | `urn:bizmall:product:read` |
 | PUT | `/admin/v1/mall/products/{id}` | 编辑商品 | AdminAuth | `urn:bizmall:product:write` |
 | DELETE | `/admin/v1/mall/products/{id}` | 删除商品（软删除） | AdminAuth | `urn:bizmall:product:delete` |
+| PUT | `/admin/v1/mall/products/{id}/additional-fields` | 独立更新商品附加字段配置 | AdminAuth | `urn:bizmall:product:write` |
 | PUT | `/admin/v1/mall/products/{id}/expiry` | 更新商品售卖截止时间 | AdminAuth | `urn:bizmall:product:write` |
 | PUT | `/admin/v1/mall/products/{id}/lbs` | 更新商品经纬度 | AdminAuth | `urn:bizmall:product:write` |
 | PUT | `/admin/v1/mall/products/{id}/list-status` | 更新商品上下架状态 | AdminAuth | `urn:bizmall:product:write` |
@@ -186,6 +187,7 @@ urn:bizmall:<module>:<action>
 | POST | `/admin/v1/mall/products/{id}/skus` | 批量创建SKU | AdminAuth | `urn:bizmall:product:write` |
 | DELETE | `/admin/v1/mall/products/{id}/skus` | 删除商品全部SKU | AdminAuth | `urn:bizmall:product:delete` |
 | PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}` | 编辑单个SKU | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}/additional-fields` | 独立更新SKU附加字段配置 | AdminAuth | `urn:bizmall:product:write` |
 | PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}/expiry` | 更新SKU过期时间 | AdminAuth | `urn:bizmall:product:write` |
 | PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}/usable` | 更新SKU生效时间 | AdminAuth | `urn:bizmall:product:write` |
 | PUT | `/admin/v1/mall/products/{id}/sort-order` | 更新商品排序 | AdminAuth | `urn:bizmall:product:write` |
@@ -580,6 +582,23 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | POST | `/admin/v1/logs/audit/archive` | 归档日志 | AdminAuth | AdminAuth |
 | GET | `/admin/v1/logs/audit/verify` | 验证哈希链完整性 | AdminAuth | AdminAuth |
 | GET | `/admin/v1/logs/my` | 我的日志列表 | AdminAuth | AdminAuth |
+
+## 十八、后台-系统设置 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/settings` | 设置项列表 | — | — |
+| POST | `/admin/v1/settings` | 创建设置项 | — | — |
+| GET | `/admin/v1/settings/{id}` | 设置项详情 | — | — |
+| PUT | `/admin/v1/settings/{id}` | 更新设置项 | — | — |
+| DELETE | `/admin/v1/settings/{id}` | 删除设置项 | — | — |
+| PUT | `/admin/v1/settings/{id}/enabled` | 启用/禁用设置项 | — | — |
+
+## 十九、C端-系统设置 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/settings/{key}` | 读取公开设置 | — | — |
 
 ---
 

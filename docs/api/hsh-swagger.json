@@ -4472,6 +4472,70 @@
                 }
             }
         },
+        "/admin/v1/mall/products/{id}/additional-fields": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "允许在商品下架状态下更新附加字段配置，不影响其他字段",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "独立更新商品附加字段配置",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "附加字段配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.UpdateProductAdditionalFieldsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "2001 商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/mall/products/{id}/expiry": {
             "put": {
                 "security": [
@@ -4928,6 +4992,77 @@
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/products/{id}/skus/{sku_id}/additional-fields": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "允许在商品下架状态下更新 SKU 附加字段配置，不影响价格/库存等其他字段",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Products"
+                ],
+                "summary": "独立更新SKU附加字段配置",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "SKU ID",
+                        "name": "sku_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "SKU附加字段配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.UpdateSkuAdditionalFieldsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "4004 SKU不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "400": {
@@ -6701,6 +6836,280 @@
                 }
             }
         },
+        "/admin/v1/settings": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-系统设置"
+                ],
+                "summary": "设置项列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键词（key/label）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "分组名称",
+                        "name": "group_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "启用状态",
+                        "name": "is_enabled",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-系统设置"
+                ],
+                "summary": "创建设置项",
+                "parameters": [
+                    {
+                        "description": "创建设置项请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_settings_dto.CreateSettingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/settings/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-系统设置"
+                ],
+                "summary": "设置项详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "设置项 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置项详情",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-系统设置"
+                ],
+                "summary": "更新设置项",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "设置项 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新设置项请求（PATCH 语义）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_settings_dto.UpdateSettingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-系统设置"
+                ],
+                "summary": "删除设置项",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "设置项 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/settings/{id}/enabled": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-系统设置"
+                ],
+                "summary": "启用/禁用设置项",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "设置项 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "启用/禁用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_settings_dto.UpdateEnabledRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/upload/archive": {
             "post": {
                 "security": [
@@ -8097,6 +8506,43 @@
                 }
             }
         },
+        "/api/v1/settings/{key}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-系统设置"
+                ],
+                "summary": "读取公开设置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "设置项 key",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置值",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在或未启用",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/login": {
             "post": {
                 "consumes": [
@@ -8433,13 +8879,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "业务错误（2002 SKU不可用 / 2003 库存不足 / 2012 已下架 / 2013 不在售卖时间 / 2017 版本不一致 / 3001 购物车项不存在 / 3005~3008 优惠券 / 3018 缺收货地址 / 3019 重复下单）",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（购物车项为空/地址缺失/校验失败）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8581,7 +9027,7 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "订单ID",
+                        "description": "订单ID（正整数）",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -8589,19 +9035,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "业务错误（订单不存在/无权操作/状态不允许确认收货）",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（订单ID无效或缺失）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作（非订单所属用户）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -10842,6 +11300,26 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_order_dto.CartItemAdditionalFields": {
+            "type": "object",
+            "required": [
+                "cart_item_id"
+            ],
+            "properties": {
+                "additional_fields": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "additional_fields_summary": {
+                    "description": "has_sensitive=true 时提交",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "cart_item_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_order_dto.CreateLogisticsCompanyRequest": {
             "type": "object",
             "required": [
@@ -10871,8 +11349,7 @@
         "github_com_vbegin_bizmall_internal_order_dto.CreateOrderRequest": {
             "type": "object",
             "required": [
-                "cart_item_ids",
-                "shipping_address"
+                "cart_item_ids"
             ],
             "properties": {
                 "cart_item_ids": {
@@ -10886,12 +11363,29 @@
                 "coupon_id": {
                     "type": "integer"
                 },
+                "idempotency_key": {
+                    "description": "客户端幂等键，防重复下单",
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "item_additional_fields": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.CartItemAdditionalFields"
+                    }
+                },
                 "remark": {
                     "type": "string",
                     "maxLength": 256
                 },
                 "shipping_address": {
-                    "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.ShippingAddressDTO"
+                    "description": "实物订单必填，纯核销单可忽略",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.ShippingAddressDTO"
+                        }
+                    ]
                 }
             }
         },
@@ -11157,6 +11651,16 @@
                 "title"
             ],
             "properties": {
+                "additional_fields_config": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "additional_fields_has_sensitive": {
+                    "type": "boolean"
+                },
                 "brand_id": {
                     "type": "integer"
                 },
@@ -11224,10 +11728,17 @@
         "github_com_vbegin_bizmall_internal_product_dto.CreateSkuItem": {
             "type": "object",
             "required": [
-                "price",
                 "spec_indices"
             ],
             "properties": {
+                "additional_fields_config": {
+                    "description": "覆盖 Product 级模板，为空时回退到 Product",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
                 "expiry": {
                     "description": "T-099: 过期时间 RFC3339，可选；优先级：SKU > Product",
                     "type": "string"
@@ -11386,6 +11897,23 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_product_dto.UpdateProductAdditionalFieldsRequest": {
+            "type": "object",
+            "properties": {
+                "additional_fields_config": {
+                    "description": "nil=不更新, 非nil=替换（含空切片）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "additional_fields_has_sensitive": {
+                    "description": "nil=不更新",
+                    "type": "boolean"
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_product_dto.UpdateProductExpiryRequest": {
             "type": "object",
             "properties": {
@@ -11428,6 +11956,18 @@
         "github_com_vbegin_bizmall_internal_product_dto.UpdateProductRequest": {
             "type": "object",
             "properties": {
+                "additional_fields_config": {
+                    "description": "nil=不更新, 非nil=替换（含空切片）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
+                "additional_fields_has_sensitive": {
+                    "description": "nil=不更新",
+                    "type": "boolean"
+                },
                 "brand_id": {
                     "type": "integer"
                 },
@@ -11518,6 +12058,19 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_product_dto.UpdateSkuAdditionalFieldsRequest": {
+            "type": "object",
+            "properties": {
+                "additional_fields_config": {
+                    "description": "nil=不更新, 非nil=替换（含空切片）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_product_dto.UpdateSkuExpiryRequest": {
             "type": "object",
             "properties": {
@@ -11530,6 +12083,14 @@
         "github_com_vbegin_bizmall_internal_product_dto.UpdateSkuRequest": {
             "type": "object",
             "properties": {
+                "additional_fields_config": {
+                    "description": "nil=不更新, 非nil=替换（含空切片）",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {}
+                    }
+                },
                 "expiry": {
                     "description": "T-099: nil=不更新, \"\"=清空, 非空=RFC3339",
                     "type": "string"
@@ -11590,6 +12151,97 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.CreateSpecValueItem"
                     }
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_settings_dto.CreateSettingRequest": {
+            "type": "object",
+            "required": [
+                "key",
+                "type",
+                "value"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "bool",
+                        "json",
+                        "text",
+                        "image"
+                    ]
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_settings_dto.UpdateEnabledRequest": {
+            "type": "object",
+            "properties": {
+                "is_enabled": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_settings_dto.UpdateSettingRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "key": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "bool",
+                        "json",
+                        "text",
+                        "image"
+                    ]
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         },

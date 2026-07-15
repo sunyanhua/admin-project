@@ -90,11 +90,6 @@ const EventManagement = () => {
     refresh();
   };
 
-  const getCategoryName = (categoryId?: number) => {
-    if (!categoryId) return '-';
-    return categoryOptions.find((c) => c.id === categoryId)?.name || '-';
-  };
-
   const filters: FilterConfig[] = [
     {
       name: 'category_id',
@@ -113,10 +108,6 @@ const EventManagement = () => {
 
   const columns: ColumnsType<Product> = [
     { title: '活动名称', dataIndex: 'title', key: 'title' },
-    {
-      title: '所属分类', dataIndex: 'category_id', key: 'category_id',
-      render: (v?: number) => getCategoryName(v),
-    },
     {
       title: '上架/下架', dataIndex: 'is_listed', key: 'is_listed', width: 110,
       render: (v: boolean, r: Product) => (

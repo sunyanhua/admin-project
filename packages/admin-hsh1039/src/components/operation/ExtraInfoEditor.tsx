@@ -169,7 +169,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
   // ---- 渲染 ----
   return (
     <>
-      <div style={{ fontWeight: 600, marginBottom: 16 }}>报名附加信息</div>
+      {/* 不再渲染标题，由父组件 SectionBlock 统一提供 */}
       <Radio.Group
         value={value.mode}
         onChange={(e) => onChange({ ...value, mode: e.target.value, groups: e.target.value === 'none' ? [] : value.groups })}

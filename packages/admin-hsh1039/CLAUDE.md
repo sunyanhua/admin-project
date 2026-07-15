@@ -70,6 +70,43 @@ catch (err: any) {
 - ❌ 拦截器弹窗 + 组件 catch 弹窗 → 拦截器已关闭 UI 提示，只由组件处理
 - ❌ `catch (error: any)` 后调用 `error()` → 变量遮蔽，应重命名为 `showError`
 
+### 区域卡片样式（SectionBlock）
+
+**配置页面/弹窗内的功能区域必须使用统一的卡片样式**，替代零散的 `<Divider />` + 加粗标题。
+
+```css
+/* 卡片容器 */
+background: '#fafafa';
+borderLeft: '3px solid {颜色}';
+borderRadius: 4;
+padding: '12px 14px';
+marginBottom: 16;
+/* 区域间分隔线 */
+height: 1px; background: '#e8e8e8'; margin: '0 0 16px 0';
+```
+
+| 区域类型 | 左边框色 | 示例场景 |
+|---------|---------|---------|
+| 信息配置 | `#1677ff`（蓝） | 报名期限、报名附加信息、规格项目 |
+| 数据表格 | `#722ed1`（紫） | SKU 组合 |
+| 状态操作 | `#fa8c16`（橙） | 是否上架 |
+
+**标准结构**：
+```tsx
+{/* ====== 区域名称 ====== */}
+<div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+  <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>区域名称</div>
+  {/* 区域内容 */}
+</div>
+{/* 区域间分隔线 */}
+<div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+```
+
+**禁止行为**：
+- ❌ 用 `<Divider />` 拼凑区域边界
+- ❌ 多个区域无视觉分隔直接堆叠
+- ❌ 区域内 SKU 表格与配置区混在一起不分隔
+
 ### 筛选搜索参数
 
 全系统关键词搜索参数统一为 **`keyword`**（非 `word`）。

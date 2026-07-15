@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { categoryApi } from '@/api/services/category';
-import { useAppNotification } from '@/hooks/useAppNotification';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
@@ -12,18 +11,6 @@ interface MallCategory {
   id: number;
   name: string;
   children?: MallCategory[];
-}
-
-function flattenTree(nodes: MallCategory[], depth = 0): MallCategory[] {
-  const result: MallCategory[] = [];
-  const prefix = '　'.repeat(depth);
-  nodes.forEach((node) => {
-    result.push({ ...node, name: prefix + node.name });
-    if (node.children && node.children.length > 0) {
-      result.push(...flattenTree(node.children, depth + 1));
-    }
-  });
-  return result;
 }
 
 const CategoryManagement = () => {
@@ -38,7 +25,11 @@ const CategoryManagement = () => {
     try {
       const res: any = await categoryApi.getMallCategories();
       const nodes: MallCategory[] = Array.isArray(res) ? res : (res?.list || []);
-      setData(flattenTree(nodes));
+      // 只显示顶级分类（parent_id 为 null 的节点），剥离 children 字段
+      const topLevel: MallCategory[] = nodes
+        .filter((n: any) => n.parent_id == null)
+        .map(({ children, ...rest }: any) => rest);
+      setData(topLevel);
     } catch {
       setData([]);
     } finally {

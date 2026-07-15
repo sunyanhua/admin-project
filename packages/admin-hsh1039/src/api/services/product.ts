@@ -62,6 +62,8 @@ export interface UpdateProductData {
   brand_id?: number;
   additional_fields_config?: any | null;
   additional_fields_has_sensitive?: boolean;
+  usable?: string | null;
+  expiry?: string | null;
 }
 
 export const productApi = {

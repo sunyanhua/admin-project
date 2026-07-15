@@ -17,6 +17,7 @@ import VisitUserStats from '@/pages/system/VisitUserStats';
 
 // 运营管理 — 配置管理
 import CategoryManagement from '@/pages/operation/CategoryManagement';
+import PageConfigManagement from '@/pages/operation/PageConfigManagement';
 import BannerManagement from '@/pages/system/BannerManagement';
 import AgreementManagement from '@/pages/community/AgreementManagement';
 import FaqManagement from '@/pages/system/FaqManagement';
@@ -81,6 +82,7 @@ const router = createHashRouter([
         children: [
           { index: true, element: <BannerManagement /> },
           // 配置管理
+          { path: 'page-config', element: <PageConfigManagement /> },
           { path: 'categories', element: <CategoryManagement /> },
           { path: 'banners', element: <BannerManagement /> },
           { path: 'agreements', element: <AgreementManagement /> },

@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, forwardRef, useImperativeHandle, useEffect } from 'react';
-import { Button, Switch, Radio, Select, Table, DatePicker, TimePicker, InputNumber, Divider } from 'antd';
+import { Button, Switch, Radio, Select, Table, DatePicker, TimePicker, InputNumber } from 'antd';
 import ExtraInfoEditor, { ExtraInfoData } from './ExtraInfoEditor';
 import type { ExtraInfoGroup } from './ExtraInfoEditor';
 import type { ColumnsType } from 'antd/es/table';
@@ -16,8 +16,8 @@ interface Step2SkuRow {
   spec_indices: string;
   specText: string;
   dateValue?: string;
-  usable?: string;
-  expiry?: string;
+  usable?: string | null;
+  expiry?: string | null;
 }
 
 export interface SkuConfigWizardHandle {
@@ -53,7 +53,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
   const [wizardSpecs, setWizardSpecs] = useState<SpecGroup[]>([]);
   const [wizardEditedSkus, setWizardEditedSkus] = useState<Record<string, Partial<SkuRow>>>({});
-  const [step2Edits, setStep2Edits] = useState<Record<string, { usable?: string; expiry?: string }>>({});
+  const [step2Edits, setStep2Edits] = useState<Record<string, { usable?: string | null; expiry?: string | null }>>({});
   const [expiryMode, setExpiryMode] = useState<'unified' | 'individual'>('unified');
   const [unifiedUsable, setUnifiedUsable] = useState<Dayjs | null>(null);
   const [unifiedExpiry, setUnifiedExpiry] = useState<Dayjs | null>(null);
@@ -97,15 +97,41 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
   const { success, error: showError, warning } = useAppNotification();
 
-  // 加载产品状态
+  // 将后端存储格式 [{name, config:[{name,type,...}]}] 还原为 ExtraInfoData
+  const parseExtraInfoFromProduct = (detail: any): ExtraInfoData => {
+    const raw: any[] = detail?.additional_fields_config;
+    if (!raw || !Array.isArray(raw) || raw.length === 0) {
+      return { mode: 'none', groups: [] };
+    }
+    const presetNames = ['姓名', '手机号', '性别', '年龄', '工作单位'];
+    let gk = 0;
+    const groups: ExtraInfoGroup[] = raw.map((g: any) => ({
+      key: `g_restore_${++gk}_${Date.now()}`,
+      name: g.name || '',
+      fields: (g.config || []).map((f: any, fi: number) => ({
+        key: `f_restore_${fi}_${Date.now()}`,
+        label: f.name || '',
+        type: f.type || 'text',
+        required: f.required === true,
+        format: f.format || '',
+        options: f.options || undefined,
+        preset: presetNames.includes(f.name),
+      })),
+    }));
+    return { mode: groups.length === 1 ? 'unified' : 'individual', groups };
+  };
+
+  // 加载产品状态（ref 防 StrictMode 双重触发）
+  const loadedPidRef = useRef<number>(0);
+
   useEffect(() => {
-    if (productId) {
+    if (productId && loadedPidRef.current !== productId) {
+      loadedPidRef.current = productId;
       setCurrent(0);
       setStep2Edits({});
       setExpiryMode('unified');
       setSelectedRowKeys([]);
       setBatchMode(false);
-      setExtraInfo({ mode: 'none', groups: [] });
       setExtraFieldSkus({});
       productApi.getProductDetail(productId).then((detail: any) => {
         setIsListed(detail?.is_listed === true);
@@ -113,6 +139,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         else setUnifiedUsable(null);
         if (detail?.expiry) setUnifiedExpiry(dayjs(detail.expiry));
         else setUnifiedExpiry(null);
+        // 还原已保存的附加信息库
+        setExtraInfo(parseExtraInfoFromProduct(detail));
       }).catch(() => {});
     }
   }, [productId]);
@@ -140,8 +168,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       const s2e = step2Edits[indices] || {};
       return {
         key: `step2-${idx}`, spec_indices: indices, specText, dateValue,
-        usable: s2e.usable !== undefined ? s2e.usable : undefined,
-        expiry: s2e.expiry !== undefined ? s2e.expiry : undefined,
+        usable: s2e.usable != null ? s2e.usable : undefined,
+        expiry: s2e.expiry != null ? s2e.expiry : undefined,
       };
     });
   }, [wizardSpecs, step2Edits, hasDateSpec, dateSpecIndex]);
@@ -151,8 +179,25 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     if (!state) return;
     const validSpecs = state.specs.filter((s) => s.name.trim() && s.values.some((v) => v.value.trim()));
     if (validSpecs.length === 0) { warning('请至少配置一个有效的规格项目'); return; }
-    setWizardSpecs(state.specs);
-    setWizardEditedSkus(state.editedSkus);
+    setWizardSpecs(validSpecs);
+
+    // 重映射 editedSkus key：过滤掉无效 spec 对应的部分
+    const filteredEdited: Record<string, Partial<SkuRow>> = {};
+    for (const [oldKey, edits] of Object.entries(state.editedSkus)) {
+      const parts = oldKey.split(' | ');
+      // 只保留在 validSpecs 中的 spec（通过名称匹配）
+      const newParts: string[] = [];
+      for (let i = 0; i < parts.length; i++) {
+        const [name] = parts[i].split(':');
+        if (validSpecs.some((s) => s.name === name)) {
+          newParts.push(parts[i]);
+        }
+      }
+      if (newParts.length > 0) {
+        filteredEdited[newParts.join(' | ')] = edits;
+      }
+    }
+    setWizardEditedSkus(filteredEdited);
     setStep2Edits({});
     setBatchMode(false);
     setSelectedRowKeys([]);
@@ -163,14 +208,14 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
   const handlePrev = () => { setCurrent(0); onStepChange?.(0); };
 
-  const updateStep2Sku = (specIndices: string, field: 'usable' | 'expiry', value: string) => {
+  const updateStep2Sku = (specIndices: string, field: 'usable' | 'expiry', value: string | null) => {
     setStep2Edits((prev) => ({ ...prev, [specIndices]: { ...(prev[specIndices] || {}), [field]: value } }));
   };
 
-  const computeRelativeTime = (dateValue: string | undefined, days: number, time: Dayjs | null): string => {
-    if (!dateValue || days == null) return '';
+  const computeRelativeTime = (dateValue: string | undefined, days: number, time: Dayjs | null): string | null => {
+    if (!dateValue || days == null) return null;
     const date = dayjs(dateValue);
-    if (!date.isValid()) return '';
+    if (!date.isValid()) return null;
     const result = date.subtract(days, 'day');
     if (time) return result.hour(time.hour()).minute(time.minute()).second(0).format('YYYY-MM-DDTHH:mm:ssZ');
     return result.format('YYYY-MM-DDTHH:mm:ssZ');
@@ -182,16 +227,16 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     setStep2Edits((prev) => {
       const next = { ...prev };
       for (const row of selectedSkus) {
-        const edits: { usable?: string; expiry?: string } = {};
+        const edits: { usable?: string | null; expiry?: string | null } = {};
         if (batchEnabled.usable) {
           edits.usable = (hasDateSpec && batchUsableMode === 'relative')
             ? computeRelativeTime(row.dateValue, batchUsableDays, batchUsableTime)
-            : batchUsable ? batchUsable.format('YYYY-MM-DDTHH:mm:ssZ') : '';
+            : batchUsable ? batchUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
         }
         if (batchEnabled.expiry) {
           edits.expiry = (hasDateSpec && batchExpiryMode === 'relative')
             ? computeRelativeTime(row.dateValue, batchExpiryDays, batchExpiryTime)
-            : batchExpiry ? batchExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : '';
+            : batchExpiry ? batchExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
         }
         next[row.spec_indices] = { ...(next[row.spec_indices] || {}), ...edits };
       }
@@ -236,6 +281,14 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     try {
       setSaving(true);
 
+      // 0. 清空前先读取现有 SKU 数据，作为价格/限额/状态的兜底
+      let existingByIndices = new Map<string, { price: number; stock: number; status: number }>();
+      try {
+        const raw: any = await productApi.getSkus(productId);
+        const arr: any[] = Array.isArray(raw) ? raw : (raw?.list || []);
+        for (const s of arr) existingByIndices.set(s.spec_indices || '', { price: s.price || 0, stock: s.stock || 0, status: s.status ?? 1 });
+      } catch { /* ignore */ }
+
       await productApi.clearAllSkus(productId);
 
       const payload = wizardSpecs
@@ -267,10 +320,16 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       if (payload.length > 0 && freshList.length > 0) {
         const step2IndicesToText = new Map<string, string>();
         for (const row of step2Skus) step2IndicesToText.set(row.spec_indices, row.specText);
-        const textToStep2 = new Map<string, { usable?: string; expiry?: string }>();
+        const textToStep2 = new Map<string, { usable?: string | null; expiry?: string | null }>();
         for (const [oldIndices, edits] of Object.entries(step2Edits)) {
           const text = step2IndicesToText.get(oldIndices);
           if (text) textToStep2.set(text, edits);
+        }
+        // 将清空前读到的现有 SKU 数据转为 specText key（兜底价格/限额/状态）
+        const existingByText = new Map<string, { price: number; stock: number; status: number }>();
+        for (const [oldIndices, data] of existingByIndices.entries()) {
+          const text = step2IndicesToText.get(oldIndices);
+          if (text) existingByText.set(text, data);
         }
         // 同样为 extraFieldSkus 建立 specText 桥接
         const textToExtraFields = new Map<string, { groupKey: string; count: number }[]>();
@@ -307,15 +366,21 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           });
           const specText = specTextParts.join(' | ');
 
-          const wEdits = wizardEditedSkus[specText] || {};
+          // 价格/限额/状态：wizardEditedSkus（用户编辑） > 现有 SKU 数据（兜底） > 默认值
+          const wEdits = wizardEditedSkus[specText];
+          const existing = existingByText.get(specText);
+          const price = wEdits?.price ?? existing?.price ?? 0;
+          const stock = wEdits?.stock ?? existing?.stock ?? 0;
+          const status = wEdits?.status ?? existing?.status ?? 1;
+
           let usable: string | null = null, expiry: string | null = null;
           if (expiryMode === 'unified') {
             usable = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
             expiry = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
           } else {
             const s2e = textToStep2.get(specText) || {};
-            usable = s2e.usable && s2e.usable !== '' ? s2e.usable : null;
-            expiry = s2e.expiry && s2e.expiry !== '' ? s2e.expiry : null;
+            usable = s2e.usable || null;
+            expiry = s2e.expiry || null;
           }
           // 附加信息配置
           let afc = null;
@@ -341,39 +406,29 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
             }
           }
 
-          skuList.push({ spec_indices: idParts.join('_'), price: wEdits.price ?? 0, stock: wEdits.stock ?? 0, status: wEdits.status ?? 1, usable, expiry, additional_fields_config: afc });
+          skuList.push({ spec_indices: idParts.join('_'), price, stock, status, usable, expiry, additional_fields_config: afc });
         }
         if (skuList.length > 0) await productApi.batchCreateSkus(productId, skuList);
       }
 
-      if (expiryMode === 'unified') {
-        await productApi.updateProductUsable(productId, unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null);
-        await productApi.updateProductExpiry(productId, unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null);
-      } else {
-        await productApi.updateProductUsable(productId, null);
-        await productApi.updateProductExpiry(productId, null);
-      }
-
-      // 7. 保存附加信息配置到产品
-      // 格式: [{name, config: [{name, type, required, format?, options?}]}]
+      // 5. 合并更新产品：usable + expiry + 附加信息 + 上下架（一次 PUT）
       const toStorageGroup = (g: ExtraInfoGroup) => ({
         name: g.name,
         config: g.fields.map(({ key, preset, ...rest }) => rest),
       });
 
-      if (extraInfo.mode !== 'none' && extraInfo.groups.length > 0) {
-        await productApi.updateProduct(productId, {
-          additional_fields_config: extraInfo.groups.map(toStorageGroup),
-          additional_fields_has_sensitive: hasSensitive,
-        });
-      } else {
-        await productApi.updateProduct(productId, {
-          additional_fields_config: null,
-          additional_fields_has_sensitive: false,
-        });
-      }
+      const unifiedUsableStr = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+      const unifiedExpiryStr = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
 
-      await productApi.updateListStatus(productId, isListed);
+      await productApi.updateProduct(productId, {
+        usable: expiryMode === 'unified' ? (unifiedUsableStr || null) : null,
+        expiry: expiryMode === 'unified' ? (unifiedExpiryStr || null) : null,
+        additional_fields_config: extraInfo.mode !== 'none' && extraInfo.groups.length > 0
+          ? extraInfo.groups.map(toStorageGroup)
+          : null,
+        additional_fields_has_sensitive: hasSensitive,
+        is_listed: isListed,
+      });
 
       success('配置已保存');
       onSaved?.();
@@ -404,7 +459,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     { title: '开始时间', dataIndex: 'usable', key: 'usable', width: 200,
       render: (v: string | undefined, r: Step2SkuRow) => (
         <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
-          onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'usable', typeof dateStr === 'string' ? dateStr : '')} />
+          onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'usable', typeof dateStr === 'string' ? dateStr : null)} />
       ),
     },
     { title: '截止时间', dataIndex: 'expiry', key: 'expiry', width: 200,
@@ -425,127 +480,141 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
       {/* ====== 上架管理 ====== */}
       {current === 1 && (
-        <div style={{ padding: '0 8px' }}>
-          <div style={{ fontWeight: 600, marginBottom: 16 }}>报名期限</div>
-          <Radio.Group value={expiryMode} onChange={(e) => setExpiryMode(e.target.value)} style={{ marginBottom: 16 }}>
-            <Radio.Button value="unified">全部项目统一</Radio.Button>
-            <Radio.Button value="individual">各项目单独设置</Radio.Button>
-          </Radio.Group>
+        <div style={{ padding: '0 4px' }}>
 
-          {expiryMode === 'unified' && (
-            <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ whiteSpace: 'nowrap' }}>开始时间</span>
-                <DatePicker showTime value={unifiedUsable} placeholder="不限" onChange={(v) => setUnifiedUsable(v)} />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ whiteSpace: 'nowrap' }}>截止时间</span>
-                <DatePicker showTime value={unifiedExpiry} placeholder="不限" onChange={(v) => setUnifiedExpiry(v)} />
-              </div>
-            </div>
-          )}
+          {/* ====== 报名期限 ====== */}
+          <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>报名期限</div>
+            <Radio.Group value={expiryMode} onChange={(e) => setExpiryMode(e.target.value)} style={{ marginBottom: expiryMode === 'unified' ? 0 : 12 }}>
+              <Radio.Button value="unified">全部项目统一</Radio.Button>
+              <Radio.Button value="individual">各项目单独设置</Radio.Button>
+            </Radio.Group>
 
-          {expiryMode === 'individual' && (
-            <>
-              <Divider />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontWeight: 600 }}>SKU 组合（{step2Skus.length} 种）</span>
-                <Button type="link" size="small" onClick={() => {
-                  const next = !batchMode;
-                  setBatchMode(next);
-                  if (next) { setSelectedRowKeys(step2Skus.map((s) => s.key)); setSelectedSpecFilters({}); }
-                  else { setSelectedRowKeys([]); setSelectedSpecFilters({}); }
-                }}>{batchMode ? '收起批量设置' : '批量设置'}</Button>
-              </div>
-
-              {batchMode && (
-                <div style={{ border: '1px solid #d9d9d9', borderRadius: 6, padding: 12, marginBottom: 12, background: '#f5f5f5' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 600 }}>批量设置</span>
-                    <label style={{ fontSize: 13, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={batchEnabled.usable} style={{ marginRight: 4 }} onChange={(e) => setBatchEnabled((prev) => ({ ...prev, usable: e.target.checked }))} /> 开始时间
-                    </label>
-                    <label style={{ fontSize: 13, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={batchEnabled.expiry} style={{ marginRight: 4 }} onChange={(e) => setBatchEnabled((prev) => ({ ...prev, expiry: e.target.checked }))} /> 截止时间
-                    </label>
-                  </div>
-
-                  {wizardSpecs.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
-                      {wizardSpecs.map((spec, si) => (
-                        <Select key={si} allowClear placeholder={`全部${spec.name || `规格${si + 1}`}`} value={selectedSpecFilters[si]}
-                          options={spec.values.filter((v) => v.value).map((v) => ({ label: v.value, value: v.value }))}
-                          onChange={(val) => {
-                            setSelectedSpecFilters((prev) => ({ ...prev, [si]: val }));
-                            const allFilters = { ...selectedSpecFilters, [si]: val };
-                            const newKeys: string[] = [];
-                            for (const row of step2Skus) {
-                              const parts = row.specText.split(' | ');
-                              let match = true;
-                              for (const [k, filterVal] of Object.entries(allFilters)) {
-                                if (filterVal && parts[Number(k)]?.split(':')[1] !== filterVal) { match = false; break; }
-                              }
-                              if (match) newKeys.push(row.key);
-                            }
-                            setSelectedRowKeys(newKeys);
-                          }} />
-                      ))}
-                    </div>
-                  )}
-
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 8 }}>
-                    <div style={{ opacity: batchEnabled.usable ? 1 : 0.5 }}>
-                      {hasDateSpec && (
-                        <Radio.Group size="small" value={batchUsableMode} onChange={(e) => setBatchUsableMode(e.target.value)} disabled={!batchEnabled.usable} style={{ marginBottom: 4 }}>
-                          <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
-                          <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
-                        </Radio.Group>
-                      )}
-                      {(!hasDateSpec || batchUsableMode === 'fixed') ? (
-                        <DatePicker showTime placeholder="开始时间" value={batchUsable} onChange={(v) => setBatchUsable(v)} disabled={!batchEnabled.usable} style={{ width: '100%' }} />
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <InputNumber min={0} value={batchUsableDays} prefix="提前" disabled={!batchEnabled.usable} style={{ width: 100 }} onChange={(v) => setBatchUsableDays(v ?? 0)} />
-                          <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>天</span>
-                          <TimePicker value={batchUsableTime} format="HH:mm" disabled={!batchEnabled.usable} style={{ flex: 1 }} onChange={(v) => setBatchUsableTime(v)} placeholder="时间" />
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ opacity: batchEnabled.expiry ? 1 : 0.5 }}>
-                      {hasDateSpec && (
-                        <Radio.Group size="small" value={batchExpiryMode} onChange={(e) => setBatchExpiryMode(e.target.value)} disabled={!batchEnabled.expiry} style={{ marginBottom: 4 }}>
-                          <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
-                          <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
-                        </Radio.Group>
-                      )}
-                      {(!hasDateSpec || batchExpiryMode === 'fixed') ? (
-                        <DatePicker showTime placeholder="截止时间" value={batchExpiry} onChange={(v) => setBatchExpiry(v)} disabled={!batchEnabled.expiry} style={{ width: '100%' }} />
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <InputNumber min={0} value={batchExpiryDays} prefix="提前" disabled={!batchEnabled.expiry} style={{ width: 100 }} onChange={(v) => setBatchExpiryDays(v ?? 0)} />
-                          <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>天</span>
-                          <TimePicker value={batchExpiryTime} format="HH:mm" disabled={!batchEnabled.expiry} style={{ flex: 1 }} onChange={(v) => setBatchExpiryTime(v)} placeholder="时间" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <Button onClick={applyStep2Batch}>应用设置</Button>
-                    <span style={{ color: '#999', fontSize: 12 }}>已选 {selectedRowKeys.length} 项</span>
-                  </div>
+            {expiryMode === 'unified' && (
+              <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ whiteSpace: 'nowrap' }}>开始时间</span>
+                  <DatePicker showTime value={unifiedUsable} placeholder="不限" onChange={(v) => setUnifiedUsable(v)} />
                 </div>
-              )}
-
-              <div style={{ background: '#fff', borderRadius: 4, border: '1px solid #d9d9d9', overflow: 'hidden' }}>
-                <Table rowKey="key" columns={skuColumns} dataSource={step2Skus} size="small" pagination={false} scroll={{ y: 280 }}
-                  rowSelection={batchMode ? { columnWidth: 32, selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys as string[]) } : undefined} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ whiteSpace: 'nowrap' }}>截止时间</span>
+                  <DatePicker showTime value={unifiedExpiry} placeholder="不限" onChange={(v) => setUnifiedExpiry(v)} />
+                </div>
               </div>
-            </>
-          )}
+            )}
 
-          <Divider />
-          <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
+            {expiryMode === 'individual' && (
+              <div style={{ marginTop: 4 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>SKU 组合（{step2Skus.length} 种）</span>
+                  <Button type="link" size="small" onClick={() => {
+                    const next = !batchMode;
+                    setBatchMode(next);
+                    if (next) { setSelectedRowKeys(step2Skus.map((s) => s.key)); setSelectedSpecFilters({}); }
+                    else { setSelectedRowKeys([]); setSelectedSpecFilters({}); }
+                  }}>{batchMode ? '收起批量设置' : '批量设置'}</Button>
+                </div>
+
+                {batchMode && (
+                  <div style={{ border: '1px solid #d9d9d9', borderRadius: 6, padding: 12, marginBottom: 12, background: '#f5f5f5' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 600 }}>批量设置</span>
+                      <label style={{ fontSize: 13, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={batchEnabled.usable} style={{ marginRight: 4 }} onChange={(e) => setBatchEnabled((prev) => ({ ...prev, usable: e.target.checked }))} /> 开始时间
+                      </label>
+                      <label style={{ fontSize: 13, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={batchEnabled.expiry} style={{ marginRight: 4 }} onChange={(e) => setBatchEnabled((prev) => ({ ...prev, expiry: e.target.checked }))} /> 截止时间
+                      </label>
+                    </div>
+
+                    {wizardSpecs.length > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
+                        {wizardSpecs.map((spec, si) => (
+                          <Select key={si} allowClear placeholder={`全部${spec.name || `规格${si + 1}`}`} value={selectedSpecFilters[si]}
+                            options={spec.values.filter((v) => v.value).map((v) => ({ label: v.value, value: v.value }))}
+                            onChange={(val) => {
+                              setSelectedSpecFilters((prev) => ({ ...prev, [si]: val }));
+                              const allFilters = { ...selectedSpecFilters, [si]: val };
+                              const newKeys: string[] = [];
+                              for (const row of step2Skus) {
+                                const parts = row.specText.split(' | ');
+                                let match = true;
+                                for (const [k, filterVal] of Object.entries(allFilters)) {
+                                  if (filterVal && parts[Number(k)]?.split(':')[1] !== filterVal) { match = false; break; }
+                                }
+                                if (match) newKeys.push(row.key);
+                              }
+                              setSelectedRowKeys(newKeys);
+                            }} />
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 8 }}>
+                      <div style={{ opacity: batchEnabled.usable ? 1 : 0.5 }}>
+                        {hasDateSpec && (
+                          <Radio.Group size="small" value={batchUsableMode} onChange={(e) => setBatchUsableMode(e.target.value)} disabled={!batchEnabled.usable} style={{ marginBottom: 4 }}>
+                            <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
+                            <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
+                          </Radio.Group>
+                        )}
+                        {(!hasDateSpec || batchUsableMode === 'fixed') ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: '#666' }}>开始时间</span>
+                            <DatePicker showTime placeholder="不限" value={batchUsable} onChange={(v) => setBatchUsable(v)} disabled={!batchEnabled.usable} style={{ flex: 1 }} />
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <InputNumber min={0} value={batchUsableDays} prefix="提前" disabled={!batchEnabled.usable} style={{ width: 100 }} onChange={(v) => setBatchUsableDays(v ?? 0)} />
+                            <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>天</span>
+                            <TimePicker value={batchUsableTime} format="HH:mm" disabled={!batchEnabled.usable} style={{ flex: 1 }} onChange={(v) => setBatchUsableTime(v)} placeholder="时间" />
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ opacity: batchEnabled.expiry ? 1 : 0.5 }}>
+                        {hasDateSpec && (
+                          <Radio.Group size="small" value={batchExpiryMode} onChange={(e) => setBatchExpiryMode(e.target.value)} disabled={!batchEnabled.expiry} style={{ marginBottom: 4 }}>
+                            <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
+                            <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
+                          </Radio.Group>
+                        )}
+                        {(!hasDateSpec || batchExpiryMode === 'fixed') ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: '#666' }}>截止时间</span>
+                            <DatePicker showTime placeholder="不限" value={batchExpiry} onChange={(v) => setBatchExpiry(v)} disabled={!batchEnabled.expiry} style={{ flex: 1 }} />
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <InputNumber min={0} value={batchExpiryDays} prefix="提前" disabled={!batchEnabled.expiry} style={{ width: 100 }} onChange={(v) => setBatchExpiryDays(v ?? 0)} />
+                            <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>天</span>
+                            <TimePicker value={batchExpiryTime} format="HH:mm" disabled={!batchEnabled.expiry} style={{ flex: 1 }} onChange={(v) => setBatchExpiryTime(v)} placeholder="时间" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <Button onClick={applyStep2Batch}>应用设置</Button>
+                      <span style={{ color: '#999', fontSize: 12 }}>已选 {selectedRowKeys.length} 项</span>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ background: '#fff', borderRadius: 4, border: '1px solid #d9d9d9', overflow: 'hidden' }}>
+                  <Table rowKey="key" columns={skuColumns} dataSource={step2Skus} size="small" pagination={false} scroll={{ y: 280 }}
+                    rowSelection={batchMode ? { columnWidth: 32, selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys as string[]) } : undefined} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+
+          {/* ====== 报名附加信息 ====== */}
+          <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>报名附加信息</div>
+            <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
+          </div>
 
           {/* SKU 附加信息配置表格（仅"各项目单独设置"时显示） */}
           {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
@@ -669,15 +738,18 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                   <div style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
                     注：数量为 0 表示该 SKU 不要求填写此附加信息库
                   </div>
-                  <Divider />
             </div>
           )}
 
-          <Divider />
-          <div style={{ fontWeight: 600, marginBottom: 16 }}>是否上架</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-            <Switch checked={isListed} checkedChildren="上架" unCheckedChildren="下架" onChange={(checked) => setIsListed(checked)} />
-            <span style={{ color: '#666', fontSize: 13 }}>{isListed ? '活动已上架，用户可看到并购买' : '活动已下架，用户无法看到'}</span>
+          <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+
+          {/* ====== 是否上架 ====== */}
+          <div style={{ background: '#fafafa', borderLeft: '3px solid #fa8c16', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#fa8c16' }}>是否上架</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Switch checked={isListed} checkedChildren="上架" unCheckedChildren="下架" onChange={(checked) => setIsListed(checked)} />
+              <span style={{ color: '#666', fontSize: 13 }}>{isListed ? '活动已上架，用户可看到并购买' : '活动已下架，用户无法看到'}</span>
+            </div>
           </div>
         </div>
       )}
