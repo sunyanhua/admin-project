@@ -8,6 +8,7 @@ import { momentApi } from '@/api/services/moment';
 import { uploadApi } from '@/api/services/upload';
 import { eventApi } from '@/api/services/event';
 import { TopicStatus } from '@shared/constants/topic.enums';
+import { getMediumUrl } from '@/utils/imageUtils';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -339,20 +340,18 @@ const TopicManagement = () => {
       key: 'cover',
       width: 80,
       render: (url: string) => url ? (
-        <Image width={60} height={60} src={url} style={{ borderRadius: 6, objectFit: 'cover' }} />
+        <Image width={60} height={60} src={getMediumUrl(url)} preview={{ src: url }} style={{ borderRadius: 6, objectFit: 'cover' }} />
       ) : '-',
     },
     {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
     },
     {
       title: '简介',
       dataIndex: 'brief',
       key: 'brief',
-      ellipsis: true,
       render: (text: string) => text || '-',
     },
     {
@@ -365,8 +364,7 @@ const TopicManagement = () => {
           min={0}
           max={9999}
           value={orderon}
-          placeholder="未设置"
-          style={{ width: 90 }}
+          style={{ width: 70 }}
           onBlur={(e) => handleOrderChange(record, e.target.value ? parseInt(e.target.value) : null)}
           onPressEnter={(e) => {
             const value = (e.target as HTMLInputElement).value;

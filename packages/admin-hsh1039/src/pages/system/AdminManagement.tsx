@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Tag } from 'antd';
 import { adminApi, AdminUser, AdminRole } from '../../api/services/admin';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, formatDate } from '@/utils/format';
 import AddAdminModal from '../../components/admin/AddAdminModal';
 import AdminEditModal from '../../components/admin/AdminEditModal';
 import { useListPage } from '@/hooks/useListPage';
@@ -114,13 +114,14 @@ const AdminManagement = () => {
       title: '角色',
       dataIndex: 'roles',
       key: 'roles',
+      width: 100,
       render: (roles?: any[]) => {
         if (!roles || roles.length === 0) return <Tag>未分配</Tag>;
         return roles.map((role: any, idx: number) => {
           const name = extractRoleName(role);
           const code = typeof role === 'string' ? role : role?.code || '';
           return (
-            <Tag key={code || idx} color={code === 'super_admin' ? 'red' : 'blue'}>
+            <Tag key={code || idx} color={code === 'super_admin' ? 'red' : 'blue'} title={name || code}>
               {name || code}
             </Tag>
           );
@@ -131,8 +132,9 @@ const AdminManagement = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 100,
       render: (status?: number) => (
-        <Tag color={status === 1 ? 'green' : 'default'}>
+        <Tag color={status === 1 ? 'green' : 'default'} title={status === 1 ? '正常' : '屏蔽'}>
           {status === 1 ? '正常' : '屏蔽'}
         </Tag>
       ),
@@ -141,7 +143,15 @@ const AdminManagement = () => {
       title: '最后登录时间',
       dataIndex: 'last_login_at',
       key: 'last_login_at',
-      render: (last_login_at?: string) => last_login_at ? formatDateTime(last_login_at) : '-',
+      width: 120,
+      render: (t: string) => (
+        <div style={{ lineHeight: 1.6 }}>
+          <div>{formatDate(t)}</div>
+          <div style={{ color: '#666', fontSize: 12 }}>
+            {t ? formatDateTime(t).split(' ')[1] : '-'}
+          </div>
+        </div>
+      ),
     },
     ActionColumn({
       onEdit: (record) => {

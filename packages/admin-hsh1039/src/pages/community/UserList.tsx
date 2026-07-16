@@ -13,6 +13,7 @@ import UserDetailSections from '../../components/user/UserDetailSections';
 import request from '@/api';
 import '../../styles/user-detail-modal.css';
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
+import { getAvatarUrl } from '@/utils/imageUtils';
 
 const { Title } = Typography;
 
@@ -259,13 +260,13 @@ const UserList = () => {
     {
       title: '用户',
       key: 'user',
-      width: 220,
+      width: 140,
       render: (_: any, record: any) => {
         const showIdentity = record.coop_auth && !isExpired(record.coop_auth_expiry) && record.coop_role;
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewDetail(record)}>
             <Space size={4}>
-              <Avatar src={record.avatar} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+              <Avatar src={getAvatarUrl(record.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
               <span style={{ fontSize: 14 }}>{record.nick || '-'}</span>
               {showIdentity && <CoopRoleTag role={record.coop_role} />}
               {record.recom && <Tag color="red">推荐</Tag>}
@@ -313,9 +314,9 @@ const UserList = () => {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 110,
+      width: 100,
       render: (status: number, record: any) => {
-        if (status === 3) return <Tag color="default">未激活</Tag>;
+        if (status === 3) return <Tag color="default" title="未激活">未激活</Tag>;
         return (
           <Switch
             checked={status === 0}

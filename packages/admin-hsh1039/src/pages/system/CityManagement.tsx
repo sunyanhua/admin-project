@@ -107,7 +107,6 @@ const CityManagement = () => {
       title: '城市名称',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
     },
     {
       title: '状态',

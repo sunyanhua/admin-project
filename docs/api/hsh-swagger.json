@@ -3647,52 +3647,58 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "订单号",
+                        "description": "订单号（模糊搜索）",
                         "name": "order_no",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "订单状态",
+                        "description": "订单状态（0待支付 1已支付 2待发货 3已发货 4已收货 5已完成 6已取消 7售后中）",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "订单类型",
+                        "description": "订单类型（physical/verification）",
                         "name": "order_type",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "开始日期",
+                        "description": "开始日期（YYYY-MM-DD）",
                         "name": "start_date",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "结束日期",
+                        "description": "结束日期（YYYY-MM-DD）",
                         "name": "end_date",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "页码",
+                        "description": "页码（默认1）",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "每页数量（默认20，最大100）",
                         "name": "page_size",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（分页查询主单列表，含子单Brief + 订单号/状态/类型/日期多维筛选）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误（日期格式无效/分页参数不合法/状态枚举值无效）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -3895,7 +3901,7 @@
                     "application/json"
                 ],
                 "produces": [
-                    "application/json"
+                    "application/octet-stream"
                 ],
                 "tags": [
                     "Orders"
@@ -3904,32 +3910,44 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "订单状态",
+                        "description": "订单状态（0待支付 1已支付 2待发货 3已发货 4已收货 5已完成 6已取消 7售后中）",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "开始日期",
+                        "description": "开始日期（YYYY-MM-DD）",
                         "name": "start_date",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "结束日期",
+                        "description": "结束日期（YYYY-MM-DD）",
                         "name": "end_date",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误（日期格式无效/状态枚举值无效/导出数量超限）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:order:read）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -4499,7 +4517,7 @@
                         "required": true
                     },
                     {
-                        "description": "附加字段配置",
+                        "description": "附加字段配置（传 null 或 {} 清空）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -4562,7 +4580,7 @@
                         "required": true
                     },
                     {
-                        "description": "更新售卖截止时间请求",
+                        "description": "更新售卖截止时间请求（传 null 或 \\",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5049,7 +5067,7 @@
                         "required": true
                     },
                     {
-                        "description": "SKU附加字段配置",
+                        "description": "SKU附加字段配置（传 null 或 {} 清空）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5116,7 +5134,7 @@
                         "required": true
                     },
                     {
-                        "description": "SKU过期时间",
+                        "description": "SKU过期时间（null 或 \\",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5171,7 +5189,7 @@
                         "required": true
                     },
                     {
-                        "description": "SKU生效时间",
+                        "description": "SKU生效时间（null 或 \\",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5511,7 +5529,7 @@
                         "required": true
                     },
                     {
-                        "description": "更新售卖开始时间请求",
+                        "description": "更新售卖开始时间请求（传 null 或 \\",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5638,6 +5656,18 @@
                         "default": 20,
                         "description": "每页数量",
                         "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否系统级",
+                        "name": "is_system",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否隐藏",
+                        "name": "is_hidden",
                         "in": "query"
                     }
                 ],
@@ -5849,6 +5879,69 @@
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/refund-rules/{id}/hidden": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "RefundRules"
+                ],
+                "summary": "更新退款规则隐藏状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "规则ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "隐藏状态",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_after_sale_dto.UpdateRefundRuleHiddenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -8836,6 +8929,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误（状态枚举值无效/分页参数不合法）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
                         "schema": {
@@ -8925,7 +9024,7 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "订单ID",
+                        "description": "订单ID（正整数）",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -8933,13 +9032,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（返回主单详情 master_order + 子单列表 sub_orders + 商品行 items + 物流信息 logistics）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误（订单ID无效）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -10470,14 +10581,18 @@
         "github_com_vbegin_bizmall_internal_after_sale_dto.CreateRefundRuleRequest": {
             "type": "object",
             "required": [
-                "name"
+                "name",
+                "stages"
             ],
             "properties": {
                 "description": {
                     "type": "string",
                     "maxLength": 256
                 },
-                "is_unlimited": {
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "is_system": {
                     "type": "boolean"
                 },
                 "name": {
@@ -10486,6 +10601,7 @@
                 },
                 "stages": {
                     "type": "array",
+                    "minItems": 1,
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_bizmall_internal_after_sale_dto.CreateRefundRuleStageItem"
                     }
@@ -10546,6 +10662,14 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_after_sale_dto.UpdateRefundRuleHiddenRequest": {
+            "type": "object",
+            "properties": {
+                "is_hidden": {
+                    "type": "boolean"
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_after_sale_dto.UpdateRefundRuleRequest": {
             "type": "object",
             "properties": {
@@ -10553,7 +10677,7 @@
                     "type": "string",
                     "maxLength": 256
                 },
-                "is_unlimited": {
+                "is_system": {
                     "type": "boolean"
                 },
                 "name": {
@@ -11686,9 +11810,6 @@
                 "is_listed": {
                     "type": "boolean"
                 },
-                "is_refundable": {
-                    "type": "boolean"
-                },
                 "is_virtual": {
                     "type": "boolean"
                 },
@@ -11705,7 +11826,14 @@
                 "lbs_lng": {
                     "type": "number"
                 },
+                "refund_base_time": {
+                    "description": "RFC3339, null=不设置",
+                    "type": "string"
+                },
                 "refund_rule_id": {
+                    "type": "integer"
+                },
+                "refund_type": {
                     "type": "integer"
                 },
                 "sort_order": {
@@ -11901,7 +12029,7 @@
             "type": "object",
             "properties": {
                 "additional_fields_config": {
-                    "description": "nil=不更新, 非nil=替换（含空切片）",
+                    "description": "nil 或 [] = 清空, 非空=替换",
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -11918,7 +12046,7 @@
             "type": "object",
             "properties": {
                 "expiry": {
-                    "description": "RFC3339 日期时间, null 清空",
+                    "description": "RFC3339 日期时间, null 或 \"\" = 清空",
                     "type": "string"
                 }
             }
@@ -11994,9 +12122,6 @@
                 "is_listed": {
                     "type": "boolean"
                 },
-                "is_refundable": {
-                    "type": "boolean"
-                },
                 "is_virtual": {
                     "type": "boolean"
                 },
@@ -12013,7 +12138,14 @@
                 "lbs_lng": {
                     "type": "number"
                 },
+                "refund_base_time": {
+                    "description": "nil=不更新, \"\"=清空, 非空=RFC3339",
+                    "type": "string"
+                },
                 "refund_rule_id": {
+                    "type": "integer"
+                },
+                "refund_type": {
                     "type": "integer"
                 },
                 "sort_order": {
@@ -12045,7 +12177,7 @@
             "type": "object",
             "properties": {
                 "usable": {
-                    "description": "RFC3339 日期时间, null 清空",
+                    "description": "RFC3339 日期时间, null 或 \"\" = 清空",
                     "type": "string"
                 }
             }
@@ -12062,7 +12194,7 @@
             "type": "object",
             "properties": {
                 "additional_fields_config": {
-                    "description": "nil=不更新, 非nil=替换（含空切片）",
+                    "description": "nil 或 [] = 清空, 非空=替换",
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -12075,7 +12207,7 @@
             "type": "object",
             "properties": {
                 "expiry": {
-                    "description": "RFC3339, nil=不更新, \"\"=清空, 非空=设置",
+                    "description": "RFC3339, null=\"\"=清空, 非空=设置",
                     "type": "string"
                 }
             }
@@ -12128,7 +12260,7 @@
             "type": "object",
             "properties": {
                 "usable": {
-                    "description": "RFC3339, nil=不更新, \"\"=清空, 非空=设置",
+                    "description": "RFC3339, null=\"\"=清空, 非空=设置",
                     "type": "string"
                 }
             }

@@ -12,6 +12,7 @@ import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { AddEditModal } from '@/components/templates/AddEditModal';
 import { exportToExcel } from '@/utils/exportUtils';
+import { getAvatarUrl } from '@/utils/imageUtils';
 import dayjs from 'dayjs';
 
 // 优惠券批次状态枚举
@@ -292,8 +293,7 @@ const CouponManagement = () => {
       title: '批次名称',
       dataIndex: 'title',
       key: 'title',
-      width: 150,
-      ellipsis: true,
+      render: (text: string) => <div style={{ wordBreak: 'break-word' }}>{text}</div>,
     },
     {
       title: '优惠',
@@ -519,7 +519,7 @@ const CouponManagement = () => {
                 return (
                   <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {user_data.avatar ? (
-                      <img src={user_data.avatar} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+                      <img src={getAvatarUrl(user_data.avatar)} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
                     ) : null}
                     {user_data.nick || user_data.name || '-'}
                   </span>

@@ -109,14 +109,14 @@ const EventManagement = () => {
   const columns: ColumnsType<Product> = [
     { title: '活动名称', dataIndex: 'title', key: 'title' },
     {
-      title: '上架/下架', dataIndex: 'is_listed', key: 'is_listed', width: 110,
+      title: '上架/下架', dataIndex: 'is_listed', key: 'is_listed', width: 100,
       render: (v: boolean, r: Product) => (
         <Switch checked={v === true} checkedChildren="上架" unCheckedChildren="下架"
           onChange={(c) => handleListStatusChange(r, c)} />
       ),
     },
     {
-      title: '显示/隐藏', dataIndex: 'is_visible', key: 'is_visible', width: 110,
+      title: '显示/隐藏', dataIndex: 'is_visible', key: 'is_visible', width: 100,
       render: (v: boolean, r: Product) => (
         <Switch checked={v !== false} checkedChildren="显示" unCheckedChildren="隐藏"
           onChange={(c) => handleVisibilityChange(r, c)} />
@@ -125,7 +125,7 @@ const EventManagement = () => {
     {
       title: '权重', dataIndex: 'sort_order', key: 'sort_order', width: 120,
       render: (v: number | undefined, r: Product) => (
-        <InputNumber value={v ?? undefined} min={0} precision={0} style={{ width: 100 }}
+        <InputNumber value={v ?? undefined} min={0} precision={0} style={{ width: 70 }}
           onChange={(val) => handleSortOrderChange(r, val)} />
       ),
     },

@@ -4,6 +4,7 @@ import { Button, Card, Table, Tag, Typography, Grid, Space, Modal, Form, Input, 
 import { PlusOutlined, EditOutlined, DeleteOutlined, ScissorOutlined, UploadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { BannerStatus, BannerLinkType, BannerLinkTypeLabels } from '@shared/constants';
+import { getFullWidthUrl } from '@/utils/imageUtils';
 import { bannerApi } from '../../api/services/banner';
 import { uploadApi } from '../../api/services/upload';
 import ImgCrop from 'antd-img-crop';
@@ -124,7 +125,7 @@ const screens = useBreakpoint();
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
+      render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
     },
     {
       title: '预览',
@@ -135,7 +136,7 @@ const screens = useBreakpoint();
         <div style={{ width: 100, height: 50, background: '#f0f0f0', borderRadius: 4, overflow: 'hidden' }}>
           {url ? (
             <img
-              src={url}
+              src={getFullWidthUrl(url)}
               alt="banner"
               style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
               onClick={() => setPreviewImage(url)}
@@ -158,8 +159,7 @@ const screens = useBreakpoint();
           min={0}
           max={9999}
           value={orderon}
-          placeholder="未设置"
-          style={{ width: 90 }}
+          style={{ width: 70 }}
           onBlur={(e) => handleOrderChange(record, e.target.value ? parseInt(e.target.value) : null)}
           onPressEnter={(e) => {
             const value = (e.target as HTMLInputElement).value;

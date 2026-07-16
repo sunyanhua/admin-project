@@ -12,6 +12,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '../../components/user/UserDetailSections';
 import { formatDateTime } from '@/utils/format';
+import { getAvatarUrl } from '@/utils/imageUtils';
 
 const { Title } = Typography;
 
@@ -153,7 +154,7 @@ const WithdrawalManagement = () => {
       render: (_: any, record: Withdrawal) => (
         <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)}>
           <Space size={4}>
-            <Avatar src={record.user_data?.avatar} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <Avatar src={getAvatarUrl(record.user_data?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>{record.user_data?.nick || record.user_data?.userid || '-'}</span>
           </Space>
         </Button>
@@ -176,7 +177,7 @@ const WithdrawalManagement = () => {
       key: 'status',
       width: 90,
       render: (status: number) => (
-        <Tag color={WithdrawStatusMap[status]?.color}>
+        <Tag color={WithdrawStatusMap[status]?.color} title={WithdrawStatusMap[status]?.text}>
           {WithdrawStatusMap[status]?.text}
         </Tag>
       ),
@@ -185,7 +186,7 @@ const WithdrawalManagement = () => {
       title: '订单号',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 90,
       render: (id: number) => id || '-',
     },
     {
@@ -261,7 +262,7 @@ const WithdrawalManagement = () => {
           <Descriptions column={2} bordered size="small">
             <Descriptions.Item label="提现用户" span={2}>
               <Space>
-                <Avatar src={currentRecord.user_data?.avatar} size="small" />
+                <Avatar src={getAvatarUrl(currentRecord.user_data?.avatar)} size="small" />
                 <span>{currentRecord.user_data?.nick || currentRecord.user_data?.userid || currentRecord.userid}</span>
               </Space>
             </Descriptions.Item>

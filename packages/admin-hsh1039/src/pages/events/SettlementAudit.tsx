@@ -13,6 +13,7 @@ import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '../../components/user/UserDetailSections';
 import EventDetailModal from '../../components/events/EventDetailModal';
 import { formatDateTime } from '@/utils/format';
+import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
 
 const { Title } = Typography;
 
@@ -207,10 +208,8 @@ const SettlementAudit = () => {
     {
       title: '活动标题',
       key: 'event',
-      width: 180,
-      ellipsis: true,
       render: (_: any, record: Settlement) => (
-        <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewEventDetail(record)}>
+        <Button type="link" style={{ padding: 0, height: 'auto', wordBreak: 'break-word' }} onClick={() => handleViewEventDetail(record)}>
           {record.event_data?.title || record.eventid || '-'}
         </Button>
       ),
@@ -222,7 +221,7 @@ const SettlementAudit = () => {
       render: (_: any, record: Settlement) => (
         <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)}>
           <Space size={4}>
-            <Avatar src={record.user_data?.avatar} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <Avatar src={getAvatarUrl(record.user_data?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>{record.user_data?.nick || record.user_data?.userid || '-'}</span>
           </Space>
         </Button>
@@ -248,7 +247,7 @@ const SettlementAudit = () => {
       key: 'status',
       width: 90,
       render: (status: number) => (
-        <Tag color={SettlementStatusMap[status]?.color}>
+        <Tag color={SettlementStatusMap[status]?.color} title={SettlementStatusMap[status]?.text || '其他'}>
           {SettlementStatusMap[status]?.text || '其他'}
         </Tag>
       ),
@@ -341,7 +340,7 @@ const SettlementAudit = () => {
               </Descriptions.Item>
               <Descriptions.Item label="发布者" span={2}>
                 <Space>
-                  <Avatar src={d.user_data?.avatar} size="small" />
+                  <Avatar src={getAvatarUrl(d.user_data?.avatar)} size="small" />
                   <span>{d.user_data?.nick || d.user_data?.userid || '-'}</span>
                 </Space>
               </Descriptions.Item>
@@ -360,7 +359,7 @@ const SettlementAudit = () => {
                 <Descriptions.Item label="动态图片" span={2}>
                   <Space size={8} wrap>
                     {d.feed_data.image.split('|').filter(Boolean).map((img: string, idx: number) => (
-                      <Image key={idx} width={80} height={80} src={img} style={{ borderRadius: 6, objectFit: 'cover' }} />
+                      <Image key={idx} width={80} height={80} src={getMediumUrl(img)} preview={{ src: img }} style={{ borderRadius: 6, objectFit: 'cover' }} />
                     ))}
                   </Space>
                 </Descriptions.Item>

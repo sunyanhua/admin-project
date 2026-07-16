@@ -81,7 +81,7 @@ const EventCategoryManagement = () => {
       title: '上架/下架',
       dataIndex: 'is_listed',
       key: 'is_listed',
-      width: 110,
+      width: 100,
       render: (v: boolean, r: MallCategory) => (
         <Switch checked={v !== false} checkedChildren="上架" unCheckedChildren="下架"
           onChange={(c) => handleListStatusChange(r, c)} />
@@ -91,7 +91,7 @@ const EventCategoryManagement = () => {
       title: '显示/隐藏',
       dataIndex: 'is_visible',
       key: 'is_visible',
-      width: 110,
+      width: 100,
       render: (v: boolean, r: MallCategory) => (
         <Switch checked={v !== false} checkedChildren="显示" unCheckedChildren="隐藏"
           onChange={(c) => handleVisibilityChange(r, c)} />
@@ -103,7 +103,7 @@ const EventCategoryManagement = () => {
       key: 'sort_order',
       width: 120,
       render: (v: number | undefined, r: MallCategory) => (
-        <InputNumber value={v ?? undefined} min={0} precision={0} style={{ width: 100 }}
+        <InputNumber value={v ?? undefined} min={0} precision={0} style={{ width: 70 }}
           onChange={(val) => handleSortOrderChange(r, val)} />
       ),
     },

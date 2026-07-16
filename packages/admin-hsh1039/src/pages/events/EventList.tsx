@@ -16,6 +16,7 @@ import SourceQrcodeModal from '@/components/wechat/SourceQrcodeModal';
 import UserDetailSections from '../../components/user/UserDetailSections';
 import EventDetailModal from '../../components/events/EventDetailModal';
 import { formatDate } from '@/utils/format';
+import { getAvatarUrl } from '@/utils/imageUtils';
 
 const { Title } = Typography;
 
@@ -240,14 +241,13 @@ const EventList = () => {
     {
       title: '标题',
       key: 'title',
-      ellipsis: true,
       minWidth: 100,
       render: (_: any, record: Event) => (
-        <Space size={1}>
-          {record.category_data?.title && <Tag color="blue">{record.category_data.title}</Tag>}
-          <span>{record.title}</span>
+        <>
+          {record.category_data?.title && <Tag color="blue" style={{ verticalAlign: 'middle' }} title={record.category_data.title}>{record.category_data.title}</Tag>}
+          <span style={{ verticalAlign: 'middle', wordBreak: 'break-word' }}>{record.title}</span>
           {(record.status === 1 || record.status === 6) && <SourceQrcodeModal basePage={`pages/p-find/detail?id=${record.id}`} />}
-        </Space>
+        </>
       ),
     },
     {
@@ -257,7 +257,7 @@ const EventList = () => {
       render: (_: any, record: Event) => (
         <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)}>
           <Space size={4}>
-            <Avatar src={record.user_data?.avatar} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <Avatar src={getAvatarUrl(record.user_data?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>{record.user_data?.nick || record.user_data?.userid || '-'}</span>
           </Space>
         </Button>
@@ -297,7 +297,7 @@ const EventList = () => {
       title: '排序',
       dataIndex: 'orderon',
       key: 'orderon',
-      width: 100,
+      width: 120,
       render: (orderon: number | undefined, record: Event) => (
         <InputNumber
           min={0}
@@ -324,7 +324,7 @@ const EventList = () => {
       key: 'status',
       width: 90,
       render: (status: number) => (
-        <Tag color={STATUS_MAP[status]?.color}>
+        <Tag color={STATUS_MAP[status]?.color} title={STATUS_MAP[status]?.text || '-'}>
           {STATUS_MAP[status]?.text || '-'}
         </Tag>
       ),

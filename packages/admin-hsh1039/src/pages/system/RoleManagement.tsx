@@ -42,13 +42,14 @@ const RoleManagement = () => {
       title: 'ID',
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 90,
     },
     {
       title: '角色标识',
       dataIndex: 'code',
       key: 'code',
-      render: (code: string) => <Tag color="blue">{code}</Tag>,
+      width: 90,
+      render: (code: string) => <Tag color="blue" title={code}>{code}</Tag>,
     },
     {
       title: '角色名称',

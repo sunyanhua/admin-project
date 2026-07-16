@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-15 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-16 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -217,16 +217,16 @@ urn:bizmall:<module>:<action>
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/logistics-companies` | 物流公司列表 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/logistics-companies` | 创建物流公司 | AdminAuth | AdminAuth |
-| PUT | `/admin/v1/mall/logistics-companies/:id` | 编辑物流公司 | AdminAuth | AdminAuth |
-| DELETE | `/admin/v1/mall/logistics-companies/:id` | 删除物流公司 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/orders` | 后台订单列表 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/orders/:id` | 后台订单详情 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/mall/logistics-companies` | 物流公司列表 | AdminAuth | `urn:bizmall:order:read` |
+| POST | `/admin/v1/mall/logistics-companies` | 创建物流公司 | AdminAuth | `urn:bizmall:order:write` |
+| PUT | `/admin/v1/mall/logistics-companies/:id` | 编辑物流公司 | AdminAuth | `urn:bizmall:order:write` |
+| DELETE | `/admin/v1/mall/logistics-companies/:id` | 删除物流公司 | AdminAuth | `urn:bizmall:order:write` |
+| GET | `/admin/v1/mall/orders` | 后台订单列表 | AdminAuth | `urn:bizmall:order:read` |
+| GET | `/admin/v1/mall/orders/:id` | 后台订单详情 | AdminAuth | `urn:bizmall:order:read` |
 | POST | `/admin/v1/mall/orders/:id/remark` | 添加订单备注 | AdminAuth | AdminAuth |
 | POST | `/admin/v1/mall/orders/:id/ship` | 手动发货 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/orders/export` | 导出订单 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/orders/import/ship` | 批量发货导入 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/mall/orders/export` | 导出订单 | AdminAuth | `urn:bizmall:order:read` |
+| POST | `/admin/v1/mall/orders/import/ship` | 批量发货导入 | AdminAuth | `urn:bizmall:order:write` |
 | GET | `/api/v1/wxa/mall/orders` | C端订单列表 | WxaAuth | — |
 | POST | `/api/v1/wxa/mall/orders` | 创建订单 | WxaAuth | — |
 | GET | `/api/v1/wxa/mall/orders/:id` | C端订单详情 | WxaAuth | — |
@@ -267,6 +267,7 @@ urn:bizmall:<module>:<action>
 | GET | `/admin/v1/mall/refund-rules/{id}` | 退款规则详情 | AdminAuth | `urn:bizmall:refundrule:read` |
 | PUT | `/admin/v1/mall/refund-rules/{id}` | 更新退款规则 | AdminAuth | `urn:bizmall:refundrule:write` |
 | DELETE | `/admin/v1/mall/refund-rules/{id}` | 删除退款规则 | AdminAuth | `urn:bizmall:refundrule:delete` |
+| PUT | `/admin/v1/mall/refund-rules/{id}/hidden` | 更新退款规则隐藏状态 | AdminAuth | `urn:bizmall:refundrule:write` |
 
 ## 十一、Coupons 模块
 
@@ -583,7 +584,13 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | GET | `/admin/v1/logs/audit/verify` | 验证哈希链完整性 | AdminAuth | AdminAuth |
 | GET | `/admin/v1/logs/my` | 我的日志列表 | AdminAuth | AdminAuth |
 
-## 十八、后台-系统设置 模块
+## 十八、C端-系统设置 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/settings/{key}` | 读取公开设置 | — | — |
+
+## 十九、后台-系统设置 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -593,12 +600,6 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | PUT | `/admin/v1/settings/{id}` | 更新设置项 | — | — |
 | DELETE | `/admin/v1/settings/{id}` | 删除设置项 | — | — |
 | PUT | `/admin/v1/settings/{id}/enabled` | 启用/禁用设置项 | — | — |
-
-## 十九、C端-系统设置 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/api/v1/settings/{key}` | 读取公开设置 | — | — |
 
 ---
 

@@ -19,6 +19,7 @@ import VisitUserStats from '@/pages/system/VisitUserStats';
 import CategoryManagement from '@/pages/operation/CategoryManagement';
 import PageConfigManagement from '@/pages/operation/PageConfigManagement';
 import BannerManagement from '@/pages/system/BannerManagement';
+import RefundRuleManagement from '@/pages/operation/RefundRuleManagement';
 import AgreementManagement from '@/pages/community/AgreementManagement';
 import FaqManagement from '@/pages/system/FaqManagement';
 
@@ -84,6 +85,7 @@ const router = createHashRouter([
           // 配置管理
           { path: 'page-config', element: <PageConfigManagement /> },
           { path: 'categories', element: <CategoryManagement /> },
+          { path: 'refund-rules', element: <RefundRuleManagement /> },
           { path: 'banners', element: <BannerManagement /> },
           { path: 'agreements', element: <AgreementManagement /> },
           { path: 'faq', element: <FaqManagement /> },

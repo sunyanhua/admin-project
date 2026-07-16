@@ -13,6 +13,7 @@ import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '../../components/user/UserDetailSections';
 import EventDetailModal from '../../components/events/EventDetailModal';
 import { formatDateTime } from '@/utils/format';
+import { getAvatarUrl } from '@/utils/imageUtils';
 
 const { Title } = Typography;
 
@@ -168,7 +169,7 @@ const RefundRecords = () => {
       render: (_: any, record: RefundRecord) => (
         <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)}>
           <Space size={4}>
-            <Avatar src={record.user_data?.avatar} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <Avatar src={getAvatarUrl(record.user_data?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>{record.user_data?.nick || record.user_data?.userid || '-'}</span>
           </Space>
         </Button>
@@ -177,10 +178,8 @@ const RefundRecords = () => {
     {
       title: '报名活动',
       key: 'event',
-      width: 150,
-      ellipsis: true,
       render: (_: any, record: RefundRecord) => (
-        <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewEventDetail(record)}>
+        <Button type="link" style={{ padding: 0, height: 'auto', wordBreak: 'break-word' }} onClick={() => handleViewEventDetail(record)}>
           {record.event_data?.title || record.eventid || '-'}
         </Button>
       ),
@@ -201,7 +200,7 @@ const RefundRecords = () => {
       key: 'status',
       width: 90,
       render: (status: number) => (
-        <Tag color={RefundStatusMap[status]?.color}>
+        <Tag color={RefundStatusMap[status]?.color} title={RefundStatusMap[status]?.text}>
           {RefundStatusMap[status]?.text}
         </Tag>
       ),
@@ -285,7 +284,7 @@ const RefundRecords = () => {
             <Descriptions column={2} bordered size="small" style={{ marginBottom: 24 }}>
               <Descriptions.Item label="报名用户" span={2}>
                 <Space>
-                  <Avatar src={d.user_data?.avatar} size="small" />
+                  <Avatar src={getAvatarUrl(d.user_data?.avatar)} size="small" />
                   <span>{d.user_data?.nick || d.user_data?.userid || '-'}</span>
                 </Space>
               </Descriptions.Item>

@@ -2,6 +2,7 @@ import { useState, useRef, useMemo, forwardRef, useImperativeHandle, useEffect }
 import { Button, Switch, Radio, Select, Table, DatePicker, TimePicker, InputNumber } from 'antd';
 import ExtraInfoEditor, { ExtraInfoData } from './ExtraInfoEditor';
 import type { ExtraInfoGroup } from './ExtraInfoEditor';
+import RefundSettings, { RefundSettingsData, REFUND_TYPE_MAP } from './RefundSettings';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import SkuConfigPanel, {
@@ -73,8 +74,10 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const [batchExpiryDays, setBatchExpiryDays] = useState<number>(0);
   const [batchExpiryTime, setBatchExpiryTime] = useState<Dayjs | null>(null);
 
-  // 报名附加信息
+  // 报名信息
   const [extraInfo, setExtraInfo] = useState<ExtraInfoData>({ mode: 'none', groups: [] });
+  // 退款设置
+  const [refundSettings, setRefundSettings] = useState<RefundSettingsData>({ mode: 'none', deadlineMode: 'unified', skuDeadlines: {} });
   // 各 SKU 的附加信息配置（仅 individual 模式）：spec_indices → [{groupKey, count}]
   const [extraFieldSkus, setExtraFieldSkus] = useState<Record<string, { groupKey: string; count: number }[]>>({});
   // 附加信息分配批量设置
@@ -133,13 +136,14 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       setSelectedRowKeys([]);
       setBatchMode(false);
       setExtraFieldSkus({});
+      setRefundSettings({ mode: 'none', deadlineMode: 'unified', skuDeadlines: {}, refundBaseTime: null });
       productApi.getProductDetail(productId).then((detail: any) => {
         setIsListed(detail?.is_listed === true);
         if (detail?.usable) setUnifiedUsable(dayjs(detail.usable));
         else setUnifiedUsable(null);
         if (detail?.expiry) setUnifiedExpiry(dayjs(detail.expiry));
         else setUnifiedExpiry(null);
-        // 还原已保存的附加信息库
+        // 还原已保存的报名信息模板
         setExtraInfo(parseExtraInfoFromProduct(detail));
       }).catch(() => {});
     }
@@ -270,11 +274,21 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const handleFinish = async (): Promise<boolean> => {
     if (!productId) return false;
 
-    // 统一模式必须且仅需1个附加信息库
+    // 统一模式必须且仅需1个报名信息模板
     if (extraInfo.mode === 'unified' && extraInfo.groups.length !== 1) {
       warning(extraInfo.groups.length === 0
-        ? '全部项目统一下，请先添加一个附加信息库'
-        : '全部项目统一下，仅需一个附加信息库，请删除多余信息库');
+        ? '全部项目统一下，请先添加一个报名信息模板'
+        : '全部项目统一下，仅需一个报名信息模板，请删除多余模板');
+      return false;
+    }
+
+    // 退款设置校验
+    if (refundSettings.mode === 'staged' && !refundSettings.ruleId) {
+      warning('阶梯退模式下，请选择或新建退款规则');
+      return false;
+    }
+    if ((refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') && refundSettings.deadlineMode === 'unified' && !refundSettings.unifiedDeadline) {
+      warning('请设置退款截止时间');
       return false;
     }
 
@@ -410,7 +424,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         if (skuList.length > 0) await productApi.batchCreateSkus(productId, skuList);
       }
 
-      // 5. 合并更新产品：usable + expiry + 附加信息 + 上下架（一次 PUT）
+      // 5. 合并更新产品：usable + expiry + 附加信息 + 退款设置 + 上下架（一次 PUT）
       const toStorageGroup = (g: ExtraInfoGroup) => ({
         name: g.name,
         config: g.fields.map(({ key, preset, ...rest }) => rest),
@@ -418,6 +432,20 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
       const unifiedUsableStr = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
       const unifiedExpiryStr = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+
+      // 退款相关字段
+      const refundType = REFUND_TYPE_MAP[refundSettings.mode];
+      const refundRuleId = (refundSettings.mode !== 'none' && refundSettings.ruleId) ? refundSettings.ruleId : null;
+
+      // 计算 product 的 refund_base_time
+      let productRefundBaseTime: string | null = null;
+      if (refundSettings.mode === 'anytime') {
+        productRefundBaseTime = dayjs().add(30, 'year').format('YYYY-MM-DDTHH:mm:ssZ');
+      } else if (refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') {
+        if (refundSettings.deadlineMode === 'unified') {
+          productRefundBaseTime = refundSettings.unifiedDeadline || null;
+        }
+      }
 
       await productApi.updateProduct(productId, {
         usable: expiryMode === 'unified' ? (unifiedUsableStr || null) : null,
@@ -427,7 +455,29 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           : null,
         additional_fields_has_sensitive: hasSensitive,
         is_listed: isListed,
+        refund_type: refundType,
+        refund_rule_id: refundRuleId as any,
+        refund_base_time: productRefundBaseTime,
       });
+
+      // 6. 更新 SKU 的 refund_base_time
+      try {
+        const allSkus: any = await productApi.getSkus(productId);
+        const skuArr: any[] = Array.isArray(allSkus) ? allSkus : (allSkus?.list || []);
+        for (const s of skuArr) {
+          let skuBaseTime: string | null = null;
+          if (refundSettings.mode === 'anytime') {
+            skuBaseTime = dayjs().add(30, 'year').format('YYYY-MM-DDTHH:mm:ssZ');
+          } else if (refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') {
+            if (refundSettings.deadlineMode === 'unified') {
+              skuBaseTime = refundSettings.unifiedDeadline || null;
+            } else {
+              skuBaseTime = refundSettings.skuDeadlines[s.spec_indices] || null;
+            }
+          }
+          await productApi.updateSku(productId, s.id, { refund_base_time: skuBaseTime || null });
+        }
+      } catch { /* ignore */ }
 
       success('配置已保存');
       onSaved?.();
@@ -553,7 +603,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                       <div style={{ opacity: batchEnabled.usable ? 1 : 0.5 }}>
                         {hasDateSpec && (
                           <Radio.Group size="small" value={batchUsableMode} onChange={(e) => setBatchUsableMode(e.target.value)} disabled={!batchEnabled.usable} style={{ marginBottom: 4 }}>
-                            <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
+                            <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定时间</Radio.Button>
                             <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
                           </Radio.Group>
                         )}
@@ -573,7 +623,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                       <div style={{ opacity: batchEnabled.expiry ? 1 : 0.5 }}>
                         {hasDateSpec && (
                           <Radio.Group size="small" value={batchExpiryMode} onChange={(e) => setBatchExpiryMode(e.target.value)} disabled={!batchEnabled.expiry} style={{ marginBottom: 4 }}>
-                            <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
+                            <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定时间</Radio.Button>
                             <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
                           </Radio.Group>
                         )}
@@ -609,16 +659,16 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
           <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
 
-          {/* ====== 报名附加信息 ====== */}
+          {/* ====== 报名信息 ====== */}
           <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>报名附加信息</div>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>报名信息</div>
             <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
 
             {/* SKU 附加信息配置表格（仅"各项目单独设置"时显示） */}
             {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
               <div style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <span style={{ fontWeight: 600 }}>SKU 附加信息配置（{step2Skus.length} 种）</span>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>SKU 报名信息配置（{step2Skus.length} 种）</span>
                     <Button type="link" size="small" onClick={() => {
                       const next = !efBatchMode;
                       setEfBatchMode(next);
@@ -734,11 +784,23 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                     />
                   </div>
                   <div style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
-                    注：数量为 0 表示该 SKU 不要求填写此附加信息库
+                    注：数量为 0 表示该 SKU 不要求填写此报名信息模板
                   </div>
             </div>
           )}
 
+          </div>
+
+          <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+
+          {/* ====== 退款设置 ====== */}
+          <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+            <RefundSettings
+              value={refundSettings}
+              onChange={setRefundSettings}
+              step2Skus={current === 1 ? step2Skus : undefined}
+              wizardSpecs={current === 1 ? wizardSpecs.filter((s) => s.name.trim()).map((s) => ({ name: s.name, values: s.values.map((v) => ({ value: v.value })), is_time_type: s.is_time_type })) : undefined}
+            />
           </div>
 
           <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />

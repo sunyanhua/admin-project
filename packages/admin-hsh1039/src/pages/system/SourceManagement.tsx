@@ -70,19 +70,18 @@ const SourceManagement = () => {
       title: '来源名称',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
     },
     {
       title: '注册人数',
       dataIndex: 'user_total',
       key: 'user_total',
-      width: 80,
+      width: 90,
     },
     {
       title: '访问次数',
       dataIndex: 'reported_total',
       key: 'reported_total',
-      width: 80,
+      width: 90,
     },
     {
       title: '状态',

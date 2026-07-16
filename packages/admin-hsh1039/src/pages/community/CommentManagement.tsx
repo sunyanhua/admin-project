@@ -15,6 +15,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '../../components/user/UserDetailSections';
 import { formatDateTime, formatDate } from '@/utils/format';
+import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
 
 const { Title } = Typography;
 
@@ -203,7 +204,6 @@ const CommentManagement = () => {
       title: '内容',
       dataIndex: 'intro',
       key: 'intro',
-      ellipsis: true,
     },
     {
       title: '发布人',
@@ -212,7 +212,7 @@ const CommentManagement = () => {
       render: (_: any, record: Comment) => (
         <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)}>
           <Space size={4}>
-            <Avatar src={record.user_data?.avatar} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <Avatar src={getAvatarUrl(record.user_data?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>{record.user_data?.nick || '-'}</span>
           </Space>
         </Button>
@@ -221,11 +221,10 @@ const CommentManagement = () => {
     {
       title: '所属动态',
       key: 'feed',
-      ellipsis: true,
       width: 150,
       render: (_: any, record: Comment) => (
         <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewFeedDetail(record)}>
-          {record.feed_data?.intro || '-'}
+          <span style={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>{record.feed_data?.intro || '-'}</span>
         </Button>
       ),
     },
@@ -235,7 +234,7 @@ const CommentManagement = () => {
       key: 'status',
       width: 90,
       render: (status: number) => (
-        <Tag color={STATUS_MAP[status]?.color}>
+        <Tag color={STATUS_MAP[status]?.color} title={STATUS_MAP[status]?.text || '未知'}>
           {STATUS_MAP[status]?.text}
         </Tag>
       ),
@@ -443,7 +442,7 @@ const CommentManagement = () => {
                 value: (
                   <Space size={8} wrap>
                     {entity.image.split('|').filter(Boolean).map((img: string, idx: number) => (
-                      <Image key={idx} width={80} height={80} src={img} style={{ borderRadius: 6, objectFit: 'cover' }} />
+                      <Image key={idx} width={80} height={80} src={getMediumUrl(img)} preview={{ src: img }} style={{ borderRadius: 6, objectFit: 'cover' }} />
                     ))}
                   </Space>
                 ),

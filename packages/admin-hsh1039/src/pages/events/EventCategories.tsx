@@ -10,6 +10,7 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
+import { getSmallUrl } from '@/utils/imageUtils';
 import { uploadApi } from '@/api/services/upload';
 
 const { Title } = Typography;
@@ -183,20 +184,19 @@ const EventCategories = () => {
           return <span className={`iconfont icon-${record.cover}`} style={{ fontSize: 20 }} />;
         }
         // 否则渲染为图片
-        return <img src={record.cover} alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />;
+        return <img src={getSmallUrl(record.cover)} alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />;
       },
     },
     {
       title: '名称',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
     },
     {
       title: '排序',
       dataIndex: 'orderon',
       key: 'orderon',
-      width: 100,
+      width: 120,
       render: (orderon: number | undefined, record: Category) => (
         <InputNumber
           min={0}

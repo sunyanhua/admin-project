@@ -186,7 +186,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
             <Tag key={g.key} color="blue" style={{ fontSize: 12, padding: '2px 8px', marginBottom: 6, marginRight: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <span>{g.name}（{g.fields.length}项）</span>
               <EditOutlined style={{ cursor: 'pointer', fontSize: 11 }} onClick={() => startEdit(g)} />
-              <Popconfirm title="确定删除此附加信息库？" onConfirm={() => handleDeleteGroup(g.key)}>
+              <Popconfirm title="确定删除此报名信息模板？" onConfirm={() => handleDeleteGroup(g.key)}>
                 <DeleteOutlined style={{ cursor: 'pointer', fontSize: 11, color: '#ff4d4f' }} />
               </Popconfirm>
             </Tag>
@@ -195,7 +195,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
           {(value.mode === 'individual' || value.groups.length === 0) && (
             <div style={{ marginTop: 4 }}>
               <Button type="dashed" icon={<PlusOutlined />} onClick={startAdd}>
-                添加附加信息库
+                添加报名信息模板
               </Button>
             </div>
           )}
@@ -204,7 +204,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
 
       {/* ====== 编辑弹窗 ====== */}
       <ScrollableModal
-        title={editingGroup ? `编辑附加信息 — ${editingGroup.name}` : '添加附加信息库'}
+        title={editingGroup ? `编辑附加信息 — ${editingGroup.name}` : '添加报名信息模板'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         width={750}
@@ -221,7 +221,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
         <div style={{ padding: '0 8px' }}>
           {/* 名称 */}
           <div style={{ marginBottom: 16 }}>
-            <div style={{ marginBottom: 4, fontSize: 13, color: '#666' }}>附加信息名称</div>
+            <div style={{ marginBottom: 4, fontSize: 13, color: '#666' }}>模板名称</div>
             <Input
               autoFocus
               placeholder={value.mode === 'unified' ? '如：报名信息' : '如：成人、儿童'}

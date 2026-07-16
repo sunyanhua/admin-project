@@ -5,6 +5,7 @@ import { PlusOutlined } from '@ant-design/icons';
 import { eventApi } from '@/api/services/event';
 import { EventStatus } from '@shared/constants/event.enums';
 import { formatDateTime } from '@/utils/format';
+import { getAvatarUrl, getFullWidthUrl } from '@/utils/imageUtils';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ImageUpload from '@/components/common/ImageUpload';
 import { uploadApi } from '@/api/services/upload';
@@ -191,13 +192,13 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
             {data.image && (
               <Descriptions.Item label="封面" span={2}>
-                <Image src={data.image} style={{ borderRadius: 8, maxWidth: 200 }} preview={{ src: data.image }} />
+                <Image src={getFullWidthUrl(data.image)} style={{ borderRadius: 8, maxWidth: 200 }} preview={{ src: data.image }} />
               </Descriptions.Item>
             )}
 
             <Descriptions.Item label="发布者" span={2}>
               <Space>
-                <Avatar src={data.user_data?.avatar} size="small" />
+                <Avatar src={getAvatarUrl(data.user_data?.avatar)} size="small" />
                 <span>{data.user_data?.nick || data.user_data?.userid || '-'}</span>
               </Space>
             </Descriptions.Item>
@@ -222,7 +223,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                   {arg0Images.map((img: string, idx: number) => (
                     <Image
                       key={idx}
-                      src={img}
+                      src={getFullWidthUrl(img)}
                       width={80}
                       height={80}
                       style={{ borderRadius: 6, objectFit: 'cover', cursor: 'pointer' }}
@@ -239,7 +240,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                   {arg1Images.map((img: string, idx: number) => (
                     <Image
                       key={idx}
-                      src={img}
+                      src={getFullWidthUrl(img)}
                       width={80}
                       height={80}
                       style={{ borderRadius: 6, objectFit: 'cover', cursor: 'pointer' }}

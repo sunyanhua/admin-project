@@ -4,6 +4,7 @@ import { Space, Tag, Image, Button, Checkbox, Divider, Avatar } from 'antd';
 import '../../styles/feed-detail-modal.css';
 import { EyeOutlined, CheckOutlined, StopOutlined } from '@ant-design/icons';
 import { formatDateTime, formatDate } from '@/utils/format';
+import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
 import type { ColumnsType } from 'antd/es/table';
 import { feedApi } from '../../api/services/feed';
 import { userApi } from '../../api/services/user';
@@ -184,17 +185,16 @@ const FeedManagement = () => {
       render: (_: any, record: any) => {
         const cover = getCoverImage(record.image);
         return cover ? (
-          <Image width={60} height={60} src={cover} style={{ borderRadius: 6, objectFit: 'cover' }} />
+          <Image width={60} height={60} src={getMediumUrl(cover)} preview={{ src: cover }} style={{ borderRadius: 6, objectFit: 'cover' }} />
         ) : '-';
       },
     },
     {
       title: '内容',
       key: 'intro',
-      ellipsis: true,
       render: (_: any, record: any) => (
         <Space size={4}>
-          <span>{record.intro || '-'}</span>
+          <span style={{ wordBreak: 'break-word' }}>{record.intro || '-'}</span>
           {(record.recom_flags & 2) !== 0 && <Tag color="red">推荐</Tag>}
         </Space>
       ),
@@ -206,7 +206,7 @@ const FeedManagement = () => {
       render: (_: any, record: any) => (
         <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)}>
           <Space size={4}>
-            <Avatar src={record.user_data?.avatar} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <Avatar src={getAvatarUrl(record.user_data?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>{record.user_data?.nick || record.userid || '-'}</span>
           </Space>
         </Button>
@@ -235,7 +235,7 @@ const FeedManagement = () => {
           [FeedStatus.APPROVED]: 'green',
           [FeedStatus.REJECTED]: 'red',
         };
-        return <Tag color={colorMap[status] || 'default'}>{STATUS_MAP[status] || '未知'}</Tag>;
+        return <Tag color={colorMap[status] || 'default'} title={STATUS_MAP[status] || '未知'}>{STATUS_MAP[status] || '未知'}</Tag>;
       },
     },
     {
@@ -361,7 +361,7 @@ const FeedManagement = () => {
                   value: (
                     <Space size={8} wrap>
                       {entity.image.split('|').filter(Boolean).map((img: string, idx: number) => (
-                        <Image key={idx} width={80} height={80} src={img} style={{ borderRadius: 6, objectFit: 'cover' }} />
+                        <Image key={idx} width={80} height={80} src={getMediumUrl(img)} preview={{ src: img }} style={{ borderRadius: 6, objectFit: 'cover' }} />
                       ))}
                     </Space>
                   ),

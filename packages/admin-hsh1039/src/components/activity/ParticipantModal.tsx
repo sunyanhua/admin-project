@@ -44,7 +44,7 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ visible, onClose, a
     {
       dataIndex: 'id',
       key: 'id',
-      width: 80,
+      width: 90,
     },
     {
       title: '姓名',
@@ -60,14 +60,25 @@ const ParticipantModal: React.FC<ParticipantModalProps> = ({ visible, onClose, a
       title: '报名时间',
       dataIndex: 'signupTime',
       key: 'signupTime',
+      width: 120,
+      render: (t: string) => {
+        const parts = t ? t.split(' ') : ['-', '-'];
+        return (
+          <div style={{ lineHeight: 1.6 }}>
+            <div>{parts[0]}</div>
+            <div style={{ color: '#666', fontSize: 12 }}>{parts[1] || '-'}</div>
+          </div>
+        );
+      },
     },
     {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
+      width: 90,
       render: (status: number) => {
         const statusInfo = getStatusLabel(status);
-        return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
+        return <Tag color={statusInfo.color} title={statusInfo.text}>{statusInfo.text}</Tag>;
       },
     },
   ];

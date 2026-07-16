@@ -64,6 +64,9 @@ export interface UpdateProductData {
   additional_fields_has_sensitive?: boolean;
   usable?: string | null;
   expiry?: string | null;
+  refund_type?: number;
+  refund_rule_id?: number | null;
+  refund_base_time?: string | null;
 }
 
 export const productApi = {
@@ -162,6 +165,7 @@ export const productApi = {
     price?: number; stock?: number; status?: number; sku_code?: string;
     usable?: string | null; expiry?: string | null;
     additional_fields_config?: any | null;
+    refund_base_time?: string | null;
   }) => {
     return request.put(`/admin/v1/mall/products/${productId}/skus/${skuId}`, data);
   },

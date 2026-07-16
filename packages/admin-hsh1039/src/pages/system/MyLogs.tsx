@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { authApi } from '@/api/services/auth';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, formatDate } from '@/utils/format';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -69,8 +69,15 @@ const MyLogs = () => {
       title: '时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      width: 180,
-      render: (created_at: string) => formatDateTime(created_at),
+      width: 120,
+      render: (t: string) => (
+        <div style={{ lineHeight: 1.6 }}>
+          <div>{formatDate(t)}</div>
+          <div style={{ color: '#666', fontSize: 12 }}>
+            {t ? formatDateTime(t).split(' ')[1] : '-'}
+          </div>
+        </div>
+      ),
     },
   ];
 

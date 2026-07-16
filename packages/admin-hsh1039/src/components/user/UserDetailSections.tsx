@@ -1,6 +1,7 @@
 import { Avatar, Tag, Image, Switch, Checkbox, Space } from 'antd';
 import { UserOutlined, SafetyCertificateOutlined, AccountBookOutlined, LockOutlined } from '@ant-design/icons';
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
+import { getAvatarUrl, getFullWidthUrl } from '@/utils/imageUtils';
 
 export interface UserDetailSectionsProps {
   user: any;
@@ -68,7 +69,7 @@ const UserDetailSections = ({ user, onStatusChange, onOfficialChange, onRecommen
     {
       title: <><UserOutlined style={{ fontSize: 18, color: '#1890ff', marginRight: 6 }} />基本信息</>,
       items: [
-        { label: '头像', value: d.avatar ? <Avatar src={d.avatar} size={48} style={{ borderRadius: 8 }} /> : '-' },
+        { label: '头像', value: d.avatar ? <Avatar src={getAvatarUrl(d.avatar)} size={48} style={{ borderRadius: 8 }} /> : '-' },
         { label: '昵称', value: <span style={{ fontSize: 16, fontWeight: 600 }}>{d.nick || '-'}</span> },
         { label: '真实姓名', value: d.name || '-' },
         { label: '手机号', value: d.phone || '-' },
@@ -80,7 +81,7 @@ const UserDetailSections = ({ user, onStatusChange, onOfficialChange, onRecommen
         { label: '学校', value: d.school || '-', span: 1 },
         { label: '个人介绍', value: d.profile || '-', span: 2 },
         { label: '个人标签', value: hobbies.length > 0 ? hobbies.map((h: string) => <Tag key={h}>{h}</Tag>) : '-', span: 2 },
-        { label: '个人主页封面', value: d.cover ? <Image width={80} height={80} src={d.cover} style={{ borderRadius: 8, objectFit: 'cover' }} /> : '-', span: 2 },
+        { label: '个人主页封面', value: d.cover ? <Image width={80} height={80} src={getFullWidthUrl(d.cover)} preview={{ src: d.cover }} style={{ borderRadius: 8, objectFit: 'cover' }} /> : '-', span: 2 },
       ],
     },
     {

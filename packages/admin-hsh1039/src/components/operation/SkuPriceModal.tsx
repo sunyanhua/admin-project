@@ -8,7 +8,7 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 
 // ==================== Types ====================
 
-interface SpecInfo { name: string; values: { id: number; value: string }[]; }
+interface SpecInfo { name: string; values: { id: number; value: string }[]; is_time_type?: boolean; }
 
 interface SkuItem {
   key: string; id: number; specText: string; specParts: string[];
@@ -111,7 +111,7 @@ const SkuFullEditModal: React.FC<{
 
         {productGroups.length > 0 && (
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>附加信息</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>报名信息</div>
             {productGroups.map((g: any) => (
               <div key={g.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '6px 8px', background: '#fafafa', borderRadius: 4 }}>
                 <div>
@@ -166,7 +166,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
   const [batchUsableTime, setBatchUsableTime] = useState<Dayjs | null>(null);
   const [batchExpiryDays, setBatchExpiryDays] = useState<number>(0);
   const [batchExpiryTime, setBatchExpiryTime] = useState<Dayjs | null>(null);
-  // 批量设置 — 附加信息
+  // 批量设置 — 报名信息
   const [baEnabled, setBaEnabled] = useState<Record<string, boolean>>({});
   const [baValues, setBaValues] = useState<Record<string, number>>({});
 
@@ -178,7 +178,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
   const { modal } = App.useApp();
 
   // 是否有日期 spec
-  const dateSpecIndex = useMemo(() => specs.findIndex((sp) => sp.name.includes('日期')), [specs]);
+  const dateSpecIndex = useMemo(() => specs.findIndex((sp) => sp.is_time_type), [specs]);
   const hasDateSpec = dateSpecIndex >= 0;
 
   // 加载
@@ -198,6 +198,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
         const parsedSpecs: SpecInfo[] = specList.map((sp: any) => ({
           name: sp.name || '',
           values: (sp.values || []).map((v: any) => ({ id: v.id, value: v.value || '' })),
+          is_time_type: sp.is_time_type || false,
         }));
         setSpecs(parsedSpecs);
         setProductGroups(detail?.additional_fields_config || []);
@@ -300,7 +301,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
             : batchExpiry ? batchExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
         }
 
-        // 附加信息
+        // 报名信息
         if (productGroups.some((g) => baEnabled[g.name])) {
           const existingAfc: any[] = existing.additional_fields_config ?? displaySkus.find((r) => r.key === k)?.additional_fields_config ?? [];
           const merged = new Map<string, number>();
@@ -412,7 +413,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
       },
     },
     {
-      title: '附加信息', key: 'afc', width: 140,
+      title: '报名信息', key: 'afc', width: 140,
       render: (_: any, r: SkuItem) => {
         const d = displaySkus.find((dd) => dd.key === r.key);
         return (
@@ -528,7 +529,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
               <div style={{ opacity: btEnabled.usable ? 1 : 0.5 }}>
                 {hasDateSpec && (
                   <Radio.Group size="small" value={batchUsableMode} onChange={(e) => setBatchUsableMode(e.target.value)} disabled={!btEnabled.usable} style={{ marginBottom: 4 }}>
-                    <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
+                    <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定时间</Radio.Button>
                     <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
                   </Radio.Group>
                 )}
@@ -548,7 +549,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
               <div style={{ opacity: btEnabled.expiry ? 1 : 0.5 }}>
                 {hasDateSpec && (
                   <Radio.Group size="small" value={batchExpiryMode} onChange={(e) => setBatchExpiryMode(e.target.value)} disabled={!btEnabled.expiry} style={{ marginBottom: 4 }}>
-                    <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定日期</Radio.Button>
+                    <Radio.Button value="fixed" style={{ fontSize: 11, padding: '0 8px' }}>指定时间</Radio.Button>
                     <Radio.Button value="relative" style={{ fontSize: 11, padding: '0 8px' }}>提前天数</Radio.Button>
                   </Radio.Group>
                 )}
@@ -567,7 +568,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
               </div>
             </div>
 
-            {/* 附加信息 — 标题与开始/截止时间对齐 */}
+            {/* 报名信息 — 标题与开始/截止时间对齐 */}
             {productGroups.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
                 <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: '#666' }}>报名信息</span>
@@ -596,7 +597,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
         </div>
 
         <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.8 }}>
-          <div>点击"报名期限"或"附加信息"列可编辑单条SKU，点击"保存配置"提交所有修改。</div>
+          <div>点击"报名期限"或"报名信息"列可编辑单条SKU，点击"保存配置"提交所有修改。</div>
           <div>
             如需进行更多配置（如修改规格项目组合、调整报名信息模板等），请点击{' '}
             <Button type="link" size="small" style={{ padding: 0, fontSize: 13 }} onClick={handleModifyCombo}>高级配置管理</Button>。

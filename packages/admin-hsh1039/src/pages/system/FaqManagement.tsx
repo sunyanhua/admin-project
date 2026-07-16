@@ -161,7 +161,6 @@ const FaqManagement = () => {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      ellipsis: true,
     },
     {
       title: '排序',
@@ -174,7 +173,7 @@ const FaqManagement = () => {
           max={9999}
           value={orderon}
           placeholder="未设置"
-          style={{ width: 90 }}
+          style={{ width: 70 }}
           onBlur={(e) => {
             const val = e.target.value ? parseInt(e.target.value) : null;
             handleOrderChange(record, val);

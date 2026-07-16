@@ -250,11 +250,17 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                 options={[{ label: '普通', value: 'normal' }, { label: '日期', value: 'date' }]}
                 onChange={(val) => {
                   const isDate = val === 'date';
-                  setSpecs((prev) => prev.map((s, i) => i === si ? {
-                    ...s,
-                    is_time_type: isDate,
-                    values: isDate ? s.values.map((v) => dayjs(v.value).isValid() ? v : { value: '' }) : s.values,
-                  } : s));
+                  setSpecs((prev) => prev.map((s, i) => {
+                    if (i === si) {
+                      return {
+                        ...s,
+                        is_time_type: isDate,
+                        values: isDate ? s.values.map((v) => dayjs(v.value).isValid() ? v : { value: '' }) : s.values,
+                      };
+                    }
+                    // 确保只有一个日期类型 spec：当前设为日期时，其他项取消日期类型
+                    return isDate ? { ...s, is_time_type: false } : s;
+                  }));
                 }} />
               <Input value={spec.name} placeholder="请输入项目名称，如：票种" style={{ width: 260 }} onChange={(e) => updateSpecName(si, e.target.value)} maxLength={32} />
             </div>
