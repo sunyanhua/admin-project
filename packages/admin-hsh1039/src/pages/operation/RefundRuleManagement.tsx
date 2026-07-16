@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
-import { Button, Input, InputNumber, Select, Switch, Tag, Space, Form, Grid, Radio } from 'antd';
+import { useState, useCallback, useMemo } from 'react';
+import { Button, Input, InputNumber, Select, Switch, Tag, Space, Form, Grid, Alert } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
+import { useAuth } from '@/contexts/AuthContext';
 import { refundRuleApi } from '@/api/services/refundRule';
 import type { RefundRule, RefundRuleStage } from '@/api/services/refundRule';
 import { useListPage } from '@/hooks/useListPage';
@@ -15,6 +16,10 @@ import type { FilterConfig } from '@/components/templates/SearchPanel';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 
 const filters: FilterConfig[] = [
+  { name: 'is_hidden', placeholder: '全部状态', type: 'select', options: [
+    { label: '显示', value: 'false' },
+    { label: '隐藏', value: 'true' },
+  ]},
   { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
 
@@ -45,6 +50,7 @@ const renderStagesSummary = (stages?: RefundRuleStage[]) => {
 
 const RefundRuleManagement = () => {
   const { success, error: showError } = useAppNotification();
+  const { user } = useAuth();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
   const [modalVisible, setModalVisible] = useState(false);
@@ -53,12 +59,20 @@ const RefundRuleManagement = () => {
   const [submitting, setSubmitting] = useState(false);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
+  const hasSuper = useMemo(() => (user?.roles || []).includes('super_admin'), [user]);
+
   const fetchRules = useCallback(async (params: any) => {
-    return refundRuleApi.getRules(params);
-  }, []);
+    // 非超级管理员不加载系统级规则
+    const finalParams = { ...params, ...(hasSuper ? {} : { is_system: false }) };
+    // 筛选值转 boolean
+    if (finalParams.is_hidden === 'true') finalParams.is_hidden = true;
+    else if (finalParams.is_hidden === 'false') finalParams.is_hidden = false;
+    else delete finalParams.is_hidden;
+    return refundRuleApi.getRules(finalParams);
+  }, [hasSuper]);
 
   const formatResponse = useCallback((res: any) => ({
-    list: (res?.data?.list || res?.data || []).map((item: any) => ({
+    list: (res?.list || res?.data || []).map((item: any) => ({
       id: item.id,
       name: item.name || '',
       description: item.description || '',
@@ -68,7 +82,7 @@ const RefundRuleManagement = () => {
       created_at: item.created_at,
       updated_at: item.updated_at,
     })),
-    count: res?.data?.total || res?.count || 0,
+    count: res?.total || res?.data?.total || 0,
   }), []);
 
   const {
@@ -96,7 +110,8 @@ const RefundRuleManagement = () => {
     search({});
   };
 
-  const columns: ColumnsType<RefundRule> = [
+  const columns: ColumnsType<RefundRule> = useMemo(() => {
+    const cols: ColumnsType<RefundRule> = [
     {
       title: 'ID',
       dataIndex: 'id',
@@ -115,9 +130,9 @@ const RefundRuleManagement = () => {
       key: 'stages',
       render: (stages: RefundRuleStage[]) => renderStagesSummary(stages),
     },
-    {
+    ...(hasSuper ? [{
       title: '系统级',
-      dataIndex: 'is_system',
+      dataIndex: 'is_system' as const,
       key: 'is_system',
       width: 90,
       render: (val: boolean) => (
@@ -125,16 +140,27 @@ const RefundRuleManagement = () => {
           {val ? '系统' : '自定义'}
         </Tag>
       ),
-    },
+    }] : []),
     {
-      title: '隐藏',
+      title: '显示/隐藏',
       dataIndex: 'is_hidden',
       key: 'is_hidden',
-      width: 90,
-      render: (val: boolean) => (
-        <Tag color={val ? 'orange' : 'green'} title={val ? '已隐藏' : '显示中'}>
-          {val ? '已隐藏' : '显示中'}
-        </Tag>
+      width: 100,
+      render: (val: boolean, record: RefundRule) => (
+        <Switch
+          checked={!val}
+          checkedChildren="显示"
+          unCheckedChildren="隐藏"
+          onChange={async (checked) => {
+            try {
+              await refundRuleApi.updateRuleHidden(record.id, !checked);
+              success(checked ? '已设为显示' : '已设为隐藏');
+              refresh();
+            } catch (err: any) {
+              showError(err?.response?.data?.message || '操作失败');
+            }
+          }}
+        />
       ),
     },
     ActionColumn({
@@ -146,7 +172,7 @@ const RefundRuleManagement = () => {
             name: record.name,
             description: record.description || '',
             stages: record.stages && record.stages.length > 0 ? record.stages : [{ days_before: 0, refund_type: 'rate' as const, refund_value: 0 }],
-            is_hidden: record.is_hidden ?? false,
+            is_system: record.is_system ?? false,
           });
         }, 0);
       },
@@ -157,13 +183,16 @@ const RefundRuleManagement = () => {
       }),
       showView: false,
     }),
-  ];
+    ];
+    return cols;
+  }, [hasSuper]);
 
   const handleAdd = () => {
     setEditingRule(null);
     setModalVisible(true);
     setTimeout(() => {
       form.resetFields();
+      if (hasSuper) form.setFieldsValue({ is_system: false });
     }, 0);
   };
 
@@ -175,14 +204,17 @@ const RefundRuleManagement = () => {
       const submitData: {
         name: string;
         description?: string;
-        is_hidden?: boolean;
+        is_system?: boolean;
         stages?: RefundRuleStage[];
       } = {
         name: values.name,
         description: values.description || undefined,
-        is_hidden: values.is_hidden ?? false,
         stages: (values.stages || []).filter((s: RefundRuleStage) => s.days_before >= 0),
       };
+      // 仅超级管理员可设置系统级
+      if (hasSuper) {
+        submitData.is_system = values.is_system ?? false;
+      }
 
       if (editingRule) {
         await refundRuleApi.updateRule(editingRule.id, submitData);
@@ -255,10 +287,16 @@ const RefundRuleManagement = () => {
           form={form}
           layout="vertical"
           initialValues={{
-            is_hidden: false,
             stages: [{ days_before: 0, refund_type: 'rate', refund_value: 0 }],
           }}
         >
+          {editingRule && (
+            <Alert
+              type="warning" showIcon
+              message="修改后，所有使用本规则的活动/票务/商品的退款规则都会同步更新，请谨慎操作！"
+              style={{ marginBottom: 16 }}
+            />
+          )}
           <Form.Item
             name="name"
             label="规则名称"
@@ -275,8 +313,12 @@ const RefundRuleManagement = () => {
             <Form.List name="stages">
               {(fields, { add, remove }) => (
                 <>
-                  {fields.map(({ key, name, ...restField }) => (
-                    <Space key={key} align="baseline" wrap style={{ display: 'flex', marginBottom: 8, width: '100%' }}>
+                  {fields.map(({ key, name, ...restField }, idx) => (
+                    <Space key={key} align="baseline" wrap style={{
+                      display: 'flex', marginBottom: 8, width: '100%',
+                      borderBottom: idx < fields.length - 1 ? '1px solid #f0f0f0' : 'none',
+                      paddingBottom: 8,
+                    }}>
                       <Form.Item
                         {...restField}
                         name={[name, 'days_before']}
@@ -296,13 +338,28 @@ const RefundRuleManagement = () => {
                         <Select options={REFUND_TYPE_OPTIONS} style={{ width: 130 }} />
                       </Form.Item>
                       <Form.Item
-                        {...restField}
-                        name={[name, 'refund_value']}
-                        label="退款值"
-                        rules={[{ required: true, message: '请输入' }]}
-                        style={{ marginBottom: 0 }}
+                        noStyle
+                        shouldUpdate={(prev, cur) => prev?.stages?.[name]?.refund_type !== cur?.stages?.[name]?.refund_type}
                       >
-                        <InputNumber min={0} max={999999} placeholder="金额/比例" style={{ width: 110 }} />
+                        {({ getFieldValue }) => {
+                          const refundType = getFieldValue(['stages', name, 'refund_type']);
+                          return (
+                            <Form.Item
+                              {...restField}
+                              name={[name, 'refund_value']}
+                              label="退款值"
+                              rules={[{ required: true, message: '请输入' }]}
+                              style={{ marginBottom: 0 }}
+                            >
+                              <InputNumber
+                                min={0} max={999999}
+                                style={{ width: 110 }}
+                                formatter={refundType === 'rate' ? (v) => `${v}%` : undefined}
+                                parser={refundType === 'rate' ? (v) => v?.replace('%', '') as any : undefined}
+                              />
+                            </Form.Item>
+                          );
+                        }}
                       </Form.Item>
                       <Button
                         type="link" danger icon={<DeleteOutlined />}
@@ -325,9 +382,12 @@ const RefundRuleManagement = () => {
             </Form.List>
           </Form.Item>
 
-          <Form.Item name="is_hidden" label="隐藏此规则" valuePropName="checked" style={{ marginTop: 16 }}>
-            <Switch checkedChildren="隐藏" unCheckedChildren="显示" />
-          </Form.Item>
+          {hasSuper && (
+            <Form.Item name="is_system" label="系统级规则" valuePropName="checked" style={{ marginTop: 16 }}>
+              <Switch checkedChildren="系统" unCheckedChildren="自定义" />
+            </Form.Item>
+          )}
+
         </Form>
       </ScrollableModal>
     </>

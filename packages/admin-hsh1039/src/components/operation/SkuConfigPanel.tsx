@@ -208,8 +208,8 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
 
     useImperativeHandle(ref, () => ({
       save: handleSave,
-      getState: () => ({ specs, editedSkus }),
-    }), [handleSave, specs, editedSkus]);
+      getState: () => ({ specs, editedSkus, loadedSkus }),
+    }), [handleSave, specs, editedSkus, loadedSkus]);
 
     const skuColumns: ColumnsType<SkuRow> = [
       { title: '规格组合', dataIndex: 'specText', key: 'specText', width: 200 },
@@ -250,17 +250,15 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                 options={[{ label: '普通', value: 'normal' }, { label: '日期', value: 'date' }]}
                 onChange={(val) => {
                   const isDate = val === 'date';
-                  setSpecs((prev) => prev.map((s, i) => {
-                    if (i === si) {
-                      return {
-                        ...s,
-                        is_time_type: isDate,
-                        values: isDate ? s.values.map((v) => dayjs(v.value).isValid() ? v : { value: '' }) : s.values,
-                      };
-                    }
-                    // 确保只有一个日期类型 spec：当前设为日期时，其他项取消日期类型
-                    return isDate ? { ...s, is_time_type: false } : s;
-                  }));
+                  if (isDate && specs.some((s, i) => i !== si && s.is_time_type)) {
+                    warning('只能有一个日期类型的规格项目');
+                    return;
+                  }
+                  setSpecs((prev) => prev.map((s, i) => ({
+                    ...s,
+                    is_time_type: i === si ? isDate : (isDate ? false : s.is_time_type),
+                    values: i === si && isDate ? s.values.map((v) => dayjs(v.value).isValid() ? v : { value: '' }) : s.values,
+                  })));
                 }} />
               <Input value={spec.name} placeholder="请输入项目名称，如：票种" style={{ width: 260 }} onChange={(e) => updateSpecName(si, e.target.value)} maxLength={32} />
             </div>
@@ -273,30 +271,23 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                 marginBottom: 8,
               }}>
                 {spec.values.map((v, vi) => spec.is_time_type ? (
-                  <DatePicker key={vi}
-                    value={v.value ? dayjs(v.value) : null}
-                    style={{ width: '100%' }}
-                    placeholder="选择日期"
-                    suffixIcon={
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 1, display: 'inline-block' }} />
-                        <DeleteOutlined
-                          hidden={spec.values.length <= 1}
-                          style={{
-                            color: '#ff4d4f',
-                            cursor: 'pointer',
-                            fontSize: 12,
-                            display: spec.values.length > 1 ? 'inline' : 'none',
-                          }}
-                          onClick={(e: React.MouseEvent) => {
-                            e.stopPropagation();
-                            removeSpecValue(si, vi);
-                          }}
-                        />
-                      </span>
-                    }
-                    onChange={(_, dateStr) => updateSpecValue(si, vi, typeof dateStr === 'string' ? dateStr : '')}
-                  />
+                  <div key={vi} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <DatePicker
+                      value={v.value ? dayjs(v.value) : null}
+                      style={{ flex: 1 }}
+                      placeholder="选择日期"
+                      onChange={(_, dateStr) => updateSpecValue(si, vi, typeof dateStr === 'string' ? dateStr : '')}
+                    />
+                    {spec.values.length > 1 && (
+                      <DeleteOutlined
+                        style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 14, flexShrink: 0 }}
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          removeSpecValue(si, vi);
+                        }}
+                      />
+                    )}
+                  </div>
                 ) : (
                   <Input key={vi} value={v.value} placeholder="如：成人票" style={{ flex: 1 }}
                     onChange={(e) => updateSpecValue(si, vi, e.target.value)} maxLength={64}

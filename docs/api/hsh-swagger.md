@@ -584,13 +584,7 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | GET | `/admin/v1/logs/audit/verify` | 验证哈希链完整性 | AdminAuth | AdminAuth |
 | GET | `/admin/v1/logs/my` | 我的日志列表 | AdminAuth | AdminAuth |
 
-## 十八、C端-系统设置 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/api/v1/settings/{key}` | 读取公开设置 | — | — |
-
-## 十九、后台-系统设置 模块
+## 十八、后台-系统设置 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -600,6 +594,19 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | PUT | `/admin/v1/settings/{id}` | 更新设置项 | — | — |
 | DELETE | `/admin/v1/settings/{id}` | 删除设置项 | — | — |
 | PUT | `/admin/v1/settings/{id}/enabled` | 启用/禁用设置项 | — | — |
+
+## 十九、Excel 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| POST | `/admin/v1/excel/build` | 构建 Excel 文件 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/excel/parse` | 解析 Excel 文件 | AdminAuth | AdminAuth |
+
+## 二十、C端-系统设置 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/settings/{key}` | 读取公开设置 | — | — |
 
 ---
 

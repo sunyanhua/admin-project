@@ -599,7 +599,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
         <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.8 }}>
           <div>点击"报名期限"或"报名信息"列可编辑单条SKU，点击"保存配置"提交所有修改。</div>
           <div>
-            如需进行更多配置（如修改规格项目组合、调整报名信息模板等），请点击{' '}
+            如需进行更多配置（如修改规格项目组合、调整报名有效期或信息模板、更新退款规则等），请点击{' '}
             <Button type="link" size="small" style={{ padding: 0, fontSize: 13 }} onClick={handleModifyCombo}>高级配置管理</Button>。
           </div>
         </div>

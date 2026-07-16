@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Radio, Select, Button, DatePicker, TimePicker, Table, InputNumber, Input, Space } from 'antd';
+import { Radio, Select, Button, DatePicker, TimePicker, Table, InputNumber, Input, Space, Form, Alert } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { refundRuleApi, RefundRule, RefundRuleStage } from '../../api/services/refundRule';
@@ -47,43 +47,37 @@ const fmtStages = (stages?: RefundRuleStage[]): string => {
 
 const RuleEditModal: React.FC<{
   open: boolean;
-  initial?: { name: string; description?: string; stages: RefundRuleStage[]; is_hidden?: boolean } | null;
+  initial?: { name: string; description?: string; stages: RefundRuleStage[] } | null;
   onClose: () => void;
-  onSave: (data: { name: string; description?: string; stages: RefundRuleStage[]; is_hidden?: boolean }) => void;
+  onSave: (data: { name: string; description?: string; stages: RefundRuleStage[] }) => void;
 }> = ({ open, initial, onClose, onSave }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [stages, setStages] = useState<RefundRuleStage[]>([]);
-  const [isHidden, setIsHidden] = useState(false);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     if (open) {
-      setName(initial?.name || '');
-      setDescription(initial?.description || '');
-      setStages(initial?.stages || [
-        { days_before: 30, refund_type: 'rate', refund_value: 100 },
-        { days_before: 7, refund_type: 'rate', refund_value: 50 },
-        { days_before: 0, refund_type: 'rate', refund_value: 0 },
-      ]);
-      setIsHidden(initial?.is_hidden || false);
+      form.setFieldsValue({
+        name: initial?.name || '',
+        description: initial?.description || '',
+        stages: initial?.stages && initial.stages.length > 0
+          ? initial.stages
+          : [
+            { days_before: 30, refund_type: 'rate', refund_value: 100 },
+            { days_before: 7, refund_type: 'rate', refund_value: 50 },
+            { days_before: 0, refund_type: 'rate', refund_value: 0 },
+          ],
+      });
     }
-  }, [open, initial]);
-
-  const addStage = () => setStages((prev) => [...prev, { days_before: 0, refund_type: 'rate', refund_value: 0 }]);
-  const removeStage = (idx: number) => setStages((prev) => prev.filter((_, i) => i !== idx));
-  const updateStage = (idx: number, patch: Partial<RefundRuleStage>) => {
-    setStages((prev) => prev.map((s, i) => i === idx ? { ...s, ...patch } : s));
-  };
+  }, [open, initial, form]);
 
   const handleSave = () => {
-    if (!name.trim()) return;
-    onSave({
-      name: name.trim(),
-      description: description.trim() || undefined,
-      stages: stages.filter((s) => s.days_before >= 0).sort((a, b) => b.days_before - a.days_before),
-      is_hidden: isHidden,
-    });
-    onClose();
+    form.validateFields().then((values: any) => {
+      onSave({
+        name: values.name.trim(),
+        description: values.description?.trim() || undefined,
+        stages: (values.stages || []).filter((s: RefundRuleStage) => s.days_before >= 0).sort((a: RefundRuleStage, b: RefundRuleStage) => b.days_before - a.days_before),
+      });
+      onClose();
+    }).catch(() => {});
   };
 
   return (
@@ -93,38 +87,71 @@ const RuleEditModal: React.FC<{
       onCancel={onClose}
       width={650}
       destroyOnHidden
-      footer={<Space><Button onClick={onClose}>取消</Button><Button type="primary" onClick={handleSave} disabled={!name.trim()}>保存</Button></Space>}
+      footer={<Space><Button onClick={onClose}>取消</Button><Button type="primary" onClick={handleSave}>保存</Button></Space>}
     >
-      <div style={{ padding: '0 8px' }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 4, fontSize: 13, color: '#666' }}>规则名称</div>
-          <Input placeholder="如：标准阶梯退" value={name} onChange={(e) => setName(e.target.value)} maxLength={32} />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ marginBottom: 4, fontSize: 13, color: '#666' }}>规则说明</div>
-          <Input.TextArea placeholder="可选，描述规则用途" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={256} rows={2} />
-        </div>
-        <div style={{ fontWeight: 600, marginBottom: 8 }}>退款阶梯</div>
-        {stages.map((s, idx) => (
-          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, padding: '6px 8px', background: '#fafafa', borderRadius: 4 }}>
-            <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>提前</span>
-            <InputNumber size="small" min={0} max={365} value={s.days_before} style={{ width: 60 }} onChange={(v) => updateStage(idx, { days_before: v ?? 0 })} />
-            <span style={{ fontSize: 12, whiteSpace: 'nowrap' }}>天退</span>
-            <Select size="small" value={s.refund_type} style={{ width: 70 }} options={[{ label: '%', value: 'rate' }, { label: '元', value: 'fixed' }]} onChange={(v) => updateStage(idx, { refund_type: v })} />
-            <InputNumber size="small" min={0} max={s.refund_type === 'rate' ? 100 : 999999} value={s.refund_value} style={{ width: 80 }} onChange={(v) => updateStage(idx, { refund_value: v ?? 0 })} />
-            <Button size="small" type="text" danger icon={<DeleteOutlined />} onClick={() => removeStage(idx)} />
-          </div>
-        ))}
-        <Button type="dashed" size="small" icon={<PlusOutlined />} onClick={addStage}>添加阶梯</Button>
-        <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 13 }}>隐藏此规则</span>
-          <Radio.Group value={isHidden ? 'yes' : 'no'} onChange={(e) => setIsHidden(e.target.value === 'yes')}>
-            <Radio.Button value="no">显示</Radio.Button>
-            <Radio.Button value="yes">隐藏</Radio.Button>
-          </Radio.Group>
-          <span style={{ color: '#999', fontSize: 12 }}>隐藏后仅在退款规则管理页可见</span>
-        </div>
-      </div>
+      <Form form={form} layout="vertical" autoComplete="off">
+        {initial && (
+          <Alert
+            type="warning" showIcon
+            message="修改后，所有使用本规则的活动/票务/商品的退款规则都会同步更新，请谨慎操作！"
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        <Form.Item
+          name="name"
+          label="规则名称"
+          rules={[{ required: true, message: '请输入规则名称' }]}
+        >
+          <Input placeholder="如：标准阶梯退" maxLength={32} />
+        </Form.Item>
+        <Form.Item name="description" label="规则说明">
+          <Input.TextArea placeholder="可选，描述规则用途" maxLength={256} rows={3} />
+        </Form.Item>
+        <Form.Item label="退款阶梯" style={{ marginBottom: 0 }}>
+          <Form.List name="stages">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }, idx) => (
+                  <Space key={key} align="baseline" wrap style={{
+                    display: 'flex', marginBottom: 8, width: '100%',
+                    borderBottom: idx < fields.length - 1 ? '1px solid #f0f0f0' : 'none',
+                    paddingBottom: 8,
+                  }}>
+                    <Form.Item {...restField} name={[name, 'days_before']} label="提前天数" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
+                      <InputNumber min={0} max={365} style={{ width: 100 }} />
+                    </Form.Item>
+                    <Form.Item {...restField} name={[name, 'refund_type']} label="退款方式" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
+                      <Select style={{ width: 120 }} options={[{ label: '按比例退', value: 'rate' }, { label: '固定金额退', value: 'fixed' }]} />
+                    </Form.Item>
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prev, cur) => prev?.stages?.[name]?.refund_type !== cur?.stages?.[name]?.refund_type}
+                      >
+                        {({ getFieldValue }) => {
+                          const refundType = getFieldValue(['stages', name, 'refund_type']);
+                          return (
+                            <Form.Item {...restField} name={[name, 'refund_value']} label="退款值" rules={[{ required: true }]} style={{ marginBottom: 0 }}>
+                              <InputNumber
+                                min={0} max={999999}
+                                style={{ width: 100 }}
+                                formatter={refundType === 'rate' ? (v) => `${v}%` : undefined}
+                                parser={refundType === 'rate' ? (v) => v?.replace('%', '') as any : undefined}
+                              />
+                            </Form.Item>
+                          );
+                        }}
+                      </Form.Item>
+                    <Button type="link" danger icon={<DeleteOutlined />} onClick={() => remove(name)} style={{ alignSelf: 'flex-end', marginBottom: 0 }} />
+                  </Space>
+                ))}
+                <Button type="dashed" onClick={() => add({ days_before: 0, refund_type: 'rate', refund_value: 0 })} block icon={<PlusOutlined />}>
+                  添加阶梯
+                </Button>
+              </>
+            )}
+          </Form.List>
+        </Form.Item>
+      </Form>
     </ScrollableModal>
   );
 };
@@ -192,12 +219,12 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
     }
   };
 
-  const handleSaveRule = async (data: { name: string; description?: string; stages: RefundRuleStage[]; is_hidden?: boolean }) => {
+  const handleSaveRule = async (data: { name: string; description?: string; stages: RefundRuleStage[] }) => {
     try {
-      const created: any = await refundRuleApi.createRule({ name: data.name, description: data.description, stages: data.stages, is_hidden: data.is_hidden });
+      const created: any = await refundRuleApi.createRule({ name: data.name, description: data.description, stages: data.stages });
       const newId = created?.data?.id || created?.id;
       if (newId) {
-        const newRule: RefundRule = { id: newId, name: data.name, description: data.description, stages: data.stages, is_hidden: data.is_hidden };
+        const newRule: RefundRule = { id: newId, name: data.name, description: data.description, stages: data.stages };
         setRules((prev) => [...prev, newRule]);
         onChange({ ...value, ruleId: newId });
         success('规则已创建');
@@ -238,7 +265,7 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
       </Radio.Group>
 
       {value.mode === 'none' && <div style={{ color: '#999', fontSize: 12 }}>该活动不支持退款。</div>}
-      {value.mode === 'anytime' && <div style={{ color: '#999', fontSize: 12 }}>用户在活动开始前可随时申请全额退款。退款基准时间自动设为30年后。</div>}
+      {value.mode === 'anytime' && <div style={{ color: '#999', fontSize: 12 }}>用户在活动开始前可随时申请全额退款。</div>}
 
       {(value.mode === 'deadline' || value.mode === 'staged') && (
         <div style={{ marginTop: 4 }}>

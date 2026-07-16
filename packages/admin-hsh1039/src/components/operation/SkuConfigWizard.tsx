@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, forwardRef, useImperativeHandle, useEffect }
 import { Button, Switch, Radio, Select, Table, DatePicker, TimePicker, InputNumber } from 'antd';
 import ExtraInfoEditor, { ExtraInfoData } from './ExtraInfoEditor';
 import type { ExtraInfoGroup } from './ExtraInfoEditor';
-import RefundSettings, { RefundSettingsData, REFUND_TYPE_MAP } from './RefundSettings';
+import RefundSettings, { RefundSettingsData, RefundMode, REFUND_TYPE_MAP } from './RefundSettings';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import SkuConfigPanel, {
@@ -136,7 +136,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       setSelectedRowKeys([]);
       setBatchMode(false);
       setExtraFieldSkus({});
-      setRefundSettings({ mode: 'none', deadlineMode: 'unified', skuDeadlines: {}, refundBaseTime: null });
+      setRefundSettings({ mode: 'none', deadlineMode: 'unified', skuDeadlines: {} });
       productApi.getProductDetail(productId).then((detail: any) => {
         setIsListed(detail?.is_listed === true);
         if (detail?.usable) setUnifiedUsable(dayjs(detail.usable));
@@ -178,31 +178,125 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     });
   }, [wizardSpecs, step2Edits, hasDateSpec, dateSpecIndex]);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const state = panelRef.current?.getState();
     if (!state) return;
     const validSpecs = state.specs.filter((s) => s.name.trim() && s.values.some((v) => v.value.trim()));
     if (validSpecs.length === 0) { warning('请至少配置一个有效的规格项目'); return; }
-    setWizardSpecs(validSpecs);
-
-    // 重映射 editedSkus key：过滤掉无效 spec 对应的部分
-    const filteredEdited: Record<string, Partial<SkuRow>> = {};
-    for (const [oldKey, edits] of Object.entries(state.editedSkus)) {
-      const parts = oldKey.split(' | ');
-      // 只保留在 validSpecs 中的 spec（通过名称匹配）
-      const newParts: string[] = [];
-      for (let i = 0; i < parts.length; i++) {
-        const [name] = parts[i].split(':');
-        if (validSpecs.some((s) => s.name === name)) {
-          newParts.push(parts[i]);
-        }
-      }
-      if (newParts.length > 0) {
-        filteredEdited[newParts.join(' | ')] = edits;
+    // 校验所有 spec 的值都已正确填写，避免出现 "?" 项的 SKU
+    for (const s of validSpecs) {
+      if (s.values.some((v) => !v.value.trim())) {
+        warning(`规格"${s.name}"中存在未填写的项目值，请完善后再继续`);
+        return;
       }
     }
-    setWizardEditedSkus(filteredEdited);
-    setStep2Edits({});
+    setWizardSpecs(validSpecs);
+
+    // 计算完整 SKU 数据（loadedSkus + editedSkus），确保返回上一步不丢数据
+    const fullData: Record<string, Partial<SkuRow>> = {};
+    const specTextToIndices = new Map<string, string>();
+    if (validSpecs.length > 0) {
+      const valueArrays = validSpecs.map((s) => s.values.map((v: any) => v.value || '?'));
+      for (const combo of cartesian(valueArrays)) {
+        const specText = validSpecs.map((s, i) => `${s.name || '?'}:${combo[i]}`).join(' | ');
+        const indices = validSpecs.map((s, i) => {
+          const vi = s.values.findIndex((v: any) => (v.value || v) === combo[i]);
+          const val = s.values[vi >= 0 ? vi : 0] as any;
+          return (val?.id ? String(val.id) : String(vi >= 0 ? vi : i));
+        }).join('_');
+        specTextToIndices.set(specText, indices);
+        const existing = state.loadedSkus.find((s) => s.spec_indices === indices);
+        const edits = state.editedSkus[specText] || {};
+        fullData[specText] = {
+          price: edits.price ?? existing?.price ?? 0,
+          stock: edits.stock ?? existing?.stock ?? 0,
+          status: edits.status ?? existing?.status ?? 1,
+        };
+      }
+    }
+    setWizardEditedSkus(fullData);
+
+    // 仅在 specs 未变更时，从 API 加载旧 SKU 数据预填 Step 2
+    try {
+      const [skuRes, productDetail]: any[] = await Promise.all([
+        productApi.getSkus(productId),
+        productApi.getProductDetail(productId),
+      ]);
+      const skuArr: any[] = Array.isArray(skuRes) ? skuRes : (skuRes?.list || []);
+      const syncedExtraInfo = parseExtraInfoFromProduct(productDetail);
+      setExtraInfo(syncedExtraInfo);
+
+      // 判断 specs 是否被修改：新旧 spec_indices 集合是否一致
+      const newIndicesSet = new Set(Array.from(specTextToIndices.values()));
+      const oldIndicesSet = new Set(skuArr.map((s: any) => s.spec_indices || ''));
+      const specsUnchanged = newIndicesSet.size > 0
+        && newIndicesSet.size === oldIndicesSet.size
+        && Array.from(newIndicesSet).every((idx) => oldIndicesSet.has(idx));
+
+      if (specsUnchanged) {
+        const initStep2: Record<string, { usable?: string | null; expiry?: string | null }> = {};
+        const initExtraFields: Record<string, { groupKey: string; count: number }[]> = {};
+        let hasSkuDates = false;
+
+        for (const [specText, indices] of specTextToIndices.entries()) {
+          const existingSku = skuArr.find((s: any) => (s.spec_indices || '') === indices);
+          if (!existingSku) continue;
+          if (existingSku.usable || existingSku.expiry) {
+            initStep2[indices] = { usable: existingSku.usable || null, expiry: existingSku.expiry || null };
+            hasSkuDates = true;
+          }
+          const afc = existingSku.additional_fields_config;
+          if (afc && Array.isArray(afc) && afc.length > 0) {
+            const entries: { groupKey: string; count: number }[] = [];
+            for (const item of afc) {
+              const group = syncedExtraInfo.groups.find((g) => g.name === item.name);
+              if (group && typeof item.num === 'number' && item.num > 0) {
+                entries.push({ groupKey: group.key, count: item.num });
+              }
+            }
+            if (entries.length > 0) initExtraFields[indices] = entries;
+          }
+        }
+        setStep2Edits(initStep2);
+        setExtraFieldSkus(initExtraFields);
+
+        // 恢复报名期限模式：product 有值 → 统一模式，否则 SKU 有值 → 单独模式
+        const productHasDates = !!(productDetail?.usable || productDetail?.expiry);
+        if (productHasDates) {
+          setExpiryMode('unified');
+          setUnifiedUsable(productDetail?.usable ? dayjs(productDetail.usable) : null);
+          setUnifiedExpiry(productDetail?.expiry ? dayjs(productDetail.expiry) : null);
+        } else if (hasSkuDates) {
+          setExpiryMode('individual');
+          setUnifiedUsable(null);
+          setUnifiedExpiry(null);
+        }
+
+        // 恢复上架状态
+        setIsListed(productDetail?.is_listed === true);
+
+        // 恢复退款设置
+        const rtype = productDetail?.refund_type;
+        const refundMode: RefundMode = rtype === 1 ? 'anytime' : rtype === 2 ? 'deadline' : rtype === 3 ? 'staged' : 'none';
+        const hasDeadline = !!(productDetail?.refund_base_time);
+        const skuDeadlines: Record<string, string> = {};
+        // 非统一模式时收集各 SKU 的 refund_base_time
+        if (refundMode === 'deadline' || refundMode === 'staged') {
+          for (const s of skuArr) {
+            if (s.refund_base_time) skuDeadlines[s.spec_indices || ''] = s.refund_base_time;
+          }
+        }
+        setRefundSettings({
+          mode: refundMode,
+          ruleId: productDetail?.refund_rule_id || null,
+          deadlineMode: hasDeadline && refundMode !== 'none' ? 'unified' : (Object.keys(skuDeadlines).length > 0 ? 'individual' : 'unified'),
+          unifiedDeadline: productDetail?.refund_base_time || null,
+          skuDeadlines,
+        });
+      }
+      // specs 已变更 → 新 SKU 组合无历史数据可回填，保持 step2Edits/extraFieldSkus 为空
+    } catch { /* ignore */ }
+
     setBatchMode(false);
     setSelectedRowKeys([]);
     setSelectedSpecFilters({});
@@ -363,9 +457,13 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           }))
           : null;
 
+        // 建立 specText → step2Skus spec_indices 映射（step2Edits/skuDeadlines 用同一个 key 格式）
+        const textToStep2Indices = new Map<string, string>();
+        for (const row of step2Skus) textToStep2Indices.set(row.specText, row.spec_indices);
+
         const skuList: {
           price: number; spec_indices: string; stock?: number; status?: number;
-          usable?: string | null; expiry?: string | null;
+          usable?: string | null; expiry?: string | null; refund_base_time?: string;
           additional_fields_config?: any;
         }[] = [];
 
@@ -376,10 +474,12 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
             const values = s.values || [];
             const vi = values.findIndex((v: any) => v.value === combo[si]);
             const val = values[vi >= 0 ? vi : 0];
-            idParts.push(String(val?.id ?? 0));
+            idParts.push(val?.id ? String(val.id) : String(vi >= 0 ? vi : si));
             specTextParts.push(`${s.name || '?'}:${val?.value || combo[si]}`);
           });
           const specText = specTextParts.join(' | ');
+          // step2Skus 格式的 spec_indices（skuDeadlines/step2Edits 都用此格式作为 key）
+          const step2Indices = textToStep2Indices.get(specText) || idParts.join('_');
 
           // 价格/限额/状态：wizardEditedSkus（用户编辑） > 现有 SKU 数据（兜底） > 默认值
           const wEdits = wizardEditedSkus[specText];
@@ -397,6 +497,18 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
             usable = s2e.usable || null;
             expiry = s2e.expiry || null;
           }
+
+          // SKU refund_base_time（用 step2Indices 查 skuDeadlines，保持 key 格式一致）
+          let skuRefundBaseTime = '';
+          if (refundSettings.mode === 'anytime') {
+            skuRefundBaseTime = dayjs().add(30, 'year').format('YYYY-MM-DDTHH:mm:ssZ');
+          } else if (refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') {
+            if (refundSettings.deadlineMode === 'unified') {
+              skuRefundBaseTime = refundSettings.unifiedDeadline || '';
+            } else {
+              skuRefundBaseTime = refundSettings.skuDeadlines[step2Indices] || '';
+            }
+          }
           // 附加信息配置
           let afc = null;
           if (unifiedExtraFields) {
@@ -404,7 +516,6 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           } else if (extraInfo.mode === 'individual') {
             const skuCfg = textToExtraFields.get(specText);
             if (skuCfg && skuCfg.length > 0) {
-              // 格式: [{name, num, config}], num>=1
               afc = [];
               for (const c of skuCfg) {
                 const g = extraInfo.groups.find((grp) => grp.key === c.groupKey);
@@ -419,7 +530,11 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
             }
           }
 
-          skuList.push({ spec_indices: idParts.join('_'), price, stock, status, usable, expiry, additional_fields_config: afc });
+          const skuItem: any = { spec_indices: idParts.join('_'), price, stock, status, additional_fields_config: afc };
+          if (usable) skuItem.usable = usable;
+          if (expiry) skuItem.expiry = expiry;
+          if (refundSettings.mode !== 'none') skuItem.refund_base_time = skuRefundBaseTime;
+          skuList.push(skuItem);
         }
         if (skuList.length > 0) await productApi.batchCreateSkus(productId, skuList);
       }
@@ -430,26 +545,27 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         config: g.fields.map(({ key, preset, ...rest }) => rest),
       });
 
-      const unifiedUsableStr = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
-      const unifiedExpiryStr = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+      const unifiedUsableStr = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : '';
+      const unifiedExpiryStr = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : '';
 
       // 退款相关字段
       const refundType = REFUND_TYPE_MAP[refundSettings.mode];
       const refundRuleId = (refundSettings.mode !== 'none' && refundSettings.ruleId) ? refundSettings.ruleId : null;
 
-      // 计算 product 的 refund_base_time
-      let productRefundBaseTime: string | null = null;
-      if (refundSettings.mode === 'anytime') {
-        productRefundBaseTime = dayjs().add(30, 'year').format('YYYY-MM-DDTHH:mm:ssZ');
-      } else if (refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') {
-        if (refundSettings.deadlineMode === 'unified') {
-          productRefundBaseTime = refundSettings.unifiedDeadline || null;
-        }
+      // 计算 product 的 refund_base_time（UpdateProductRequest: nil=不更新, ""=清空, 非空=RFC3339）
+      // 1.不退款=清空  2.随时退=清空（SKU负责30年後）  3/4.指定日期/阶梯退：统一=设值，单独=清空
+      let productRefundBaseTime: string | undefined;
+      if (refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') {
+        productRefundBaseTime = refundSettings.deadlineMode === 'unified'
+          ? (refundSettings.unifiedDeadline || '')
+          : '';
+      } else {
+        productRefundBaseTime = '';  // 不退款 / 随时退 → 清空
       }
 
       await productApi.updateProduct(productId, {
-        usable: expiryMode === 'unified' ? (unifiedUsableStr || null) : null,
-        expiry: expiryMode === 'unified' ? (unifiedExpiryStr || null) : null,
+        usable: expiryMode === 'unified' ? (unifiedUsableStr || '') : '',
+        expiry: expiryMode === 'unified' ? (unifiedExpiryStr || '') : '',
         additional_fields_config: extraInfo.mode !== 'none' && extraInfo.groups.length > 0
           ? extraInfo.groups.map(toStorageGroup)
           : null,
@@ -459,25 +575,6 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         refund_rule_id: refundRuleId as any,
         refund_base_time: productRefundBaseTime,
       });
-
-      // 6. 更新 SKU 的 refund_base_time
-      try {
-        const allSkus: any = await productApi.getSkus(productId);
-        const skuArr: any[] = Array.isArray(allSkus) ? allSkus : (allSkus?.list || []);
-        for (const s of skuArr) {
-          let skuBaseTime: string | null = null;
-          if (refundSettings.mode === 'anytime') {
-            skuBaseTime = dayjs().add(30, 'year').format('YYYY-MM-DDTHH:mm:ssZ');
-          } else if (refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') {
-            if (refundSettings.deadlineMode === 'unified') {
-              skuBaseTime = refundSettings.unifiedDeadline || null;
-            } else {
-              skuBaseTime = refundSettings.skuDeadlines[s.spec_indices] || null;
-            }
-          }
-          await productApi.updateSku(productId, s.id, { refund_base_time: skuBaseTime || null });
-        }
-      } catch { /* ignore */ }
 
       success('配置已保存');
       onSaved?.();

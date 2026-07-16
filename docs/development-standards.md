@@ -688,23 +688,28 @@ await api.getList({ start: 0, length: 10, ...filters });
 
 ```typescript
 const filters: FilterConfig[] = [
-  // 下拉选项 — 第一个为"全部"，值为空字符串 ''
+  // 下拉框放在输入框前面，placeholder 如"全部状态"，options 不含"全部"
   { name: 'status', placeholder: '全部状态', type: 'select', options: [
-    { label: '全部', value: '' },
     { label: '启用', value: 0 },
     { label: '禁用', value: 1 },
   ]},
-  // 关键词输入 — name 固定为 "word"
-  { name: 'word', placeholder: '关键词搜索', type: 'input' },
+  // 关键词输入 — name 固定为 "keyword"，放在下拉框后面
+  { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
 
-// 状态变量与 name 保持一致
-const [values, setValues] = useState<Record<string, any>>({});
+// 状态变量与 name 保持一致，初始值设为默认筛选
+const [values, setValues] = useState<Record<string, any>>({ status: 0 });
 
 const handleChange = (name: string, value: any) => {
   setValues(prev => ({ ...prev, [name]: value }));
 };
 ```
+
+**要点**：
+- **下拉框在输入框前面**，按 `filters` 数组顺序渲染
+- placeholder 格式 **"全部XXX"**（如"全部状态"），语义清晰
+- **options 里不要"全部"**，用户直接选具体值即可
+- 关键词输入框 `name="keyword"`（全系统统一）
 
 ## 16. 表单验证补充
 

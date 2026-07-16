@@ -1419,6 +1419,106 @@
                 }
             }
         },
+        "/admin/v1/excel/build": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "接收结构化行数据 JSON，生成 .xlsx 文件并返回下载。通用工具端点。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "Excel"
+                ],
+                "summary": "构建 Excel 文件",
+                "parameters": [
+                    {
+                        "description": "Excel 构建请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_excel_dto.BuildExcelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Excel 文件下载",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/excel/parse": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "上传 .xlsx 文件，返回结构化行数据 JSON。通用工具端点，前端用于预览导入数据。",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Excel"
+                ],
+                "summary": "解析 Excel 文件",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "Excel 文件（.xlsx）",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "解析成功（rows 数组）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "文件上传失败或格式不正确",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/login": {
             "get": {
                 "security": [
@@ -3249,13 +3349,19 @@
                 "summary": "物流公司列表",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "物流公司列表（按 sort_order 倒序排列）",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:order:read）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3297,7 +3403,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "物流公司创建成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -3310,6 +3416,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:order:write）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3736,7 +3848,7 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "订单ID",
+                        "description": "订单ID（正整数）",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3744,13 +3856,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（返回主单详情 master_order + 子单列表 sub_orders + 商品行 items + 物流信息 logistics + 备注 remarks + 收货地址 shipping_address）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误（订单ID无效）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无订单查看权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3784,7 +3914,7 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "订单ID",
+                        "description": "订单ID（正整数）",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3807,13 +3937,25 @@
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（订单ID无效或缺失）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（URN 拒绝）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3864,7 +4006,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "发货成功，返回订单状态与发货时间",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -3877,6 +4019,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:order:write）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3968,6 +4122,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "接收前端解析 Excel 后的结构化行数据，逐行校验并执行批量发货。\n前端使用流程：① POST /admin/v1/excel/parse 上传 .xlsx 得到 rows JSON →\n② 前端展示预览 → ③ POST /admin/v1/mall/orders/import/ship 提交 rows 执行发货。",
                 "consumes": [
                     "application/json"
                 ],
@@ -3978,15 +4133,26 @@
                     "Orders"
                 ],
                 "summary": "批量发货导入",
+                "parameters": [
+                    {
+                        "description": "发货导入请求（rows 来自 /admin/v1/excel/parse）",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.ShipImportRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "批量发货完成（含成功/失败统计与详细失败原因）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（rows 为空/JSON 格式不正确）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3997,8 +4163,8 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
-                    "500": {
-                        "description": "服务器内部错误",
+                    "403": {
+                        "description": "无订单写权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -10611,9 +10777,7 @@
         "github_com_vbegin_bizmall_internal_after_sale_dto.CreateRefundRuleStageItem": {
             "type": "object",
             "required": [
-                "days_before",
-                "refund_type",
-                "refund_value"
+                "refund_type"
             ],
             "properties": {
                 "days_before": {
@@ -11321,6 +11485,24 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_excel_dto.BuildExcelRequest": {
+            "type": "object",
+            "required": [
+                "filename",
+                "rows"
+            ],
+            "properties": {
+                "filename": {
+                    "type": "string"
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_excel.ShipExportRow"
+                    }
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_notification_dto.CreateTemplateRequest": {
             "type": "object",
             "required": [
@@ -11510,6 +11692,20 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.ShippingAddressDTO"
                         }
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_order_dto.ShipImportRequest": {
+            "type": "object",
+            "required": [
+                "rows"
+            ],
+            "properties": {
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_excel.ShipImportRow"
+                    }
                 }
             }
         },
@@ -12506,6 +12702,56 @@
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_pkg_excel.ShipExportRow": {
+            "type": "object",
+            "properties": {
+                "order_no": {
+                    "description": "订单号",
+                    "type": "string"
+                },
+                "product_details": {
+                    "description": "商品明细（多件以 \"; \" 分隔）",
+                    "type": "string"
+                },
+                "quantity": {
+                    "description": "总数量",
+                    "type": "integer"
+                },
+                "receiver_address": {
+                    "description": "收货地址",
+                    "type": "string"
+                },
+                "receiver_name": {
+                    "description": "收货人",
+                    "type": "string"
+                },
+                "receiver_phone": {
+                    "description": "收货电话",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_pkg_excel.ShipImportRow": {
+            "type": "object",
+            "properties": {
+                "logistics_company": {
+                    "description": "物流公司",
+                    "type": "string"
+                },
+                "order_no": {
+                    "description": "订单号",
+                    "type": "string"
+                },
+                "row": {
+                    "description": "Excel 行号（1-indexed）",
+                    "type": "integer"
+                },
+                "tracking_no": {
+                    "description": "运单号",
+                    "type": "string"
                 }
             }
         },

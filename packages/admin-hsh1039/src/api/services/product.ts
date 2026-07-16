@@ -62,11 +62,11 @@ export interface UpdateProductData {
   brand_id?: number;
   additional_fields_config?: any | null;
   additional_fields_has_sensitive?: boolean;
-  usable?: string | null;
-  expiry?: string | null;
+  usable?: string;
+  expiry?: string;
   refund_type?: number;
   refund_rule_id?: number | null;
-  refund_base_time?: string | null;
+  refund_base_time?: string;  // nil=不更新, ""=清空, 非空=RFC3339
 }
 
 export const productApi = {
@@ -154,8 +154,9 @@ export const productApi = {
   // Body: { skus: [{ price, spec_indices, stock?, sku_code? }] }
   batchCreateSkus: (productId: number, skus: {
     price: number; spec_indices: string; stock?: number; sku_code?: string;
-    status?: number; usable?: string | null; expiry?: string | null;
+    status?: number; usable?: string; expiry?: string;
     additional_fields_config?: any | null;
+    refund_base_time?: string;
   }[]) => {
     return request.post(`/admin/v1/mall/products/${productId}/skus`, { skus });
   },

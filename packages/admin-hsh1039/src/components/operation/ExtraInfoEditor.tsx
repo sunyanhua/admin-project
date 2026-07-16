@@ -172,7 +172,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
       {/* 不再渲染标题，由父组件 SectionBlock 统一提供 */}
       <Radio.Group
         value={value.mode}
-        onChange={(e) => onChange({ ...value, mode: e.target.value, groups: e.target.value === 'none' ? [] : value.groups })}
+        onChange={(e) => onChange({ ...value, mode: e.target.value })}
         style={{ marginBottom: 16 }}
       >
         <Radio.Button value="none">无特殊要求</Radio.Button>

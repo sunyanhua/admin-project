@@ -84,7 +84,7 @@
 | 模式 | 查阅 |
 |------|------|
 | 接口调用（数据读取、分页、错误提示、`start`/`length` 参数） | §1、§7、§14 |
-| 搜索交互（`search()` 传参、下拉"全部"值 `''`、关键词输入 `name="word"`） | §15 |
+| 搜索交互（`search()` 传参、下拉在输入框前、placeholder 如"全部状态"、option **不含"全部"**、关键词 `name="keyword"`） | §15 |
 | 日期格式（统一 `YYYY/MM/DD HH:mm:ss` + `formatDateTime()`） | §8 |
 | 表格列表（StandardTable、ID列隐藏、状态列 Tag、按 orderon 升序） | §1、§2 |
 | 表单验证（`onFinish`、密码四要素、`destroyOnHidden`） | §16 |
