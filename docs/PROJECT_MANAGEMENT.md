@@ -58,7 +58,7 @@ dist-test
   - `.env.test` 的 `VITE_APP_TITLE`
   - `CLAUDE.md` 中的项目定位描述
   - `README.md` 中的项目介绍
-  - `SITEMAP.md` 中的项目名称
+  - `docs/SITEMAP.md` 中的项目名称
   - `index.html` 的 `<title>` 标签
   - **所有三个 `.env.*` 文件必须设置 `VITE_PROJECT_ID=[项目文件夹]`**（多项目同域名部署时隔离 localStorage）
   - `src/pages/Dashboard.tsx`、`src/pages/Login.tsx`、`src/components/layout/MainLayout.tsx` 中的标题文字
@@ -92,7 +92,7 @@ dist-test
 - [ ] 项目文件夹存在且包含所有必要文件
 - [ ] 所有 `.env.*` 文件中的项目名称和端口已正确更新
 - [ ] 所有 `.env.*` 文件中的 `VITE_PROJECT_ID` 已设置为项目文件夹名
-- [ ] `CLAUDE.md`、`README.md`、`SITEMAP.md`、`index.html` 中的项目名称已替换
+- [ ] `CLAUDE.md`、`README.md`、`SITEMAP.md`（含 `docs/SITEMAP.md`）、`index.html` 中的项目名称已替换
 - [ ] `dist`、`dist-test` 等文件夹不存在于新项目中
 - [ ] 确认根目录有 `node_modules`（依赖由 workspaces 统一管理）
 

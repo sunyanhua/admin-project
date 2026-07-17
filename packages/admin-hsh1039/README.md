@@ -69,15 +69,19 @@ npm run test:e2e
 
 ### 核心文档
 1. **[CLAUDE.md](./CLAUDE.md)** - 项目专属开发规范
-2. **[SITEMAP.md](./SITEMAP.md)** - 页面结构、路由、接口对照
+2. **[docs/SITEMAP.md](./docs/SITEMAP.md)** - 页面结构、路由、接口对照
+3. **[docs/PROGRESS.md](./docs/PROGRESS.md)** - 项目进度（模块/接口清单/待办）
 
 ### 规范文档
-3. **docs/development-standards.md** - 代码模板（可复制代码示例）
-4. **docs/DOCUMENT_MANAGEMENT.md** - 文档管理制度
+4. **docs/development-standards.md** - 代码模板（可复制代码示例）
+5. **docs/DOCUMENT_MANAGEMENT.md** - 文档管理制度
+
+### 前端文档
+6. **[docs/frontend-miniapp-guide.md](./docs/frontend-miniapp-guide.md)** - 小程序开发指南
 
 ### 测试文档
-5. **tests/README.md** - 测试指南
-6. **tests/e2e/README.md** - E2E测试指南
+7. **tests/README.md** - 测试指南
+8. **tests/e2e/README.md** - E2E测试指南
 
 ## 📁 项目结构
 ```
@@ -114,8 +118,9 @@ admin-template/
 
 ### 新成员上手
 1. 阅读根目录 **CLAUDE.md** 了解核心开发规范
-2. 查看 **SITEMAP.md** 了解页面结构
-3. 遵循开发规范进行页面/组件开发
+2. 查看 **[docs/SITEMAP.md](./docs/SITEMAP.md)** 了解页面结构
+3. 查看 **[docs/PROGRESS.md](./docs/PROGRESS.md)** 了解项目进度
+4. 遵循开发规范进行页面/组件开发
 
 ### 前后端协作
 - **当前模式**: 并行开发 + Mock数据
