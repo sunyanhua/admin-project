@@ -71,15 +71,15 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
-| 2026-07-16 | 图片缩略图全站接入 | 16 文件，新增 imageUtils | 65b1342 |
-| 2026-07-16 | 表格列排列标准统一 | 23 文件，55 处修改 | 65b1342 |
-| 2026-07-16 | 产品 specs 日期类型互斥 | SkuConfigPanel 强制唯一日期 spec | 65b1342 |
-| 2026-07-16 | CLAUDE.md 精简 + 进度/标准文档重构 | 根 328→130 行，项目 232→69 行 | 65b1342 |
-| 2026-07-16 | 退款配置重构 | refund_type 字段 0/1/2/3，新增退款规则管理页面 | 65b1342 |
-| 2026-07-17 | 票务销售模块 | 新建 TicketManagement/TicketWizard/TicketEdit，共享组件增加 ticketMode | 65b1342 |
-| 2026-07-17 | 商品销售模块 | 新建 ProductManagement/ProductWizard/ProductEdit，共享组件增加 productMode | 65b1342 |
-| 2026-07-17 | 信息模板增强 | 新增"身份证号"预设字段 + idcardRestrict 附加限制 | 65b1342 |
-| 2026-07-17 | 文档标准完善 | 搜索交互、列排列、缩略图规则写入 CLAUDE.md + dev-standards.md | 65b1342 |
+| 2026-07-16 | 图片缩略图全站接入 | 16 文件，新增 imageUtils | ba68aac |
+| 2026-07-16 | 表格列排列标准统一 | 23 文件，55 处修改 | ba68aac |
+| 2026-07-16 | 产品 specs 日期类型互斥 | SkuConfigPanel 强制唯一日期 spec | ba68aac |
+| 2026-07-16 | CLAUDE.md 精简 + 进度/标准文档重构 | 根 328→130 行，项目 232→69 行 | ba68aac |
+| 2026-07-16 | 退款配置重构 | refund_type 字段 0/1/2/3，新增退款规则管理页面 | ba68aac |
+| 2026-07-17 | 票务销售模块 | 新建 TicketManagement/TicketWizard/TicketEdit，共享组件增加 ticketMode | ba68aac |
+| 2026-07-17 | 商品销售模块 | 新建 ProductManagement/ProductWizard/ProductEdit，共享组件增加 productMode | ba68aac |
+| 2026-07-17 | 信息模板增强 | 新增"身份证号"预设字段 + idcardRestrict 附加限制 | ba68aac |
+| 2026-07-17 | 文档标准完善 | 搜索交互、列排列、缩略图规则写入 CLAUDE.md + dev-standards.md | ba68aac |
 
 ---
 
