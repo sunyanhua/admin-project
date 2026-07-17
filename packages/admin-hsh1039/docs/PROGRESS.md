@@ -82,7 +82,7 @@
 | 2026-07-17 | 文档标准完善 | 搜索交互、列排列、缩略图规则写入 CLAUDE.md + dev-standards.md | ba68aac |
 | 2026-07-17 | 修复登录跳转+富文本换行+菜单权限 | 子路径部署适配、RichTextEditor innerHTML 注入、page-config 仅超管 | dd4c945 |
 | 2026-07-17 | 前端小程序开发指南 | docs/frontend-miniapp-guide.md（10 章） | ac43147 |
-| 2026-07-17 | 文档结构调整 | PROGRESS+SITEMAP 迁入 docs/，SITEMAP 重写为当前结构+更新机制 | da044b3 |
+| 2026-07-17 | 文档结构调整 | PROGRESS+SITEMAP 迁入 docs/，SITEMAP 重写为当前结构+更新机制 | 3f71921 |
 
 ---
 
