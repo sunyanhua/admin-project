@@ -1962,6 +1962,31 @@
                     "AfterSale"
                 ],
                 "summary": "后台售后列表",
+                "parameters": [
+                    {
+                        "maximum": 5,
+                        "minimum": -1,
+                        "type": "integer",
+                        "description": "售后状态（0~5，-1=不限）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "售后申请列表（分页，含用户信息）",
@@ -1969,8 +1994,20 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
+                    "400": {
+                        "description": "查询参数无效（page/page_size 越界或 status 不在 0~5）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:bizmall:after_sale:read）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2030,7 +2067,7 @@
                         }
                     },
                     "403": {
-                        "description": "无权限（缺少 urn:after_sale:read）",
+                        "description": "无权限（缺少 urn:bizmall:after_sale:read）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2096,7 +2133,13 @@
                         }
                     },
                     "403": {
-                        "description": "无权限（缺少 urn:after_sale:write）",
+                        "description": "无权限（缺少 urn:bizmall:after_sale:write）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "售后单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2165,7 +2208,7 @@
                         }
                     },
                     "403": {
-                        "description": "无权限（缺少 urn:after_sale:write）",
+                        "description": "无权限（缺少 urn:bizmall:after_sale:write）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2235,7 +2278,7 @@
                         }
                     },
                     "403": {
-                        "description": "无权限（缺少 urn:after_sale:write）",
+                        "description": "无权限（缺少 urn:bizmall:after_sale:write）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6263,6 +6306,23 @@
                     "AfterSale"
                 ],
                 "summary": "退款记录列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "退款记录列表（分页，含退款状态）",
@@ -6270,8 +6330,20 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
+                    "400": {
+                        "description": "查询参数无效",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:bizmall:after_sale:read）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }

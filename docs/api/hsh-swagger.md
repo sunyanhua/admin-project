@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-16 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-17 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -247,11 +247,11 @@ urn:bizmall:<module>:<action>
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/after-sales` | 后台售后列表 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/after-sales/:id` | 后台售后详情 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/after-sales/:id/confirm-return` | 确认收到退货 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/after-sales/:id/refund` | 执行退款 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/after-sales/:id/review` | 审核售后单 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/mall/after-sales` | 后台售后列表 | AdminAuth | `urn:bizmall:after_sale:read` |
+| GET | `/admin/v1/mall/after-sales/:id` | 后台售后详情 | AdminAuth | `urn:bizmall:after_sale:read` |
+| POST | `/admin/v1/mall/after-sales/:id/confirm-return` | 确认收到退货 | AdminAuth | `urn:bizmall:after_sale:write` |
+| POST | `/admin/v1/mall/after-sales/:id/refund` | 执行退款 | AdminAuth | `urn:bizmall:after_sale:write` |
+| POST | `/admin/v1/mall/after-sales/:id/review` | 审核售后单 | AdminAuth | `urn:bizmall:after_sale:write` |
 | GET | `/admin/v1/mall/refunds` | 退款记录列表 | AdminAuth | AdminAuth |
 | GET | `/api/v1/wxa/mall/after-sales` | C端售后列表 | WxaAuth | — |
 | POST | `/api/v1/wxa/mall/after-sales` | 提交售后申请 | WxaAuth | — |
