@@ -77,11 +77,12 @@ npm run test:e2e
 5. **docs/DOCUMENT_MANAGEMENT.md** - 文档管理制度
 
 ### 前端文档
-6. **[docs/frontend-miniapp-guide.md](./docs/frontend-miniapp-guide.md)** - 小程序开发指南
+6. **[docs/frontend-miniapp-guide.md](./docs/frontend-miniapp-guide.md)** - 小程序开发指南（技术向）
+7. **[docs/demo-guide.md](./docs/demo-guide.md)** - DEMO 制作指南（UE/流程向）
 
 ### 测试文档
-7. **tests/README.md** - 测试指南
-8. **tests/e2e/README.md** - E2E测试指南
+8. **tests/README.md** - 测试指南
+9. **tests/e2e/README.md** - E2E测试指南
 
 ## 📁 项目结构
 ```
