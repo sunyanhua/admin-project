@@ -6,7 +6,8 @@ import ScrollableModal from '@/components/templates/ScrollableModal';
 // ==================== Types ====================
 
 type FieldType = 'text' | 'textarea' | 'select' | 'multi_select' | 'image';
-type TextFormat = '' | 'mobile' | 'positive_integer' | 'number';
+type TextFormat = '' | 'mobile' | 'idcard' | 'positive_integer' | 'number';
+type IdcardRestrict = '' | 'adult' | 'child' | 'male' | 'female';
 
 export interface ExtraField {
   key: string;
@@ -17,6 +18,8 @@ export interface ExtraField {
   options?: string[];
   /** 预置字段不允许编辑 type/format/options */
   preset?: boolean;
+  /** 身份证号附加限制：空=无要求, adult=成人, child=儿童, male=男性, female=女性 */
+  idcardRestrict?: IdcardRestrict;
 }
 
 export interface ExtraInfoGroup {
@@ -44,6 +47,7 @@ const PRESET_FIELDS: Record<string, Omit<ExtraField, 'key' | 'required'>> = {
   '性别': { label: '性别', type: 'select', options: ['男', '女'], preset: true },
   '年龄': { label: '年龄', type: 'text', format: 'positive_integer', preset: true },
   '工作单位': { label: '工作单位', type: 'text', format: '', preset: true },
+  '身份证号': { label: '身份证号', type: 'text', format: 'idcard', preset: true, idcardRestrict: '' as IdcardRestrict },
 };
 
 const FIELD_TYPE_OPTIONS = [
@@ -59,6 +63,14 @@ const TEXT_FORMAT_OPTIONS = [
   { label: '手机号', value: 'mobile' as const },
   { label: '正整数', value: 'positive_integer' as const },
   { label: '数字', value: 'number' as const },
+];
+
+const IDCARD_RESTRICT_OPTIONS = [
+  { label: '无要求', value: '' as const },
+  { label: '必须为成人', value: 'adult' as const },
+  { label: '必须为儿童', value: 'child' as const },
+  { label: '必须为男性', value: 'male' as const },
+  { label: '必须为女性', value: 'female' as const },
 ];
 
 let fieldKeyCounter = 0;
@@ -79,7 +91,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
 
   const startAdd = useCallback(() => {
     setEditingGroup(null);
-    setGroupName(value.mode === 'unified' ? '报名信息' : '');
+    setGroupName(value.mode === 'unified' ? '信息模板' : '');
     setFields([
       { key: nextKey(), label: '姓名', type: 'text', required: true, format: '', preset: true },
       { key: nextKey(), label: '手机号', type: 'text', required: true, format: 'mobile', preset: true },
@@ -186,7 +198,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
             <Tag key={g.key} color="blue" style={{ fontSize: 12, padding: '2px 8px', marginBottom: 6, marginRight: 6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <span>{g.name}（{g.fields.length}项）</span>
               <EditOutlined style={{ cursor: 'pointer', fontSize: 11 }} onClick={() => startEdit(g)} />
-              <Popconfirm title="确定删除此报名信息模板？" onConfirm={() => handleDeleteGroup(g.key)}>
+              <Popconfirm title="确定删除此信息模板？" onConfirm={() => handleDeleteGroup(g.key)}>
                 <DeleteOutlined style={{ cursor: 'pointer', fontSize: 11, color: '#ff4d4f' }} />
               </Popconfirm>
             </Tag>
@@ -195,7 +207,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
           {(value.mode === 'individual' || value.groups.length === 0) && (
             <div style={{ marginTop: 4 }}>
               <Button type="dashed" icon={<PlusOutlined />} onClick={startAdd}>
-                添加报名信息模板
+                添加信息模板
               </Button>
             </div>
           )}
@@ -204,7 +216,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
 
       {/* ====== 编辑弹窗 ====== */}
       <ScrollableModal
-        title={editingGroup ? `编辑附加信息 — ${editingGroup.name}` : '添加报名信息模板'}
+        title={editingGroup ? '编辑信息模板' : '新建信息模板'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         width={750}
@@ -224,7 +236,7 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
             <div style={{ marginBottom: 4, fontSize: 13, color: '#666' }}>模板名称</div>
             <Input
               autoFocus
-              placeholder={value.mode === 'unified' ? '如：报名信息' : '如：成人、儿童'}
+              placeholder={value.mode === 'unified' ? '如：信息模板' : '如：成人、儿童'}
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
               maxLength={32}
@@ -286,9 +298,20 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
                   )}
                   <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, whiteSpace: 'nowrap' }}>
                     <input type="checkbox" checked={field.required} style={{ margin: 0 }}
+                      disabled={field.label === '身份证号' && !!(field.idcardRestrict)}
                       onChange={(e) => updateField(field.key, { required: e.target.checked })} />
                     必填
                   </label>
+                  {/* 身份证号附加限制 */}
+                  {field.label === '身份证号' && (
+                    <Select
+                      size="small"
+                      value={field.idcardRestrict || ''}
+                      style={{ width: 130 }}
+                      options={IDCARD_RESTRICT_OPTIONS}
+                      onChange={(v) => updateField(field.key, { idcardRestrict: v as IdcardRestrict, required: !!v || field.required })}
+                    />
+                  )}
                 </div>
 
                 {/* 选项（单选/多选，用 | 分割） */}

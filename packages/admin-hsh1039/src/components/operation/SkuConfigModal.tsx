@@ -9,10 +9,12 @@ export interface SkuConfigModalProps {
   productTitle: string;
   onClose: () => void;
   onSuccess?: () => void;
+  ticketMode?: boolean;
+  productMode?: boolean;
 }
 
 const SkuConfigModal: React.FC<SkuConfigModalProps> = ({
-  visible, productId, productTitle, onClose, onSuccess,
+  visible, productId, productTitle, onClose, onSuccess, ticketMode, productMode,
 }) => {
   const wizardRef = useRef<SkuConfigWizardHandle>(null);
   const [step, setStep] = useState(0);
@@ -66,6 +68,8 @@ const SkuConfigModal: React.FC<SkuConfigModalProps> = ({
         productId={productId}
         onSaved={onSuccess}
         onStepChange={setStep}
+        ticketMode={ticketMode}
+        productMode={productMode}
       />
     </ScrollableModal>
   );

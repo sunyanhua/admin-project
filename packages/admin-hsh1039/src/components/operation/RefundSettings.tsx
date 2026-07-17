@@ -31,6 +31,9 @@ export interface RefundSettingsProps {
   onChange: (data: RefundSettingsData) => void;
   step2Skus?: { key: string; spec_indices: string; specText: string; dateValue?: string }[];
   wizardSpecs?: { name: string; values: { value: string }[]; is_time_type?: boolean }[];
+  /** 票务模式：仅允许不退款/随时退两种模式 */
+  ticketMode?: boolean;
+  productMode?: boolean;
 }
 
 // ==================== 规则描述 ====================
@@ -158,7 +161,7 @@ const RuleEditModal: React.FC<{
 
 // ==================== RefundSettings 主组件 ====================
 
-const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2Skus, wizardSpecs }) => {
+const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2Skus, wizardSpecs, productMode, ticketMode }) => {
   const [rules, setRules] = useState<RefundRule[]>([]);
   const [loadingRules, setLoadingRules] = useState(false);
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
@@ -259,13 +262,17 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
     <>
       <Radio.Group value={value.mode} onChange={(e) => handleModeChange(e.target.value)} style={{ marginBottom: 16 }}>
         <Radio.Button value="none">不退款</Radio.Button>
-        <Radio.Button value="anytime">随时退</Radio.Button>
-        <Radio.Button value="deadline">指定日期前退</Radio.Button>
-        <Radio.Button value="staged">阶梯退</Radio.Button>
+        {(productMode ? null : <Radio.Button value="anytime">随时退</Radio.Button>)}
+        {!ticketMode && !productMode && (
+          <>
+            <Radio.Button value="deadline">指定日期前退</Radio.Button>
+            <Radio.Button value="staged">阶梯退</Radio.Button>
+          </>
+        )}
       </Radio.Group>
 
-      {value.mode === 'none' && <div style={{ color: '#999', fontSize: 12 }}>该活动不支持退款。</div>}
-      {value.mode === 'anytime' && <div style={{ color: '#999', fontSize: 12 }}>用户在活动开始前可随时申请全额退款。</div>}
+      {value.mode === 'none' && <div style={{ color: '#999', fontSize: 12 }}>{(productMode ? '不支持线上直接退款。' : ticketMode ? '该票务不支持退款。' : '该活动不支持退款。')}</div>}
+      {value.mode === 'anytime' && <div style={{ color: '#999', fontSize: 12 }}>{ticketMode ? '用户在票未核销前可随时退款。' : '用户在活动开始前可随时申请全额退款。'}</div>}
 
       {(value.mode === 'deadline' || value.mode === 'staged') && (
         <div style={{ marginTop: 4 }}>

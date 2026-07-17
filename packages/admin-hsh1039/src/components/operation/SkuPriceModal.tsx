@@ -25,6 +25,10 @@ type SkuEdits = {
 export interface SkuPriceModalProps {
   visible: boolean; productId: number; productTitle: string;
   onClose: () => void; onSuccess?: () => void; onEnterFullConfig?: () => void;
+  /** 票务模式：隐藏限额列、免费按钮、价格最小值0.01 */
+  ticketMode?: boolean;
+  /** 商品模式：同票务（无免费）+ 库存列可见(标签"库存") + 隐藏报名期限 */
+  productMode?: boolean;
 }
 
 // ==================== 单 SKU 完整编辑弹窗 ====================
@@ -32,7 +36,9 @@ export interface SkuPriceModalProps {
 const SkuFullEditModal: React.FC<{
   open: boolean; sku: SkuItem | null; productGroups: any[];
   onClose: () => void; onApply: (key: string, edits: SkuEdits) => void;
-}> = ({ open, sku, productGroups, onClose, onApply }) => {
+  ticketMode?: boolean;
+  productMode?: boolean;
+}> = ({ open, sku, productGroups, onClose, onApply, ticketMode, productMode }) => {
   const [price, setPrice] = useState(0);
   const [stock, setStock] = useState(0);
   const [status, setStatus] = useState(1);
@@ -83,21 +89,24 @@ const SkuFullEditModal: React.FC<{
           <div>
             <div style={{ fontSize: 13, marginBottom: 4 }}>价格(元)</div>
             <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <InputNumber min={0} precision={2} value={price} prefix="￥" style={{ flex: 1 }}
+              <InputNumber min={(ticketMode || productMode) ? 0.01 : 0} precision={2} value={price} prefix="￥" style={{ flex: 1 }}
                 onChange={(v) => setPrice(v ?? 0)} />
-              <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px' }} onClick={() => setPrice(0)}>免费</Button>
+              {!(ticketMode || productMode) && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px' }} onClick={() => setPrice(0)}>免费</Button>}
             </span>
           </div>
-          <div>
-            <div style={{ fontSize: 13, marginBottom: 4 }}>限额</div>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <InputNumber min={0} precision={0} value={stock} style={{ flex: 1 }} placeholder="不限"
-                onChange={(v) => setStock(v ?? 0)} />
-              <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px' }} onClick={() => setStock(99999)}>不限</Button>
-            </span>
-          </div>
+          {!ticketMode && (
+            <div>
+              <div style={{ fontSize: 13, marginBottom: 4 }}>{productMode ? '库存' : '限额'}</div>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <InputNumber min={0} precision={0} value={stock} style={{ flex: 1 }} placeholder="不限"
+                  onChange={(v) => setStock(v ?? 0)} />
+                {!productMode && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px' }} onClick={() => setStock(99999)}>不限</Button>}
+              </span>
+            </div>
+          )}
         </div>
 
+        {!(ticketMode || productMode) && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 13, marginBottom: 4 }}>开始时间</div>
@@ -108,23 +117,31 @@ const SkuFullEditModal: React.FC<{
             <DatePicker showTime value={expiry} placeholder="不限" style={{ width: '100%' }} onChange={(v) => setExpiry(v)} />
           </div>
         </div>
+        )}
 
         {productGroups.length > 0 && (
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>报名信息</div>
-            {productGroups.map((g: any) => (
-              <div key={g.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '6px 8px', background: '#fafafa', borderRadius: 4 }}>
-                <div>
-                  <div style={{ fontWeight: 500, fontSize: 13 }}>{g.name}</div>
-                  <div style={{ fontSize: 11, color: '#999' }}>
-                    {(g.config || []).map((f: any) => f.label || f.name || '?').join('、')}
+            <div style={{ fontSize: 13, marginBottom: 4 }}>{(productMode ? '购买信息' : ticketMode ? '购票信息' : '报名信息')}</div>
+            <div style={{ border: '1px solid #d9d9d9', borderRadius: 6, overflow: 'hidden' }}>
+              {productGroups.map((g: any, idx: number) => (
+                <div key={g.name} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  background: '#fff',
+                  borderBottom: idx < productGroups.length - 1 ? '1px solid #f0f0f0' : 'none',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13 }}>{g.name}</div>
+                    <div style={{ fontSize: 11, color: '#999' }}>
+                      {(g.config || []).map((f: any) => f.label || f.name || '?').join('、')}
+                    </div>
                   </div>
+                  <InputNumber min={0} max={99} size="small" style={{ width: 60 }}
+                    value={counts[g.name] ?? 0}
+                    onChange={(v) => setCounts((prev) => ({ ...prev, [g.name]: v ?? 0 }))} />
                 </div>
-                <InputNumber min={0} max={99} size="small" style={{ width: 60 }}
-                  value={counts[g.name] ?? 0}
-                  onChange={(v) => setCounts((prev) => ({ ...prev, [g.name]: v ?? 0 }))} />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
@@ -140,7 +157,7 @@ const SkuFullEditModal: React.FC<{
 // ==================== 轻量配置主弹窗 ====================
 
 const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
-  visible, productId, productTitle, onClose, onSuccess, onEnterFullConfig,
+  visible, productId, productTitle, onClose, onSuccess, onEnterFullConfig, ticketMode, productMode,
 }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -166,7 +183,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
   const [batchUsableTime, setBatchUsableTime] = useState<Dayjs | null>(null);
   const [batchExpiryDays, setBatchExpiryDays] = useState<number>(0);
   const [batchExpiryTime, setBatchExpiryTime] = useState<Dayjs | null>(null);
-  // 批量设置 — 报名信息
+  // 批量设置 — 信息模板
   const [baEnabled, setBaEnabled] = useState<Record<string, boolean>>({});
   const [baValues, setBaValues] = useState<Record<string, number>>({});
 
@@ -380,25 +397,27 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
       title: '价格(元)', dataIndex: 'price', key: 'price', width: 160,
       render: (v: number, r: SkuItem) => (
         <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <InputNumber min={0} precision={2} value={v} prefix="￥" style={{ width: 110 }}
+          <InputNumber min={(ticketMode || productMode) ? 0.01 : 0} precision={2} value={v} prefix="￥" style={{ width: 110 }}
             onChange={(val) => updateSkuField(r.key, { price: val ?? 0 })} />
-          <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
-            onClick={() => updateSkuField(r.key, { price: 0 })}>免费</Button>
+          {!(ticketMode || productMode) && (
+            <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
+              onClick={() => updateSkuField(r.key, { price: 0 })}>免费</Button>
+          )}
         </span>
       ),
     },
-    {
-      title: '限额', dataIndex: 'stock', key: 'stock', width: 140,
+    ...(ticketMode ? [] : [{
+      title: productMode ? '库存' : '限额', dataIndex: 'stock', key: 'stock', width: 140,
       render: (v: number, r: SkuItem) => (
         <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <InputNumber min={0} precision={0} value={v} style={{ width: 80 }} placeholder="不限"
             onChange={(val) => updateSkuField(r.key, { stock: val ?? 0 })} />
-          <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
-            onClick={() => updateSkuField(r.key, { stock: 99999 })}>不限</Button>
+          {!productMode && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
+            onClick={() => updateSkuField(r.key, { stock: 99999 })}>不限</Button>}
         </span>
       ),
-    },
-    {
+    }]),
+    ...((ticketMode || productMode) ? [] : [{
       title: '报名期限', key: 'time', width: 150,
       render: (_: any, r: SkuItem) => {
         const d = displaySkus.find((dd) => dd.key === r.key);
@@ -411,9 +430,9 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
           </div>
         );
       },
-    },
+    }]),
     {
-      title: '报名信息', key: 'afc', width: 140,
+      title: productMode ? '购买信息' : ticketMode ? '购票信息' : '报名信息', key: 'afc', width: 140,
       render: (_: any, r: SkuItem) => {
         const d = displaySkus.find((dd) => dd.key === r.key);
         return (
@@ -462,14 +481,17 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
                 <input type="checkbox" checked={bpEnabled.price} style={{ marginRight: 4 }}
                   onChange={(e) => setBpEnabled((prev) => ({ ...prev, price: e.target.checked }))} /> 价格
               </label>
-              <label style={{ fontSize: 13, cursor: 'pointer' }}>
-                <input type="checkbox" checked={bpEnabled.stock} style={{ marginRight: 4 }}
-                  onChange={(e) => setBpEnabled((prev) => ({ ...prev, stock: e.target.checked }))} /> 限额
-              </label>
+              {!ticketMode && (
+                <label style={{ fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={bpEnabled.stock} style={{ marginRight: 4 }}
+                    onChange={(e) => setBpEnabled((prev) => ({ ...prev, stock: e.target.checked }))} /> {productMode ? '库存' : '限额'}
+                </label>
+              )}
               <label style={{ fontSize: 13, cursor: 'pointer' }}>
                 <input type="checkbox" checked={bpEnabled.status} style={{ marginRight: 4 }}
                   onChange={(e) => setBpEnabled((prev) => ({ ...prev, status: e.target.checked }))} /> 上架
               </label>
+              {!(ticketMode || productMode) && (<>
               <label style={{ fontSize: 13, cursor: 'pointer' }}>
                 <input type="checkbox" checked={btEnabled.usable} style={{ marginRight: 4 }}
                   onChange={(e) => setBtEnabled((prev) => ({ ...prev, usable: e.target.checked }))} /> 开始时间
@@ -478,6 +500,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
                 <input type="checkbox" checked={btEnabled.expiry} style={{ marginRight: 4 }}
                   onChange={(e) => setBtEnabled((prev) => ({ ...prev, expiry: e.target.checked }))} /> 截止时间
               </label>
+              </>)}
               {productGroups.map((g) => (
                 <label key={g.name} style={{ fontSize: 13, cursor: 'pointer' }}>
                   <input type="checkbox" checked={baEnabled[g.name] || false} style={{ marginRight: 4 }}
@@ -513,18 +536,21 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
               <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <InputNumber min={0} precision={2} value={batchPrice} prefix="价格￥" disabled={!bpEnabled.price}
                   style={{ flex: 1, opacity: bpEnabled.price ? 1 : 0.5 }} placeholder="价格" onChange={(v) => setBatchPrice(v ?? 0)} />
-                {bpEnabled.price && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }} onClick={() => setBatchPrice(0)}>免费</Button>}
+                {!(ticketMode || productMode) && bpEnabled.price && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }} onClick={() => setBatchPrice(0)}>免费</Button>}
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <InputNumber min={0} precision={0} value={batchStock} prefix="限额" disabled={!bpEnabled.stock}
-                  style={{ flex: 1, opacity: bpEnabled.stock ? 1 : 0.5 }} placeholder="不限" onChange={(v) => setBatchStock(v ?? 0)} />
-                {bpEnabled.stock && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }} onClick={() => setBatchStock(99999)}>不限</Button>}
-              </span>
+              {!ticketMode && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <InputNumber min={0} precision={0} value={batchStock} prefix={productMode ? '库存' : '限额'} disabled={!bpEnabled.stock}
+                    style={{ flex: 1, opacity: bpEnabled.stock ? 1 : 0.5 }} placeholder="不限" onChange={(v) => setBatchStock(v ?? 0)} />
+                  {!productMode && bpEnabled.stock && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }} onClick={() => setBatchStock(99999)}>不限</Button>}
+                </span>
+              )}
               <Select value={batchStatus} disabled={!bpEnabled.status} style={{ opacity: bpEnabled.status ? 1 : 0.5 }}
                 options={[{ label: '上架', value: 1 }, { label: '下架', value: 0 }]} onChange={(v) => setBatchStatus(v)} />
             </div>
 
             {/* 报名期限 */}
+            {!(ticketMode || productMode) && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 8 }}>
               <div style={{ opacity: btEnabled.usable ? 1 : 0.5 }}>
                 {hasDateSpec && (
@@ -567,11 +593,12 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
                 )}
               </div>
             </div>
+            )}
 
-            {/* 报名信息 — 标题与开始/截止时间对齐 */}
+            {/* 信息模板 — 标题与开始/截止时间对齐 */}
             {productGroups.length > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: '#666' }}>报名信息</span>
+                <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: '#666' }}>{(productMode ? '购买信息' : ticketMode ? '购票信息' : '报名信息')}</span>
                 <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                 {productGroups.map((g) => (
                   <InputNumber key={g.name} min={0} max={99}
@@ -597,7 +624,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
         </div>
 
         <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.8 }}>
-          <div>点击"报名期限"或"报名信息"列可编辑单条SKU，点击"保存配置"提交所有修改。</div>
+          <div>{ticketMode ? '点击"购票信息"列可编辑单条SKU，点击"保存配置"提交所有修改。' : '点击"报名期限"或"信息模板"列可编辑单条SKU，点击"保存配置"提交所有修改。'}</div>
           <div>
             如需进行更多配置（如修改规格项目组合、调整报名有效期或信息模板、更新退款规则等），请点击{' '}
             <Button type="link" size="small" style={{ padding: 0, fontSize: 13 }} onClick={handleModifyCombo}>高级配置管理</Button>。
@@ -609,6 +636,8 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
         open={!!editSku} sku={editSku} productGroups={productGroups}
         onClose={() => setEditSku(null)}
         onApply={handleSingleEditApply}
+        ticketMode={ticketMode}
+        productMode={productMode}
       />
     </>
   );

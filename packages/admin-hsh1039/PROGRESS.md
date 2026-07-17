@@ -12,7 +12,7 @@
 **不触发**：单文件小修、文案调整、样式微调。
 
 **更新方式**：
-1. `git commit` 提交改动，commit message 用简洁的动词短语描述（如 `feat: 全站图片缩略图接入`）
+1. `git commit` 提交改动，commit message 用简洁的动词短语描述
 2. 将 commit hash 写入本文件对应条目的 `commit` 列
 3. 更新 `最后更新` 日期
 
@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-07-16**
+**2026-07-17**
 
 ---
 
@@ -34,6 +34,9 @@
 ### 运营管理
 - 运营分类管理、活动分类管理、活动发布、轮播图管理、协议文档、FAQ管理
 - 活动管理（含规格/SKU 配置向导、价格快捷配置、退款设置）
+- **退款规则管理**（新增，super_admin 专属）
+- **票务销售**（新增，root_category_id=2 隔离，含票务分类管理）
+- **商品销售**（新增，root_category_id=3 隔离，含商品分类管理）
 
 ### 社区管理
 - 用户列表、动态管理、评论管理、话题管理
@@ -55,10 +58,10 @@
 | 角色管理 | `/admin/v1/roles` | |
 | 权限分配 | `/admin/v1/permissions`、`/admin/v1/roles/:id/permissions` | |
 | 分类管理 | `/admin/v1/mall/categories` | |
-| 商品（活动）管理 | `/admin/v1/mall/products` | is_virtual=true |
+| 商品（活动）管理 | `/admin/v1/mall/products` | 支持 root_category_id 隔离 |
 | 规格管理 | `/admin/v1/mall/products/:id/specs` | |
 | SKU 管理 | `/admin/v1/mall/products/:id/skus` | |
-| 退款规则 | `/admin/v1/mall/refund-rules` | |
+| 退款规则 | `/admin/v1/mall/refund-rules` | 含 CRUD + 显隐控制 |
 | 图片上传 | `POST /admin/v1/upload/image` | vbegin CDN |
 | 日志 | `/admin/v1/logs/audit`、`/admin/v1/logs/my` | |
 
@@ -68,10 +71,15 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
-| 2026-07-16 | 图片缩略图全站接入 | 16 文件，新增 imageUtils，vbegin CDN 统一走缩略图 | _(待提交)_ |
-| 2026-07-16 | 表格列排列标准统一 | 23 文件，55 处修改，全站列定义合规 | _(待提交)_ |
-| 2026-07-16 | 产品 specs 日期类型互斥 | SkuConfigPanel 强制唯一日期 spec | _(待提交)_ |
-| 2026-07-16 | CLAUDE.md 精简 + 进度/标准文档重构 | 根 328→131 行，项目 232→69 行，dev-standards 补充 §14~§21，新增 progress.md | _(待提交)_ |
+| 2026-07-16 | 图片缩略图全站接入 | 16 文件，新增 imageUtils | 65b1342 |
+| 2026-07-16 | 表格列排列标准统一 | 23 文件，55 处修改 | 65b1342 |
+| 2026-07-16 | 产品 specs 日期类型互斥 | SkuConfigPanel 强制唯一日期 spec | 65b1342 |
+| 2026-07-16 | CLAUDE.md 精简 + 进度/标准文档重构 | 根 328→130 行，项目 232→69 行 | 65b1342 |
+| 2026-07-16 | 退款配置重构 | refund_type 字段 0/1/2/3，新增退款规则管理页面 | 65b1342 |
+| 2026-07-17 | 票务销售模块 | 新建 TicketManagement/TicketWizard/TicketEdit，共享组件增加 ticketMode | 65b1342 |
+| 2026-07-17 | 商品销售模块 | 新建 ProductManagement/ProductWizard/ProductEdit，共享组件增加 productMode | 65b1342 |
+| 2026-07-17 | 信息模板增强 | 新增"身份证号"预设字段 + idcardRestrict 附加限制 | 65b1342 |
+| 2026-07-17 | 文档标准完善 | 搜索交互、列排列、缩略图规则写入 CLAUDE.md + dev-standards.md | 65b1342 |
 
 ---
 

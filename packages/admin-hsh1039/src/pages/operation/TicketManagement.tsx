@@ -10,20 +10,20 @@ import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import EventEditModal from '@/components/operation/EventEditModal';
+import TicketEditModal from '@/components/operation/TicketEditModal';
 import SkuConfigModal from '@/components/operation/SkuConfigModal';
 import SkuPriceModal from '@/components/operation/SkuPriceModal';
-import EventWizardModal from '@/components/operation/EventWizardModal';
+import TicketWizardModal from '@/components/operation/TicketWizardModal';
 
 interface CategoryOption {
   id: number;
   name: string;
 }
 
-const EventManagement = () => {
+const TicketManagement = () => {
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<Product | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<Product | null>(null);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
   const [values, setValues] = useState<Record<string, any>>({});
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -38,26 +38,26 @@ const EventManagement = () => {
     setLoadingDetail(true);
     try {
       const detail: any = await productApi.getProductDetail(record.id);
-      setSelectedEvent(detail || record);
+      setSelectedTicket(detail || record);
     } catch {
-      setSelectedEvent(record);
+      setSelectedTicket(record);
     } finally {
       setLoadingDetail(false);
       setEditModalVisible(true);
     }
   };
 
-  // 加载活动分类（id=1 的子节点）
+  // 加载票务分类（id=2 的子节点）
   useEffect(() => {
     categoryApi.getMallCategories().then((res: any) => {
       const nodes: any[] = Array.isArray(res) ? res : (res?.list || []);
-      const root = nodes.find((n: any) => n.id === 1);
+      const root = nodes.find((n: any) => n.id === 2);
       setCategoryOptions(root?.children || []);
     }).catch(() => setCategoryOptions([]));
   }, []);
 
-  const fetchEvents = useCallback(async (params: any) => {
-    return productApi.getProducts({ ...params, root_category_id: 1 });
+  const fetchTickets = useCallback(async (params: any) => {
+    return productApi.getProducts({ ...params, root_category_id: 2 });
   }, []);
 
   const formatResponse = useCallback((res: any) => ({
@@ -66,7 +66,7 @@ const EventManagement = () => {
   }), []);
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<Product>({
-    fetchFn: fetchEvents,
+    fetchFn: fetchTickets,
     formatResponse: formatResponse,
   });
 
@@ -96,7 +96,7 @@ const EventManagement = () => {
       type: 'select',
       options: categoryOptions.map((c) => ({ label: c.name, value: c.id })),
     },
-    { name: 'keyword', placeholder: '搜索活动名称', type: 'input' },
+    { name: 'keyword', placeholder: '搜索票务名称', type: 'input' },
   ];
 
   const handleChange = (name: string, value: any) => {
@@ -106,7 +106,7 @@ const EventManagement = () => {
   const handleReset = () => { setValues({}); search({}); };
 
   const columns: ColumnsType<Product> = [
-    { title: '活动名称', dataIndex: 'title', key: 'title' },
+    { title: '票务名称', dataIndex: 'title', key: 'title' },
     {
       title: '上架/下架', dataIndex: 'is_listed', key: 'is_listed', width: 100,
       render: (v: boolean, r: Product) => (
@@ -153,36 +153,37 @@ const EventManagement = () => {
   return (
     <>
       <StandardPage
-        title="活动发布"
-        description="管理平台活动，支持上下架、显隐控制。"
+        title="票务销售"
+        description="管理平台票务，支持上下架、显隐控制。"
         showRefreshButton onRefresh={refresh}
         searchArea={<SearchPanel filters={filters} values={values} onChange={handleChange} onSearch={handleSearch} onReset={handleReset} />}
         showAddButton
         onAdd={() => setWizardVisible(true)}
-        addButtonText="添加活动"
+        addButtonText="添加票务"
         table={<StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />}
       />
-      <EventEditModal visible={editModalVisible} mode={editMode} event={selectedEvent}
+      <TicketEditModal visible={editModalVisible} mode={editMode} event={selectedTicket}
         categoryOptions={categoryOptions} loadingDetail={loadingDetail}
-        onClose={() => { setEditModalVisible(false); setSelectedEvent(null); }} onSuccess={refresh} />
+        onClose={() => { setEditModalVisible(false); setSelectedTicket(null); }} onSuccess={refresh} />
 
       <SkuPriceModal visible={priceModalVisible}
         productId={configProduct?.id || 0} productTitle={configProduct?.title || ''}
         onClose={() => { setPriceModalVisible(false); setConfigProduct(null); }}
         onSuccess={refresh}
+        ticketMode
         onEnterFullConfig={() => {
           setPriceModalVisible(false);
           setConfigModalVisible(true);
         }} />
 
-      <SkuConfigModal visible={configModalVisible}
+      <SkuConfigModal visible={configModalVisible} ticketMode
         productId={configProduct?.id || 0} productTitle={configProduct?.title || ''}
         onClose={() => { setConfigModalVisible(false); setConfigProduct(null); }} onSuccess={refresh} />
 
-      <EventWizardModal visible={wizardVisible} categoryOptions={categoryOptions}
+      <TicketWizardModal visible={wizardVisible} categoryOptions={categoryOptions}
         onClose={() => setWizardVisible(false)} onSuccess={refresh} />
     </>
   );
 };
 
-export default EventManagement;
+export default TicketManagement;

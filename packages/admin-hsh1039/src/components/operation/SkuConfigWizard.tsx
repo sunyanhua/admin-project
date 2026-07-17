@@ -44,10 +44,13 @@ export interface SkuConfigWizardProps {
   onSaved?: () => void;
   /** 步数变化回调 */
   onStepChange?: (step: number) => void;
+  /** 票务模式：隐藏报名期限、退款仅支持不退款/随时退、stock默认99999、不设置usable/expiry */
+  ticketMode?: boolean;
+  productMode?: boolean;
 }
 
 const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(function SkuConfigWizard({
-  productId, stepLabels, onSaved, onStepChange,
+  productId, stepLabels, onSaved, onStepChange, ticketMode, productMode,
 }, ref) {
   const [current, setCurrent] = useState(0);
   const panelRef = useRef<SkuConfigPanelHandle>(null);
@@ -78,9 +81,9 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const [extraInfo, setExtraInfo] = useState<ExtraInfoData>({ mode: 'none', groups: [] });
   // 退款设置
   const [refundSettings, setRefundSettings] = useState<RefundSettingsData>({ mode: 'none', deadlineMode: 'unified', skuDeadlines: {} });
-  // 各 SKU 的附加信息配置（仅 individual 模式）：spec_indices → [{groupKey, count}]
+  // 各 SKU 的信息模板配置（仅 individual 模式）：spec_indices → [{groupKey, count}]
   const [extraFieldSkus, setExtraFieldSkus] = useState<Record<string, { groupKey: string; count: number }[]>>({});
-  // 附加信息分配批量设置
+  // 信息模板批量设置
   const [efBatchMode, setEfBatchMode] = useState(false);
   const [efBatchSelectedKeys, setEfBatchSelectedKeys] = useState<string[]>([]);
   const [efBatchEnabled, setEfBatchEnabled] = useState<Record<string, boolean>>({});
@@ -106,7 +109,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     if (!raw || !Array.isArray(raw) || raw.length === 0) {
       return { mode: 'none', groups: [] };
     }
-    const presetNames = ['姓名', '手机号', '性别', '年龄', '工作单位'];
+    const presetNames = ['姓名', '手机号', '性别', '年龄', '工作单位', '身份证号'];
     let gk = 0;
     const groups: ExtraInfoGroup[] = raw.map((g: any) => ({
       key: `g_restore_${++gk}_${Date.now()}`,
@@ -119,6 +122,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         format: f.format || '',
         options: f.options || undefined,
         preset: presetNames.includes(f.label),
+        idcardRestrict: f.idcardRestrict || ('' as any),
       })),
     }));
     return { mode: groups.length === 1 ? 'unified' : 'individual', groups };
@@ -139,10 +143,12 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       setRefundSettings({ mode: 'none', deadlineMode: 'unified', skuDeadlines: {} });
       productApi.getProductDetail(productId).then((detail: any) => {
         setIsListed(detail?.is_listed === true);
-        if (detail?.usable) setUnifiedUsable(dayjs(detail.usable));
-        else setUnifiedUsable(null);
-        if (detail?.expiry) setUnifiedExpiry(dayjs(detail.expiry));
-        else setUnifiedExpiry(null);
+        if (!ticketMode && !productMode) {
+          if (detail?.usable) setUnifiedUsable(dayjs(detail.usable));
+          else setUnifiedUsable(null);
+          if (detail?.expiry) setUnifiedExpiry(dayjs(detail.expiry));
+          else setUnifiedExpiry(null);
+        }
         // 还原已保存的报名信息模板
         setExtraInfo(parseExtraInfoFromProduct(detail));
       }).catch(() => {});
@@ -205,7 +211,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           return (val?.id ? String(val.id) : String(vi >= 0 ? vi : i));
         }).join('_');
         specTextToIndices.set(specText, indices);
-        const existing = state.loadedSkus.find((s) => s.spec_indices === indices);
+        const existing = state.loadedSkus.find((s: SkuRow) => s.spec_indices === indices);
         const edits = state.editedSkus[specText] || {};
         fullData[specText] = {
           price: edits.price ?? existing?.price ?? 0,
@@ -241,7 +247,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         for (const [specText, indices] of specTextToIndices.entries()) {
           const existingSku = skuArr.find((s: any) => (s.spec_indices || '') === indices);
           if (!existingSku) continue;
-          if (existingSku.usable || existingSku.expiry) {
+          if (!(ticketMode || productMode) && (existingSku.usable || existingSku.expiry)) {
             initStep2[indices] = { usable: existingSku.usable || null, expiry: existingSku.expiry || null };
             hasSkuDates = true;
           }
@@ -261,15 +267,17 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         setExtraFieldSkus(initExtraFields);
 
         // 恢复报名期限模式：product 有值 → 统一模式，否则 SKU 有值 → 单独模式
-        const productHasDates = !!(productDetail?.usable || productDetail?.expiry);
-        if (productHasDates) {
-          setExpiryMode('unified');
-          setUnifiedUsable(productDetail?.usable ? dayjs(productDetail.usable) : null);
-          setUnifiedExpiry(productDetail?.expiry ? dayjs(productDetail.expiry) : null);
-        } else if (hasSkuDates) {
-          setExpiryMode('individual');
-          setUnifiedUsable(null);
-          setUnifiedExpiry(null);
+        if (!ticketMode && !productMode) {
+          const productHasDates = !!(productDetail?.usable || productDetail?.expiry);
+          if (productHasDates) {
+            setExpiryMode('unified');
+            setUnifiedUsable(productDetail?.usable ? dayjs(productDetail.usable) : null);
+            setUnifiedExpiry(productDetail?.expiry ? dayjs(productDetail.expiry) : null);
+          } else if (hasSkuDates) {
+            setExpiryMode('individual');
+            setUnifiedUsable(null);
+            setUnifiedExpiry(null);
+          }
         }
 
         // 恢复上架状态
@@ -368,11 +376,11 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const handleFinish = async (): Promise<boolean> => {
     if (!productId) return false;
 
-    // 统一模式必须且仅需1个报名信息模板
+    // 统一模式必须且仅需1个信息模板
     if (extraInfo.mode === 'unified' && extraInfo.groups.length !== 1) {
       warning(extraInfo.groups.length === 0
-        ? '全部项目统一下，请先添加一个报名信息模板'
-        : '全部项目统一下，仅需一个报名信息模板，请删除多余模板');
+        ? '全部项目统一下，请先添加一个信息模板'
+        : '全部项目统一下，仅需一个信息模板，请删除多余模板');
       return false;
     }
 
@@ -447,7 +455,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         }
 
         const valueArrays = freshList.map((s: any) => (s.values || []).map((v: any) => v.value || '?'));
-        // 附加信息 — 统一模式取全部 groups，单独模式按 SKU 各自配置+数量展开
+        // 信息模板 — 统一模式取全部 groups，单独模式按 SKU 各自配置+数量展开
         const isExtraUnified = extraInfo.mode === 'unified';
         const unifiedExtraFields = isExtraUnified
           ? extraInfo.groups.map((g) => ({
@@ -463,7 +471,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
         const skuList: {
           price: number; spec_indices: string; stock?: number; status?: number;
-          usable?: string | null; expiry?: string | null; refund_base_time?: string;
+          usable?: string; expiry?: string; refund_base_time?: string;
           additional_fields_config?: any;
         }[] = [];
 
@@ -485,17 +493,19 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           const wEdits = wizardEditedSkus[specText];
           const existing = existingByText.get(specText);
           const price = wEdits?.price ?? existing?.price ?? 0;
-          const stock = wEdits?.stock ?? existing?.stock ?? 0;
+          const stock = ticketMode ? 99999 : (wEdits?.stock ?? existing?.stock ?? 0);
           const status = wEdits?.status ?? existing?.status ?? 1;
 
           let usable: string | null = null, expiry: string | null = null;
-          if (expiryMode === 'unified') {
-            usable = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
-            expiry = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
-          } else {
-            const s2e = textToStep2.get(specText) || {};
-            usable = s2e.usable || null;
-            expiry = s2e.expiry || null;
+          if (!ticketMode) {
+            if (expiryMode === 'unified') {
+              usable = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+              expiry = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+            } else {
+              const s2e = textToStep2.get(specText) || {};
+              usable = s2e.usable || null;
+              expiry = s2e.expiry || null;
+            }
           }
 
           // SKU refund_base_time（用 step2Indices 查 skuDeadlines，保持 key 格式一致）
@@ -509,7 +519,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
               skuRefundBaseTime = refundSettings.skuDeadlines[step2Indices] || '';
             }
           }
-          // 附加信息配置
+          // 信息模板配置
           let afc = null;
           if (unifiedExtraFields) {
             afc = unifiedExtraFields;
@@ -531,8 +541,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           }
 
           const skuItem: any = { spec_indices: idParts.join('_'), price, stock, status, additional_fields_config: afc };
-          if (usable) skuItem.usable = usable;
-          if (expiry) skuItem.expiry = expiry;
+          if (ticketMode || productMode) { skuItem.usable = ''; skuItem.expiry = ''; }
+          else { if (usable) skuItem.usable = usable; if (expiry) skuItem.expiry = expiry; }
           if (refundSettings.mode !== 'none') skuItem.refund_base_time = skuRefundBaseTime;
           skuList.push(skuItem);
         }
@@ -564,8 +574,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       }
 
       await productApi.updateProduct(productId, {
-        usable: expiryMode === 'unified' ? (unifiedUsableStr || '') : '',
-        expiry: expiryMode === 'unified' ? (unifiedExpiryStr || '') : '',
+        usable: (ticketMode || productMode) ? '' : (expiryMode === 'unified' ? (unifiedUsableStr || '') : ''),
+        expiry: (ticketMode || productMode) ? '' : (expiryMode === 'unified' ? (unifiedExpiryStr || '') : ''),
         additional_fields_config: extraInfo.mode !== 'none' && extraInfo.groups.length > 0
           ? extraInfo.groups.map(toStorageGroup)
           : null,
@@ -602,18 +612,19 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   // ---- Step 2 SKU 表格列 ----
   const skuColumns: ColumnsType<Step2SkuRow> = [
     { title: '规格组合', dataIndex: 'specText', key: 'specText', width: 200 },
-    { title: '开始时间', dataIndex: 'usable', key: 'usable', width: 200,
+    ...((ticketMode || productMode) ? [] : [{
+      title: '开始时间', dataIndex: 'usable' as const, key: 'usable', width: 200,
       render: (v: string | undefined, r: Step2SkuRow) => (
         <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
           onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'usable', typeof dateStr === 'string' ? dateStr : null)} />
       ),
     },
-    { title: '截止时间', dataIndex: 'expiry', key: 'expiry', width: 200,
+    { title: '截止时间', dataIndex: 'expiry' as const, key: 'expiry', width: 200,
       render: (v: string | undefined, r: Step2SkuRow) => (
         <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
           onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'expiry', typeof dateStr === 'string' ? dateStr : '')} />
       ),
-    },
+    }]),
   ];
 
   // ---- 渲染 ----
@@ -621,7 +632,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     <>
       {/* ====== 项目配置 ====== */}
       {current === 0 && (
-        <SkuConfigPanel ref={panelRef} productId={productId} initialState={panelInitialState} />
+        <SkuConfigPanel ref={panelRef} productId={productId} initialState={panelInitialState} ticketMode={ticketMode} productMode={productMode} />
       )}
 
       {/* ====== 上架管理 ====== */}
@@ -629,6 +640,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         <div style={{ padding: '0 4px' }}>
 
           {/* ====== 报名期限 ====== */}
+          {!(ticketMode || productMode) && (
           <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
             <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>报名期限</div>
             <Radio.Group value={expiryMode} onChange={(e) => setExpiryMode(e.target.value)} style={{ marginBottom: expiryMode === 'unified' ? 0 : 12 }}>
@@ -753,19 +765,20 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
               </div>
             )}
           </div>
+          )}
 
-          <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+          {!(ticketMode || productMode) && <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />}
 
           {/* ====== 报名信息 ====== */}
           <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>报名信息</div>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>{(productMode ? '购买信息' : ticketMode ? '购票信息' : '报名信息')}</div>
             <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
 
-            {/* SKU 附加信息配置表格（仅"各项目单独设置"时显示） */}
+            {/* SKU 信息模板配置表格（仅"各项目单独设置"时显示） */}
             {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
               <div style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <span style={{ fontWeight: 600, fontSize: 13 }}>SKU 报名信息配置（{step2Skus.length} 种）</span>
+                    <span style={{ fontWeight: 600, fontSize: 13 }}>SKU {(productMode ? '购买' : ticketMode ? '购票' : '报名')}信息配置（{step2Skus.length} 种）</span>
                     <Button type="link" size="small" onClick={() => {
                       const next = !efBatchMode;
                       setEfBatchMode(next);
@@ -881,7 +894,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                     />
                   </div>
                   <div style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
-                    注：数量为 0 表示该 SKU 不要求填写此报名信息模板
+                    注：数量为 0 表示该 SKU 不要求填写此{(productMode ? '购买' : ticketMode ? '购票' : '报名')}信息模板
                   </div>
             </div>
           )}
@@ -892,11 +905,14 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
           {/* ====== 退款设置 ====== */}
           <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>退款设置</div>
             <RefundSettings
               value={refundSettings}
               onChange={setRefundSettings}
               step2Skus={current === 1 ? step2Skus : undefined}
               wizardSpecs={current === 1 ? wizardSpecs.filter((s) => s.name.trim()).map((s) => ({ name: s.name, values: s.values.map((v) => ({ value: v.value })), is_time_type: s.is_time_type })) : undefined}
+              ticketMode={ticketMode}
+              productMode={productMode}
             />
           </div>
 

@@ -27,6 +27,8 @@ export interface SkuConfigPanelHandle {
     specs: SpecGroup[];
     /** specText → 编辑数据（价格/限额/上架），key 格式保证与保存时一致 */
     editedSkus: Record<string, Partial<SkuRow>>;
+    /** API 加载的原始 SKU 数据 */
+    loadedSkus: SkuRow[];
   };
 }
 
@@ -38,10 +40,14 @@ export interface SkuConfigPanelProps {
   renderFooter?: (opts: { saving: boolean; handleSave: () => Promise<boolean> }) => React.ReactNode;
   /** 从向导返回时恢复的快照数据（有值时跳过 API 加载） */
   initialState?: { specs: SpecGroup[]; editedSkus: Record<string, Partial<SkuRow>> } | null;
+  /** 票务模式：隐藏限额列、免费按钮、价格最小值0.01、stock默认99999 */
+  ticketMode?: boolean;
+  /** 商品模式：无免费、隐藏报名期限、stock标签"库存" */
+  productMode?: boolean;
 }
 
 const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
-  function SkuConfigPanel({ productId, onSaved, renderFooter, initialState }, ref) {
+  function SkuConfigPanel({ productId, onSaved, renderFooter, initialState, ticketMode, productMode }, ref) {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const originalSpecIdsRef = useRef<number[]>([]);
@@ -108,7 +114,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
         const existing = loadedSkus.find((s) => s.spec_indices === indices);
         const edits = editedSkus[specText] || {};
         return { key: `gen-${idx}`, spec_indices: indices, specText,
-          price: edits.price ?? existing?.price ?? 0, stock: edits.stock ?? existing?.stock ?? 0,
+          price: edits.price ?? existing?.price ?? 0, stock: edits.stock ?? existing?.stock ?? (ticketMode ? 99999 : 0),
           status: edits.status ?? existing?.status ?? 1, skuId: existing?.skuId };
       });
     }, [specs, loadedSkus, editedSkus]);
@@ -194,7 +200,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
             skuList.push({
               spec_indices: idParts.join('_'),
               price: edits.price ?? 0,
-              stock: edits.stock ?? 0,
+              stock: edits.stock ?? (ticketMode ? 99999 : 0),
               status: edits.status ?? 1,
             });
           }
@@ -216,20 +222,22 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
       { title: '价格(元)', dataIndex: 'price', key: 'price', width: 160,
         render: (v: number, r: SkuRow) => (
           <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <InputNumber min={0} precision={2} value={v} prefix="￥" style={{ width: 110 }} onChange={(val) => updateSku(r.key, 'price', val ?? 0)} />
-            <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
-              onClick={() => updateSku(r.key, 'price', 0)}>免费</Button>
+            <InputNumber min={(ticketMode || productMode) ? 0.01 : 0} precision={2} value={v} prefix="￥" style={{ width: 110 }} onChange={(val) => updateSku(r.key, 'price', val ?? 0)} />
+            {!(ticketMode || productMode) && (
+              <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
+                onClick={() => updateSku(r.key, 'price', 0)}>免费</Button>
+            )}
           </span>
         ) },
-      { title: '限额', dataIndex: 'stock', key: 'stock', width: 140,
+      ...(ticketMode ? [] : [{ title: productMode ? '库存' : '限额', dataIndex: 'stock', key: 'stock', width: 140,
         render: (v: number, r: SkuRow) => (
           <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <InputNumber min={0} precision={0} value={v} style={{ width: 80 }} placeholder="不限"
               onChange={(val) => updateSku(r.key, 'stock', val ?? 0)} />
-            <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
-              onClick={() => updateSku(r.key, 'stock', 99999)}>不限</Button>
+            {!productMode && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
+              onClick={() => updateSku(r.key, 'stock', 99999)}>不限</Button>}
           </span>
-        ) },
+        ) }]),
       { title: '上架', dataIndex: 'status', key: 'status', width: 70,
         render: (v: number, r: SkuRow) => (<Switch checked={v === 1} checkedChildren="上架" unCheckedChildren="下架" onChange={(c) => updateSku(r.key, 'status', c ? 1 : 0)} />) },
     ];
@@ -246,6 +254,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
             </Popconfirm>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, paddingRight: 32 }}>
               <span style={{ whiteSpace: 'nowrap' }}>项目：</span>
+              {!(ticketMode || productMode) && (
               <Select value={spec.is_time_type ? 'date' : 'normal'} style={{ width: 80 }}
                 options={[{ label: '普通', value: 'normal' }, { label: '日期', value: 'date' }]}
                 onChange={(val) => {
@@ -260,6 +269,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                     values: i === si && isDate ? s.values.map((v) => dayjs(v.value).isValid() ? v : { value: '' }) : s.values,
                   })));
                 }} />
+              )}
               <Input value={spec.name} placeholder="请输入项目名称，如：票种" style={{ width: 260 }} onChange={(e) => updateSpecName(si, e.target.value)} maxLength={32} />
             </div>
             {/* 3 列网格 + 添加按钮 — 整体与上方下拉框左对齐 */}
@@ -330,11 +340,13 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                   onChange={(e) => setBatchEnabled((prev) => ({ ...prev, price: e.target.checked }))} />
                 价格
               </label>
-              <label style={{ fontSize: 13, cursor: 'pointer' }}>
-                <input type="checkbox" checked={batchEnabled.stock} style={{ marginRight: 4 }}
-                  onChange={(e) => setBatchEnabled((prev) => ({ ...prev, stock: e.target.checked }))} />
-                限额
-              </label>
+              {!ticketMode && (
+                <label style={{ fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={batchEnabled.stock} style={{ marginRight: 4 }}
+                    onChange={(e) => setBatchEnabled((prev) => ({ ...prev, stock: e.target.checked }))} />
+                  限额
+                </label>
+              )}
               <label style={{ fontSize: 13, cursor: 'pointer' }}>
                 <input type="checkbox" checked={batchEnabled.status} style={{ marginRight: 4 }}
                   onChange={(e) => setBatchEnabled((prev) => ({ ...prev, status: e.target.checked }))} />
@@ -375,16 +387,18 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
                 <InputNumber min={0} precision={2} value={batchPrice} prefix="价格￥"
                   disabled={!batchEnabled.price}
                   style={{ flex: 1, opacity: batchEnabled.price ? 1 : 0.5 }} placeholder="价格" onChange={(v) => setBatchPrice(v ?? 0)} />
-                {batchEnabled.price && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
+                {!(ticketMode || productMode) && batchEnabled.price && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
                   onClick={() => setBatchPrice(0)}>免费</Button>}
               </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <InputNumber min={0} precision={0} value={batchStock} prefix="限额"
-                  disabled={!batchEnabled.stock}
-                  style={{ flex: 1, opacity: batchEnabled.stock ? 1 : 0.5 }} placeholder="不限" onChange={(v) => setBatchStock(v ?? 0)} />
-                {batchEnabled.stock && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
-                  onClick={() => setBatchStock(99999)}>不限</Button>}
-              </span>
+              {!ticketMode && (
+                <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <InputNumber min={0} precision={0} value={batchStock} prefix={productMode ? "库存" : "限额"}
+                    disabled={!batchEnabled.stock}
+                    style={{ flex: 1, opacity: batchEnabled.stock ? 1 : 0.5 }} placeholder="不限" onChange={(v) => setBatchStock(v ?? 0)} />
+                  {!productMode && batchEnabled.stock && <Button type="link" size="small" style={{ fontSize: 11, padding: '0 2px', minWidth: 'auto' }}
+                    onClick={() => setBatchStock(99999)}>不限</Button>}
+                </span>
+              )}
               <Select value={batchStatus}
                 disabled={!batchEnabled.status}
                 style={{ opacity: batchEnabled.status ? 1 : 0.5 }}

@@ -1964,7 +1964,7 @@
                 "summary": "后台售后列表",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "售后申请列表（分页，含用户信息）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
@@ -2012,13 +2012,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "售后详情（含操作日志+订单商品行）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:read）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "售后单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2060,7 +2078,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "已确认收到退货，等待执行退款",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -2073,6 +2091,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:write）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2123,7 +2147,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退款执行成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -2136,6 +2160,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:write）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2156,6 +2186,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "管理员审核售后单（通过/拒绝）。T-098：审核通过时重新计算退款金额（以防创建到审核间时间窗变化），若当前不可退款返回 4011。",
                 "consumes": [
                     "application/json"
                 ],
@@ -2186,7 +2217,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "审核完成（通过=退款/待退货，拒绝=已拒绝）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -2199,6 +2230,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:write）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3472,7 +3509,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "物流公司编辑成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -3485,6 +3522,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:order:write）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "物流公司不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3516,7 +3565,7 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "物流公司ID",
+                        "description": "物流公司ID（正整数）",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3524,7 +3573,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "物流公司删除成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -3537,6 +3586,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:order:write）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "物流公司不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5839,7 +5900,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退款规则列表（分页，含阶段详情）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
@@ -5876,7 +5937,7 @@
                 "summary": "创建退款规则",
                 "parameters": [
                     {
-                        "description": "退款规则",
+                        "description": "退款规则（含阶段列表）",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -5887,7 +5948,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退款规则创建成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -5900,6 +5961,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:write）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5938,13 +6005,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退款规则详情（含完整阶段列表）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:read）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "退款规则不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5982,7 +6061,7 @@
                         "required": true
                     },
                     {
-                        "description": "更新请求",
+                        "description": "更新请求（全部字段可选）",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -5993,7 +6072,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退款规则更新成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -6006,6 +6085,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:write）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "退款规则不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6042,13 +6133,31 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退款规则已删除",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:write）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "退款规则不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6099,7 +6208,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "隐藏状态更新成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -6112,6 +6221,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（缺少 urn:after_sale:write）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "退款规则不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6144,7 +6265,7 @@
                 "summary": "退款记录列表",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退款记录列表（分页，含退款状态）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
@@ -8854,6 +8975,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询当前用户的售后申请记录，支持按状态筛选",
                 "consumes": [
                     "application/json"
                 ],
@@ -8864,11 +8986,37 @@
                     "AfterSale"
                 ],
                 "summary": "C端售后列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "售后状态（0=待审核 1=审核通过 2=审核拒绝 3=已退货 4=退款完成 5=已关闭）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "售后申请列表（分页，含售后单号、类型、状态、退款金额、关联订单号）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "查询参数无效（page/page_size 越界或 status 不在 0~5）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -8891,6 +9039,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "基于订单创建售后申请。T-098：退款金额受限于商品关联的退款规则（按时间阶段计算），若当前不在可退款窗口内则返回 4011。",
                 "consumes": [
                     "application/json"
                 ],
@@ -8914,7 +9063,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "售后申请提交成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -8927,6 +9076,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8968,13 +9123,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "售后详情（含操作时间线）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "售后单不存在或不属于当前用户",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -9025,7 +9192,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "退货物流信息已填写",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -9038,6 +9205,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权操作或售后单不属于当前用户",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }

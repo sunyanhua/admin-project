@@ -117,7 +117,7 @@ const sidebarMenuConfig: Record<string, any[]> = {
       label: '票务管理',
       children: [
         { key: '/operation/ticket-categories', icon: <UnorderedListOutlined />, label: '票务分类管理' },
-        { key: '/operation/tickets', icon: <FileTextOutlined />, label: '票务发布' },
+        { key: '/operation/tickets', icon: <FileTextOutlined />, label: '票务销售' },
         { key: '/operation/ticket-orders', icon: <ShoppingCartOutlined />, label: '购票信息' },
       ],
     },
@@ -127,7 +127,7 @@ const sidebarMenuConfig: Record<string, any[]> = {
       label: '商品管理',
       children: [
         { key: '/operation/product-categories', icon: <UnorderedListOutlined />, label: '商品分类管理' },
-        { key: '/operation/products', icon: <FileTextOutlined />, label: '商品发布' },
+        { key: '/operation/products', icon: <FileTextOutlined />, label: '商品销售' },
         { key: '/operation/product-orders', icon: <ShoppingCartOutlined />, label: '购买信息' },
       ],
     },

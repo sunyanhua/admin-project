@@ -32,6 +32,9 @@ import EventCategories from '@/pages/operation/EventCategoryManagement';
 import EventList from '@/pages/operation/EventManagement';
 import EventOrders from '@/pages/events/EventOrders';
 
+// 运营管理 — 票务管理
+import TicketManagement from '@/pages/operation/TicketManagement';
+
 // 财务管理
 import PaymentRecords from '@/pages/events/PaymentRecords';
 import RefundRecords from '@/pages/events/RefundRecords';
@@ -40,6 +43,7 @@ import CouponManagement from '@/pages/finance/CouponManagement';
 // 运营管理 — 票务/商品分类
 import TicketCategoryManagement from '@/pages/operation/TicketCategoryManagement';
 import ProductCategoryManagement from '@/pages/operation/ProductCategoryManagement';
+import ProductManagement from '@/pages/operation/ProductManagement';
 
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
@@ -102,11 +106,11 @@ const router = createHashRouter([
           { path: 'event-orders', element: <EventOrders /> },
           // 票务管理
           { path: 'ticket-categories', element: <TicketCategoryManagement /> },
-          { path: 'tickets', element: <PlaceholderPage title="票务发布" /> },
+          { path: 'tickets', element: <TicketManagement /> },
           { path: 'ticket-orders', element: <PlaceholderPage title="购票信息" /> },
           // 商品管理
           { path: 'product-categories', element: <ProductCategoryManagement /> },
-          { path: 'products', element: <PlaceholderPage title="商品发布" /> },
+          { path: 'products', element: <ProductManagement /> },
           { path: 'product-orders', element: <PlaceholderPage title="购买信息" /> },
         ],
       },

@@ -6,6 +6,7 @@ export interface ProductListParams {
   page_size?: number;
   keyword?: string;
   category_id?: number;
+  root_category_id?: number;
   is_listed?: boolean;
   is_visible?: boolean;
   is_virtual?: boolean;
