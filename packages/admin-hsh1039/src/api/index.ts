@@ -162,7 +162,7 @@ instance.interceptors.response.use(
       // 刷新失败 → 退回登录
       clearTokens();
       localStorage.removeItem(ADMIN_USER_KEY);
-      window.location.href = '/#/login';
+      window.location.href = window.location.pathname + '#/login';
       return Promise.reject(error);
     }
 
@@ -172,7 +172,7 @@ instance.interceptors.response.use(
       if (status === 401) {
         clearTokens();
         localStorage.removeItem(ADMIN_USER_KEY);
-        window.location.href = '/#/login';
+        window.location.href = window.location.pathname + '#/login';
       }
     }
     return Promise.reject(error);

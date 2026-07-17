@@ -40,37 +40,30 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   readOnly = false,
   disabled = false,
 }) => {
-  const quillRef = useRef<ReactQuill | null>(null);
-  const skipNextOnChangeRef = useRef(false);
-  const lastExternalValueRef = useRef(value);
+  const editorRef = useRef<any>(null);
   const [uploading, setUploading] = useState(false);
   const { error } = useAppNotification();
 
-  // 外部 value 变化时（表单调入回填/重置），强制同步到 Quill 编辑器
+  // ReactQuill 的 value/defaultValue 内部走 clipboard.convert() 会把 HTML 当纯文本。
+  // 改为 defaultValue="" 初始化空编辑器，挂载后用 innerHTML 注入真实内容。
+  const loadValueRef = useRef(value);
+  loadValueRef.current = value;
   useEffect(() => {
-    if (value !== lastExternalValueRef.current) {
-      lastExternalValueRef.current = value;
-      const editor = quillRef.current?.getEditor?.();
-      if (editor) {
-        try {
-          if (value) {
-            const delta = editor.clipboard.convert(value);
-            editor.setContents(delta, 'silent');
-          } else {
-            editor.setText('');
-          }
-        } catch { /* Quill 转换失败时忽略 */ }
+    let attempts = 0;
+    const timer = setInterval(() => {
+      const editor = editorRef.current?.getEditor?.();
+      if (editor?.root) {
+        editor.root.innerHTML = loadValueRef.current || '';
+        clearInterval(timer);
+      } else if (++attempts > 50) {
+        clearInterval(timer);
       }
-    }
-  }, [value]);
+    }, 20);
+    return () => clearInterval(timer);
+  }, []); // 仅首次挂载时注入
 
-  const handleChange = useCallback((content: string) => {
-    if (skipNextOnChangeRef.current) {
-      skipNextOnChangeRef.current = false;
-      return;
-    }
-    lastExternalValueRef.current = content;
-    onChange?.(content);
+  const handleChange = useCallback((html: string) => {
+    onChange?.(html);
   }, [onChange]);
 
   const handleImageUpload = useCallback(async (file: File) => {
@@ -85,17 +78,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       else if (res?.data) url = typeof res.data === 'string' ? res.data : String(res.data.data);
 
       if (url) {
-        const quill = quillRef.current;
+        const quill = editorRef.current;
         if (quill) {
           const editor = quill.getEditor?.();
           if (editor) {
             editor.focus();
             const range = editor.getSelection(true);
             const insertIndex = range ? range.index : editor.getLength() - 1;
-            skipNextOnChangeRef.current = true;
             editor.insertEmbed(insertIndex, 'image', url);
             editor.setSelection(insertIndex + 1, 0);
-            skipNextOnChangeRef.current = false;
             onChange?.(editor.root.innerHTML);
           }
         }
@@ -103,7 +94,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         error('图片上传成功但未返回URL');
       }
     } catch (error: any) {
-      skipNextOnChangeRef.current = false;
       error(error.response?.data?.msg || '图片上传失败');
     } finally {
       setUploading(false);
@@ -125,9 +115,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   return (
     <div className="rich-text-editor">
       <ReactQuill
-        ref={(el) => { quillRef.current = el; }}
+        ref={editorRef}
         theme="snow"
-        value={value}
+        defaultValue=""
         onChange={handleChange}
         modules={modules}
         formats={formats}
