@@ -187,7 +187,6 @@ const ExtraInfoEditor: React.FC<ExtraInfoEditorProps> = ({ value, onChange }) =>
         onChange={(e) => onChange({ ...value, mode: e.target.value })}
         style={{ marginBottom: 16 }}
       >
-        <Radio.Button value="none">无特殊要求</Radio.Button>
         <Radio.Button value="unified">全部项目统一</Radio.Button>
         <Radio.Button value="individual">各项目单独设置</Radio.Button>
       </Radio.Group>

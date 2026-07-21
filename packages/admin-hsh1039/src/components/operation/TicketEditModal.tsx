@@ -117,6 +117,8 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
           intro,
           detail_desc,
+          has_ticket: true,
+          has_booking: false,
           is_virtual: true,
           is_listed: false,
           is_visible: values.is_visible ?? true,

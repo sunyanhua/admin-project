@@ -3,12 +3,13 @@ import { Button, Switch, Radio, Select, Table, DatePicker, TimePicker, InputNumb
 import ExtraInfoEditor, { ExtraInfoData } from './ExtraInfoEditor';
 import type { ExtraInfoGroup } from './ExtraInfoEditor';
 import RefundSettings, { RefundSettingsData, RefundMode, REFUND_TYPE_MAP } from './RefundSettings';
+import BookingSlotManager, { BookingSlotManagerHandle } from './BookingSlotManager';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
 import SkuConfigPanel, {
   SkuConfigPanelHandle, SpecGroup, SkuRow, cartesian,
 } from './SkuConfigPanel';
-import { productApi } from '../../api/services/product';
+import { productApi, bookingSlotApi } from '../../api/services/product';
 import { useAppNotification } from '@/hooks/useAppNotification';
 
 /** Step 2 中展示的 SKU 行 */
@@ -54,6 +55,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 }, ref) {
   const [current, setCurrent] = useState(0);
   const panelRef = useRef<SkuConfigPanelHandle>(null);
+  const bookingRef = useRef<BookingSlotManagerHandle>(null);
 
   const [wizardSpecs, setWizardSpecs] = useState<SpecGroup[]>([]);
   const [wizardEditedSkus, setWizardEditedSkus] = useState<Record<string, Partial<SkuRow>>>({});
@@ -78,7 +80,9 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const [batchExpiryTime, setBatchExpiryTime] = useState<Dayjs | null>(null);
 
   // 报名信息
-  const [extraInfo, setExtraInfo] = useState<ExtraInfoData>({ mode: 'none', groups: [] });
+  const [extraInfo, setExtraInfo] = useState<ExtraInfoData>({ mode: 'unified', groups: [] });
+  // 报名模式（从产品读取，控制报名信息区域显隐）
+  const [registrationMode, setRegistrationMode] = useState<string>('before_pay');
   // 退款设置
   const [refundSettings, setRefundSettings] = useState<RefundSettingsData>({ mode: 'none', deadlineMode: 'unified', skuDeadlines: {} });
   // 各 SKU 的信息模板配置（仅 individual 模式）：spec_indices → [{groupKey, count}]
@@ -92,7 +96,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
   // 敏感字段检测
   const hasSensitive = useMemo(() => {
-    if (extraInfo.mode === 'none' || extraInfo.groups.length === 0) return false;
+    if (extraInfo.groups.length === 0) return false;
     return extraInfo.groups.some((g) =>
       g.fields.some((f) => f.format === 'mobile' || f.label === '身份证号' || f.label === '手机号'),
     );
@@ -107,7 +111,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const parseExtraInfoFromProduct = (detail: any): ExtraInfoData => {
     const raw: any[] = detail?.additional_fields_config;
     if (!raw || !Array.isArray(raw) || raw.length === 0) {
-      return { mode: 'none', groups: [] };
+      return { mode: 'unified', groups: [] };
     }
     const presetNames = ['姓名', '手机号', '性别', '年龄', '工作单位', '身份证号'];
     let gk = 0;
@@ -151,6 +155,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         }
         // 还原已保存的报名信息模板
         setExtraInfo(parseExtraInfoFromProduct(detail));
+        setRegistrationMode(detail?.additional_fields_mode || (ticketMode ? 'none' : 'before_pay'));
       }).catch(() => {});
     }
   }, [productId]);
@@ -376,8 +381,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
   const handleFinish = async (): Promise<boolean> => {
     if (!productId) return false;
 
-    // 统一模式必须且仅需1个信息模板
-    if (extraInfo.mode === 'unified' && extraInfo.groups.length !== 1) {
+    // 统一模式必须且仅需1个信息模板（不登记时跳过）
+    if (registrationMode !== 'none' && extraInfo.mode === 'unified' && extraInfo.groups.length !== 1) {
       warning(extraInfo.groups.length === 0
         ? '全部项目统一下，请先添加一个信息模板'
         : '全部项目统一下，仅需一个信息模板，请删除多余模板');
@@ -549,6 +554,56 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         if (skuList.length > 0) await productApi.batchCreateSkus(productId, skuList);
       }
 
+      // 6. 刷新预约时段（门票模式，延迟到 SKU 创建后执行）
+      if (ticketMode && bookingRef.current) {
+        const bk = bookingRef.current.getState();
+        for (const slotId of bk.deletedSlotIds) {
+          await bookingSlotApi.deleteSlot(productId, slotId).catch(() => {});
+        }
+        if (bk.pendingSlots.length > 0) {
+          // 用 value 名称构建 spec_text → sku_id 映射（ID 可能变，名称不变）
+          const textToSkuId = new Map<string, number>();
+          try {
+            const raw: any = await productApi.getSkus(productId);
+            const freshSkus: any[] = Array.isArray(raw) ? raw : (raw?.list || []);
+            // freshList 是 finish 中已保存后的 specs
+            const idToName: Record<number, Record<number, string>> = {};
+            for (const s of freshList) {
+              const map: Record<number, string> = {};
+              for (const v of s.values || []) map[v.id] = v.value || '';
+              idToName[s.id || 0] = map;
+            }
+            for (const sku of freshSkus) {
+              const parts = (sku.spec_indices || '').split('_');
+              const texts: string[] = [];
+              for (let i = 0; i < parts.length && i < freshList.length; i++) {
+                const vId = parseInt(parts[i]);
+                const valMap = idToName[freshList[i]?.id || 0] || {};
+                texts.push(`${freshList[i]?.name || '?'}:${valMap[vId] || parts[i]}`);
+              }
+              textToSkuId.set(texts.join(' | '), sku.id);
+            }
+          } catch { /* ignore */ }
+
+          for (const slot of bk.pendingSlots) {
+            const skuId = textToSkuId.get(slot.spec_text);
+            if (!skuId) continue;
+            if (slot._action === 'create') {
+              await bookingSlotApi.createSlot(productId, {
+                sku_id: skuId, slot_date: slot.slot_date,
+                title: slot.title, capacity: slot.capacity,
+                slot_time: slot.slot_time || undefined,
+              }).catch(() => {});
+            } else if (slot._action === 'update' && slot.slot_id) {
+              await bookingSlotApi.updateSlot(productId, slot.slot_id, {
+                title: slot.title, capacity: slot.capacity,
+                slot_time: slot.slot_time || undefined,
+              }).catch(() => {});
+            }
+          }
+        }
+      }
+
       // 5. 合并更新产品：usable + expiry + 附加信息 + 退款设置 + 上下架（一次 PUT）
       const toStorageGroup = (g: ExtraInfoGroup) => ({
         name: g.name,
@@ -576,10 +631,12 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       await productApi.updateProduct(productId, {
         usable: (ticketMode || productMode) ? '' : (expiryMode === 'unified' ? (unifiedUsableStr || '') : ''),
         expiry: (ticketMode || productMode) ? '' : (expiryMode === 'unified' ? (unifiedExpiryStr || '') : ''),
-        additional_fields_config: extraInfo.mode !== 'none' && extraInfo.groups.length > 0
+        additional_fields_config: (registrationMode !== 'none' && extraInfo.groups.length > 0)
           ? extraInfo.groups.map(toStorageGroup)
           : null,
         additional_fields_has_sensitive: hasSensitive,
+        additional_fields_mode: productMode ? undefined : registrationMode,
+        has_ticket: productMode ? undefined : true,
         is_listed: isListed,
         refund_type: refundType,
         refund_rule_id: refundRuleId as any,
@@ -767,15 +824,30 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           </div>
           )}
 
-          {!(ticketMode || productMode) && <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />}
-
-          {/* ====== 报名信息 ====== */}
+          {/* ====== 报名信息（活动/门票） ====== */}
+          {!productMode && (
           <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>{(productMode ? '购买信息' : ticketMode ? '购票信息' : '报名信息')}</div>
-            <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>{ticketMode ? '购票信息' : '报名信息'}</div>
+            <div style={{ marginBottom: registrationMode !== 'none' ? 16 : 0 }}>
+              <span style={{ marginRight: 8 }}>{ticketMode ? '购票模式' : '报名模式'}</span>
+              <Select
+                value={registrationMode}
+                onChange={(v) => setRegistrationMode(v)}
+                style={{ width: 240 }}
+                options={[
+                  { label: ticketMode ? '先登记购票信息后付费' : '先登记报名信息后付费', value: 'before_pay' },
+                  { label: ticketMode ? '先付费后登记购票信息' : '先付费后登记报名信息', value: 'after_pay' },
+                  { label: ticketMode ? '不登记购票信息' : '不登记报名信息', value: 'none' },
+                ]}
+              />
+            </div>
+            {registrationMode !== 'none' && (
+              <>
+                <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+                <ExtraInfoEditor value={extraInfo} onChange={setExtraInfo} />
 
-            {/* SKU 信息模板配置表格（仅"各项目单独设置"时显示） */}
-            {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
+                {/* SKU 信息模板配置表格（仅"各项目单独设置"时显示） */}
+                {extraInfo.mode === 'individual' && extraInfo.groups.length > 0 && (
               <div style={{ marginTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <span style={{ fontWeight: 600, fontSize: 13 }}>SKU {(productMode ? '购买' : ticketMode ? '购票' : '报名')}信息配置（{step2Skus.length} 种）</span>
@@ -898,10 +970,21 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
                   </div>
             </div>
           )}
-
+              </>
+            )}
           </div>
+          )}
 
-          <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+          {!productMode && <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />}
+
+          {/* ====== 预约配置（仅门票） ====== */}
+          {ticketMode && productId > 0 && (
+          <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>预约配置</div>
+            <BookingSlotManager ref={bookingRef} productId={productId} skuLabels={step2Skus.map((r) => ({ specText: r.specText, spec_indices: r.spec_indices }))} />
+          </div>
+          )}
+          {ticketMode && <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />}
 
           {/* ====== 退款设置 ====== */}
           <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>

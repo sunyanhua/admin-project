@@ -90,6 +90,7 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
         intro,
         detail_desc: JSON.stringify(detailDesc),
         is_virtual: true,
+        has_ticket: true,
         is_listed: false,
         is_visible: values.is_visible ?? true,
         sort_order: values.sort_order ?? 0,

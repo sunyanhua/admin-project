@@ -28,6 +28,9 @@ export interface Product {
   sort_order?: number;
   keywords?: string;
   brand_id?: number;
+  additional_fields_mode?: string;
+  has_ticket?: boolean;
+  has_booking?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -47,6 +50,9 @@ export interface CreateProductData {
   sort_order?: number;
   keywords?: string;
   brand_id?: number;
+  additional_fields_mode?: string;
+  has_ticket?: boolean;
+  has_booking?: boolean;
 }
 
 // 更新商品参数（全部可选）
@@ -66,6 +72,9 @@ export interface UpdateProductData {
   brand_id?: number;
   additional_fields_config?: any | null;
   additional_fields_has_sensitive?: boolean;
+  additional_fields_mode?: string;
+  has_ticket?: boolean;
+  has_booking?: boolean;
   usable?: string;
   expiry?: string;
   refund_type?: number;
@@ -194,4 +203,49 @@ export const productApi = {
   clearAllSkus: (productId: number) => {
     return request.delete(`/admin/v1/mall/products/${productId}/skus`);
   },
+};
+
+// ====== Booking Slots ======
+
+export interface BookingSlot {
+  id: number;
+  sku_id: number;
+  title: string;
+  slot_date: string;
+  slot_time?: string;
+  capacity: number;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateBookingSlotData {
+  sku_id: number;
+  slot_date: string;
+  title: string;
+  capacity: number;
+  slot_time?: string;
+}
+
+export interface UpdateBookingSlotData {
+  title?: string;
+  capacity?: number;
+  slot_time?: string;
+}
+
+export const bookingSlotApi = {
+  getSlots: (productId: number, params?: Record<string, unknown>) =>
+    request.get(`/admin/v1/mall/products/${productId}/booking-slots`, { params }),
+
+  createSlot: (productId: number, data: CreateBookingSlotData) =>
+    request.post(`/admin/v1/mall/products/${productId}/booking-slots`, data),
+
+  updateSlot: (productId: number, slotId: number, data: UpdateBookingSlotData) =>
+    request.put(`/admin/v1/mall/products/${productId}/booking-slots/${slotId}`, data),
+
+  toggleSlotStatus: (productId: number, slotId: number, status: string) =>
+    request.put(`/admin/v1/mall/products/${productId}/booking-slots/${slotId}/status`, { status }),
+
+  deleteSlot: (productId: number, slotId: number) =>
+    request.delete(`/admin/v1/mall/products/${productId}/booking-slots/${slotId}`),
 };
