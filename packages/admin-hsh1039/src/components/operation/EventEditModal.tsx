@@ -187,11 +187,11 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
 
         <Form.Item label="活动封面" name="cover_image"
           rules={[{ required: true, message: '请上传活动封面' }]}>
-          <CropperImageUpload />
+          <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
         </Form.Item>
 
         <Form.Item label="活动图片" name="carousel_images">
-          <MultiImageUpload />
+          <MultiImageUpload cropAspect={640 / 480} cropSizeHint="建议尺寸：640 × 480 像素" />
         </Form.Item>
 
         <Form.Item label="主办方" name="host"
