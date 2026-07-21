@@ -18,6 +18,13 @@ interface TicketDetailDesc {
   agreement?: string;
 }
 
+interface ActivityIntroItem {
+  title: string;
+  content: string;
+  showonlist: string;
+  zuobiao?: string;
+}
+
 export interface TicketEditModalProps {
   visible: boolean;
   mode: 'create' | 'edit';
@@ -36,6 +43,14 @@ function parseDetailDesc(json?: string): TicketDetailDesc {
   try { return JSON.parse(decoded); } catch { return {}; }
 }
 
+function parseIntro(json?: string): ActivityIntroItem[] {
+  if (!json) return [];
+  let decoded = json;
+  decoded = decoded.replace(/&(?:#34|quot);/g, '"');
+  decoded = decoded.replace(/\\\\"/g, '\\"');
+  try { return JSON.parse(decoded); } catch { return []; }
+}
+
 const TicketEditModal: React.FC<TicketEditModalProps> = ({
   visible, mode, event, categoryOptions, loadingDetail = false, onClose, onSuccess,
 }) => {
@@ -49,6 +64,7 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
     if (visible) {
       if (event && !isCreate) {
         const desc = parseDetailDesc(event.detail_desc);
+        const introItems = parseIntro(event.intro);
         setHasAgreement(desc.hasagreement || false);
         form.setFieldsValue({
           title: event.title || '',
@@ -56,6 +72,9 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           category_id: event.category_id ?? undefined,
           cover_image: event.cover_image || '',
           carousel_images: event.carousel_images || [],
+          usage_note: introItems.find((i: ActivityIntroItem) => i.title === '使用说明')?.content || '',
+          usage_address: introItems.find((i: ActivityIntroItem) => i.title === '使用地点')?.content || '',
+          usage_coordinate: introItems.find((i: ActivityIntroItem) => i.title === '使用地点')?.zuobiao || '',
           detail: desc.detail || '',
           hasagreement: desc.hasagreement || false,
           agreement: desc.agreement || '',
@@ -74,6 +93,12 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
     try {
       setLoading(true);
 
+      const introItems: ActivityIntroItem[] = [
+        { title: '使用说明', content: values.usage_note || '', showonlist: 'true' },
+        { title: '使用地点', content: values.usage_address || '', zuobiao: values.usage_coordinate || '', showonlist: 'true' },
+      ];
+      const intro = JSON.stringify(introItems);
+
       const detailDesc: TicketDetailDesc = {
         detail: values.detail || undefined,
         hasagreement: values.hasagreement || false,
@@ -90,6 +115,7 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           category_id: values.category_id,
           cover_image: values.cover_image || undefined,
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+          intro,
           detail_desc,
           is_virtual: true,
           is_listed: false,
@@ -105,6 +131,7 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           category_id: values.category_id,
           cover_image: values.cover_image || undefined,
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+          intro,
           detail_desc,
           is_visible: values.is_visible,
           sort_order: values.sort_order ?? undefined,
@@ -161,6 +188,28 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
 
         <Form.Item label="门票图片" name="carousel_images">
           <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
+        </Form.Item>
+
+        <Form.Item label="使用说明" name="usage_note"
+          rules={[{ required: true, message: '请输入使用说明' }, { max: 512, message: '最多512个字符' }]}>
+          <Input placeholder="请输入使用说明" />
+        </Form.Item>
+
+        <Form.Item label="使用地点" required>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Form.Item name="usage_address" noStyle
+              rules={[{ required: true, message: '请输入使用地点' }]}>
+              <Input placeholder="请输入地点" />
+            </Form.Item>
+            <Space>
+              <Form.Item name="usage_coordinate" noStyle>
+                <Input placeholder="请输入坐标" style={{ width: 300 }} />
+              </Form.Item>
+              <a href="https://lbs.qq.com/tool/getpoint/index.html" target="_blank" rel="noopener noreferrer">
+                查询坐标
+              </a>
+            </Space>
+          </Space>
         </Form.Item>
 
         <Form.Item label="门票介绍" name="detail"

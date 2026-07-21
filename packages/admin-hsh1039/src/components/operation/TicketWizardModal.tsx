@@ -15,6 +15,13 @@ interface TicketDetailDesc {
   detail?: string; hasagreement?: boolean; agreement?: string;
 }
 
+interface ActivityIntroItem {
+  title: string;
+  content: string;
+  showonlist: string;
+  zuobiao?: string;
+}
+
 const steps = [
   { title: '门票信息' },
   { title: '项目配置' },
@@ -58,6 +65,11 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
       const values = await form.validateFields();
       setLoading(true);
 
+      const introItems: ActivityIntroItem[] = [
+        { title: '使用说明', content: values.usage_note || '', showonlist: 'true' },
+        { title: '使用地点', content: values.usage_address || '', zuobiao: values.usage_coordinate || '', showonlist: 'true' },
+      ];
+
       const detailDesc: TicketDetailDesc = {
         detail: values.detail || undefined,
         hasagreement: values.hasagreement || false,
@@ -72,6 +84,7 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
         category_id: values.category_id,
         cover_image: values.cover_image || undefined,
         carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+        intro: JSON.stringify(introItems),
         detail_desc: JSON.stringify(detailDesc),
         is_virtual: true,
         is_listed: false,
@@ -133,6 +146,26 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
       </Form.Item>
       <Form.Item label="门票图片" name="carousel_images">
         <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
+      </Form.Item>
+      <Form.Item label="使用说明" name="usage_note"
+        rules={[{ required: true, message: '请输入使用说明' }, { max: 512, message: '最多512个字符' }]}>
+        <Input placeholder="请输入使用说明" />
+      </Form.Item>
+      <Form.Item label="使用地点" required>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Form.Item name="usage_address" noStyle
+            rules={[{ required: true, message: '请输入使用地点' }]}>
+            <Input placeholder="请输入地点" />
+          </Form.Item>
+          <Space>
+            <Form.Item name="usage_coordinate" noStyle>
+              <Input placeholder="请输入坐标" style={{ width: 300 }} />
+            </Form.Item>
+            <a href="https://lbs.qq.com/tool/getpoint/index.html" target="_blank" rel="noopener noreferrer">
+              查询坐标
+            </a>
+          </Space>
+        </Space>
       </Form.Item>
       <Form.Item label="门票介绍" name="detail" rules={[{ required: true, message: '请输入门票介绍' }]}>
         <RichTextEditor placeholder="请输入门票详细介绍" />
