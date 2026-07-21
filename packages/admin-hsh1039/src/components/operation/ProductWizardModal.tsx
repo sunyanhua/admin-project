@@ -140,9 +140,9 @@ const ProductWizardModal: React.FC<ProductWizardModalProps> = ({
         rules={[{ required: true, message: '请输入商品名称' }, { max: 128, message: '最多128个字符' }]}>
         <Input placeholder="请输入商品名称" />
       </Form.Item>
-      <Form.Item label="商品简介" name="sub_title"
+      <Form.Item label={<span>商品简介 <span style={{ color: 'red', fontSize: 12 }}>请输入两行内容</span></span>} name="sub_title"
         rules={[{ required: true, message: '请输入商品简介' }, { max: 512, message: '最多512个字符' }]}>
-        <Input.TextArea rows={2} placeholder={'请在此输入商品简介\n第一行自动保存为"简介1"，第二行自动保存为"简介2"'} />
+        <Input.TextArea rows={2} placeholder="请输入商品简介" />
       </Form.Item>
       <Form.Item label="所属分类" name="category_id" rules={[{ required: true, message: '请选择分类' }]}>
         <Select placeholder="请选择分类" options={categoryOptions.map((c) => ({ label: c.name, value: c.id }))} />
