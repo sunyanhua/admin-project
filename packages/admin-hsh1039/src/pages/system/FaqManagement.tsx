@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Switch, InputNumber, Space, Form, Input, Select, Tag } from 'antd';
+import { Button, Switch, InputNumber, Space, Form, Input } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { helpsApi, Help, HelpCategory } from '@/api/services/helps';
+import { helpsApi, Help } from '@/api/services/helps';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -28,15 +28,15 @@ const FaqManagement = () => {
   const [editingHelp, setEditingHelp] = useState<Help | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [categories, setCategories] = useState<HelpCategory[]>([]);
+  const [defaultCategoryId, setDefaultCategoryId] = useState<number>(0);
   const [statusEnabled, setStatusEnabled] = useState(true);
   const [form] = Form.useForm();
 
-  // 加载分类列表
+  // 加载默认分类（接口要求 category_id 必填，但 UI 不展示分类选择）
   useEffect(() => {
-    helpsApi.getCategories({ page: 1, page_size: 100 }).then((res: any) => {
+    helpsApi.getCategories({ page: 1, page_size: 1 }).then((res: any) => {
       const list = res?.list || [];
-      setCategories(list.filter((c: HelpCategory) => c.status === 0));
+      if (list.length > 0) setDefaultCategoryId(list[0].id);
     }).catch(() => {});
   }, []);
 
@@ -108,7 +108,6 @@ const FaqManagement = () => {
         form.setFieldsValue({
           title: helpData.title || '',
           content: helpData.content || '',
-          category_id: helpData.category_id ?? undefined,
           sort_order: helpData.sort_order,
         });
       }, 0);
@@ -119,7 +118,6 @@ const FaqManagement = () => {
         form.setFieldsValue({
           title: record.title || '',
           content: record.content || '',
-          category_id: record.category_id ?? undefined,
           sort_order: record.sort_order,
         });
       }, 0);
@@ -135,7 +133,7 @@ const FaqManagement = () => {
 
       const payload: Record<string, any> = {
         title: values.title,
-        category_id: values.category_id,
+        category_id: editingHelp?.category_id ?? defaultCategoryId,
         content: values.content || undefined,
         status: statusEnabled ? 0 : 1,
         sort_order: values.sort_order ?? undefined,
@@ -158,24 +156,12 @@ const FaqManagement = () => {
     }
   };
 
-  const getCategoryName = (id: number) => {
-    const cat = categories.find((c) => c.id === id);
-    return cat?.name || `ID:${id}`;
-  };
-
   const columns: ColumnsType<Help> = [
     {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      render: (text: string, record: Help) => (
-        <span>
-          <Tag color="blue" style={{ marginRight: 4 }} title={getCategoryName(record.category_id)}>
-            {getCategoryName(record.category_id)}
-          </Tag>
-          <span style={{ wordBreak: 'break-word' }}>{text}</span>
-        </span>
-      ),
+      render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
     },
     {
       title: '权重',
@@ -279,17 +265,6 @@ const FaqManagement = () => {
             rules={[{ required: true, message: '请输入标题' }]}
           >
             <Input placeholder="请输入文章标题" maxLength={128} showCount />
-          </Form.Item>
-
-          <Form.Item
-            label="所属分类"
-            name="category_id"
-            rules={[{ required: true, message: '请选择分类' }]}
-          >
-            <Select
-              placeholder="请选择分类"
-              options={categories.map((c) => ({ label: c.name, value: c.id }))}
-            />
           </Form.Item>
 
           <Form.Item
