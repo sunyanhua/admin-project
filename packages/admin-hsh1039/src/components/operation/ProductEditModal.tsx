@@ -167,7 +167,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
         <Form.Item label="商品简介" name="sub_title"
           rules={[{ required: true, message: '请输入商品简介' }, { max: 512, message: '最多512个字符' }]}>
-          <Input.TextArea rows={2} placeholder="请在此输入商品简介&#10;第一行自动保存为"简介1"，第二行自动保存为"简介2"" />
+          <Input.TextArea rows={2} placeholder={'请在此输入商品简介\n第一行自动保存为"简介1"，第二行自动保存为"简介2"'} />
         </Form.Item>
 
         <Form.Item label="所属分类" name="category_id"
