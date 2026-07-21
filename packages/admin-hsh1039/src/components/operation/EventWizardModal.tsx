@@ -12,7 +12,14 @@ import SkuConfigWizard, { SkuConfigWizardHandle } from './SkuConfigWizard';
 interface CategoryOption { id: number; name: string; }
 
 interface EventDetailDesc {
-  datetime?: string; detail?: string; hasagreement?: boolean; agreement?: string;
+  detail?: string; hasagreement?: boolean; agreement?: string;
+}
+
+interface ActivityIntroItem {
+  title: string;
+  content: string;
+  showonlist: string;
+  zuobiao?: string;
 }
 
 const steps = [
@@ -59,8 +66,14 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
       const values = await form.validateFields();
       setLoading(true);
 
+      const introItems: ActivityIntroItem[] = [
+        { title: '主办方', content: values.host || '', showonlist: 'false' },
+        { title: '活动时间', content: values.datetime || '', showonlist: 'true' },
+        { title: '活动地点', content: values.address || '', zuobiao: values.coordinate || '', showonlist: 'true' },
+      ];
+      const intro = JSON.stringify(introItems);
+
       const detailDesc: EventDetailDesc = {
-        datetime: values.datetime || undefined,
         detail: values.detail || undefined,
         hasagreement: values.hasagreement || false,
       };
@@ -74,6 +87,7 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
         category_id: values.category_id,
         cover_image: values.cover_image || undefined,
         carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+        intro,
         detail_desc: JSON.stringify(detailDesc),
         is_virtual: true,
         is_listed: false,
@@ -141,8 +155,27 @@ const EventWizardModal: React.FC<EventWizardModalProps> = ({
       <Form.Item label="活动图片" name="carousel_images">
         <MultiImageUpload />
       </Form.Item>
+      <Form.Item label="主办方" name="host" rules={[{ max: 128, message: '最多128个字符' }]}>
+        <Input placeholder="请输入主办方（选填）" />
+      </Form.Item>
       <Form.Item label="活动时间" name="datetime" rules={[{ required: true, message: '请输入活动时间' }]}>
         <Input placeholder="如：2026年7月15日 14:00 - 16:00" />
+      </Form.Item>
+      <Form.Item label="活动地点" required>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Form.Item name="address" noStyle
+            rules={[{ required: true, message: '请输入活动地点' }]}>
+            <Input placeholder="请输入地点" />
+          </Form.Item>
+          <Space>
+            <Form.Item name="coordinate" noStyle>
+              <Input placeholder="请输入坐标" style={{ width: 300 }} />
+            </Form.Item>
+            <a href="https://lbs.qq.com/tool/getpoint/index.html" target="_blank" rel="noopener noreferrer">
+              查询坐标
+            </a>
+          </Space>
+        </Space>
       </Form.Item>
       <Form.Item label="活动介绍" name="detail" rules={[{ required: true, message: '请输入活动介绍' }]}>
         <RichTextEditor placeholder="请输入活动详细介绍" />
