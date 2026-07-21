@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Switch, InputNumber, Tag, Space, Form, Input, DatePicker, Radio, Image } from 'antd';
+import { Button, Switch, InputNumber, Space, Form, Input, DatePicker, Radio, Image } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { BannerStatus, BannerPositionLabels } from '@shared/constants';
+import { BannerStatus } from '@shared/constants';
 import { getFullWidthUrl } from '@/utils/imageUtils';
 import { bannerApi, Banner, CreateBannerRequest, UpdateBannerRequest } from '@/api/services/banner';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
@@ -226,17 +226,6 @@ const BannerManagement = () => {
             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 10, background: '#f0f0f0' }}>—</div>
           )}
         </div>
-      ),
-    },
-    {
-      title: '位置',
-      dataIndex: 'position',
-      key: 'position',
-      width: 90,
-      render: (pos: string) => (
-        <Tag color={pos === 'activity' ? 'green' : 'blue'} title={BannerPositionLabels[pos] || pos}>
-          {BannerPositionLabels[pos] || pos || '-'}
-        </Tag>
       ),
     },
     {
