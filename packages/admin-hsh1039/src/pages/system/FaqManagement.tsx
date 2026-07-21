@@ -1,8 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Typography, Switch, Modal, Form, Input, InputNumber } from 'antd';
+import { Button, Switch, InputNumber, Space, Form, Input, Select, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-
+import { helpsApi, Help, HelpCategory } from '@/api/services/helps';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -10,7 +10,7 @@ import { ActionColumn } from '@/components/templates/ActionColumn';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
-import request from '@/api';
+import ScrollableModal from '@/components/templates/ScrollableModal';
 
 const STATUS_OPTIONS = [
   { label: '启用', value: 0 },
@@ -18,169 +18,181 @@ const STATUS_OPTIONS = [
 ];
 
 const filters: FilterConfig[] = [
-  { name: 'status', placeholder: '状态筛选', type: 'select', options: STATUS_OPTIONS },
+  { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
   { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
 
-const STATUS_MAP: Record<number, { text: string; color: string }> = {
-  0: { text: '禁用', color: 'red' },
-  1: { text: '启用', color: 'green' },
-};
-
-interface Faq {
-  id: number;
-  modu: string;
-  title: string;
-  contents: string;
-  status: number;
-  orderon: number;
-  inserton: string;
-}
-
 const FaqManagement = () => {
-  const { success, error } = useAppNotification();
+  const { success, error: showError } = useAppNotification();
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingFaq, setEditingFaq] = useState<Faq | null>(null);
+  const [editingHelp, setEditingHelp] = useState<Help | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [categories, setCategories] = useState<HelpCategory[]>([]);
+  const [statusEnabled, setStatusEnabled] = useState(true);
   const [form] = Form.useForm();
-  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
-  const fetchFaqs = useCallback(async (params: any) => {
-    return request.get('/admin/cms/article', { params: { ...params, modu: 'faq' } });
+  // 加载分类列表
+  useEffect(() => {
+    helpsApi.getCategories({ page: 1, page_size: 100 }).then((res: any) => {
+      const list = res?.list || [];
+      setCategories(list.filter((c: HelpCategory) => c.status === 0));
+    }).catch(() => {});
   }, []);
 
-  const formatFaqResponse = useCallback((res: any) => ({
+  const fetchHelps = useCallback(async (params: any) => {
+    return helpsApi.getHelps(params);
+  }, []);
+
+  const formatHelpResponse = useCallback((res: any) => ({
     list: res?.list || res?.data || [],
-    count: res?.count || res?.data?.count || 0,
+    count: res?.total ?? res?.count ?? 0,
   }), []);
 
   const {
     data,
-    loading,
+    loading: listLoading,
     pagination,
     onPageChange,
     refresh,
     search,
-  } = useListPage<Faq>({
-    fetchFn: fetchFaqs,
-    formatResponse: formatFaqResponse,
+  } = useListPage<Help>({
+    fetchFn: fetchHelps,
+    formatResponse: formatHelpResponse,
   });
-
-  const handleSearchChange = (name: string, value: any) => {
-    setSearchValues((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleSearch = (vals: Record<string, any>) => {
     search(vals);
   };
 
-  const handleReset = () => {
-    setSearchValues({});
-    search({});
-  };
-
-  const handleStatusToggle = async (record: Faq, checked: boolean) => {
+  // 状态切换
+  const handleStatusToggle = async (record: Help, checked: boolean) => {
     try {
-      await request.post('/admin/cms/article/status', { id: record.id, status: checked ? 0 : 1 });
+      await helpsApi.updateHelp(record.id, { status: checked ? 0 : 1 });
       success('状态更新成功');
       refresh();
     } catch (err: any) {
-      error(err.response?.data?.msg || '状态更新失败');
+      showError(err?.response?.data?.message || '状态更新失败');
     }
   };
 
-  const handleOrderChange = async (record: Faq, value: number | null | undefined) => {
+  // 权重修改
+  const handleSortChange = async (record: Help, value: number | null) => {
     try {
-      await request.post('/admin/cms/article/orderon', { id: record.id, orderon: value ?? undefined });
-      success('排序更新成功');
+      await helpsApi.updateHelp(record.id, { sort_order: value ?? undefined });
+      success('权重更新成功');
       refresh();
     } catch (err: any) {
-      error(err.response?.data?.msg || '排序更新失败');
+      showError(err?.response?.data?.message || '权重更新失败');
     }
   };
 
   const handleAdd = () => {
-    setEditingFaq(null);
+    setEditingHelp(null);
+    setStatusEnabled(true);
     setModalVisible(true);
-    setTimeout(() => {
-      form.resetFields();
-      form.setFieldsValue({ status: 0 });
-    }, 0);
+    setTimeout(() => form.resetFields(), 0);
   };
 
-  const handleEdit = (record: Faq) => {
-    setEditingFaq(record);
-    setModalVisible(true);
-    setTimeout(() => {
-      form.setFieldsValue({
-        title: record.title,
-        contents: record.contents,
-        status: record.status,
-        orderon: record.orderon ?? undefined,
-      });
-    }, 0);
+  const handleEdit = async (record: Help) => {
+    setEditingHelp(record);
+    setLoadingDetail(true);
+    try {
+      const res: any = await helpsApi.getHelpDetail(record.id);
+      const detail = res?.data || res || {};
+      const helpData = { ...record, ...detail };
+      setEditingHelp(helpData);
+      setStatusEnabled(helpData.status !== 1);
+      setModalVisible(true);
+      setTimeout(() => {
+        form.setFieldsValue({
+          title: helpData.title || '',
+          content: helpData.content || '',
+          category_id: helpData.category_id ?? undefined,
+          sort_order: helpData.sort_order,
+        });
+      }, 0);
+    } catch {
+      setStatusEnabled(record.status !== 1);
+      setModalVisible(true);
+      setTimeout(() => {
+        form.setFieldsValue({
+          title: record.title || '',
+          content: record.content || '',
+          category_id: record.category_id ?? undefined,
+          sort_order: record.sort_order,
+        });
+      }, 0);
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
-  const handleDelete = (record: Faq) => {
-    confirmDelete({
-      name: record.title,
-      deleteFn: () => request.post('/admin/cms/article/delete', { id: record.id }),
-      onSuccess: refresh,
-    });
-  };
-
-  const handleModalSubmit = async () => {
+  const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-      const submitData: Record<string, any> = {
-        modu: 'faq',
-        title: values.title,
-        contents: values.contents,
-        status: values.status ? 1 : 0,
-      };
-      if (values.orderon !== undefined && values.orderon !== null && values.orderon !== '') {
-        submitData.orderon = values.orderon;
-      }
+      setLoading(true);
 
-      if (editingFaq) {
-        await request.post(`/admin/cms/article/${editingFaq.id}`, submitData);
+      const payload: Record<string, any> = {
+        title: values.title,
+        category_id: values.category_id,
+        content: values.content || undefined,
+        status: statusEnabled ? 0 : 1,
+        sort_order: values.sort_order ?? undefined,
+      };
+
+      if (editingHelp) {
+        await helpsApi.updateHelp(editingHelp.id, payload);
         success('更新成功');
       } else {
-        await request.post('/admin/cms/article', submitData);
+        await helpsApi.createHelp(payload as any);
         success('添加成功');
       }
       setModalVisible(false);
       refresh();
     } catch (err: any) {
-      if (err.errorFields) return;
-      error(err.response?.data?.msg || '操作失败');
+      if (err?.errorFields) return;
+      showError(err?.response?.data?.message || '操作失败');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const columns: ColumnsType<Faq> = [
+  const getCategoryName = (id: number) => {
+    const cat = categories.find((c) => c.id === id);
+    return cat?.name || `ID:${id}`;
+  };
+
+  const columns: ColumnsType<Help> = [
     {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
+      render: (text: string, record: Help) => (
+        <span>
+          <Tag color="blue" style={{ marginRight: 4 }} title={getCategoryName(record.category_id)}>
+            {getCategoryName(record.category_id)}
+          </Tag>
+          <span style={{ wordBreak: 'break-word' }}>{text}</span>
+        </span>
+      ),
     },
     {
-      title: '排序',
-      dataIndex: 'orderon',
-      key: 'orderon',
+      title: '权重',
+      dataIndex: 'sort_order',
+      key: 'sort_order',
       width: 120,
-      render: (orderon: number, record: Faq) => (
+      render: (orderon: number | undefined, record: Help) => (
         <InputNumber
           min={0}
-          max={9999}
           value={orderon}
-          placeholder="未设置"
           style={{ width: 70 }}
           onBlur={(e) => {
-            const val = e.target.value ? parseInt(e.target.value) : null;
-            handleOrderChange(record, val);
-          }}
-          onPressEnter={(e) => {
-            const val = (e.target as HTMLInputElement).value ? parseInt((e.target as HTMLInputElement).value) : null;
-            handleOrderChange(record, val);
+            const val = e.target.value;
+            const num = val === '' ? null : parseInt(val);
+            if (num !== (record.sort_order ?? null)) {
+              handleSortChange(record, num);
+            }
           }}
         />
       ),
@@ -190,7 +202,7 @@ const FaqManagement = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: number, record: Faq) => (
+      render: (status: number, record: Help) => (
         <Switch
           checked={status === 0}
           onChange={(checked) => handleStatusToggle(record, checked)}
@@ -200,8 +212,12 @@ const FaqManagement = () => {
       ),
     },
     ActionColumn({
-      onEdit: handleEdit,
-      onDelete: handleDelete,
+      onEdit: (record) => handleEdit(record),
+      onDelete: (record) => confirmDelete({
+        name: record.title,
+        deleteFn: () => helpsApi.deleteHelp(record.id),
+        onSuccess: refresh,
+      }),
       showView: false,
     }),
   ];
@@ -209,85 +225,94 @@ const FaqManagement = () => {
   return (
     <>
       <StandardPage
-        title="FAQ管理"
-        description="管理常见问题解答内容。"
-        showRefreshButton={true}
+        title="帮助中心"
+        description="管理帮助中心的常见问题与文章。"
+        showRefreshButton
         onRefresh={refresh}
         showAddButton
         onAdd={handleAdd}
-        addButtonText="添加FAQ"
+        addButtonText="添加文章"
         searchArea={
           <SearchPanel
             filters={filters}
-            values={searchValues}
-            onChange={handleSearchChange}
+            values={{}}
+            onChange={() => {}}
             onSearch={handleSearch}
-            onReset={handleReset}
+            onReset={() => search({})}
           />
         }
         table={
           <StandardTable
             columns={columns}
             dataSource={data}
-            loading={loading}
+            loading={listLoading}
             pagination={pagination}
             onPageChange={onPageChange}
           />
         }
       />
 
-      <Modal
-        title={editingFaq ? '编辑FAQ' : '添加FAQ'}
+      <ScrollableModal
+        title={editingHelp ? '编辑文章' : '添加文章'}
         open={modalVisible}
-        onOk={handleModalSubmit}
-        onCancel={() => setModalVisible(false)}
-        okText="保存"
-        cancelText="取消"
+        onCancel={() => { form.resetFields(); setModalVisible(false); }}
         width={800}
         destroyOnHidden
+        footer={
+          <Space>
+            <Button onClick={() => { form.resetFields(); setModalVisible(false); }}>取消</Button>
+            <Button type="primary" loading={loading} onClick={() => form.submit()}>
+              {editingHelp ? '保存' : '创建'}
+            </Button>
+          </Space>
+        }
       >
         <Form
           form={form}
           layout="vertical"
-          initialValues={{ status: 0 }}
+          onFinish={handleSubmit}
+          autoComplete="off"
         >
           <Form.Item
-            name="title"
             label="标题"
+            name="title"
             rules={[{ required: true, message: '请输入标题' }]}
           >
-            <Input placeholder="请输入FAQ标题" maxLength={200} showCount />
+            <Input placeholder="请输入文章标题" maxLength={128} showCount />
           </Form.Item>
 
           <Form.Item
-            name="contents"
+            label="所属分类"
+            name="category_id"
+            rules={[{ required: true, message: '请选择分类' }]}
+          >
+            <Select
+              placeholder="请选择分类"
+              options={categories.map((c) => ({ label: c.name, value: c.id }))}
+            />
+          </Form.Item>
+
+          <Form.Item
             label="内容"
-            rules={[{ required: true, message: '请输入内容' }]}
+            name="content"
           >
-            <RichTextEditor placeholder="请输入FAQ内容" />
+            <RichTextEditor placeholder="请输入文章内容" />
           </Form.Item>
 
-          {!editingFaq && (
-            <Form.Item
-              name="orderon"
-              label="排序"
-              extra="数字越小排序越靠前，留空则按创建时间排序"
-            >
-              <InputNumber min={0} max={9999} placeholder="请输入排序序号" style={{ width: '100%' }} />
-            </Form.Item>
-          )}
+          <Form.Item label="权重" name="sort_order" extra="数字越大排序越靠前">
+            <InputNumber min={0} precision={0} placeholder="请输入权重" style={{ width: '100%' }} />
+          </Form.Item>
 
-          <Form.Item
-            name="status"
-            label="状态"
-            valuePropName="checked"
-            getValueFromEvent={(checked) => (checked ? 0 : 1)}
-            getValueProps={(value) => ({ checked: value === 0 })}
-          >
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+          <Form.Item label="状态">
+            <Switch
+              checked={statusEnabled}
+              onChange={setStatusEnabled}
+              checkedChildren="启用"
+              unCheckedChildren="禁用"
+            />
           </Form.Item>
         </Form>
-      </Modal>
+      </ScrollableModal>
     </>
   );
 };
