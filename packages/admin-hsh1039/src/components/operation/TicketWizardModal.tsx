@@ -150,7 +150,7 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
       </Form.Item>
       <Form.Item label="使用说明" name="usage_note"
         rules={[{ required: true, message: '请输入使用说明' }, { max: 512, message: '最多512个字符' }]}>
-        <Input placeholder="请输入使用说明" />
+        <Input placeholder="如：有效期等" />
       </Form.Item>
       <Form.Item label="使用地点" required>
         <Space direction="vertical" style={{ width: '100%' }}>
