@@ -38,6 +38,7 @@ const BannerManagement = () => {
   const [loading, setLoading] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [linkType, setLinkType] = useState<number>(LINK_TYPE.NO_LINK);
+  const [statusEnabled, setStatusEnabled] = useState(true);
   const [form] = Form.useForm();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
@@ -109,11 +110,9 @@ const BannerManagement = () => {
   const handleAdd = () => {
     setEditingBanner(null);
     setLinkType(LINK_TYPE.NO_LINK);
+    setStatusEnabled(true);
     setModalVisible(true);
-    setTimeout(() => {
-      form.resetFields();
-      form.setFieldsValue({ status: BannerStatus.ENABLED });
-    }, 0);
+    setTimeout(() => form.resetFields(), 0);
   };
 
   const handleEdit = async (record: Banner) => {
@@ -124,6 +123,7 @@ const BannerManagement = () => {
       const detail = res?.data || res || {};
       const bannerData = { ...record, ...detail };
       setEditingBanner(bannerData);
+      setStatusEnabled(bannerData.status !== BannerStatus.DISABLED);
       const hasLink = !!bannerData.link_url;
       setLinkType(hasLink ? LINK_TYPE.MINIAPP : LINK_TYPE.NO_LINK);
       setModalVisible(true);
@@ -141,6 +141,7 @@ const BannerManagement = () => {
     } catch {
       const hasLink = !!record.link_url;
       setLinkType(hasLink ? LINK_TYPE.MINIAPP : LINK_TYPE.NO_LINK);
+      setStatusEnabled(record.status !== BannerStatus.DISABLED);
       setModalVisible(true);
       setTimeout(() => {
         form.setFieldsValue({
@@ -166,7 +167,7 @@ const BannerManagement = () => {
         image_url: values.image_url,
         position: 'home',
         sort_order: values.sort_order ?? undefined,
-        status: values.status ?? BannerStatus.ENABLED,
+        status: statusEnabled ? BannerStatus.ENABLED : BannerStatus.DISABLED,
         start_time: values.start_time ? (values.start_time as Dayjs).format('YYYY/MM/DD HH:mm:ss') : undefined,
         end_time: values.end_time ? (values.end_time as Dayjs).format('YYYY/MM/DD HH:mm:ss') : undefined,
       };
@@ -213,7 +214,7 @@ const BannerManagement = () => {
       key: 'image_url',
       width: 80,
       render: (url: string) => (
-        <div style={{ width: 60, height: 35, borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: 80, height: 50, borderRadius: 2, overflow: 'hidden' }}>
           {url ? (
             <Image
               src={getFullWidthUrl(url)}
@@ -333,7 +334,6 @@ const BannerManagement = () => {
           layout="vertical"
           onFinish={handleSubmit}
           autoComplete="off"
-          initialValues={{ status: BannerStatus.ENABLED }}
         >
           <Form.Item
             label="标题"
@@ -381,14 +381,13 @@ const BannerManagement = () => {
             <InputNumber min={0} precision={0} placeholder="请输入权重" style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item
-            label="状态"
-            name="status"
-            valuePropName="checked"
-            getValueFromEvent={(checked: boolean) => checked ? BannerStatus.ENABLED : BannerStatus.DISABLED}
-            getValueProps={(value: number) => ({ checked: value === BannerStatus.ENABLED })}
-          >
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+          <Form.Item label="状态">
+            <Switch
+              checked={statusEnabled}
+              onChange={setStatusEnabled}
+              checkedChildren="启用"
+              unCheckedChildren="禁用"
+            />
           </Form.Item>
         </Form>
       </ScrollableModal>
