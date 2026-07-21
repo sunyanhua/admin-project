@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Switch, InputNumber, Tag, Space, Form, Input, DatePicker, Radio } from 'antd';
+import { Button, Switch, InputNumber, Tag, Space, Form, Input, DatePicker, Radio, Image } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { BannerStatus, BannerPositionLabels } from '@shared/constants';
 import { getFullWidthUrl } from '@/utils/imageUtils';
@@ -110,7 +110,10 @@ const BannerManagement = () => {
     setEditingBanner(null);
     setLinkType(LINK_TYPE.NO_LINK);
     setModalVisible(true);
-    setTimeout(() => form.resetFields(), 0);
+    setTimeout(() => {
+      form.resetFields();
+      form.setFieldsValue({ status: BannerStatus.ENABLED });
+    }, 0);
   };
 
   const handleEdit = async (record: Banner) => {
@@ -205,20 +208,21 @@ const BannerManagement = () => {
       render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
     },
     {
-      title: '封面',
+      title: '图片',
       dataIndex: 'image_url',
       key: 'image_url',
       width: 80,
       render: (url: string) => (
-        <div style={{ width: 60, height: 35, background: '#f0f0f0', borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: 60, height: 35, borderRadius: 2, overflow: 'hidden' }}>
           {url ? (
-            <img
+            <Image
               src={getFullWidthUrl(url)}
               alt="banner"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
+              preview={{ src: url }}
             />
           ) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 10 }}>—</div>
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 10, background: '#f0f0f0' }}>—</div>
           )}
         </div>
       ),
