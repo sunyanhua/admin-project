@@ -231,7 +231,7 @@ const BannerManagement = () => {
       ),
     },
     {
-      title: '排序',
+      title: '权重',
       dataIndex: 'sort_order',
       key: 'sort_order',
       width: 120,
@@ -340,7 +340,7 @@ const BannerManagement = () => {
             name="image_url"
             rules={[{ required: true, message: '请上传封面图' }]}
           >
-            <CropperImageUpload aspect={430 / 175} sizeHint="建议尺寸：430 × 175 像素" />
+            <CropperImageUpload aspect={400 / 175} sizeHint="建议尺寸：400 × 175 像素" />
           </Form.Item>
 
           <Form.Item label="链接类型" required>
@@ -361,16 +361,16 @@ const BannerManagement = () => {
             </Form.Item>
           )}
 
-          <Form.Item label="展示开始时间" name="start_time">
+          <Form.Item label="展示开始时间" name="start_time" extra="不填写则不限">
             <DatePicker showTime format="YYYY/MM/DD HH:mm:ss" placeholder="选择开始时间" style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item label="展示结束时间" name="end_time">
+          <Form.Item label="展示结束时间" name="end_time" extra="不填写则不限">
             <DatePicker showTime format="YYYY/MM/DD HH:mm:ss" placeholder="选择结束时间" style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item label="排序" name="sort_order" extra="数字越小排序越靠前">
-            <InputNumber min={0} precision={0} placeholder="请输入排序序号" style={{ width: '100%' }} />
+          <Form.Item label="权重" name="sort_order" extra="数字越大排序越靠前">
+            <InputNumber min={0} precision={0} placeholder="请输入权重" style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
