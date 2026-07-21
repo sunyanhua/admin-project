@@ -45,15 +45,19 @@ const BannerManagement = () => {
     return bannerApi.getBanners(params);
   }, []);
 
-  const formatBannerResponse = useCallback((res: any) => ({
-    list: (res?.data?.list || []).map((item: any) => ({
-      ...item,
-      link_url: item.link_url || '',
-      sort_order: item.sort_order,
-      position: item.position || '',
-    })),
-    count: res?.data?.total || 0,
-  }), []);
+  const formatBannerResponse = useCallback((res: any) => {
+    const list = res?.list || res?.data?.list || [];
+    const total = res?.total ?? res?.data?.total ?? 0;
+    return {
+      list: list.map((item: any) => ({
+        ...item,
+        link_url: item.link_url || '',
+        sort_order: item.sort_order,
+        position: item.position || '',
+      })),
+      count: total,
+    };
+  }, []);
 
   const {
     data,
