@@ -50,6 +50,6 @@ export class LoginPage {
 
   async isLoggedIn() {
     // 检查是否重定向到首页或其他登录后页面
-    return this.page.url().endsWith('/') || await this.page.locator('text=1039俱乐部+').isVisible();
+    return this.page.url().endsWith('/') || await this.page.locator('text=1039发现').isVisible();
   }
 }

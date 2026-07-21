@@ -3410,6 +3410,59 @@
                 }
             }
         },
+        "/admin/v1/mall/invoices": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invoices-Admin"
+                ],
+                "summary": "管理后台发票列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/mall/logistics-companies": {
             "get": {
                 "security": [
@@ -4598,6 +4651,374 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/products/:id/booking-slots": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "预约时段列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "SKU ID",
+                        "name": "sku_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYY-MM-DD",
+                        "name": "date_from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYY-MM-DD",
+                        "name": "date_to",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "创建预约时段",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "时段信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.AdminCreateBookingSlotRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3039 不可编辑已过去时段）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/products/:id/booking-slots/:slotId": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "编辑预约时段",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "时段ID",
+                        "name": "slotId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "时段信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.AdminUpdateBookingSlotRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3035 不存在 / 3038 容量小于已预约 / 3039 不可编辑已过去时段）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "删除预约时段",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "时段ID",
+                        "name": "slotId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3041 已有预约不可删除）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/products/:id/booking-slots/:slotId/status": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "启停预约时段",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "时段ID",
+                        "name": "slotId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.AdminToggleBookingSlotStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "操作成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6357,6 +6778,301 @@
                 }
             }
         },
+        "/admin/v1/mall/tickets/:code": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets-Admin"
+                ],
+                "summary": "扫码查询票夹",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "票夹码/ID",
+                        "name": "code",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3046 未找到）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/tickets/:id/booking/cancel": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets-Admin"
+                ],
+                "summary": "管理后台取消预约",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "票夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3029 状态不允许）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/tickets/:id/verify": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets-Admin"
+                ],
+                "summary": "核销卡券",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "票夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3045 状态不允许核销）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/tickets/batch-verify": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets-Admin"
+                ],
+                "summary": "批量核销",
+                "parameters": [
+                    {
+                        "description": "票夹ID列表",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.AdminBatchVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "批量核销结果",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/transfers": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets-Admin"
+                ],
+                "summary": "转赠记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/mall/users": {
             "get": {
                 "security": [
@@ -6931,6 +7647,491 @@
                     },
                     "500": {
                         "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/verifications": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets-Admin"
+                ],
+                "summary": "核销记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/wxa/apps": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "小程序应用列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键词（appid）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "创建小程序应用",
+                "parameters": [
+                    {
+                        "description": "创建小程序应用请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaAppRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/wxa/apps/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "小程序应用详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "小程序应用 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "小程序应用详情",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小程序应用不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "更新小程序应用",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "小程序应用 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新小程序应用请求（PATCH 语义）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaAppRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小程序应用不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "禁用小程序应用",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "小程序应用 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "禁用成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小程序应用不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/wxa/machs": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "商户配置列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键词（mchid/serial_no）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态过滤：1-启用 0-禁用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "创建商户配置",
+                "parameters": [
+                    {
+                        "description": "创建商户配置请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaMachRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/mall/wxa/machs/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "商户配置详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商户配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "商户配置详情",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商户配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "更新商户配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商户配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新商户配置请求（PATCH 语义）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaMachRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商户配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "禁用商户配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商户配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "禁用成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商户配置不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -7607,6 +8808,146 @@
                 }
             }
         },
+        "/admin/v1/upload/archive/chunk": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "压缩包分片上传",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "分片二进制数据",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "当前分片序号（从0开始）",
+                        "name": "chunk_index",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "总分片数",
+                        "name": "total_chunks",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "原始文件名（首片必填）",
+                        "name": "file_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "完整文件预期总大小（首片必填）",
+                        "name": "file_size",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "上传令牌（续片必填）",
+                        "name": "upload_token",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/upload/archive/chunk/abort": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "取消压缩包分片上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "上传令牌",
+                        "name": "upload_token",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/upload/audio": {
             "post": {
                 "security": [
@@ -7627,6 +8968,146 @@
                 "responses": {
                     "200": {
                         "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/upload/audio/chunk": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "音频分片上传",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "分片二进制数据",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "当前分片序号（从0开始）",
+                        "name": "chunk_index",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "总分片数",
+                        "name": "total_chunks",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "原始文件名（首片必填）",
+                        "name": "file_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "完整文件预期总大小（首片必填）",
+                        "name": "file_size",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "上传令牌（续片必填）",
+                        "name": "upload_token",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/upload/audio/chunk/abort": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "取消音频分片上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "上传令牌",
+                        "name": "upload_token",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -7697,6 +9178,146 @@
                 }
             }
         },
+        "/admin/v1/upload/image/chunk": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "图片分片上传",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "分片二进制数据",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "当前分片序号（从0开始）",
+                        "name": "chunk_index",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "总分片数",
+                        "name": "total_chunks",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "原始文件名（首片必填）",
+                        "name": "file_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "完整文件预期总大小（首片必填）",
+                        "name": "file_size",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "上传令牌（续片必填）",
+                        "name": "upload_token",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/upload/image/chunk/abort": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "取消图片分片上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "上传令牌",
+                        "name": "upload_token",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/upload/video": {
             "post": {
                 "security": [
@@ -7717,6 +9338,146 @@
                 "responses": {
                     "200": {
                         "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/upload/video/chunk": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "视频分片上传",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "分片二进制数据",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "当前分片序号（从0开始）",
+                        "name": "chunk_index",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "总分片数",
+                        "name": "total_chunks",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "原始文件名（首片必填）",
+                        "name": "file_name",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "完整文件预期总大小（首片必填）",
+                        "name": "file_size",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "上传令牌（续片必填）",
+                        "name": "upload_token",
+                        "in": "formData"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/upload/video/chunk/abort": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "取消视频分片上传",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "上传令牌",
+                        "name": "upload_token",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -8758,6 +10519,106 @@
                 }
             }
         },
+        "/api/v1/mall/products/:id/booking-dates": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "C端可预约日期列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "月份 YYYY-MM",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/mall/products/:id/booking-slots": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "C端可预约时段列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "日期 YYYY-MM-DD",
+                        "name": "date",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/mall/products/{id}": {
             "get": {
                 "description": "下架商品允许通过 ID 读取基本信息，但不返回 SKU 列表与规格组树（is_listed=false 时 skus/specs 为空数组）。加入购物车与下单规则不受影响。",
@@ -8995,6 +10856,274 @@
                 }
             }
         },
+        "/api/v1/wxa/addresses": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "C端收货地址列表",
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "新增收货地址",
+                "parameters": [
+                    {
+                        "description": "地址信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_user_dto.CreateAddressRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/addresses/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "编辑收货地址",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "地址ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "地址信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_user_dto.UpdateAddressRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "地址不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "删除收货地址",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "地址ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "地址不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/addresses/{id}/default": {
+            "put": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Addresses"
+                ],
+                "summary": "设为默认地址",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "地址ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "地址不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/login": {
             "post": {
                 "consumes": [
@@ -9111,7 +11240,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "基于订单创建售后申请。T-098：退款金额受限于商品关联的退款规则（按时间阶段计算），若当前不在可退款窗口内则返回 4011。",
+                "description": "基于订单创建售后申请。T-098：退款金额受限于商品关联的退款规则（按时间阶段计算），若当前不在可退款窗口内则返回 4011。T-115：票夹终态（已转赠/已核销/已预约）或已申请发票将拦截退款。",
                 "consumes": [
                     "application/json"
                 ],
@@ -9135,7 +11264,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "售后申请提交成功",
+                        "description": "售后申请提交成功，返回售后单号、类型、状态、退款金额、关联订单号、创建时间。业务错误（HTTP 200）：3002=订单不存在, 4001=售后单不存在, 4002=订单状态不允许, 4004=退款金额超限, 4005=重复提交, 4011=不在可退款窗口, 3047~3050=票夹/发票拦截",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -9152,8 +11281,8 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
-                    "403": {
-                        "description": "无权限",
+                    "429": {
+                        "description": "请求过于频繁",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -9174,6 +11303,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询指定售后单的完整详情，含操作时间线、退款金额、退货物流信息。仅允许查询本人的售后单，不存在或不属于当前用户均返回 404。",
                 "consumes": [
                     "application/json"
                 ],
@@ -9195,13 +11325,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "售后详情（含操作时间线）",
+                        "description": "售后详情：含售后单号、类型、状态、退款金额（original_refund_amount 仅当被规则调整时返回）、订单号、商品标题、退货物流、凭证图片、拒绝原因、操作时间线。业务错误（HTTP 200）：4001=售后单不存在, 3002=订单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（ID 非正整数）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -9829,6 +11959,127 @@
                 }
             }
         },
+        "/api/v1/wxa/mall/orders/{id}/invoice": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "查询发票状态",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "发票申请不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "申请发票",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "订单ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "发票申请信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.CreateInvoiceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "订单不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/mall/points/balance": {
             "get": {
                 "security": [
@@ -10141,6 +12392,369 @@
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/mall/tickets": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "C端票夹列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/mall/tickets/:id": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "C端票夹详情",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "票夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "票夹不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/mall/tickets/:id/book": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "C端预约票夹",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "票夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "预约时段ID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.BookTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3029 状态不允许预约 / 3036 时段已满）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/mall/tickets/:id/register": {
+            "put": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "登记票夹人员信息",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "票夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "人员信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.RegisterTicketRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3021 已登记 / 3026 人员信息格式错误）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误（人员信息格式无效）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "票夹不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/mall/tickets/:id/transfer": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "生成转赠 token（5 分钟有效），返回 token 和过期时间",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "发起转赠",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "票夹ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3043 状态不允许转赠）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "票夹不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/mall/tickets/transfer/accept": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "通过转赠 token 接收票夹，变更持有人",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets"
+                ],
+                "summary": "接收转赠",
+                "parameters": [
+                    {
+                        "description": "转赠 token",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.AcceptTransferRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（3028 已过期 / 3042 不能转给自己 / 3044 已被使用）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -10966,7 +13580,8 @@
                     }
                 },
                 "order_id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 },
                 "reason": {
                     "type": "string",
@@ -11798,6 +14413,18 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_order_dto.AcceptTransferRequest": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_order_dto.AddOrderRemarkRequest": {
             "type": "object",
             "required": [
@@ -11828,6 +14455,22 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_order_dto.AdminBatchVerifyRequest": {
+            "type": "object",
+            "required": [
+                "ticket_ids"
+            ],
+            "properties": {
+                "ticket_ids": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_order_dto.BatchSelectRequest": {
             "type": "object",
             "required": [
@@ -11851,6 +14494,18 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_order_dto.BookTicketRequest": {
+            "type": "object",
+            "required": [
+                "slot_id"
+            ],
+            "properties": {
+                "slot_id": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_order_dto.CartItemAdditionalFields": {
             "type": "object",
             "required": [
@@ -11868,6 +14523,36 @@
                 },
                 "cart_item_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_order_dto.CreateInvoiceRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "invoice_type",
+                "title"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "invoice_type": {
+                    "type": "string",
+                    "enum": [
+                        "personal",
+                        "company"
+                    ]
+                },
+                "tax_id": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 1
                 }
             }
         },
@@ -11899,11 +14584,9 @@
         },
         "github_com_vbegin_bizmall_internal_order_dto.CreateOrderRequest": {
             "type": "object",
-            "required": [
-                "cart_item_ids"
-            ],
             "properties": {
                 "cart_item_ids": {
+                    "description": "购物车路径（与直下单路径二选一）",
                     "type": "array",
                     "maxItems": 50,
                     "minItems": 1,
@@ -11926,6 +14609,23 @@
                         "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.CartItemAdditionalFields"
                     }
                 },
+                "persons": {
+                    "description": "票夹登记人员信息（has_ticket=true && additional_fields_mode=before_pay 时必填）",
+                    "type": "array",
+                    "maxItems": 50,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.PersonInfo"
+                    }
+                },
+                "product_id": {
+                    "description": "直下单路径（与购物车路径二选一）",
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
                 "remark": {
                     "type": "string",
                     "maxLength": 256
@@ -11937,6 +14637,50 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.ShippingAddressDTO"
                         }
                     ]
+                },
+                "sku_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_order_dto.PersonInfo": {
+            "type": "object",
+            "properties": {
+                "additional": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "idcard": {
+                    "type": "string",
+                    "maxLength": 18
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "mobile": {
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_order_dto.RegisterTicketRequest": {
+            "type": "object",
+            "required": [
+                "persons"
+            ],
+            "properties": {
+                "persons": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.PersonInfo"
+                    }
                 }
             }
         },
@@ -12145,6 +14889,70 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_product_dto.AdminCreateBookingSlotRequest": {
+            "type": "object",
+            "required": [
+                "capacity",
+                "sku_id",
+                "slot_date",
+                "title"
+            ],
+            "properties": {
+                "capacity": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sku_id": {
+                    "type": "integer"
+                },
+                "slot_date": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "slot_time": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_product_dto.AdminToggleBookingSlotStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_product_dto.AdminUpdateBookingSlotRequest": {
+            "type": "object",
+            "properties": {
+                "capacity": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "slot_time": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 1
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_product_dto.BatchCreateSkuRequest": {
             "type": "object",
             "required": [
@@ -12226,6 +15034,14 @@
                 "additional_fields_has_sensitive": {
                     "type": "boolean"
                 },
+                "additional_fields_mode": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "before_pay",
+                        "after_pay"
+                    ]
+                },
                 "brand_id": {
                     "type": "integer"
                 },
@@ -12246,6 +15062,15 @@
                     "type": "string"
                 },
                 "expiry": {
+                    "type": "string"
+                },
+                "has_booking": {
+                    "type": "boolean"
+                },
+                "has_ticket": {
+                    "type": "boolean"
+                },
+                "intro": {
                     "type": "string"
                 },
                 "is_listed": {
@@ -12537,6 +15362,14 @@
                     "description": "nil=不更新",
                     "type": "boolean"
                 },
+                "additional_fields_mode": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "before_pay",
+                        "after_pay"
+                    ]
+                },
                 "brand_id": {
                     "type": "integer"
                 },
@@ -12558,6 +15391,17 @@
                     "type": "string"
                 },
                 "expiry": {
+                    "type": "string"
+                },
+                "has_booking": {
+                    "description": "nil=不更新",
+                    "type": "boolean"
+                },
+                "has_ticket": {
+                    "description": "nil=不更新",
+                    "type": "boolean"
+                },
+                "intro": {
                     "type": "string"
                 },
                 "is_listed": {
@@ -12818,6 +15662,81 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_user_dto.CreateAddressRequest": {
+            "type": "object",
+            "required": [
+                "address",
+                "mobile",
+                "name"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "city": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "district": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "mobile": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "province": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_user_dto.UpdateAddressRequest": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "city": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "district": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "mobile": {
+                    "type": "string",
+                    "maxLength": 20,
+                    "minLength": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 1
+                },
+                "province": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_user_dto.UpdateCustomerStatusRequest": {
             "type": "object",
             "properties": {
@@ -12947,6 +15866,112 @@
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaAppRequest": {
+            "type": "object",
+            "required": [
+                "appid",
+                "secret"
+            ],
+            "properties": {
+                "appid": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 1
+                },
+                "mach_id": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "secret": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaMachRequest": {
+            "type": "object",
+            "required": [
+                "api_key",
+                "cert_pem",
+                "key_pem",
+                "mchid",
+                "pub_pem",
+                "pub_serial_no",
+                "serial_no"
+            ],
+            "properties": {
+                "api_key": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "cert_pem": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "key_pem": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "mchid": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 1
+                },
+                "pub_pem": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "pub_serial_no": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 1
+                },
+                "serial_no": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaAppRequest": {
+            "type": "object",
+            "properties": {
+                "mach_id": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "secret": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaMachRequest": {
+            "type": "object",
+            "properties": {
+                "api_key": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "cert_pem": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "key_pem": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "pub_pem": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "pub_serial_no": {
+                    "type": "string",
+                    "maxLength": 256,
+                    "minLength": 1
                 }
             }
         },

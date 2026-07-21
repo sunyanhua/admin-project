@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-17 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-21 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -98,23 +98,38 @@ urn:bizmall:<module>:<action>
 | `urn:bizmall:admin:role:read` | 角色权限 | 查看权限树、角色列表、角色已分配权限 |
 | `urn:bizmall:admin:role:write` | 角色权限 | 创建/编辑权限节点、创建/编辑角色、为角色分配权限 |
 | `urn:bizmall:admin:role:delete` | 角色权限 | 删除权限节点、删除角色 |
+| `urn:bizmall:user:read` | C 端用户 | 查看 C 端用户列表、用户详情 |
+| `urn:bizmall:user:write` | C 端用户 | 修改 C 端用户状态（启用/禁用） |
 | `urn:bizmall:product:read` | 商品 | 查看分类/品牌/商品/SKU/规格组 |
 | `urn:bizmall:product:write` | 商品 | 创建/编辑分类/品牌/商品/SKU/规格组、上下架 |
 | `urn:bizmall:product:delete` | 商品 | 删除分类/品牌/商品/规格组 |
 | `urn:bizmall:refundrule:read` | 退款规则 | 查看退款规则列表与详情 |
 | `urn:bizmall:refundrule:write` | 退款规则 | 创建与编辑退款规则 |
 | `urn:bizmall:refundrule:delete` | 退款规则 | 删除退款规则 |
+| `urn:bizmall:order:read` | 订单 | 查看订单列表/详情/导出、物流公司列表 |
+| `urn:bizmall:order:write` | 订单 | 发货（单笔/批量导入）、添加备注 |
+| `urn:bizmall:after_sale:read` | 售后 | 查看售后列表/详情、退款记录 |
+| `urn:bizmall:after_sale:write` | 售后 | 审核售后单、确认退货收货、执行退款 |
+| `urn:bizmall:ticket:read` | 票夹 | 查看票夹列表、票夹详情 |
+| `urn:bizmall:ticket:verify` | 票夹 | 核销（扫码查询+确认核销） |
+| `urn:bizmall:ticket:write` | 票夹 | 票夹管理（后台批量核销） |
+| `urn:bizmall:wxa:app:read` | 微信配置 | 查看小程序应用列表与详情 |
+| `urn:bizmall:wxa:app:write` | 微信配置 | 创建与编辑小程序应用 |
+| `urn:bizmall:wxa:app:delete` | 微信配置 | 禁用小程序应用 |
+| `urn:bizmall:wxa:mach:read` | 微信配置 | 查看支付商户列表与详情 |
+| `urn:bizmall:wxa:mach:write` | 微信配置 | 创建与编辑支付商户 |
+| `urn:bizmall:wxa:mach:delete` | 微信配置 | 禁用支付商户 |
 | `urn:bizmall:cms:read` | CMS | 查看资讯/Banner/公告/帮助分类/帮助文章、通知模板列表 |
 | `urn:bizmall:cms:write` | CMS | 创建/编辑内容、上下架、可见性、通知模板创建/编辑 |
 | `urn:bizmall:cms:delete` | CMS | 删除内容（软删除或硬删除） |
 | `urn:bizmall:coupon:read` | 优惠券 | 查看优惠券模板列表/详情、兑换配置列表 |
 | `urn:bizmall:coupon:write` | 优惠券 | 创建/编辑/启停/删除优惠券模板、后台发放优惠券 |
 | `urn:bizmall:points:config` | 积分 | 积分规则管理、积分流水查询、积分异常修正、积分兑换配置 |
-| `urn:bizmall:user:read` | C 端用户 | 查看 C 端用户列表、用户详情 |
-| `urn:bizmall:user:write` | C 端用户 | 修改 C 端用户状态（启用/禁用） |
+| `urn:bizmall:settings:read` | 系统设置 | 查看系统配置项 |
+| `urn:bizmall:settings:write` | 系统设置 | 创建/编辑/启停/删除系统配置项 |
 
-> **注意：** 以下模块的后台接口未绑定细粒度 URN，仅要求 `AdminAuth`（管理员已登录）即可访问：售后管理、订单管理、物流公司字典、核销人员与记录管理、操作日志、后台上传图片、通知发送记录查询。
-退款规则管理为独立 URN 权限体系（`urn:bizmall:refundrule:*`），归属商品管理权限树之下。
+> **注意：** 以下模块的后台接口未绑定细粒度 URN，仅要求 `AdminAuth`（管理员已登录）即可访问：核销人员与记录管理、操作日志、后台上传图片、通知发送记录查询。
+退款规则管理（`urn:bizmall:refundrule:*`）为独立 URN 权限体系，直属于根节点（与商品模块平级）。
 
 ---
 
@@ -243,7 +258,52 @@ urn:bizmall:<module>:<action>
 | POST | `/api/v1/wxa/mall/orders/:id/query-payment` | 主动查询支付 | WxaAuth | — |
 | POST | `/notify/v1/mall/payment/wechat/:mix` | 支付回调通知 | NotifySign | — |
 
-## 九、AfterSale 模块
+## 九、Tickets 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/wxa/mall/tickets` | C端票夹列表 | WxaAuth | — |
+| GET | `/api/v1/wxa/mall/tickets/:id` | C端票夹详情 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/tickets/:id/book` | C端预约票夹 | WxaAuth | — |
+| PUT | `/api/v1/wxa/mall/tickets/:id/register` | 登记票夹人员信息 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/tickets/:id/transfer` | 发起转赠 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/tickets/transfer/accept` | 接收转赠 | WxaAuth | — |
+
+## 十、Tickets-Admin 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/tickets/:code` | 扫码查询票夹 | AdminAuth | `urn:bizmall:ticket:read` |
+| PUT | `/admin/v1/mall/tickets/:id/booking/cancel` | 管理后台取消预约 | AdminAuth | `urn:bizmall:ticket:write` |
+| POST | `/admin/v1/mall/tickets/:id/verify` | 核销卡券 | AdminAuth | `urn:bizmall:ticket:verify` |
+| POST | `/admin/v1/mall/tickets/batch-verify` | 批量核销 | AdminAuth | `urn:bizmall:ticket:verify` |
+| GET | `/admin/v1/mall/transfers` | 转赠记录列表 | AdminAuth | `urn:bizmall:ticket:read` |
+| GET | `/admin/v1/mall/verifications` | 核销记录列表 | AdminAuth | `urn:bizmall:ticket:read` |
+
+## 十一、Invoices 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/wxa/mall/orders/{id}/invoice` | 查询发票状态 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/orders/{id}/invoice` | 申请发票 | WxaAuth | — |
+
+## 十二、Invoices-Admin 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/invoices` | 管理后台发票列表 | AdminAuth | AdminAuth |
+
+## 十三、Addresses 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/wxa/addresses` | C端收货地址列表 | WxaAuth | — |
+| POST | `/api/v1/wxa/addresses` | 新增收货地址 | WxaAuth | — |
+| PUT | `/api/v1/wxa/addresses/{id}` | 编辑收货地址 | WxaAuth | — |
+| DELETE | `/api/v1/wxa/addresses/{id}` | 删除收货地址 | WxaAuth | — |
+| PUT | `/api/v1/wxa/addresses/{id}/default` | 设为默认地址 | WxaAuth | — |
+
+## 十四、AfterSale 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -258,7 +318,7 @@ urn:bizmall:<module>:<action>
 | GET | `/api/v1/wxa/mall/after-sales/:id` | C端售后详情 | WxaAuth | — |
 | POST | `/api/v1/wxa/mall/after-sales/:id/return-logistics` | 填写退货物流 | WxaAuth | — |
 
-## 十、RefundRules 模块
+## 十五、RefundRules 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -269,7 +329,7 @@ urn:bizmall:<module>:<action>
 | DELETE | `/admin/v1/mall/refund-rules/{id}` | 删除退款规则 | AdminAuth | `urn:bizmall:refundrule:delete` |
 | PUT | `/admin/v1/mall/refund-rules/{id}/hidden` | 更新退款规则隐藏状态 | AdminAuth | `urn:bizmall:refundrule:write` |
 
-## 十一、Coupons 模块
+## 十六、Coupons 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -288,7 +348,7 @@ urn:bizmall:<module>:<action>
 | GET | `/api/v1/mall/coupons/my` | 我的优惠券列表 | WxaAuth | — |
 | POST | `/api/v1/mall/coupons/preview` | 满减试算 | WxaAuth | — |
 
-## 十二、Points 模块
+## 十七、Points 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -306,7 +366,7 @@ urn:bizmall:<module>:<action>
 | POST | `/api/v1/wxa/mall/points/sign/makeup` | 补签 | WxaAuth | — |
 | GET | `/api/v1/wxa/mall/points/sign/status` | 查询签到状态 | WxaAuth | — |
 
-## 十三、CMS 模块
+## 十八、CMS 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -346,7 +406,7 @@ urn:bizmall:<module>:<action>
 | GET | `/api/v1/cms/helps/{id}` | 帮助文章详情（C端） | — | — |
 | GET | `/api/v1/cms/notices` | 公告列表（C端） | — | — |
 
-## 十四、Notifications 模块
+## 十九、Notifications 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -359,7 +419,7 @@ urn:bizmall:<module>:<action>
 | PUT | `/api/v1/notifications/read-all` | 全部标记已读 | WxaAuth | — |
 | GET | `/api/v1/notifications/unread-count` | 未读消息数 | WxaAuth | — |
 
-## 十五、Verification 模块
+## 二十、Verification 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -379,14 +439,34 @@ urn:bizmall:<module>:<action>
 | GET | `/api/v1/wxa/mall/verification/staff/status` | 查询绑定状态 | WxaAuth | — |
 | GET | `/api/v1/wxa/mall/verification/tickets` | C端查询核销码列表 | WxaAuth | — |
 
-## 十六、Upload 模块
+## 二十一、BookingSlots 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/products/:id/booking-slots` | 预约时段列表 | AdminAuth | `urn:bizmall:product:read` |
+| POST | `/admin/v1/mall/products/:id/booking-slots` | 创建预约时段 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/booking-slots/:slotId` | 编辑预约时段 | AdminAuth | `urn:bizmall:product:write` |
+| DELETE | `/admin/v1/mall/products/:id/booking-slots/:slotId` | 删除预约时段 | AdminAuth | `urn:bizmall:product:delete` |
+| PUT | `/admin/v1/mall/products/:id/booking-slots/:slotId/status` | 启停预约时段 | AdminAuth | `urn:bizmall:product:write` |
+| GET | `/api/v1/mall/products/:id/booking-dates` | C端可预约日期列表 | — | — |
+| GET | `/api/v1/mall/products/:id/booking-slots` | C端可预约时段列表 | — | — |
+
+## 二十二、Upload 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
 | POST | `/admin/v1/upload/archive` | 上传压缩包（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/archive/chunk` | 压缩包分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/archive/chunk/abort` | 取消压缩包分片上传 | AdminAuth | AdminAuth |
 | POST | `/admin/v1/upload/audio` | 上传音频（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/audio/chunk` | 音频分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/audio/chunk/abort` | 取消音频分片上传 | AdminAuth | AdminAuth |
 | POST | `/admin/v1/upload/image` | 上传图片（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/image/chunk` | 图片分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/image/chunk/abort` | 取消图片分片上传 | AdminAuth | AdminAuth |
 | POST | `/admin/v1/upload/video` | 上传视频（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/video/chunk` | 视频分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/video/chunk/abort` | 取消视频分片上传 | AdminAuth | AdminAuth |
 | GET | `/api/v1/wxa/upload/image` | 获取媒体文件 | WxaAuth | — |
 | POST | `/api/v1/wxa/upload/image` | 上传图片（C端） | WxaAuth | — |
 
@@ -574,7 +654,7 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 8. **图片保护后缀** —— 开启 `image_protection` 后，图片 CDN URL 末尾带 `/0` 后缀（如 `.../photo.jpg/0`），其他类型不带。
 9. **分片大小配置** —— 默认 10MB/片，可通过配置文件 `chunk_size` 调整。计算 `total_chunks = ceil(file_size / chunk_size)`。
 
-## 十七、Audit 模块
+## 二十三、Audit 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -584,14 +664,7 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | GET | `/admin/v1/logs/audit/verify` | 验证哈希链完整性 | AdminAuth | AdminAuth |
 | GET | `/admin/v1/logs/my` | 我的日志列表 | AdminAuth | AdminAuth |
 
-## 十八、Excel 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| POST | `/admin/v1/excel/build` | 构建 Excel 文件 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/excel/parse` | 解析 Excel 文件 | AdminAuth | AdminAuth |
-
-## 十九、后台-系统设置 模块
+## 二十四、后台-系统设置 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -602,11 +675,33 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | DELETE | `/admin/v1/settings/{id}` | 删除设置项 | — | — |
 | PUT | `/admin/v1/settings/{id}/enabled` | 启用/禁用设置项 | — | — |
 
-## 二十、C端-系统设置 模块
+## 二十五、C端-系统设置 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
 | GET | `/api/v1/settings/{key}` | 读取公开设置 | — | — |
+
+## 二十六、Excel 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| POST | `/admin/v1/excel/build` | 构建 Excel 文件 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/excel/parse` | 解析 Excel 文件 | AdminAuth | AdminAuth |
+
+## 二十七、后台-微信配置 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/wxa/apps` | 小程序应用列表 | — | — |
+| POST | `/admin/v1/mall/wxa/apps` | 创建小程序应用 | — | — |
+| GET | `/admin/v1/mall/wxa/apps/{id}` | 小程序应用详情 | — | — |
+| PUT | `/admin/v1/mall/wxa/apps/{id}` | 更新小程序应用 | — | — |
+| DELETE | `/admin/v1/mall/wxa/apps/{id}` | 禁用小程序应用 | — | — |
+| GET | `/admin/v1/mall/wxa/machs` | 商户配置列表 | — | — |
+| POST | `/admin/v1/mall/wxa/machs` | 创建商户配置 | — | — |
+| GET | `/admin/v1/mall/wxa/machs/{id}` | 商户配置详情 | — | — |
+| PUT | `/admin/v1/mall/wxa/machs/{id}` | 更新商户配置 | — | — |
+| DELETE | `/admin/v1/mall/wxa/machs/{id}` | 禁用商户配置 | — | — |
 
 ---
 
