@@ -73,7 +73,9 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
           cover_image: event.cover_image || '',
           carousel_images: event.carousel_images || [],
           host: introItems.find((i: ActivityIntroItem) => i.title === '主办方')?.content || '',
-          datetime: introItems.find((i: ActivityIntroItem) => i.title === '活动时间')?.content || '',
+          datetime: introItems.find((i: ActivityIntroItem) => i.title === '活动时间')?.content
+            || (desc as Record<string, unknown>).datetime as string
+            || '',
           address: introItems.find((i: ActivityIntroItem) => i.title === '活动地点')?.content || '',
           coordinate: introItems.find((i: ActivityIntroItem) => i.title === '活动地点')?.zuobiao || '',
           detail: desc.detail || '',
