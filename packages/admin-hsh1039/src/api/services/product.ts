@@ -21,6 +21,7 @@ export interface Product {
   cover_image?: string;
   carousel_images?: string[];
   detail_desc?: string;
+  intro?: string;
   is_virtual?: boolean;
   is_listed?: boolean;
   is_visible?: boolean;
@@ -39,6 +40,7 @@ export interface CreateProductData {
   cover_image?: string;
   carousel_images?: string[];
   detail_desc?: string;
+  intro?: string;
   is_virtual: boolean;
   is_listed?: boolean;
   is_visible?: boolean;
@@ -55,6 +57,7 @@ export interface UpdateProductData {
   cover_image?: string;
   carousel_images?: string[];
   detail_desc?: string;
+  intro?: string;
   is_virtual?: boolean;
   is_listed?: boolean;
   is_visible?: boolean;
