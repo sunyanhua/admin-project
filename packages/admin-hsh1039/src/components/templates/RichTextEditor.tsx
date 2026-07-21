@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, } from 'antd';
+import { Button } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -42,6 +42,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const editorRef = useRef<any>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadCount, setUploadCount] = useState(0);
   const { error } = useAppNotification();
 
   // ReactQuill 的 value/defaultValue 内部走 clipboard.convert() 会把 HTML 当纯文本。
@@ -66,48 +67,70 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     onChange?.(html);
   }, [onChange]);
 
-  const handleImageUpload = useCallback(async (file: File) => {
-    setUploading(true);
-    try {
-      const res = await uploadApi.uploadImage(file) as any;
-      let url = '';
-      if (typeof res === 'string') url = res;
-      else if (res?.url) url = res.url;
-      else if (res?.data?.url) url = res.data.url;
-      else if (res?.data?.data?.url) url = res.data.data.url;
-      else if (res?.data) url = typeof res.data === 'string' ? res.data : String(res.data.data);
-
-      if (url) {
-        const quill = editorRef.current;
-        if (quill) {
-          const editor = quill.getEditor?.();
-          if (editor) {
-            editor.focus();
-            const range = editor.getSelection(true);
-            const insertIndex = range ? range.index : editor.getLength() - 1;
-            editor.insertEmbed(insertIndex, 'image', url);
-            editor.setSelection(insertIndex + 1, 0);
-            onChange?.(editor.root.innerHTML);
-          }
-        }
-      } else {
-        error('图片上传成功但未返回URL');
-      }
-    } catch (error: any) {
-      error(error.response?.data?.msg || '图片上传失败');
-    } finally {
-      setUploading(false);
+  const insertImagesAtIndex = useCallback((urls: string[], insertIndex: number) => {
+    const editor = editorRef.current?.getEditor?.();
+    if (!editor) return;
+    let idx = insertIndex;
+    for (const url of urls) {
+      editor.insertEmbed(idx, 'image', url);
+      idx += 1;
     }
-    return false;
+    editor.setSelection(idx, 0);
+    onChange?.(editor.root.innerHTML);
   }, [onChange]);
+
+  const handleImageUpload = useCallback(async (files: FileList | File[]) => {
+    const fileList = Array.from(files);
+    if (fileList.length === 0) return;
+
+    // 先捕获插入位置
+    const editor = editorRef.current?.getEditor?.();
+    editor?.focus();
+    const range = editor?.getSelection?.(true);
+    const insertIndex = range ? range.index : (editor?.getLength() ?? 1) - 1;
+
+    setUploading(true);
+    setUploadCount(fileList.length);
+
+    // 并行上传所有文件
+    const results = await Promise.allSettled(
+      fileList.map(async (file) => {
+        const res = await uploadApi.uploadImage(file) as any;
+        let url = '';
+        if (typeof res === 'string') url = res;
+        else if (res?.url) url = res.url;
+        else if (res?.data?.url) url = res.data.url;
+        else if (res?.data?.data?.url) url = res.data.data.url;
+        else if (res?.data) url = typeof res.data === 'string' ? res.data : String(res.data.data);
+        return url;
+      }),
+    );
+
+    const urls = results
+      .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled' && !!r.value)
+      .map((r) => r.value);
+
+    const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value));
+    if (failed.length > 0) {
+      error(`${failed.length} 张图片上传失败`);
+    }
+
+    if (urls.length > 0) {
+      insertImagesAtIndex(urls, insertIndex);
+    }
+
+    setUploading(false);
+    setUploadCount(0);
+  }, [error, onChange]);
 
   const triggerImageUpload = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    input.multiple = true;
     input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) handleImageUpload(file);
+      const files = (e.target as HTMLInputElement).files;
+      if (files && files.length > 0) handleImageUpload(files);
     };
     input.click();
   }, [handleImageUpload]);
@@ -134,7 +157,9 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           上传图片
         </Button>
         {uploading && (
-          <span style={{ color: '#1890ff', fontSize: 13, marginLeft: 8 }}>图片上传中...</span>
+          <span style={{ color: '#1890ff', fontSize: 13, marginLeft: 8 }}>
+            正在上传 {uploadCount} 张图片...
+          </span>
         )}
       </div>
     </div>
