@@ -91,7 +91,7 @@ const AgreementManagement = () => {
         // 不存在则先创建
         const createRes: any = await settingsApi.createSetting({
           key: tab.configKey,
-          type: 'string',
+          type: 'json',
           value,
         });
         if (createRes?.id) {
