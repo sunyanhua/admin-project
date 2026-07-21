@@ -13,10 +13,16 @@ interface CategoryOption {
 }
 
 interface EventDetailDesc {
-  datetime?: string;
   detail?: string;
   hasagreement?: boolean;
   agreement?: string;
+}
+
+interface ActivityIntroItem {
+  title: string;
+  content: string;
+  showonlist: string;
+  zuobiao?: string;
 }
 
 export interface EventEditModalProps {
@@ -31,13 +37,18 @@ export interface EventEditModalProps {
 
 function parseDetailDesc(json?: string): EventDetailDesc {
   if (!json) return {};
-  // 服务端可能返回 HTML 转义的引号，以及 extra \ 转义，统一还原
   let decoded = json;
-  // 处理服务器端 HTML 编码: &#34; / &quot; → "
   decoded = decoded.replace(/&(?:#34|quot);/g, '"');
-  // 处理 \\" → \" (JSON 内层转义被服务器二次加反斜杠)
   decoded = decoded.replace(/\\\\"/g, '\\"');
   try { return JSON.parse(decoded); } catch { return {}; }
+}
+
+function parseIntro(json?: string): ActivityIntroItem[] {
+  if (!json) return [];
+  let decoded = json;
+  decoded = decoded.replace(/&(?:#34|quot);/g, '"');
+  decoded = decoded.replace(/\\\\"/g, '\\"');
+  try { return JSON.parse(decoded); } catch { return []; }
 }
 
 const EventEditModal: React.FC<EventEditModalProps> = ({
@@ -53,6 +64,7 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
     if (visible) {
       if (event && !isCreate) {
         const desc = parseDetailDesc(event.detail_desc);
+        const introItems = parseIntro(event.intro);
         setHasAgreement(desc.hasagreement || false);
         form.setFieldsValue({
           title: event.title || '',
@@ -60,7 +72,10 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
           category_id: event.category_id ?? undefined,
           cover_image: event.cover_image || '',
           carousel_images: event.carousel_images || [],
-          datetime: desc.datetime || '',
+          host: introItems.find((i: ActivityIntroItem) => i.title === '主办方')?.content || '',
+          datetime: introItems.find((i: ActivityIntroItem) => i.title === '活动时间')?.content || '',
+          address: introItems.find((i: ActivityIntroItem) => i.title === '活动地点')?.content || '',
+          coordinate: introItems.find((i: ActivityIntroItem) => i.title === '活动地点')?.zuobiao || '',
           detail: desc.detail || '',
           hasagreement: desc.hasagreement || false,
           agreement: desc.agreement || '',
@@ -79,8 +94,14 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
     try {
       setLoading(true);
 
+      const introItems: ActivityIntroItem[] = [
+        { title: '主办方', content: values.host || '', showonlist: 'false' },
+        { title: '活动时间', content: values.datetime || '', showonlist: 'true' },
+        { title: '活动地点', content: values.address || '', zuobiao: values.coordinate || '', showonlist: 'true' },
+      ];
+      const intro = JSON.stringify(introItems);
+
       const detailDesc: EventDetailDesc = {
-        datetime: values.datetime || undefined,
         detail: values.detail || undefined,
         hasagreement: values.hasagreement || false,
       };
@@ -96,6 +117,7 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
           category_id: values.category_id,
           cover_image: values.cover_image || undefined,
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+          intro,
           detail_desc,
           is_virtual: true,
           is_listed: false,
@@ -111,6 +133,7 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
           category_id: values.category_id,
           cover_image: values.cover_image || undefined,
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+          intro,
           detail_desc,
           is_visible: values.is_visible,
           sort_order: values.sort_order ?? undefined,
@@ -169,9 +192,31 @@ const EventEditModal: React.FC<EventEditModalProps> = ({
           <MultiImageUpload />
         </Form.Item>
 
+        <Form.Item label="主办方" name="host"
+          rules={[{ max: 128, message: '最多128个字符' }]}>
+          <Input placeholder="请输入主办方（选填）" />
+        </Form.Item>
+
         <Form.Item label="活动时间" name="datetime"
           rules={[{ required: true, message: '请输入活动时间' }]}>
           <Input placeholder="如：2026年7月15日 14:00 - 16:00" />
+        </Form.Item>
+
+        <Form.Item label="活动地点" required>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Form.Item name="address" noStyle
+              rules={[{ required: true, message: '请输入活动地点' }]}>
+              <Input placeholder="请输入地点" />
+            </Form.Item>
+            <Space>
+              <Form.Item name="coordinate" noStyle>
+                <Input placeholder="请输入坐标" style={{ width: 300 }} />
+              </Form.Item>
+              <a href="https://lbs.qq.com/tool/getpoint/index.html" target="_blank" rel="noopener noreferrer">
+                查询坐标
+              </a>
+            </Space>
+          </Space>
         </Form.Item>
 
         <Form.Item label="活动介绍" name="detail"
