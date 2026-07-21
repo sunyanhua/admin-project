@@ -87,7 +87,7 @@ const PaymentRecords = () => {
   }, []);
 
   const formatPaymentResponse = useCallback((res: any) => ({
-    list: res?.data?.list || res?.data || [],
+    list: res?.list || res?.data || [],
     count: res?.count ?? 0,
   }), []);
 

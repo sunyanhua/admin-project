@@ -82,7 +82,7 @@ const EventList = () => {
     const fetchCategories = async () => {
       try {
         const res = await categoryApi.getCategories({ tags: 1, length: 1000 } as any) as any;
-        const list = res?.data?.list || res?.data || [];
+        const list = res?.list || res?.data || [];
         setCategoryOptions(list.map((item: any) => ({
           label: item.title,
           value: item.id,
@@ -107,7 +107,7 @@ const EventList = () => {
   }, []);
 
   const formatEventResponse = useCallback((res: any) => ({
-    list: res?.data?.list || res?.data || [],
+    list: res?.list || res?.data || [],
     count: res?.count ?? 0,
   }), []);
 

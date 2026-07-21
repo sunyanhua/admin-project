@@ -52,7 +52,7 @@ const VisitStatistics = () => {
         date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
         date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
       });
-      const list = res?.data?.list || res?.data || [];
+      const list = res?.list || res?.data || [];
       if (list.length > 0) {
         setTotalData(list[0]);
       } else {
@@ -73,7 +73,7 @@ const VisitStatistics = () => {
         start: 0,
         length: 100,
       });
-      const list = res?.data?.list || res?.data || [];
+      const list = res?.list || res?.data || [];
       const validList = list.filter((item: DailyItem) => item.ref_date);
       const sorted = [...validList].sort((a: DailyItem, b: DailyItem) =>
         dayjs(a.ref_date).valueOf() - dayjs(b.ref_date).valueOf()

@@ -97,8 +97,8 @@ const WithdrawalManagement = () => {
   }, []);
 
   const formatResponse = useCallback((res: any) => ({
-    list: res?.data?.list || res?.data || [],
-    count: res?.data?.count || res?.count || 0,
+    list: res?.list || res?.data || [],
+    count: res?.count || res?.data?.count || 0,
   }), []);
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<Withdrawal>({

@@ -105,7 +105,7 @@ const CouponManagement = () => {
     setEventLoading(true);
     try {
       const res = await eventApi.getEvents({ start: 0, length: 500, status: 1 }) as any;
-      const list = res?.data?.list || res?.data || [];
+      const list = res?.list || res?.data || [];
       setEvents(list.map((item: any) => ({
         id: item.id,
         title: item.title || item.event_data?.title || `活动${item.id}`,
@@ -127,8 +127,8 @@ const CouponManagement = () => {
   }, []);
 
   const formatResponse = useCallback((res: any) => ({
-    list: res?.data?.list || res?.data || [],
-    count: res?.data?.count || res?.count || 0,
+    list: res?.list || res?.data || [],
+    count: res?.count || res?.data?.count || 0,
   }), []);
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<CouponBatch>({
@@ -218,7 +218,7 @@ const CouponManagement = () => {
               },
             });
 
-            const coupons = res?.data?.list || res?.data || [];
+            const coupons = res?.data || [];
             if (coupons.length === 0) {
               message.warning('该批次没有优惠券数据');
               return;
@@ -253,8 +253,8 @@ const CouponManagement = () => {
         },
       });
 
-      const list = res?.data?.list || res?.data || [];
-      const count = res?.data?.count || res?.count || 0;
+      const list = res?.data || [];
+      const count = res?.count || 0;
       setViewData(list);
       setViewPagination((prev) => ({ ...prev, total: count }));
     } catch (err: any) {

@@ -87,7 +87,7 @@ const EventStats = () => {
   const loadCategoryOptions = useCallback(async () => {
     try {
       const res = await categoryApi.getCategories({ status: 0, start: 0, length: 100 } as any) as any;
-      const list = res?.data?.list || res?.data || [];
+      const list = res?.list || res?.data || [];
       setCategoryOptions(list.map((c: CategoryItem) => ({ id: c.id, title: c.title })));
     } catch {
       setCategoryOptions([]);
@@ -101,7 +101,7 @@ const EventStats = () => {
       const res = await request.get('/admin/v6/user', {
         params: { coop_role: 1, start: 0, length: 500 }
       }) as any;
-      const list1: UserItem[] = res?.data?.list || res?.data || [];
+      const list1: UserItem[] = res?.list || res?.data || [];
 
       const res2 = await request.get('/admin/v6/user', {
         params: { coop_role: 2, start: 0, length: 500 }

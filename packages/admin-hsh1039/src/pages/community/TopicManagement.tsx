@@ -78,7 +78,7 @@ const TopicManagement = () => {
   }, []);
 
   const formatTopicResponse = useCallback((res: any) => ({
-    list: res?.data?.list || res?.data || [],
+    list: res?.list || res?.data || [],
     count: res?.count || 0,
   }), []);
 
@@ -124,7 +124,7 @@ const TopicManagement = () => {
     setEventsLoading(true);
     try {
       const res = await request.get('/admin/v6/topic/event', { params: { topicid: topicId, length: 500 } }) as any;
-      const list = res?.data?.list || res?.data || [];
+      const list = res?.list || res?.data || [];
       const relatedIds = list.map((e: any) => e.eventid);
       setRelatedEvents(list);
       loadSelectableEvents(relatedIds);
@@ -139,7 +139,7 @@ const TopicManagement = () => {
   const loadSelectableEvents = async (relatedIds?: number[]) => {
     try {
       const res = await eventApi.getEvents({ start: 0, length: 500, status: 1 }) as any;
-      const list = res?.data?.list || res?.data || [];
+      const list = res?.list || res?.data || [];
       // 优先使用传入的relatedIds，否则使用状态中的
       const excludeIds = relatedIds || relatedEvents.map(e => e.eventid);
       const filtered = list.filter((item: any) => !excludeIds.includes(item.id));
