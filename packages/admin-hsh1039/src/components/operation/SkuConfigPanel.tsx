@@ -40,7 +40,7 @@ export interface SkuConfigPanelProps {
   renderFooter?: (opts: { saving: boolean; handleSave: () => Promise<boolean> }) => React.ReactNode;
   /** 从向导返回时恢复的快照数据（有值时跳过 API 加载） */
   initialState?: { specs: SpecGroup[]; editedSkus: Record<string, Partial<SkuRow>> } | null;
-  /** 票务模式：隐藏限额列、免费按钮、价格最小值0.01、stock默认99999 */
+  /** 门票模式：隐藏限额列、免费按钮、价格最小值0.01、stock默认99999 */
   ticketMode?: boolean;
   /** 商品模式：无免费、隐藏报名期限、stock标签"库存" */
   productMode?: boolean;

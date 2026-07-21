@@ -1,4 +1,4 @@
-# 1039俱乐部+ - 项目进度
+# 1039发现 - 项目进度
 
 > 本文件记录项目模块完成状态、接口迁移进度和关联的 git 提交。每次完成一批实质性改动并提交后更新。
 
@@ -35,7 +35,7 @@
 - 运营分类管理、活动分类管理、活动发布、轮播图管理、协议文档、FAQ管理
 - 活动管理（含规格/SKU 配置向导、价格快捷配置、退款设置）
 - **退款规则管理**（新增，super_admin 专属）
-- **票务销售**（新增，root_category_id=2 隔离，含票务分类管理）
+- **门票销售**（新增，root_category_id=2 隔离，含门票分类管理）
 - **商品销售**（新增，root_category_id=3 隔离，含商品分类管理）
 
 ### 社区管理
@@ -76,7 +76,7 @@
 | 2026-07-16 | 产品 specs 日期类型互斥 | SkuConfigPanel 强制唯一日期 spec | ba68aac |
 | 2026-07-16 | CLAUDE.md 精简 + 进度/标准文档重构 | 根 328→130 行，项目 232→69 行 | ba68aac |
 | 2026-07-16 | 退款配置重构 | refund_type 字段 0/1/2/3，新增退款规则管理页面 | ba68aac |
-| 2026-07-17 | 票务销售模块 | 新建 TicketManagement/TicketWizard/TicketEdit，共享组件增加 ticketMode | ba68aac |
+| 2026-07-17 | 门票销售模块 | 新建 TicketManagement/TicketWizard/TicketEdit，共享组件增加 ticketMode | ba68aac |
 | 2026-07-17 | 商品销售模块 | 新建 ProductManagement/ProductWizard/ProductEdit，共享组件增加 productMode | ba68aac |
 | 2026-07-17 | 信息模板增强 | 新增"身份证号"预设字段 + idcardRestrict 附加限制 | ba68aac |
 | 2026-07-17 | 文档标准完善 | 搜索交互、列排列、缩略图规则写入 CLAUDE.md + dev-standards.md | ba68aac |

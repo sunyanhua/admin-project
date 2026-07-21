@@ -117,7 +117,7 @@ const TicketCategoryManagement = () => {
 
   return (
     <>
-      <StandardPage title="票务分类管理" description="管理票务分类，支持上下架、显隐控制及权重排序。"
+      <StandardPage title="门票分类管理" description="管理门票分类，支持上下架、显隐控制及权重排序。"
         showRefreshButton onRefresh={fetchData} showAddButton
         onAdd={() => { setSelectedCategory(null); setEditMode('create'); setEditModalVisible(true); }}
         addButtonText="添加分类"

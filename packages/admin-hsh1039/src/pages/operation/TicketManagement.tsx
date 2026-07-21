@@ -47,7 +47,7 @@ const TicketManagement = () => {
     }
   };
 
-  // 加载票务分类（id=2 的子节点）
+  // 加载门票分类（id=2 的子节点）
   useEffect(() => {
     categoryApi.getMallCategories().then((res: any) => {
       const nodes: any[] = Array.isArray(res) ? res : (res?.list || []);
@@ -96,7 +96,7 @@ const TicketManagement = () => {
       type: 'select',
       options: categoryOptions.map((c) => ({ label: c.name, value: c.id })),
     },
-    { name: 'keyword', placeholder: '搜索票务名称', type: 'input' },
+    { name: 'keyword', placeholder: '搜索门票名称', type: 'input' },
   ];
 
   const handleChange = (name: string, value: any) => {
@@ -106,7 +106,7 @@ const TicketManagement = () => {
   const handleReset = () => { setValues({}); search({}); };
 
   const columns: ColumnsType<Product> = [
-    { title: '票务名称', dataIndex: 'title', key: 'title' },
+    { title: '门票名称', dataIndex: 'title', key: 'title' },
     {
       title: '上架/下架', dataIndex: 'is_listed', key: 'is_listed', width: 100,
       render: (v: boolean, r: Product) => (
@@ -153,13 +153,13 @@ const TicketManagement = () => {
   return (
     <>
       <StandardPage
-        title="票务销售"
-        description="管理平台票务，支持上下架、显隐控制。"
+        title="门票销售"
+        description="管理平台门票，支持上下架、显隐控制。"
         showRefreshButton onRefresh={refresh}
         searchArea={<SearchPanel filters={filters} values={values} onChange={handleChange} onSearch={handleSearch} onReset={handleReset} />}
         showAddButton
         onAdd={() => setWizardVisible(true)}
-        addButtonText="添加票务"
+        addButtonText="添加门票"
         table={<StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />}
       />
       <TicketEditModal visible={editModalVisible} mode={editMode} event={selectedTicket}

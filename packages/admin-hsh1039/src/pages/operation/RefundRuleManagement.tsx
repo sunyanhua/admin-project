@@ -293,7 +293,7 @@ const RefundRuleManagement = () => {
           {editingRule && (
             <Alert
               type="warning" showIcon
-              message="修改后，所有使用本规则的活动/票务/商品的退款规则都会同步更新，请谨慎操作！"
+              message="修改后，所有使用本规则的活动/门票/商品的退款规则都会同步更新，请谨慎操作！"
               style={{ marginBottom: 16 }}
             />
           )}

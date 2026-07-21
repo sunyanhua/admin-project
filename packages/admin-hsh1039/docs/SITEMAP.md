@@ -1,4 +1,4 @@
-# 1039俱乐部+ — 后台管理站点地图
+# 1039发现 — 后台管理站点地图
 
 > 本文件由菜单结构 (`MainLayout.tsx`) 和路由配置 (`router/index.tsx`) 自动推导。每次新增/修改页面后更新。
 
@@ -26,7 +26,7 @@
 ## 树状结构图
 
 ```
-1039俱乐部+ 管理后台
+1039发现 管理后台
 ├── ⚙️ 系统管理
 │   ├── 📊 工作台 #/
 │   │   └── 接口: GET /admin/v1/login (获取登录状态)
@@ -68,9 +68,9 @@
 │   │   ├── 活动发布 #/operation/events
 │   │   └── 活动报名 #/operation/event-orders
 │   │
-│   ├── 🎫 票务管理
-│   │   ├── 票务分类管理 #/operation/ticket-categories
-│   │   ├── 票务销售 #/operation/tickets (新增)
+│   ├── 🎫 门票管理
+│   │   ├── 门票分类管理 #/operation/ticket-categories
+│   │   ├── 门票销售 #/operation/tickets (新增)
 │   │   └── 购票信息 #/operation/ticket-orders (待开发)
 │   │
 │   └── 📦 商品管理
@@ -119,8 +119,8 @@
 | 活动分类管理 | `#/operation/event-categories` | 全部 | 活动分类（上下架/显隐/权重） |
 | 活动发布 | `#/operation/events` | 全部 | 活动 CRUD + 规格/SKU 配置 |
 | 活动报名 | `#/operation/event-orders` | 全部 | 报名订单管理 |
-| 票务分类管理 | `#/operation/ticket-categories` | 全部 | 票务分类（上下架/显隐/权重） |
-| 票务销售 | `#/operation/tickets` | 全部 | 票务 CRUD + 规格/SKU 配置 |
+| 门票分类管理 | `#/operation/ticket-categories` | 全部 | 门票分类（上下架/显隐/权重） |
+| 门票销售 | `#/operation/tickets` | 全部 | 门票 CRUD + 规格/SKU 配置 |
 | 商品分类管理 | `#/operation/product-categories` | 全部 | 商品分类（上下架/显隐/权重） |
 | 商品销售 | `#/operation/products` | 全部 | 商品 CRUD + 规格/SKU 配置 |
 
@@ -161,8 +161,8 @@ src/pages/
 │   ├── RefundRuleManagement.tsx       # 退款规则管理
 │   ├── EventCategoryManagement.tsx    # 活动分类管理
 │   ├── EventManagement.tsx            # 活动发布
-│   ├── TicketCategoryManagement.tsx    # 票务分类管理
-│   ├── TicketManagement.tsx           # 票务销售
+│   ├── TicketCategoryManagement.tsx    # 门票分类管理
+│   ├── TicketManagement.tsx           # 门票销售
 │   ├── ProductCategoryManagement.tsx  # 商品分类管理
 │   └── ProductManagement.tsx          # 商品销售
 │
@@ -193,17 +193,17 @@ src/pages/
 src/components/operation/             # 运营共享组件
 ├── EventWizardModal.tsx               # 活动创建向导
 ├── EventEditModal.tsx                 # 活动编辑弹窗
-├── TicketWizardModal.tsx              # 票务创建向导
-├── TicketEditModal.tsx                # 票务编辑弹窗
+├── TicketWizardModal.tsx              # 门票创建向导
+├── TicketEditModal.tsx                # 门票编辑弹窗
 ├── ProductWizardModal.tsx             # 商品创建向导
 ├── ProductEditModal.tsx               # 商品编辑弹窗
-├── SkuConfigWizard.tsx                # SKU 配置向导（公用于活动/票务/商品）
+├── SkuConfigWizard.tsx                # SKU 配置向导（公用于活动/门票/商品）
 ├── SkuConfigPanel.tsx                 # SKU 组合配置面板
 ├── SkuConfigModal.tsx                 # SKU 高级配置弹窗
 ├── SkuPriceModal.tsx                  # SKU 快捷配置弹窗
 ├── RefundSettings.tsx                 # 退款设置组件
 ├── ExtraInfoEditor.tsx                # 信息模板编辑器
 ├── EventCategoryEditModal.tsx         # 活动分类编辑弹窗
-├── MallCategoryEditModal.tsx          # 通用分类编辑弹窗（票务/商品）
+├── MallCategoryEditModal.tsx          # 通用分类编辑弹窗（门票/商品）
 └── CategoryEditModal.tsx              # 运营分类编辑弹窗
 ```

@@ -44,7 +44,7 @@ export interface SkuConfigWizardProps {
   onSaved?: () => void;
   /** 步数变化回调 */
   onStepChange?: (step: number) => void;
-  /** 票务模式：隐藏报名期限、退款仅支持不退款/随时退、stock默认99999、不设置usable/expiry */
+  /** 门票模式：隐藏报名期限、退款仅支持不退款/随时退、stock默认99999、不设置usable/expiry */
   ticketMode?: boolean;
   productMode?: boolean;
 }

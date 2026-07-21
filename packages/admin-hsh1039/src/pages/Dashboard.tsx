@@ -55,7 +55,7 @@ const Dashboard = () => {
         <Descriptions column={4} size="small">
           <Descriptions.Item label="小程序名称">
             <Space size={4}>
-              1039俱乐部+
+              1039发现
               <SourceQrcodeModal basePage="pages/index/index" />
             </Space>
           </Descriptions.Item>

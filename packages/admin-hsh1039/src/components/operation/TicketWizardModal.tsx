@@ -16,7 +16,7 @@ interface TicketDetailDesc {
 }
 
 const steps = [
-  { title: '票务信息' },
+  { title: '门票信息' },
   { title: '项目配置' },
   { title: '上架管理' },
 ];
@@ -51,7 +51,7 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
     }
   }, [visible, form]);
 
-  // Step 1: 创建票务
+  // Step 1: 创建门票
   const handleStep1 = async () => {
     if (productId > 0) { setCurrent(1); return; }
     try {
@@ -81,17 +81,17 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
 
       const newId = res?.id || 0;
       if (!newId) {
-        showError('票务创建失败：未获取到票务ID');
+        showError('门票创建失败：未获取到门票ID');
         return;
       }
 
       setProductId(newId);
       setProductTitle(values.title || '');
-      success('票务信息已保存');
+      success('门票信息已保存');
       setCurrent(1);
     } catch (err: any) {
       if (err?.errorFields) return;
-      showError(err?.response?.data?.message || err?.message || '票务创建失败');
+      showError(err?.response?.data?.message || err?.message || '门票创建失败');
     } finally {
       setLoading(false);
     }
@@ -118,24 +118,24 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
   // ====== Step 1 内容 ======
   const step1Content = (
     <Form form={form} layout="vertical" initialValues={{ is_visible: true, sort_order: 0 }}>
-      <Form.Item label="票务名称" name="title"
-        rules={[{ required: true, message: '请输入票务名称' }, { max: 128, message: '最多128个字符' }]}>
-        <Input placeholder="请输入票务名称" />
+      <Form.Item label="门票名称" name="title"
+        rules={[{ required: true, message: '请输入门票名称' }, { max: 128, message: '最多128个字符' }]}>
+        <Input placeholder="请输入门票名称" />
       </Form.Item>
-      <Form.Item label="票务简介" name="sub_title" rules={[{ max: 256, message: '最多256个字符' }]}>
-        <Input placeholder="请输入票务简介（选填）" />
+      <Form.Item label="门票简介" name="sub_title" rules={[{ max: 256, message: '最多256个字符' }]}>
+        <Input placeholder="请输入门票简介（选填）" />
       </Form.Item>
       <Form.Item label="所属分类" name="category_id" rules={[{ required: true, message: '请选择分类' }]}>
         <Select placeholder="请选择分类" options={categoryOptions.map((c) => ({ label: c.name, value: c.id }))} />
       </Form.Item>
-      <Form.Item label="票务封面" name="cover_image" rules={[{ required: true, message: '请上传票务封面' }]}>
+      <Form.Item label="门票封面" name="cover_image" rules={[{ required: true, message: '请上传门票封面' }]}>
         <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
       </Form.Item>
-      <Form.Item label="票务图片" name="carousel_images">
+      <Form.Item label="门票图片" name="carousel_images">
         <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
       </Form.Item>
-      <Form.Item label="票务介绍" name="detail" rules={[{ required: true, message: '请输入票务介绍' }]}>
-        <RichTextEditor placeholder="请输入票务详细介绍" />
+      <Form.Item label="门票介绍" name="detail" rules={[{ required: true, message: '请输入门票介绍' }]}>
+        <RichTextEditor placeholder="请输入门票详细介绍" />
       </Form.Item>
       <Form.Item label="是否有购买协议" name="hasagreement" valuePropName="checked">
         <Switch checkedChildren="是" unCheckedChildren="否" onChange={(c) => setHasAgreement(c)} />
@@ -156,7 +156,7 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
 
   return (
     <ScrollableModal
-      title="添加票务"
+      title="添加门票"
       open={visible}
       onCancel={handleCancel}
       width={960}

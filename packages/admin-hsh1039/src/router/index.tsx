@@ -32,7 +32,7 @@ import EventCategories from '@/pages/operation/EventCategoryManagement';
 import EventList from '@/pages/operation/EventManagement';
 import EventOrders from '@/pages/events/EventOrders';
 
-// 运营管理 — 票务管理
+// 运营管理 — 门票管理
 import TicketManagement from '@/pages/operation/TicketManagement';
 
 // 财务管理
@@ -40,7 +40,7 @@ import PaymentRecords from '@/pages/events/PaymentRecords';
 import RefundRecords from '@/pages/events/RefundRecords';
 import CouponManagement from '@/pages/finance/CouponManagement';
 
-// 运营管理 — 票务/商品分类
+// 运营管理 — 门票/商品分类
 import TicketCategoryManagement from '@/pages/operation/TicketCategoryManagement';
 import ProductCategoryManagement from '@/pages/operation/ProductCategoryManagement';
 import ProductManagement from '@/pages/operation/ProductManagement';
@@ -104,7 +104,7 @@ const router = createHashRouter([
           { path: 'event-categories', element: <EventCategories /> },
           { path: 'events', element: <EventList /> },
           { path: 'event-orders', element: <EventOrders /> },
-          // 票务管理
+          // 门票管理
           { path: 'ticket-categories', element: <TicketCategoryManagement /> },
           { path: 'tickets', element: <TicketManagement /> },
           { path: 'ticket-orders', element: <PlaceholderPage title="购票信息" /> },

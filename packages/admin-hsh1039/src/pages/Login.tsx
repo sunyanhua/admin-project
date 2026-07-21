@@ -37,9 +37,9 @@ const navigate = useNavigate();
       <Card className="login-card">
         <div className="login-header">
           <div className="login-logo">
-            <img src={logo} alt="1039俱乐部+" className="logo-image" />
+            <img src={logo} alt="1039发现" className="logo-image" />
           </div>
-          <Title level={2}>1039俱乐部+</Title>
+          <Title level={2}>1039发现</Title>
           <Title level={4} type="secondary">管理后台</Title>
         </div>
         <Form
@@ -96,7 +96,7 @@ const navigate = useNavigate();
           </Form.Item>
         </Form>
         <div className="login-footer">
-          <p>© 2026 1039俱乐部+ 管理后台</p>
+          <p>© 2026 1039发现 管理后台</p>
         </div>
       </Card>
     </div>

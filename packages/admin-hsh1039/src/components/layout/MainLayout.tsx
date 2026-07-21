@@ -114,10 +114,10 @@ const sidebarMenuConfig: Record<string, any[]> = {
     {
       key: 'ticket-group',
       icon: <TagOutlined />,
-      label: '票务管理',
+      label: '门票管理',
       children: [
-        { key: '/operation/ticket-categories', icon: <UnorderedListOutlined />, label: '票务分类管理' },
-        { key: '/operation/tickets', icon: <FileTextOutlined />, label: '票务销售' },
+        { key: '/operation/ticket-categories', icon: <UnorderedListOutlined />, label: '门票分类管理' },
+        { key: '/operation/tickets', icon: <FileTextOutlined />, label: '门票销售' },
         { key: '/operation/ticket-orders', icon: <ShoppingCartOutlined />, label: '购票信息' },
       ],
     },
@@ -303,7 +303,7 @@ const MainLayout = () => {
       <div className="logo">
         <img
           src={logo}
-          alt="1039俱乐部+"
+          alt="1039发现"
           className={`logo-image ${collapsed ? 'logo-collapsed' : ''}`}
         />
       </div>
@@ -342,7 +342,7 @@ const MainLayout = () => {
         <Drawer
           title={
             <div className="logo" style={{ height: 40, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img src={logo} alt="1039俱乐部+" className="logo-image" style={{ height: 36 }} />
+              <img src={logo} alt="1039发现" className="logo-image" style={{ height: 36 }} />
             </div>
           }
           placement="left"

@@ -96,7 +96,7 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           is_visible: values.is_visible ?? true,
           sort_order: values.sort_order ?? 0,
         });
-        success('票务创建成功');
+        success('门票创建成功');
       } else {
         if (!event) return;
         await productApi.updateProduct(event.id, {
@@ -109,7 +109,7 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           is_visible: values.is_visible,
           sort_order: values.sort_order ?? undefined,
         });
-        success('票务更新成功');
+        success('门票更新成功');
       }
       form.resetFields();
       onClose();
@@ -123,7 +123,7 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
 
   return (
     <ScrollableModal
-      title={isCreate ? '添加票务' : '编辑票务'}
+      title={isCreate ? '添加门票' : '编辑门票'}
       open={visible}
       onCancel={() => { form.resetFields(); onClose(); }}
       width={720}
@@ -139,14 +139,14 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
     >
       <Spin spinning={loadingDetail} tip="加载中...">
       <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
-        <Form.Item label="票务名称" name="title"
-          rules={[{ required: true, message: '请输入票务名称' }, { max: 128, message: '最多128个字符' }]}>
-          <Input placeholder="请输入票务名称" />
+        <Form.Item label="门票名称" name="title"
+          rules={[{ required: true, message: '请输入门票名称' }, { max: 128, message: '最多128个字符' }]}>
+          <Input placeholder="请输入门票名称" />
         </Form.Item>
 
-        <Form.Item label="票务简介" name="sub_title"
+        <Form.Item label="门票简介" name="sub_title"
           rules={[{ max: 256, message: '最多256个字符' }]}>
-          <Input placeholder="请输入票务简介（选填）" />
+          <Input placeholder="请输入门票简介（选填）" />
         </Form.Item>
 
         <Form.Item label="所属分类" name="category_id"
@@ -154,18 +154,18 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           <Select placeholder="请选择分类" options={categoryOptions.map((c) => ({ label: c.name, value: c.id }))} />
         </Form.Item>
 
-        <Form.Item label="票务封面" name="cover_image"
-          rules={[{ required: true, message: '请上传票务封面' }]}>
+        <Form.Item label="门票封面" name="cover_image"
+          rules={[{ required: true, message: '请上传门票封面' }]}>
           <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
         </Form.Item>
 
-        <Form.Item label="票务图片" name="carousel_images">
+        <Form.Item label="门票图片" name="carousel_images">
           <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
         </Form.Item>
 
-        <Form.Item label="票务介绍" name="detail"
-          rules={[{ required: true, message: '请输入票务介绍' }]}>
-          <RichTextEditor placeholder="请输入票务详细介绍" />
+        <Form.Item label="门票介绍" name="detail"
+          rules={[{ required: true, message: '请输入门票介绍' }]}>
+          <RichTextEditor placeholder="请输入门票详细介绍" />
         </Form.Item>
 
         <Form.Item label="是否有购买协议" name="hasagreement" valuePropName="checked">

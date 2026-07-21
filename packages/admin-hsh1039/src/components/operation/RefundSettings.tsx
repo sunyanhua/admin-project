@@ -31,7 +31,7 @@ export interface RefundSettingsProps {
   onChange: (data: RefundSettingsData) => void;
   step2Skus?: { key: string; spec_indices: string; specText: string; dateValue?: string }[];
   wizardSpecs?: { name: string; values: { value: string }[]; is_time_type?: boolean }[];
-  /** 票务模式：仅允许不退款/随时退两种模式 */
+  /** 门票模式：仅允许不退款/随时退两种模式 */
   ticketMode?: boolean;
   productMode?: boolean;
 }
@@ -96,7 +96,7 @@ const RuleEditModal: React.FC<{
         {initial && (
           <Alert
             type="warning" showIcon
-            message="修改后，所有使用本规则的活动/票务/商品的退款规则都会同步更新，请谨慎操作！"
+            message="修改后，所有使用本规则的活动/门票/商品的退款规则都会同步更新，请谨慎操作！"
             style={{ marginBottom: 16 }}
           />
         )}
@@ -271,7 +271,7 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
         )}
       </Radio.Group>
 
-      {value.mode === 'none' && <div style={{ color: '#999', fontSize: 12 }}>{(productMode ? '不支持线上直接退款。' : ticketMode ? '该票务不支持退款。' : '该活动不支持退款。')}</div>}
+      {value.mode === 'none' && <div style={{ color: '#999', fontSize: 12 }}>{(productMode ? '不支持线上直接退款。' : ticketMode ? '该门票不支持退款。' : '该活动不支持退款。')}</div>}
       {value.mode === 'anytime' && <div style={{ color: '#999', fontSize: 12 }}>{ticketMode ? '用户在票未核销前可随时退款。' : '用户在活动开始前可随时申请全额退款。'}</div>}
 
       {(value.mode === 'deadline' || value.mode === 'staged') && (

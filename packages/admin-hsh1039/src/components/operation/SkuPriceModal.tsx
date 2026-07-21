@@ -25,9 +25,9 @@ type SkuEdits = {
 export interface SkuPriceModalProps {
   visible: boolean; productId: number; productTitle: string;
   onClose: () => void; onSuccess?: () => void; onEnterFullConfig?: () => void;
-  /** 票务模式：隐藏限额列、免费按钮、价格最小值0.01 */
+  /** 门票模式：隐藏限额列、免费按钮、价格最小值0.01 */
   ticketMode?: boolean;
-  /** 商品模式：同票务（无免费）+ 库存列可见(标签"库存") + 隐藏报名期限 */
+  /** 商品模式：同门票（无免费）+ 库存列可见(标签"库存") + 隐藏报名期限 */
   productMode?: boolean;
 }
 
