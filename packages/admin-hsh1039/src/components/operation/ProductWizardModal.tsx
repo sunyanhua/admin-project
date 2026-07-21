@@ -127,10 +127,10 @@ const ProductWizardModal: React.FC<ProductWizardModalProps> = ({
         <Select placeholder="请选择分类" options={categoryOptions.map((c) => ({ label: c.name, value: c.id }))} />
       </Form.Item>
       <Form.Item label="商品封面" name="cover_image" rules={[{ required: true, message: '请上传商品封面' }]}>
-        <CropperImageUpload />
+        <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
       </Form.Item>
       <Form.Item label="商品图片" name="carousel_images">
-        <MultiImageUpload />
+        <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
       </Form.Item>
       <Form.Item label="商品介绍" name="detail" rules={[{ required: true, message: '请输入商品介绍' }]}>
         <RichTextEditor placeholder="请输入商品详细介绍" />
