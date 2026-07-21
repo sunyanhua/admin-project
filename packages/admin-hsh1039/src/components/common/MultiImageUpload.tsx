@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Upload, Button, Image } from 'antd';
 import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import ImgCrop from 'antd-img-crop';
 import { uploadApi } from '@/api/services/upload';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ImagePreviewModal from './ImagePreviewModal';
@@ -13,6 +14,10 @@ export interface MultiImageUploadProps {
   maxCount?: number;
   /** 最大文件大小(MB)，默认 5 */
   maxSize?: number;
+  /** 裁切比例（宽/高），不传则不限比例 */
+  cropAspect?: number;
+  /** 裁切尺寸提示 */
+  cropSizeHint?: string;
 }
 
 const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
@@ -21,6 +26,8 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   disabled = false,
   maxCount = 9,
   maxSize = 5,
+  cropAspect,
+  cropSizeHint,
 }) => {
   const [urls, setUrls] = useState<string[]>(value);
   const [uploading, setUploading] = useState(false);
@@ -63,8 +70,28 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
 
   const canUpload = !disabled && urls.length < maxCount;
 
+  const uploadButton = (
+    <div style={{
+      width: 100, height: 100,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      border: '1px dashed #d9d9d9', borderRadius: 4,
+      cursor: 'pointer', background: '#fafafa',
+    }}>
+      <PlusOutlined style={{ fontSize: 24 }} />
+      <div style={{ marginTop: 4, fontSize: 12 }}>上传</div>
+    </div>
+  );
+
+  const uploadArea = (
+    <Upload showUploadList={false} beforeUpload={handleUpload} accept="image/*" multiple>
+      {uploadButton}
+    </Upload>
+  );
+
   return (
     <div>
+      {cropSizeHint && <div style={{ color: '#999', marginBottom: 8, fontSize: 12 }}>{cropSizeHint}</div>}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {urls.map((url, idx) => (
           <div key={idx} style={{
@@ -85,20 +112,12 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
             )}
           </div>
         ))}
-        {canUpload && (
-          <Upload showUploadList={false} beforeUpload={handleUpload} accept="image/*" multiple>
-            <div style={{
-              width: 100, height: 100,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              border: '1px dashed #d9d9d9', borderRadius: 4,
-              cursor: 'pointer', background: '#fafafa',
-            }}>
-              <PlusOutlined style={{ fontSize: 24 }} />
-              <div style={{ marginTop: 4, fontSize: 12 }}>上传</div>
-            </div>
-          </Upload>
-        )}
+        {canUpload && cropAspect ? (
+          <ImgCrop aspect={cropAspect} quality={0.9} zoomSlider rotationSlider showReset
+            modalTitle="裁剪图片" modalOk="确定" modalCancel="取消">
+            {uploadArea}
+          </ImgCrop>
+        ) : (canUpload && uploadArea)}
       </div>
       <ImagePreviewModal visible={previewVisible} imageUrl={previewUrl} onClose={() => setPreviewVisible(false)} />
     </div>
