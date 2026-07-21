@@ -84,7 +84,7 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   );
 
   const uploadArea = (
-    <Upload showUploadList={false} beforeUpload={handleUpload} accept="image/*" multiple>
+    <Upload showUploadList={false} beforeUpload={handleUpload} accept="image/*" multiple={!cropAspect}>
       {uploadButton}
     </Upload>
   );
