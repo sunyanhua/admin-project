@@ -186,7 +186,8 @@ const TicketEditModal: React.FC<TicketEditModalProps> = ({
           <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
         </Form.Item>
 
-        <Form.Item label="门票图片" name="carousel_images">
+        <Form.Item label="门票图片" name="carousel_images"
+          rules={[{ required: true, message: '请上传门票图片' }]}>
           <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
         </Form.Item>
 

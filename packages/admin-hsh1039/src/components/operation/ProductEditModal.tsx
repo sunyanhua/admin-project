@@ -18,6 +18,22 @@ interface ProductDetailDesc {
   agreement?: string;
 }
 
+interface ActivityIntroItem {
+  title: string;
+  content: string;
+  showonlist: string;
+  zuobiao?: string;
+}
+
+function buildIntroFromSubTitle(subTitle: string): string {
+  const lines = (subTitle || '').split('\n');
+  const items: ActivityIntroItem[] = [
+    { title: '简介1', content: (lines[0] || '').trim(), showonlist: 'true' },
+    { title: '简介2', content: (lines[1] || '').trim(), showonlist: 'true' },
+  ];
+  return JSON.stringify(items);
+}
+
 export interface ProductEditModalProps {
   visible: boolean;
   mode: 'create' | 'edit';
@@ -74,6 +90,9 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
     try {
       setLoading(true);
 
+      const sub_title = values.sub_title || '';
+      const intro = buildIntroFromSubTitle(sub_title);
+
       const detailDesc: ProductDetailDesc = {
         detail: values.detail || undefined,
         hasagreement: values.hasagreement || false,
@@ -86,10 +105,11 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
       if (isCreate) {
         await productApi.createProduct({
           title: values.title,
-          sub_title: values.sub_title || undefined,
+          sub_title,
           category_id: values.category_id,
           cover_image: values.cover_image || undefined,
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+          intro,
           detail_desc,
           is_virtual: false,
           is_listed: false,
@@ -101,10 +121,11 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
         if (!event) return;
         await productApi.updateProduct(event.id, {
           title: values.title,
-          sub_title: values.sub_title || undefined,
+          sub_title,
           category_id: values.category_id,
           cover_image: values.cover_image || undefined,
           carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
+          intro,
           detail_desc,
           is_visible: values.is_visible,
           sort_order: values.sort_order ?? undefined,
@@ -145,8 +166,8 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
         </Form.Item>
 
         <Form.Item label="商品简介" name="sub_title"
-          rules={[{ max: 256, message: '最多256个字符' }]}>
-          <Input placeholder="请输入商品简介（选填）" />
+          rules={[{ required: true, message: '请输入商品简介' }, { max: 512, message: '最多512个字符' }]}>
+          <Input.TextArea rows={2} placeholder="请输入两行内容，第一行为简介1，第二行为简介2" />
         </Form.Item>
 
         <Form.Item label="所属分类" name="category_id"
@@ -159,7 +180,8 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
           <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
         </Form.Item>
 
-        <Form.Item label="商品图片" name="carousel_images">
+        <Form.Item label="商品图片" name="carousel_images"
+          rules={[{ required: true, message: '请上传商品图片' }]}>
           <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
         </Form.Item>
 

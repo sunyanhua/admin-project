@@ -15,6 +15,22 @@ interface ProductDetailDesc {
   detail?: string; hasagreement?: boolean; agreement?: string;
 }
 
+interface ActivityIntroItem {
+  title: string;
+  content: string;
+  showonlist: string;
+  zuobiao?: string;
+}
+
+function buildIntroFromSubTitle(subTitle: string): string {
+  const lines = (subTitle || '').split('\n');
+  const items: ActivityIntroItem[] = [
+    { title: '简介1', content: (lines[0] || '').trim(), showonlist: 'true' },
+    { title: '简介2', content: (lines[1] || '').trim(), showonlist: 'true' },
+  ];
+  return JSON.stringify(items);
+}
+
 const steps = [
   { title: '商品信息' },
   { title: '项目配置' },
@@ -57,6 +73,9 @@ const ProductWizardModal: React.FC<ProductWizardModalProps> = ({
       const values = await form.validateFields();
       setLoading(true);
 
+      const sub_title = values.sub_title || '';
+      const intro = buildIntroFromSubTitle(sub_title);
+
       const detailDesc: ProductDetailDesc = {
         detail: values.detail || undefined,
         hasagreement: values.hasagreement || false,
@@ -67,7 +86,8 @@ const ProductWizardModal: React.FC<ProductWizardModalProps> = ({
 
       const res: any = await productApi.createProduct({
         title: values.title,
-        sub_title: values.sub_title || undefined,
+        sub_title,
+        intro,
         category_id: values.category_id,
         cover_image: values.cover_image || undefined,
         carousel_images: values.carousel_images?.length > 0 ? values.carousel_images : undefined,
@@ -120,8 +140,9 @@ const ProductWizardModal: React.FC<ProductWizardModalProps> = ({
         rules={[{ required: true, message: '请输入商品名称' }, { max: 128, message: '最多128个字符' }]}>
         <Input placeholder="请输入商品名称" />
       </Form.Item>
-      <Form.Item label="商品简介" name="sub_title" rules={[{ max: 256, message: '最多256个字符' }]}>
-        <Input placeholder="请输入商品简介（选填）" />
+      <Form.Item label="商品简介" name="sub_title"
+        rules={[{ required: true, message: '请输入商品简介' }, { max: 512, message: '最多512个字符' }]}>
+        <Input.TextArea rows={2} placeholder="请输入两行内容，第一行为简介1，第二行为简介2" />
       </Form.Item>
       <Form.Item label="所属分类" name="category_id" rules={[{ required: true, message: '请选择分类' }]}>
         <Select placeholder="请选择分类" options={categoryOptions.map((c) => ({ label: c.name, value: c.id }))} />
@@ -129,7 +150,8 @@ const ProductWizardModal: React.FC<ProductWizardModalProps> = ({
       <Form.Item label="商品封面" name="cover_image" rules={[{ required: true, message: '请上传商品封面' }]}>
         <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
       </Form.Item>
-      <Form.Item label="商品图片" name="carousel_images">
+      <Form.Item label="商品图片" name="carousel_images"
+        rules={[{ required: true, message: '请上传商品图片' }]}>
         <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
       </Form.Item>
       <Form.Item label="商品介绍" name="detail" rules={[{ required: true, message: '请输入商品介绍' }]}>
