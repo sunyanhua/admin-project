@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Switch, InputNumber, Tag, Space, Form, Input, Select, DatePicker } from 'antd';
+import { Button, Switch, InputNumber, Tag, Space, Form, Input, DatePicker, Radio } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { BannerStatus, BannerPosition, BannerPositionLabels } from '@shared/constants';
+import { BannerStatus, BannerPositionLabels } from '@shared/constants';
 import { getFullWidthUrl } from '@/utils/imageUtils';
 import { bannerApi, Banner, CreateBannerRequest, UpdateBannerRequest } from '@/api/services/banner';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
@@ -20,15 +20,16 @@ const STATUS_OPTIONS = [
   { label: '禁用', value: 1 },
 ];
 
-const POSITION_OPTIONS = [
-  { label: '首页', value: BannerPosition.HOME },
-  { label: '活动页', value: BannerPosition.ACTIVITY },
-];
-
 const filters: FilterConfig[] = [
   { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
   { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
+
+// 链接类型（仅前端控制，不存到接口）
+const LINK_TYPE = {
+  MINIAPP: 1,
+  NO_LINK: 100,
+} as const;
 
 const BannerManagement = () => {
   const { success, error: showError } = useAppNotification();
@@ -36,6 +37,7 @@ const BannerManagement = () => {
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [linkType, setLinkType] = useState<number>(LINK_TYPE.NO_LINK);
   const [form] = Form.useForm();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
@@ -102,6 +104,7 @@ const BannerManagement = () => {
 
   const handleAdd = () => {
     setEditingBanner(null);
+    setLinkType(LINK_TYPE.NO_LINK);
     setModalVisible(true);
     setTimeout(() => form.resetFields(), 0);
   };
@@ -114,13 +117,14 @@ const BannerManagement = () => {
       const detail = res?.data || res || {};
       const bannerData = { ...record, ...detail };
       setEditingBanner(bannerData);
+      const hasLink = !!bannerData.link_url;
+      setLinkType(hasLink ? LINK_TYPE.MINIAPP : LINK_TYPE.NO_LINK);
       setModalVisible(true);
       setTimeout(() => {
         form.setFieldsValue({
           title: bannerData.title || '',
           image_url: bannerData.image_url || '',
           link_url: bannerData.link_url || '',
-          position: bannerData.position || undefined,
           start_time: bannerData.start_time ? dayjs(bannerData.start_time) : null,
           end_time: bannerData.end_time ? dayjs(bannerData.end_time) : null,
           sort_order: bannerData.sort_order,
@@ -128,14 +132,14 @@ const BannerManagement = () => {
         });
       }, 0);
     } catch {
-      // 详情获取失败时用列表数据回填
+      const hasLink = !!record.link_url;
+      setLinkType(hasLink ? LINK_TYPE.MINIAPP : LINK_TYPE.NO_LINK);
       setModalVisible(true);
       setTimeout(() => {
         form.setFieldsValue({
           title: record.title || '',
           image_url: record.image_url || '',
           link_url: record.link_url || '',
-          position: record.position || undefined,
           sort_order: record.sort_order,
           status: record.status ?? BannerStatus.ENABLED,
         });
@@ -153,13 +157,17 @@ const BannerManagement = () => {
       const payload: CreateBannerRequest = {
         title: values.title,
         image_url: values.image_url,
-        link_url: values.link_url || undefined,
-        position: values.position || undefined,
+        position: 'home',
         sort_order: values.sort_order ?? undefined,
         status: values.status ?? BannerStatus.ENABLED,
         start_time: values.start_time ? (values.start_time as Dayjs).format('YYYY/MM/DD HH:mm:ss') : undefined,
         end_time: values.end_time ? (values.end_time as Dayjs).format('YYYY/MM/DD HH:mm:ss') : undefined,
       };
+
+      // 仅小程序链接时传 link_url
+      if (linkType === LINK_TYPE.MINIAPP && values.link_url) {
+        payload.link_url = values.link_url;
+      }
 
       if (editingBanner) {
         await bannerApi.updateBanner(editingBanner.id, payload as UpdateBannerRequest);
@@ -175,6 +183,13 @@ const BannerManagement = () => {
       showError(err?.response?.data?.message || '操作失败');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLinkTypeChange = (value: number) => {
+    setLinkType(value);
+    if (value === LINK_TYPE.NO_LINK) {
+      form.setFieldsValue({ link_url: '' });
     }
   };
 
@@ -264,7 +279,7 @@ const BannerManagement = () => {
     <>
       <StandardPage
         title="轮播图管理"
-        description="管理首页及各页面的轮播图，设置图片、跳转链接和展示时间。"
+        description="管理首页轮播图，设置图片、跳转链接和展示时间。"
         showRefreshButton
         onRefresh={refresh}
         showAddButton
@@ -328,24 +343,23 @@ const BannerManagement = () => {
             <CropperImageUpload aspect={430 / 175} sizeHint="建议尺寸：430 × 175 像素" />
           </Form.Item>
 
-          <Form.Item
-            label="跳转链接"
-            name="link_url"
-            rules={[{ max: 512, message: '最多512个字符' }]}
-          >
-            <Input placeholder="请输入跳转链接（选填）" />
+          <Form.Item label="链接类型" required>
+            <Radio.Group value={linkType} onChange={(e) => handleLinkTypeChange(e.target.value)}>
+              <Radio.Button value={LINK_TYPE.MINIAPP}>小程序链接</Radio.Button>
+              <Radio.Button value={LINK_TYPE.NO_LINK}>无链接</Radio.Button>
+            </Radio.Group>
           </Form.Item>
 
-          <Form.Item
-            label="展示位置"
-            name="position"
-          >
-            <Select
-              placeholder="请选择展示位置"
-              options={POSITION_OPTIONS}
-              allowClear
-            />
-          </Form.Item>
+          {linkType === LINK_TYPE.MINIAPP && (
+            <Form.Item
+              label="跳转链接"
+              name="link_url"
+              rules={[{ required: true, message: '请输入跳转链接' }, { max: 512, message: '最多512个字符' }]}
+              extra="请输入小程序页面路径，如: /pages/activity/detail?id=123"
+            >
+              <Input placeholder="请输入小程序页面路径" />
+            </Form.Item>
+          )}
 
           <Form.Item label="展示开始时间" name="start_time">
             <DatePicker showTime format="YYYY/MM/DD HH:mm:ss" placeholder="选择开始时间" style={{ width: '100%' }} />
