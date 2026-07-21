@@ -212,9 +212,9 @@ const BannerManagement = () => {
       title: '图片',
       dataIndex: 'image_url',
       key: 'image_url',
-      width: 80,
+      width: 120,
       render: (url: string) => (
-        <div style={{ width: 80, height: 50, borderRadius: 2, overflow: 'hidden' }}>
+        <div style={{ width: 100, height: 44, borderRadius: 2, overflow: 'hidden' }}>
           {url ? (
             <Image
               src={getFullWidthUrl(url)}
