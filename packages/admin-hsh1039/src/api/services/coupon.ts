@@ -13,8 +13,8 @@ export const couponApi = {
     discount_amount: number;
     threshold_amount: number;
     total_stock: number;
-    start_time: string;
-    end_time: string;
+    start_time?: string;
+    end_time?: string;
     scope_type: 'all' | 'category' | 'product';
     scope_ids?: number[];
     allow_rollback?: boolean;

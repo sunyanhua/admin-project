@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Switch, InputNumber, Space, Form, Input } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
@@ -28,17 +28,8 @@ const FaqManagement = () => {
   const [editingHelp, setEditingHelp] = useState<Help | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [defaultCategoryId, setDefaultCategoryId] = useState<number>(0);
   const [statusEnabled, setStatusEnabled] = useState(true);
   const [form] = Form.useForm();
-
-  // 加载默认分类（接口要求 category_id 必填，但 UI 不展示分类选择）
-  useEffect(() => {
-    helpsApi.getCategories({ page: 1, page_size: 1 }).then((res: any) => {
-      const list = res?.list || [];
-      if (list.length > 0) setDefaultCategoryId(list[0].id);
-    }).catch(() => {});
-  }, []);
 
   const fetchHelps = useCallback(async (params: any) => {
     return helpsApi.getHelps(params);
@@ -133,7 +124,6 @@ const FaqManagement = () => {
 
       const payload: Record<string, any> = {
         title: values.title,
-        category_id: editingHelp?.category_id ?? defaultCategoryId,
         content: values.content || undefined,
         status: statusEnabled ? 0 : 1,
         sort_order: values.sort_order ?? undefined,

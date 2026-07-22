@@ -145,17 +145,18 @@ const CouponManagement = () => {
   const handleAddSubmit = async (vals: any) => {
     setSubmitting(true);
     try {
-      await couponApi.createCoupon({
+      const body: any = {
         name: vals.name,
         discount_amount: Math.round(vals.discount_amount * 100),
-        threshold_amount: vals.threshold_amount ? Math.round(vals.threshold_amount * 100) : 0,
+        threshold_amount: Math.round((vals.threshold_amount || 0) * 100),
         total_stock: vals.total_stock,
-        start_time: vals.start_time ? vals.start_time.toISOString() : '',
-        end_time: vals.end_time ? vals.end_time.toISOString() : '',
+        start_time: vals.start_time ? vals.start_time.toISOString() : dayjs().toISOString(),
+        end_time: vals.end_time ? vals.end_time.toISOString() : dayjs().add(1, 'year').toISOString(),
         scope_type: vals.scope_type || 'all',
         scope_ids: buildScopeIds(vals),
         allow_rollback: vals.allow_rollback ?? true,
-      });
+      };
+      await couponApi.createCoupon(body);
       success('创建成功');
       setAddModalOpen(false);
       refresh();
@@ -215,8 +216,8 @@ const CouponManagement = () => {
       if (vals.discount_amount !== undefined) data.discount_amount = Math.round(vals.discount_amount * 100);
       if (vals.threshold_amount !== undefined) data.threshold_amount = Math.round(vals.threshold_amount * 100);
       if (vals.total_stock !== undefined) data.total_stock = vals.total_stock;
-      if (vals.start_time !== undefined) data.start_time = vals.start_time ? vals.start_time.toISOString() : '';
-      if (vals.end_time !== undefined) data.end_time = vals.end_time ? vals.end_time.toISOString() : '';
+      if (vals.start_time !== undefined) data.start_time = vals.start_time ? vals.start_time.toISOString() : dayjs().toISOString();
+      if (vals.end_time !== undefined) data.end_time = vals.end_time ? vals.end_time.toISOString() : dayjs().add(1, 'year').toISOString();
       data.scope_type = vals.scope_type || 'all';
       data.scope_ids = buildScopeIds(vals);
       if (vals.allow_rollback !== undefined) data.allow_rollback = vals.allow_rollback;

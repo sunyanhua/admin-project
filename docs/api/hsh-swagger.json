@@ -13988,7 +13988,6 @@
         "github_com_vbegin_bizmall_internal_cms_dto.CreateHelpRequest": {
             "type": "object",
             "required": [
-                "category_id",
                 "title"
             ],
             "properties": {
@@ -14187,8 +14186,7 @@
             "type": "object",
             "properties": {
                 "category_id": {
-                    "type": "integer",
-                    "minimum": 1
+                    "type": "integer"
                 },
                 "content": {
                     "type": "string"
@@ -14305,7 +14303,7 @@
                     "type": "boolean"
                 },
                 "discount_amount": {
-                    "description": "优惠金额（元）",
+                    "description": "优惠金额（元），必须 > 0",
                     "type": "number"
                 },
                 "end_time": {
@@ -14336,8 +14334,9 @@
                     "type": "string"
                 },
                 "threshold_amount": {
-                    "description": "门槛金额（元）",
-                    "type": "number"
+                    "description": "门槛金额（元），0 表示无门槛",
+                    "type": "number",
+                    "minimum": 0
                 },
                 "total_stock": {
                     "type": "integer",
@@ -14442,7 +14441,8 @@
                     "type": "string"
                 },
                 "threshold_amount": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": 0
                 },
                 "total_stock": {
                     "type": "integer",
