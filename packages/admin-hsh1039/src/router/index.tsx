@@ -31,6 +31,8 @@ import UserStats from '@/pages/community/UserStats';
 import EventCategories from '@/pages/operation/EventCategoryManagement';
 import EventList from '@/pages/operation/EventManagement';
 import EventOrders from '@/pages/events/EventOrders';
+import TicketOrders from '@/pages/events/TicketOrders';
+import ProductOrders from '@/pages/events/ProductOrders';
 
 // 运营管理 — 门票管理
 import TicketManagement from '@/pages/operation/TicketManagement';
@@ -38,6 +40,7 @@ import TicketManagement from '@/pages/operation/TicketManagement';
 // 财务管理
 import PaymentRecords from '@/pages/events/PaymentRecords';
 import RefundRecords from '@/pages/events/RefundRecords';
+import InvoiceManagement from '@/pages/finance/InvoiceManagement';
 import CouponManagement from '@/pages/finance/CouponManagement';
 
 // 运营管理 — 门票/商品分类
@@ -107,11 +110,11 @@ const router = createHashRouter([
           // 门票管理
           { path: 'ticket-categories', element: <TicketCategoryManagement /> },
           { path: 'tickets', element: <TicketManagement /> },
-          { path: 'ticket-orders', element: <PlaceholderPage title="购票信息" /> },
+          { path: 'ticket-orders', element: <TicketOrders /> },
           // 商品管理
           { path: 'product-categories', element: <ProductCategoryManagement /> },
           { path: 'products', element: <ProductManagement /> },
-          { path: 'product-orders', element: <PlaceholderPage title="购买信息" /> },
+          { path: 'product-orders', element: <ProductOrders /> },
         ],
       },
 
@@ -123,6 +126,7 @@ const router = createHashRouter([
           // 财务信息
           { path: 'payments', element: <PaymentRecords /> },
           { path: 'refunds', element: <RefundRecords /> },
+          { path: 'invoices', element: <InvoiceManagement /> },
           { path: 'coupons', element: <CouponManagement /> },
           // 财务统计（待开发）
           { path: 'stats', element: <PlaceholderPage title="财务统计管理" /> },

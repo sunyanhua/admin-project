@@ -13,27 +13,26 @@ interface SkuLabel {
   spec_indices: string;
 }
 
-interface LocalSlot {
+interface WizardSlot {
   key: string;
-  spec_text: string;    // 可读文本，用于列表展示
-  spec_indices: string;  // spec 索引串，用于 finish 时匹配 SKU
+  spec_text: string;
+  spec_indices: string;
   slot_date: string;
   slot_time: string;
   title: string;
   capacity: number;
   slot_id?: number;
   status?: string;
-  _action: 'create' | 'update' | 'keep';
+  _action: 'create' | 'keep';
 }
 
 export interface BookingSlotState {
   hasBooking: boolean;
-  pendingSlots: LocalSlot[];
-  deletedSlotIds: number[];
+  pendingWizardSlots: WizardSlot[];
 }
 
 export interface BookingSlotManagerHandle {
-  getState: () => BookingSlotState;
+  getWizardState: () => BookingSlotState;
 }
 
 interface BookingSlotManagerProps {
@@ -46,131 +45,112 @@ interface BookingSlotManagerProps {
 let _keyCounter = Date.now();
 function uid() { return `bs-${++_keyCounter}`; }
 
+async function fetchAllSlots(productId: number): Promise<BookingSlot[]> {
+  const all: BookingSlot[] = [];
+  for (let pg = 1; ; pg++) {
+    const sr: any = await bookingSlotApi.getSlots(productId, { page: pg, page_size: 100 });
+    const page: BookingSlot[] = sr?.list || [];
+    all.push(...page);
+    if (page.length < 100) break;
+  }
+  return all;
+}
+
+function buildSpecTexts(specs: any[], skus: any[]) {
+  const vMap = new Map<number, string>();
+  for (const spec of specs) for (const v of spec.values || []) vMap.set(v.id, v.value || '');
+  const buildText = (indices: string) => {
+    if (!indices) return '';
+    return indices.split('_').map((pid, i) => {
+      const vId = parseInt(pid);
+      return `${specs[i]?.name || '?'}:${vMap.get(vId) || pid}`;
+    }).join(' | ');
+  };
+  const skuIdToText = new Map<number, string>();
+  const skuIdToIndices = new Map<number, string>();
+  for (const sku of skus) {
+    skuIdToText.set(sku.id, buildText(sku.spec_indices || ''));
+    skuIdToIndices.set(sku.id, sku.spec_indices || '');
+  }
+  return { skuIdToText, skuIdToIndices };
+}
+
 // ---- Component ----
 
 const BookingSlotManager = forwardRef<BookingSlotManagerHandle, BookingSlotManagerProps>(
-function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, ref) {
+  function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, ref) {
     const [hasBooking, setHasBooking] = useState(false);
-    const [slots, setSlots] = useState<LocalSlot[]>([]);
+    const [slots, setSlots] = useState<WizardSlot[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const { success, error: showError } = useAppNotification();
 
-    // 当前有效的 specText 集合（用于孤儿判定）
     const validTexts = useMemo(() => new Set(skuLabels.map((l) => l.specText)), [skuLabels]);
 
-    // 暴露状态给父组件
-    const handleGetState = useCallback(() => {
-      const orphanIds = slots
-        .filter((s) => s._action === 'keep' && s.slot_id && s.spec_text !== String(s.slot_id) && !validTexts.has(s.spec_text))
-        .map((s) => s.slot_id!);
-      const userDeletedIds = slots.filter((s) => s._action === 'delete' && s.slot_id).map((s) => s.slot_id!);
-      const result: BookingSlotState = {
-        hasBooking,
-        pendingSlots: slots.filter((s) => s._action !== 'delete'
-          && !(s._action === 'keep' && s.slot_id && s.spec_text !== String(s.slot_id) && !validTexts.has(s.spec_text))),
-        deletedSlotIds: [...new Set([...userDeletedIds, ...orphanIds])],
-      };
-      return result;
-    }, [hasBooking, slots, validTexts]);
+    const handleGetWizardState = useCallback((): BookingSlotState => ({
+      hasBooking,
+      pendingWizardSlots: slots.filter((s) => s._action !== undefined && validTexts.has(s.spec_text)),
+    }), [hasBooking, slots, validTexts]);
 
     useImperativeHandle(ref, () => ({
-      getState: handleGetState,
-    }), [handleGetState]);
+      getWizardState: () => handleGetWizardState(),
+    }), [handleGetWizardState]);
 
-    // 追踪是否已加载过服务端数据（只执行一次）
     const loadedOnce = useRef(false);
 
-    // 加载产品状态及已有时段（skuLabels 就绪后再执行）
+    // SKU 变化清理孤儿
+    useEffect(() => {
+      if (!loadedOnce.current) return;
+      setSlots((prev) =>
+        prev.map((s) => (validTexts.has(s.spec_text) ? s : { ...s, _action: undefined } as WizardSlot)),
+      );
+    }, [validTexts]);
+
     useEffect(() => {
       if (!productId || loadedOnce.current || skuLabels.length === 0) return;
-      const doLoad = async () => {
       loadedOnce.current = true;
-      setLoading(true);
-      try {
-        const detail: any = await productApi.getProductDetail(productId);
-        setHasBooking(detail?.has_booking === true);
-      } catch { /* ignore */ }
+      const doLoad = async () => {
+        setLoading(true);
+        try {
+          const detail: any = await productApi.getProductDetail(productId);
+          setHasBooking(detail?.has_booking === true);
+        } catch { /* ignore */ }
 
-      // 加载已有 slots（直接查 API 解析 value ID→名称→specText）
-      try {
-        const slotRes: any = await bookingSlotApi.getSlots(productId);
-        const apiSlots: BookingSlot[] = slotRes?.list || [];
+        try {
+          const [apiSlots, specRes, skuRes]: any[] = await Promise.all([
+            fetchAllSlots(productId),
+            productApi.getSpecs(productId),
+            productApi.getSkus(productId),
+          ]);
+          const specs: any[] = Array.isArray(specRes) ? specRes : [];
+          const skus: any[] = Array.isArray(skuRes) ? skuRes : (skuRes?.list || []);
+          const { skuIdToText, skuIdToIndices } = buildSpecTexts(specs, skus);
 
-        const [specRes, skuRes]: any[] = await Promise.all([
-          productApi.getSpecs(productId),
-          productApi.getSkus(productId),
-        ]);
-        const savedSpecs: any[] = Array.isArray(specRes) ? specRes : [];
-        const skuArr: any[] = Array.isArray(skuRes) ? skuRes : (skuRes?.list || []);
-
-        const vMap = new Map<number, string>();
-        for (const spec of savedSpecs) {
-          for (const v of spec.values || []) vMap.set(v.id, v.value || '');
-        }
-
-        const buildText = (indices: string): string => {
-          if (!indices) return '';
-          return indices.split('_').map((pid, i) => {
-            const vId = parseInt(pid);
-            return `${savedSpecs[i]?.name || '?'}:${vMap.get(vId) || pid}`;
-          }).join(' | ');
-        };
-
-        const skuIdToText = new Map<number, string>();
-        const skuIdToIndices = new Map<number, string>();
-        for (const sku of skuArr) {
-          skuIdToText.set(sku.id, buildText(sku.spec_indices || ''));
-          skuIdToIndices.set(sku.id, sku.spec_indices || '');
-        }
-
-        const local: LocalSlot[] = apiSlots.map((s) => {
-          const specText = skuIdToText.get(s.sku_id) || String(s.sku_id);
-          const si = skuIdToIndices.get(s.sku_id) || '';
-          return {
-            key: `existing-${s.id}`,
-            spec_text: specText,
-            spec_indices: si,
-            slot_date: s.slot_date || '',
-            slot_time: s.slot_time || '',
-            title: s.title || '',
-            capacity: s.capacity || 1,
-            slot_id: s.id,
-            status: s.status,
-            _action: 'keep' as const,
-          };
-        });
-        setSlots(local);
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
+          const mapped: WizardSlot[] = apiSlots.map((s) => ({
+            key: `wiz-${s.id}`,
+            spec_text: skuIdToText.get(s.sku_id) || String(s.sku_id),
+            spec_indices: skuIdToIndices.get(s.sku_id) || '',
+            slot_date: s.slot_date || '', slot_time: s.slot_time || '',
+            title: s.title || '', capacity: s.capacity || 1,
+            slot_id: s.id, status: s.status, _action: 'keep' as const,
+          }));
+          setSlots(mapped);
+        } catch { /* ignore */ }
+        finally { setLoading(false); }
       };
       doLoad();
     }, [productId, skuLabels.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // 重置加载标志（父组件 productId 变化时重新加载）
-    useEffect(() => {
-      loadedOnce.current = false;
-    }, [productId]);
+    useEffect(() => { loadedOnce.current = false; }, [productId]);
 
-    // has_booking 切换（立即保存到产品）
-    const handleToggleHasBooking = async (checked: boolean) => {
-      setHasBooking(checked);
-      try {
-        await productApi.updateProduct(productId, { has_booking: checked });
-        success(checked ? '已启用预约' : '已关闭预约');
-      } catch (err: any) {
-        setHasBooking(!checked);
-        showError(err?.response?.data?.message || err?.message || '操作失败');
-      }
-    };
+    // has_booking 仅切换本地状态，等 finish() 时统一保存
+    const handleToggleHasBooking = (checked: boolean) => setHasBooking(checked);
 
-    // ---- 批量添加表单状态 ----
+    // ---- 批量添加 ----
     const [selectedSkus, setSelectedSkus] = useState<string[]>([]);
     const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null);
     const [dayFilter, setDayFilter] = useState<'all' | 'weekday' | 'weekend'>('all');
-    const [slotDefs, setSlotDefs] = useState<{ key: string; title: string }[]>([
-      { key: 's1', title: '' },
-    ]);
+    const [slotDefs, setSlotDefs] = useState<{ key: string; title: string }[]>([{ key: 's1', title: '' }]);
     const [slotCapacity, setSlotCapacity] = useState(10);
 
     const openCreate = () => {
@@ -182,13 +162,8 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
       setModalOpen(true);
     };
 
-    const addSlotDef = () => {
-      setSlotDefs((prev) => [...prev, { key: uid(), title: '' }]);
-    };
-
-    const removeSlotDef = (key: string) => {
-      setSlotDefs((prev) => prev.filter((s) => s.key !== key));
-    };
+    const addSlotDef = () => setSlotDefs((prev) => [...prev, { key: uid(), title: '' }]);
+    const removeSlotDef = (key: string) => setSlotDefs((prev) => prev.filter((s) => s.key !== key));
 
     const handleSubmit = () => {
       if (selectedSkus.length === 0) { showError('请至少选择一个 SKU'); return; }
@@ -196,12 +171,11 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
       const filled = slotDefs.filter((s) => s.title.trim());
       if (filled.length === 0) { showError('请至少填写一个时段名称'); return; }
 
-      // 计算日期列表
       const dates: string[] = [];
       let cursor = dateRange[0];
       const end = dateRange[1];
       while (cursor.isBefore(end) || cursor.isSame(end, 'day')) {
-        const dow = cursor.day(); // 0=Sun, 6=Sat
+        const dow = cursor.day();
         if (dayFilter === 'all'
           || (dayFilter === 'weekday' && dow >= 1 && dow <= 5)
           || (dayFilter === 'weekend' && (dow === 0 || dow === 6))) {
@@ -210,48 +184,37 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
         cursor = cursor.add(1, 'day');
       }
 
-      // 生成所有组合：SKU × 日期 × 时段
-      const newSlots: LocalSlot[] = [];
+      const newSlots: WizardSlot[] = [];
       for (const indices of selectedSkus) {
         const skuLabel = skuLabels.find((l) => l.spec_indices === indices);
         for (const d of dates) {
           for (const sd of filled) {
             newSlots.push({
-              key: uid(),
-              spec_text: skuLabel ? skuLabel.specText : indices,
-              spec_indices: indices,
-              slot_date: d,
-              slot_time: '',
-              title: sd.title.trim(),
-              capacity: slotCapacity,
-              _action: 'create' as const,
+              key: uid(), spec_text: skuLabel ? skuLabel.specText : indices,
+              spec_indices: indices, slot_date: d, slot_time: '',
+              title: sd.title.trim(), capacity: slotCapacity, _action: 'create' as const,
             });
           }
         }
       }
-
       setSlots((prev) => [...prev, ...newSlots]);
       success(`已生成 ${newSlots.length} 个预约时段`);
       setModalOpen(false);
     };
 
-    // ---- 删除 ----
-
-    const handleDelete = (slot: LocalSlot) => {
+    const handleDelete = (slot: WizardSlot) => {
       if (slot._action === 'create') {
         setSlots((prev) => prev.filter((s) => s.key !== slot.key));
       } else {
         setSlots((prev) => prev.map((s) =>
-          s.key === slot.key ? { ...s, _action: 'delete' as const } : s,
+          s.key === slot.key ? { ...s, _action: undefined } : s,
         ));
       }
     };
 
-    // 可见 slot（排除 _action === 'delete' + 孤儿，按日期升序）
-    const visibleSlots = useMemo(() =>
+    const visible = useMemo(() =>
       slots
-        .filter((s) => s._action !== 'delete'
-          && (s._action === 'create' || s.spec_text === String(s.slot_id) || validTexts.has(s.spec_text)))
+        .filter((s) => s._action !== undefined && validTexts.has(s.spec_text))
         .sort((a, b) => a.slot_date.localeCompare(b.slot_date)),
       [slots, validTexts]);
 
@@ -261,14 +224,14 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
       { title: '关联SKU', dataIndex: 'spec_text', key: 'spec_text', width: 200, ellipsis: true },
       { title: '容量', dataIndex: 'capacity', key: 'capacity', width: 70 },
       {
-        title: '状态', dataIndex: 'status', key: 'status', width: 80,
-        render: (v: string) => v
-          ? <Tag color={v === 'active' ? 'blue' : 'default'}>{v === 'active' ? '启用' : '停用'}</Tag>
+        title: '状态', key: 'status', width: 80,
+        render: (_: unknown, record: WizardSlot) => record.status
+          ? <Tag color={record.status === 'active' ? 'blue' : 'default'}>{record.status === 'active' ? '启用' : '停用'}</Tag>
           : <Tag color="green">待保存</Tag>,
       },
       {
         title: '操作', key: 'actions', width: 80,
-        render: (_: unknown, record: LocalSlot) => (
+        render: (_: unknown, record: WizardSlot) => (
           <Button type="link" size="small" danger onClick={() => handleDelete(record)}>删除</Button>
         ),
       },
@@ -284,19 +247,12 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
         {hasBooking && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <span style={{ fontWeight: 600, fontSize: 13 }}>预约时段（{visibleSlots.length} 个）</span>
+              <span style={{ fontWeight: 600, fontSize: 13 }}>预约时段（{visible.length} 个）</span>
               <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreate}>添加时段</Button>
             </div>
             <div style={{ background: '#fff', borderRadius: 4, border: '1px solid #d9d9d9', overflow: 'hidden' }}>
-            <Table
-              rowKey="key"
-              columns={columns}
-              dataSource={visibleSlots}
-              loading={loading}
-              size="small"
-              pagination={false}
-              scroll={{ y: 240 }}
-            />
+            <Table rowKey="key" columns={columns} dataSource={visible} loading={loading}
+              size="small" pagination={false} scroll={{ y: 240 }} />
             </div>
             <div style={{ color: '#999', fontSize: 12, marginTop: 6 }}>
               注：预约时段将在点击"完成"后与 SKU 一并保存
@@ -304,37 +260,18 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
           </div>
         )}
 
-        <ScrollableModal
-          title="批量添加时段"
-          open={modalOpen}
-          onCancel={() => setModalOpen(false)}
-          width={600}
-          destroyOnHidden
-          footer={
-            <Space>
-              <Button onClick={() => setModalOpen(false)}>取消</Button>
-              <Button type="primary" onClick={handleSubmit}>生成</Button>
-            </Space>
-          }
-        >
+        <ScrollableModal title="批量添加时段" open={modalOpen} onCancel={() => setModalOpen(false)} width={600} destroyOnHidden
+          footer={<Space><Button onClick={() => setModalOpen(false)}>取消</Button><Button type="primary" onClick={handleSubmit}>生成</Button></Space>}>
           <div style={{ marginBottom: 16 }}>
             <div style={{ marginBottom: 8, fontWeight: 500 }}>关联SKU</div>
-            <Checkbox.Group
-              value={selectedSkus}
-              onChange={(vals) => setSelectedSkus(vals as string[])}
+            <Checkbox.Group value={selectedSkus} onChange={(vals) => setSelectedSkus(vals as string[])}
               style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
-              options={skuLabels.map((l) => ({ label: l.specText, value: l.spec_indices }))}
-            />
+              options={skuLabels.map((l) => ({ label: l.specText, value: l.spec_indices }))} />
           </div>
-
           <div style={{ marginBottom: 16 }}>
             <div style={{ marginBottom: 8, fontWeight: 500 }}>日期范围</div>
-            <DatePicker.RangePicker
-              value={dateRange}
-              onChange={(vals) => setDateRange(vals as [Dayjs, Dayjs] | null)}
-              style={{ width: '100%' }}
-              disabledDate={(d) => d.isBefore(dayjs(), 'day')}
-            />
+            <DatePicker.RangePicker value={dateRange} onChange={(vals) => setDateRange(vals as [Dayjs, Dayjs] | null)}
+              style={{ width: '100%' }} disabledDate={(d) => d.isBefore(dayjs(), 'day')} />
             <div style={{ marginTop: 8 }}>
               <Radio.Group value={dayFilter} onChange={(e) => setDayFilter(e.target.value)}>
                 <Radio.Button value="all">不限</Radio.Button>
@@ -343,7 +280,6 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
               </Radio.Group>
             </div>
           </div>
-
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <span style={{ fontWeight: 500 }}>时段</span>
@@ -351,20 +287,12 @@ function BookingSlotManager({ productId, skuLabels }: BookingSlotManagerProps, r
             </div>
             {slotDefs.map((sd) => (
               <div key={sd.key} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
-                <Input
-                  placeholder="如：上午场"
-                  maxLength={128}
-                  style={{ flex: 1 }}
-                  value={sd.title}
-                  onChange={(e) => setSlotDefs((prev) => prev.map((s) => s.key === sd.key ? { ...s, title: e.target.value } : s))}
-                />
-                {slotDefs.length > 1 && (
-                  <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeSlotDef(sd.key)} />
-                )}
+                <Input placeholder="如：上午场" maxLength={128} style={{ flex: 1 }} value={sd.title}
+                  onChange={(e) => setSlotDefs((prev) => prev.map((s) => s.key === sd.key ? { ...s, title: e.target.value } : s))} />
+                {slotDefs.length > 1 && <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={() => removeSlotDef(sd.key)} />}
               </div>
             ))}
           </div>
-
           <div style={{ marginBottom: 8 }}>
             <div style={{ marginBottom: 8, fontWeight: 500 }}>容量</div>
             <InputNumber min={1} style={{ width: '100%' }} value={slotCapacity} onChange={(v) => setSlotCapacity(v ?? 10)} />

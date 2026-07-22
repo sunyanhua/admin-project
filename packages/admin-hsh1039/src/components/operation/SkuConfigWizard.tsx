@@ -412,6 +412,11 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
 
       await productApi.clearAllSkus(productId);
 
+      // 门票模式：清空 SKU 后立即批量删除所有旧 booking-slots
+      if (ticketMode) {
+        await bookingSlotApi.deleteAllSlots(productId).catch(() => {});
+      }
+
       const payload = wizardSpecs
         .filter((s) => s.name.trim() && s.values.some((v) => v.value.trim()))
         .map((s) => ({
@@ -554,19 +559,15 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         if (skuList.length > 0) await productApi.batchCreateSkus(productId, skuList);
       }
 
-      // 6. 刷新预约时段（门票模式，延迟到 SKU 创建后执行）
+      // 6. 门票模式：SKU 重建后将全部 pendingWizardSlots 映射新 sku_id 并批量创建
       if (ticketMode && bookingRef.current) {
-        const bk = bookingRef.current.getState();
-        for (const slotId of bk.deletedSlotIds) {
-          await bookingSlotApi.deleteSlot(productId, slotId).catch(() => {});
-        }
-        if (bk.pendingSlots.length > 0) {
-          // 用 value 名称构建 spec_text → sku_id 映射（ID 可能变，名称不变）
+        const bk = bookingRef.current.getWizardState();
+        if (bk.pendingWizardSlots.length > 0) {
+          // 用 value 名称构建 spec_text → sku_id 映射
           const textToSkuId = new Map<string, number>();
           try {
             const raw: any = await productApi.getSkus(productId);
             const freshSkus: any[] = Array.isArray(raw) ? raw : (raw?.list || []);
-            // freshList 是 finish 中已保存后的 specs
             const idToName: Record<number, Record<number, string>> = {};
             for (const s of freshList) {
               const map: Record<number, string> = {};
@@ -585,21 +586,16 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
             }
           } catch { /* ignore */ }
 
-          for (const slot of bk.pendingSlots) {
-            const skuId = textToSkuId.get(slot.spec_text);
-            if (!skuId) continue;
-            if (slot._action === 'create') {
-              await bookingSlotApi.createSlot(productId, {
-                sku_id: skuId, slot_date: slot.slot_date,
-                title: slot.title, capacity: slot.capacity,
-                slot_time: slot.slot_time || undefined,
-              }).catch(() => {});
-            } else if (slot._action === 'update' && slot.slot_id) {
-              await bookingSlotApi.updateSlot(productId, slot.slot_id, {
-                title: slot.title, capacity: slot.capacity,
-                slot_time: slot.slot_time || undefined,
-              }).catch(() => {});
-            }
+          const batchSlots = bk.pendingWizardSlots
+            .map((slot) => {
+              const skuId = textToSkuId.get(slot.spec_text);
+              if (!skuId) return null;
+              return { sku_id: skuId, slot_date: slot.slot_date, title: slot.title, capacity: slot.capacity, slot_time: slot.slot_time || undefined };
+            })
+            .filter(Boolean) as { sku_id: number; slot_date: string; title: string; capacity: number; slot_time?: string }[];
+
+          if (batchSlots.length > 0) {
+            await bookingSlotApi.batchCreateSlots(productId, batchSlots);
           }
         }
       }
@@ -693,8 +689,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       )}
 
       {/* ====== 上架管理 ====== */}
-      {current === 1 && (
-        <div style={{ padding: '0 4px' }}>
+      <div style={{ padding: '0 4px', display: current === 1 ? 'block' : 'none' }}>
 
           {/* ====== 报名期限 ====== */}
           {!(ticketMode || productMode) && (
@@ -1010,7 +1005,6 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
             </div>
           </div>
         </div>
-      )}
     </>
   );
 });

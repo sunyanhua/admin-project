@@ -5,6 +5,7 @@ import dayjs, { Dayjs } from 'dayjs';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { productApi } from '../../api/services/product';
 import { useAppNotification } from '@/hooks/useAppNotification';
+import LiveBookingSlotManager from './LiveBookingSlotManager';
 
 // ==================== Types ====================
 
@@ -12,6 +13,7 @@ interface SpecInfo { name: string; values: { id: number; value: string }[]; is_t
 
 interface SkuItem {
   key: string; id: number; specText: string; specParts: string[];
+  spec_indices: string;
   price: number; stock: number; status: number;
   usable?: string | null; expiry?: string | null; additional_fields_config?: any[] | null;
 }
@@ -235,6 +237,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
           }
           return {
             key: String(s.id), id: s.id, specText: partsWithNames.join(' | '), specParts,
+            spec_indices: s.spec_indices || '',
             price: s.price || 0, stock: s.stock || 0, status: s.status ?? 1,
             usable: s.usable || null, expiry: s.expiry || null,
             additional_fields_config: s.additional_fields_config || null,
@@ -466,8 +469,9 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
           </Space>
         }
       >
+        <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span style={{ fontWeight: 600 }}>SKU 列表（{originalSkus.length} 种）</span>
+          <span style={{ fontWeight: 600, color: '#1677ff' }}>SKU 管理</span>
           <Button type="link" size="small" onClick={() => toggleBatchMode(!batchMode)}>
             {batchMode ? '收起批量设置' : '批量设置'}
           </Button>
@@ -625,6 +629,21 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
 
         <div style={{ fontSize: 13, marginTop: 12, lineHeight: 1.8 }}>
           <div>{ticketMode ? '点击"购票信息"列可编辑单条SKU，点击"保存配置"提交所有修改。' : '点击"报名期限"或"信息模板"列可编辑单条SKU，点击"保存配置"提交所有修改。'}</div>
+        </div>
+        </div>
+
+        {/* ====== 预约配置（仅门票） ====== */}
+        {ticketMode && (
+          <div style={{ marginTop: 20, background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px' }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>预约配置</div>
+            <LiveBookingSlotManager
+              productId={productId}
+              skuLabels={originalSkus.map((s) => ({ specText: s.specText, spec_indices: s.spec_indices }))}
+            />
+          </div>
+        )}
+
+        <div style={{ fontSize: 13, marginTop: 16, lineHeight: 1.8 }}>
           <div>
             如需进行更多配置（如修改规格项目组合、调整报名有效期或信息模板、更新退款规则等），请点击{' '}
             <Button type="link" size="small" style={{ padding: 0, fontSize: 13 }} onClick={handleModifyCombo}>高级配置管理</Button>。

@@ -1,22 +1,23 @@
 import request from '..';
 
-// 用户相关API（v6）
+// C端用户相关API（v1）
 export const userApi = {
-  // 查询用户列表
-  getUsers: (params?: { gender?: number; status?: number; start?: number; length?: number }) => {
-    return request.get('/admin/v6/user', { params });
+  // 查询C端用户列表（v1）
+  getUsers: (params?: { page?: number; page_size?: number; keyword?: string; status?: number; gender?: number }) => {
+    return request.get('/admin/v1/mall/users', { params });
   },
 
-  // 获取用户详情
-  getUserDetail: (id: string) => {
-    return request.get(`/admin/v6/user/${id}`);
+  // 获取C端用户详情（v1）
+  getUserDetail: (id: number) => {
+    return request.get(`/admin/v1/mall/users/${id}`);
   },
 
-  // 更新用户状态
-  updateUserStatus: (id: string, status: number) => {
-    return request.post('/admin/v6/user/status', { id, status });
+  // 修改C端用户状态 0=启用 1=禁用（v1）
+  updateUserStatus: (id: number, status: number) => {
+    return request.patch(`/admin/v1/mall/users/${id}/status`, { status });
   },
 
+  // 以下为旧版 v6 API，详情弹窗管理操作仍在使用
   // 更新用户可见性
   updateUserVisible: (id: string, visible: boolean) => {
     return request.post('/admin/v6/user/visible', { id, visible });

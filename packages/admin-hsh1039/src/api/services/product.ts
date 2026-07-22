@@ -248,4 +248,12 @@ export const bookingSlotApi = {
 
   deleteSlot: (productId: number, slotId: number) =>
     request.delete(`/admin/v1/mall/products/${productId}/booking-slots/${slotId}`),
+
+  // 批量创建 — POST /admin/v1/mall/products/{id}/booking-slots/batch
+  batchCreateSlots: (productId: number, slots: CreateBookingSlotData[]) =>
+    request.post(`/admin/v1/mall/products/${productId}/booking-slots/batch`, { slots }),
+
+  // 批量删除（清空该产品全部时段） — DELETE /admin/v1/mall/products/{id}/booking-slots
+  deleteAllSlots: (productId: number) =>
+    request.delete(`/admin/v1/mall/products/${productId}/booking-slots`),
 };

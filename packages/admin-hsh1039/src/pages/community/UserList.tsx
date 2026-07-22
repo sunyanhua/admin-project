@@ -19,23 +19,6 @@ const { Title } = Typography;
 
 const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
 
-const ZODIAC_MAP: Array<[number, string, string]> = [
-  [20, '摩羯座', '水瓶座'], [19, '水瓶座', '双鱼座'], [20, '双鱼座', '白羊座'],
-  [20, '白羊座', '金牛座'], [20, '金牛座', '双子座'], [21, '双子座', '巨蟹座'],
-  [22, '巨蟹座', '狮子座'], [22, '狮子座', '处女座'], [22, '处女座', '天秤座'],
-  [23, '天秤座', '天蝎座'], [22, '天蝎座', '射手座'], [21, '射手座', '摩羯座'],
-];
-
-const getZodiac = (birthday: string): string => {
-  if (!birthday) return '-';
-  const d = parseAsLocal(birthday) || new Date(birthday);
-  if (isNaN(d.getTime())) return '-';
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  const [border, prev, curr] = ZODIAC_MAP[month - 1];
-  return day < border ? prev : curr;
-};
-
 const getAge = (birthday: string): number | string => {
   if (!birthday) return '-';
   const birth = parseAsLocal(birthday);
@@ -55,15 +38,14 @@ const GENDER_OPTIONS = [
 const STATUS_OPTIONS = [
   { label: '正常', value: 0 },
   { label: '屏蔽', value: 1 },
-  { label: '未激活', value: 3 },
 ];
 
-const COOP_ROLE_OPTIONS = [
-  { label: '官方用户', value: 3 },
-  { label: '主理人', value: 2 },
-  { label: '合作商户', value: 1 },
-  { label: '推荐用户', value: true },
-];
+const isExpired = (expiry: string): boolean => {
+  if (!expiry) return false;
+  const d = parseAsLocal(expiry);
+  if (!d) return false;
+  return d < new Date();
+};
 
 const CoopRoleTag = ({ role }: { role: number }) => {
   const roleMap: Record<number, { text: string; color: string }> = {
@@ -76,16 +58,8 @@ const CoopRoleTag = ({ role }: { role: number }) => {
   return <Tag color={roleInfo.color}>{roleInfo.text}</Tag>;
 };
 
-const isExpired = (expiry: string): boolean => {
-  if (!expiry) return false;
-  const d = parseAsLocal(expiry);
-  if (!d) return false;
-  return d < new Date();
-};
-
 const filters: FilterConfig[] = [
   { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
-  { name: 'coop_role', placeholder: '全部身份', type: 'select', options: COOP_ROLE_OPTIONS },
   { name: 'gender', placeholder: '全部性别', type: 'select', options: GENDER_OPTIONS },
   { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
@@ -100,16 +74,12 @@ const UserList = () => {
   const [statusReason, setStatusReason] = useState('');
 
   const fetchUsers = useCallback(async (params: any) => {
-    // 转换coop_role=true为recom=true，其他身份coop_role值不变
-    if (params.coop_role === true) {
-      return userApi.getUsers({ ...params, recom: true, coop_role: undefined });
-    }
     return userApi.getUsers(params);
   }, []);
 
   const formatUserResponse = useCallback((res: any) => ({
-    list: res?.data || [],
-    count: res?.count ?? 0,
+    list: res?.list || [],
+    count: res?.total ?? 0,
   }), []);
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<any>({
@@ -125,7 +95,7 @@ const UserList = () => {
       success(checked ? '用户已设为正常' : '用户已屏蔽');
       refresh();
     } catch (err: any) {
-      error(err.response?.data?.msg || '操作失败');
+      error(err.response?.data?.msg || err.response?.data?.message || '操作失败');
     }
   };
 
@@ -134,9 +104,10 @@ const UserList = () => {
     setDetailLoading(true);
     try {
       const res = await userApi.getUserDetail(record.id) as any;
+      // v1 响应经拦截器解包后直接是用户对象
       setDetailModalData(res?.data || res || {});
-    } catch (error: any) {
-      // error handled by useListPage
+    } catch (err: any) {
+      // error handled by useListPage notification
     } finally {
       setDetailLoading(false);
     }
@@ -150,7 +121,7 @@ const UserList = () => {
       setDetailModalData({ ...detailModalData, status: checked ? 0 : 1 });
       refresh();
     } catch (err: any) {
-      error(err.response?.data?.msg || '操作失败');
+      error(err.response?.data?.msg || err.response?.data?.message || '操作失败');
     }
   };
 
@@ -159,7 +130,6 @@ const UserList = () => {
     const isCurrentlyOfficial = !!(detailModalData.coop_auth && detailModalData.coop_role === 3);
 
     if (checked) {
-      // 设为官方用户 - 弹出确认框
       Modal.confirm({
         title: '确认操作',
         content: `确定要将用户 "${detailModalData.nick || detailModalData.userid}" 设为官方用户吗？`,
@@ -179,12 +149,10 @@ const UserList = () => {
           }
         },
         onCancel: () => {
-          // 取消时回滚 checkbox 状态 - 需要重新渲染来恢复
           setDetailModalData({ ...detailModalData });
         },
       });
     } else {
-      // 取消官方用户 - 弹出原因输入框
       setRevokeModalRecord(detailModalData);
       setStatusReason('');
       setRevokeModalVisible(true);
@@ -201,35 +169,6 @@ const UserList = () => {
     } catch (err: any) {
       error(err.response?.data?.msg || '操作失败');
     }
-  };
-
-  const handleSetOfficialUser = (record: any) => {
-    Modal.confirm({
-      title: '确认操作',
-      content: `确定要将用户 "${record.nick || record.userid}" 设为官方用户吗？`,
-      okText: '确认',
-      cancelText: '取消',
-      getContainer: false,
-      onOk: async () => {
-        setActionLoading(true);
-        try {
-          await request.post('/admin/v6/user/coop', { id: record.id, coop_role: 3, coop_commission: 0, inbox: true, inbox_title: '官方认证状态更新通知', inbox_intro: '您已被设置为官方认证用户，请点击查看详情！' });
-          success('操作成功');
-          setDetailModalData(null);
-          refresh();
-        } catch (err: any) {
-          error(err.response?.data?.msg || '操作失败');
-        } finally {
-          setActionLoading(false);
-        }
-      },
-    });
-  };
-
-  const handleRevokeOfficialUser = (record: any) => {
-    setRevokeModalRecord(record);
-    setStatusReason('');
-    setRevokeModalVisible(true);
   };
 
   const handleRevokeConfirm = async () => {
@@ -251,31 +190,24 @@ const UserList = () => {
     }
   };
 
-  const renderDetailFooter = () => {
-    // 官方用户操作已移至弹窗内的管理操作区域
-    return null;
-  };
+  const renderDetailFooter = () => null;
 
   const columns: ColumnsType<any> = [
     {
       title: '用户',
       key: 'user',
-      width: 140,
-      render: (_: any, record: any) => {
-        const showIdentity = record.coop_auth && !isExpired(record.coop_auth_expiry) && record.coop_role;
-        return (
-          <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewDetail(record)}>
-            <Space size={4}>
-              <Avatar src={getAvatarUrl(record.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
-              <span style={{ fontSize: 14 }}>{record.nick || '-'}</span>
-              {showIdentity && <CoopRoleTag role={record.coop_role} />}
-              {record.recom && <Tag color="red">推荐</Tag>}
-            </Space>
-          </Button>
-        );
-      },
+      width: 160,
+      render: (_: any, record: any) => (
+        <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewDetail(record)}>
+          <Space size={4}>
+            <Avatar src={getAvatarUrl(record.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <span style={{ fontSize: 14 }}>{record.nick || record.nickname || '-'}</span>
+          </Space>
+        </Button>
+      ),
     },
-    { title: '手机号', dataIndex: 'phone', key: 'phone', width: 130 },
+    { title: '姓名', dataIndex: 'name', key: 'name', width: 100, render: (v: string) => v || '-' },
+    { title: '手机号', dataIndex: 'phone', key: 'phone', width: 130, render: (v: string) => v || '-' },
     {
       title: '性别',
       dataIndex: 'gender',
@@ -291,13 +223,12 @@ const UserList = () => {
       render: (birthday: string) => getAge(birthday),
     },
     {
-      title: '星座',
-      dataIndex: 'birthday',
-      key: 'zodiac',
-      width: 80,
-      render: (birthday: string) => getZodiac(birthday),
+      title: '积分',
+      dataIndex: 'points_balance',
+      key: 'points_balance',
+      width: 90,
+      render: (v: number) => (v != null ? v : 0),
     },
-    { title: 'MBTI', dataIndex: 'mbti', key: 'mbti', width: 70, render: (v: string) => v || '-' },
     {
       title: '注册时间',
       dataIndex: 'insertat',
@@ -353,8 +284,8 @@ const UserList = () => {
     <>
       <StandardPage
         title="注册用户管理"
-        description="管理平台的注册用户信息。"
-        showRefreshButton={true}
+        description="管理平台的注册用户信息，查看头像、昵称、姓名、性别、年龄、所在区县、积分、注册时间。"
+        showRefreshButton
         onRefresh={refresh}
         searchArea={
           <SearchPanel

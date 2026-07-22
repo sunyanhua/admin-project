@@ -1952,6 +1952,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "管理员分页查询全部售后单列表，支持按状态、类型、日期范围筛选。返回列表含售后单号、类型、状态、退款金额、关联订单号、用户昵称等字段。",
                 "consumes": [
                     "application/json"
                 ],
@@ -1965,16 +1966,34 @@
                 "parameters": [
                     {
                         "maximum": 5,
-                        "minimum": -1,
+                        "minimum": 0,
                         "type": "integer",
-                        "description": "售后状态（0~5，-1=不限）",
+                        "description": "售后状态（0=待审核 1=审核通过 2=审核拒绝 3=已退货 4=退款完成 5=已关闭，不传=不限）",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "售后类型（refund=仅退款 return_refund=退货退款，不传=不限）",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建起始日期（格式 2006-01-02）",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "创建截止日期（格式 2006-01-02）",
+                        "name": "end_date",
                         "in": "query"
                     },
                     {
                         "minimum": 1,
                         "type": "integer",
-                        "description": "页码",
+                        "description": "页码（默认 1）",
                         "name": "page",
                         "in": "query"
                     },
@@ -1982,20 +2001,20 @@
                         "maximum": 100,
                         "minimum": 1,
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "每页条数（默认 20，最大 100）",
                         "name": "page_size",
                         "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "售后申请列表（分页，含用户信息）",
+                        "description": "售后列表（分页，含售后单号、类型、状态、退款金额、关联订单号、用户ID、用户昵称、创建时间）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
                     "400": {
-                        "description": "查询参数无效（page/page_size 越界或 status 不在 0~5）",
+                        "description": "查询参数无效（page/page_size 越界或 status/type 非法）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2028,6 +2047,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "管理员查询指定售后单的完整详情，含售后基本信息、关联订单信息（订单号/金额/商品行）、用户信息（ID/昵称）、退货物流、凭证图片、操作日志时间线",
                 "consumes": [
                     "application/json"
                 ],
@@ -2040,6 +2060,7 @@
                 "summary": "后台售后详情",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "售后单ID",
                         "name": "id",
@@ -2049,13 +2070,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "售后详情（含操作日志+订单商品行）",
+                        "description": "售后详情：含售后单号、类型、状态、退款金额、订单号/金额/商品行、用户ID/昵称、退货物流、凭证图片、拒绝原因、审核人/时间、退款时间、关联售后ID、操作日志。业务错误（HTTP 200）：4001=售后单不存在, 3002=订单不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（ID 非正整数）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -4690,14 +4711,17 @@
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
-                        "description": "页码",
+                        "description": "页码（默认 1）",
                         "name": "page",
                         "in": "query"
                     },
                     {
+                        "maximum": 100,
+                        "minimum": 1,
                         "type": "integer",
-                        "description": "每页数量",
+                        "description": "每页数量（最大 100）",
                         "name": "page_size",
                         "in": "query"
                     },
@@ -4784,6 +4808,64 @@
                 "responses": {
                     "200": {
                         "description": "业务错误（3039 不可编辑已过去时段）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "批量删除预约时段",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "业务错误（2011 商品上架中请先下架 / 3053 尚有SKU数据）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5032,6 +5114,75 @@
                 }
             }
         },
+        "/admin/v1/mall/products/:id/booking-slots/batch": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "BookingSlots"
+                ],
+                "summary": "批量创建预约时段",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "商品ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "批量时段信息",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.AdminBatchCreateBookingSlotRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "部分成功（返回成功列表 + 错误详情）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/mall/products/{id}": {
             "get": {
                 "security": [
@@ -5143,6 +5294,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "删除商品，已有销量（sold_count > 0）的商品禁止删除，只能下架处理。",
                 "produces": [
                     "application/json"
                 ],
@@ -5161,9 +5313,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "业务错误（2014: 商品已有销量无法删除）",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -7713,432 +7865,6 @@
                 }
             }
         },
-        "/admin/v1/mall/wxa/apps": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "小程序应用列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "搜索关键词（appid）",
-                        "name": "keyword",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "type": "integer",
-                        "default": 20,
-                        "description": "每页条数",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "分页列表",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "创建小程序应用",
-                "parameters": [
-                    {
-                        "description": "创建小程序应用请求",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaAppRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "创建成功",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/v1/mall/wxa/apps/{id}": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "小程序应用详情",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "小程序应用 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "小程序应用详情",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "小程序应用不存在",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "更新小程序应用",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "小程序应用 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新小程序应用请求（PATCH 语义）",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaAppRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新成功",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "小程序应用不存在",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "禁用小程序应用",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "小程序应用 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "禁用成功",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "小程序应用不存在",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/v1/mall/wxa/machs": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "商户配置列表",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "搜索关键词（mchid/serial_no）",
-                        "name": "keyword",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "状态过滤：1-启用 0-禁用",
-                        "name": "status",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 1,
-                        "description": "页码",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "type": "integer",
-                        "default": 20,
-                        "description": "每页条数",
-                        "name": "page_size",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "分页列表",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "创建商户配置",
-                "parameters": [
-                    {
-                        "description": "创建商户配置请求",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaMachRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "创建成功",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/admin/v1/mall/wxa/machs/{id}": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "商户配置详情",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "商户配置 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "商户配置详情",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "商户配置不存在",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "更新商户配置",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "商户配置 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "更新商户配置请求（PATCH 语义）",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaMachRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "更新成功",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "参数错误",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "商户配置不存在",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "后台-微信配置"
-                ],
-                "summary": "禁用商户配置",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "商户配置 ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "禁用成功",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "商户配置不存在",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/admin/v1/permissions": {
             "get": {
                 "security": [
@@ -9783,6 +9509,432 @@
                 }
             }
         },
+        "/admin/v1/wxa/apps": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "小程序应用列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键词（appid）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "创建小程序应用",
+                "parameters": [
+                    {
+                        "description": "创建小程序应用请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaAppRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/wxa/apps/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "小程序应用详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "小程序应用 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "小程序应用详情",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小程序应用不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "更新小程序应用",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "小程序应用 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新小程序应用请求（PATCH 语义）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaAppRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小程序应用不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "禁用小程序应用",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "小程序应用 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "禁用成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "小程序应用不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/wxa/machs": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "商户配置列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键词（mchid/serial_no）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态过滤：1-启用 0-禁用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "分页列表",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "创建商户配置",
+                "parameters": [
+                    {
+                        "description": "创建商户配置请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.CreateWxaMachRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/wxa/machs/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "商户配置详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商户配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "商户配置详情",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商户配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "更新商户配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商户配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新商户配置请求（PATCH 语义）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_wxa_dto.UpdateWxaMachRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商户配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "后台-微信配置"
+                ],
+                "summary": "禁用商户配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "商户配置 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "禁用成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商户配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/cart": {
             "get": {
                 "security": [
@@ -11364,6 +11516,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "买家填写退货物流公司和运单号。仅允许 return_refund（退货退款）类型且状态为\"审核通过待退货\"的售后单操作。",
                 "consumes": [
                     "application/json"
                 ],
@@ -11394,13 +11547,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "退货物流信息已填写",
+                        "description": "退货物流信息已填写，售后单状态变为已退货待确认。业务错误（HTTP 200）：4001=售后单不存在或不属于当前用户, 4002=当前售后单状态不允许填写物流",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（ID 非正整数或物流信息缺失）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -11411,8 +11564,14 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
-                    "403": {
-                        "description": "无权操作或售后单不属于当前用户",
+                    "404": {
+                        "description": "售后单不存在或不属于当前用户",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "请求体校验失败",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -13191,6 +13350,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "返回当前登录用户的个人资料；若用户已通过微信登录但尚未注册，返回 data:null（code=0），前端据此判断是否需要引导注册",
                 "consumes": [
                     "application/json"
                 ],
@@ -13203,13 +13363,13 @@
                 "summary": "获取当前用户个人信息",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；未注册时 data 为 null",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "401": {
-                        "description": "未登录或已过期",
+                        "description": "未登录或 Token 已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -14886,6 +15046,21 @@
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_product_dto.AdminBatchCreateBookingSlotRequest": {
+            "type": "object",
+            "required": [
+                "slots"
+            ],
+            "properties": {
+                "slots": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_internal_product_dto.AdminCreateBookingSlotRequest"
+                    }
                 }
             }
         },
