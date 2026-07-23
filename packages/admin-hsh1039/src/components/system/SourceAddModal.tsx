@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Form, Input, Switch, Button, Space } from 'antd';
+import { Form, Input, DatePicker, Button, Space } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { sourceApi } from '@/api/services/source';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -10,15 +10,6 @@ export interface SourceAddModalProps {
   onSuccess?: () => void;
 }
 
-// 来源状态：0-禁用，1-启用
-const SOURCE_STATUS = {
-  DISABLED: 0,
-  ENABLED: 1,
-};
-
-// 默认来源标识
-const DEFAULT_KEY = 'default';
-
 const SourceAddModal: React.FC<SourceAddModalProps> = ({ visible, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -27,75 +18,44 @@ const SourceAddModal: React.FC<SourceAddModalProps> = ({ visible, onClose, onSuc
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      await sourceApi.addSource({
-        ...values,
-        key: DEFAULT_KEY,
-        status: values.status ? SOURCE_STATUS.ENABLED : SOURCE_STATUS.DISABLED,
-        visible: values.visible ?? true,
-      });
+      const data: any = { name: values.name };
+      if (values.start_time) data.start_time = values.start_time.toISOString();
+      if (values.end_time) data.end_time = values.end_time.toISOString();
+      await sourceApi.createSource(data);
       success('添加成功');
       form.resetFields();
       onClose();
-      if (onSuccess) {
-        onSuccess();
-      }
+      onSuccess?.();
     } catch (err: any) {
-      showError(err.response?.data?.msg || err.response?.data?.error || '添加失败');
+      showError(err.response?.data?.message || '添加失败');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCancel = () => {
-    form.resetFields();
-    onClose();
   };
 
   return (
     <ScrollableModal
       title="添加来源"
       open={visible}
-      onCancel={handleCancel}
-      width={600}
+      onCancel={() => { form.resetFields(); onClose(); }}
+      width={480}
       destroyOnHidden
       footer={
         <Space>
-          <Button onClick={handleCancel}>取消</Button>
+          <Button onClick={() => { form.resetFields(); onClose(); }}>取消</Button>
           <Button type="primary" htmlType="submit" loading={loading} onClick={() => form.submit()}>添加</Button>
         </Space>
       }
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        autoComplete="off"
-        initialValues={{ status: SOURCE_STATUS.ENABLED, key: DEFAULT_KEY }}
-      >
-        <Form.Item name="key" hidden>
-          <Input />
+      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
+        <Form.Item label="来源名称" name="name" rules={[{ required: true, message: '请输入来源名称' }]}>
+          <Input placeholder="请输入来源名称" maxLength={64} />
         </Form.Item>
-        <Form.Item
-          label="来源名称"
-          name="title"
-          rules={[{ required: true, message: '请输入来源名称' }]}
-        >
-          <Input placeholder="请输入来源名称" />
+        <Form.Item label="生效时间" name="start_time" extra="不填则立即生效">
+          <DatePicker showTime style={{ width: '100%' }} />
         </Form.Item>
-        <Form.Item
-          label="简介"
-          name="brief"
-        >
-          <Input.TextArea placeholder="请输入简介" rows={3} />
-        </Form.Item>
-        <Form.Item
-          label="状态"
-          name="status"
-          valuePropName="checked"
-          getValueFromEvent={(checked: boolean) => checked ? SOURCE_STATUS.ENABLED : SOURCE_STATUS.DISABLED}
-          getValueProps={(value: number) => ({ checked: value === SOURCE_STATUS.ENABLED })}
-        >
-          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+        <Form.Item label="截止时间" name="end_time" extra="不填则永久有效">
+          <DatePicker showTime style={{ width: '100%' }} />
         </Form.Item>
       </Form>
     </ScrollableModal>

@@ -48,7 +48,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // ReactQuill 的 value/defaultValue 内部走 clipboard.convert() 会把 HTML 当纯文本。
   // 改为 defaultValue="" 初始化空编辑器，挂载后用 innerHTML 注入真实内容。
   const loadValueRef = useRef(value);
+  const prevValueRef = useRef(value);
   loadValueRef.current = value;
+
+  // 首次挂载注入
   useEffect(() => {
     let attempts = 0;
     const timer = setInterval(() => {
@@ -61,7 +64,20 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
       }
     }, 20);
     return () => clearInterval(timer);
-  }, []); // 仅首次挂载时注入
+  }, []);
+
+  // value prop 变化时更新编辑器内容
+  useEffect(() => {
+    if (value === prevValueRef.current) return;
+    prevValueRef.current = value;
+    const editor = editorRef.current?.getEditor?.();
+    if (editor?.root) {
+      const cursorPos = editor.getSelection?.()?.index ?? 0;
+      editor.root.innerHTML = value || '';
+      // 恢复光标位置
+      try { editor.setSelection(cursorPos, 0); } catch { /* ignore */ }
+    }
+  }, [value]);
 
   const handleChange = useCallback((html: string) => {
     onChange?.(html);

@@ -913,6 +913,27 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | `id` | path | string | — | ✅ | 小程序应用 ID |
 | `status` | query | integer | — | — | 状态过滤：1-启用 0-禁用 |
 
+## 二十八、Source 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/sources` | 分页查询来源列表（后台） | AdminAuth | `urn:bizmall:source:read` |
+| POST | `/admin/v1/sources` | 创建来源 | AdminAuth | `urn:bizmall:source:write` |
+| GET | `/admin/v1/sources/register-stats` | 注册用户按天汇总 | AdminAuth | `urn:bizmall:source:read` |
+| GET | `/admin/v1/sources/report-stats` | 上报日志按天汇总 | AdminAuth | `urn:bizmall:source:read` |
+| GET | `/admin/v1/sources/{id}` | 查询来源详情（后台） | AdminAuth | `urn:bizmall:source:read` |
+| PUT | `/admin/v1/sources/{id}` | 编辑来源 | AdminAuth | `urn:bizmall:source:write` |
+| DELETE | `/admin/v1/sources/{id}` | 删除来源（软删除） | AdminAuth | `urn:bizmall:source:delete` |
+| POST | `/api/v1/source/report` | 来源上报（C 端，无需鉴权） | — | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `start_date` | query | string | — | ✅ | 开始日期 (YYYY-MM-DD) |
+| `end_date` | query | string | — | ✅ | 结束日期 (YYYY-MM-DD) |
+| `id` | path | integer | — | ✅ | 来源ID |
+
 ---
 
 > 本文档由 `go run internal/router/swagger_md_gen.go` 自动生成，与 `swag init` 产出的 OpenAPI 规范同步。
