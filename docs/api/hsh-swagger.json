@@ -13729,7 +13729,6 @@
             "required": [
                 "order_id",
                 "reason",
-                "refund_amount",
                 "type"
             ],
             "properties": {
@@ -13748,7 +13747,7 @@
                     "maxLength": 256
                 },
                 "refund_amount": {
-                    "description": "元",
+                    "description": "元（去掉 required：float64 零值 0.0 已被 gt=0 拦截，required 冗余且语义混淆）",
                     "type": "number"
                 },
                 "related_after_sale_id": {
@@ -13819,12 +13818,9 @@
         },
         "github_com_vbegin_bizmall_internal_after_sale_dto.ExecuteRefundRequest": {
             "type": "object",
-            "required": [
-                "refund_amount"
-            ],
             "properties": {
                 "refund_amount": {
-                    "description": "退款金额（元），需二次确认",
+                    "description": "退款金额（元），需二次确认（去掉 required：同 CreateAfterSaleRequest，gt=0 已覆盖）",
                     "type": "number"
                 }
             }
@@ -14289,12 +14285,10 @@
         "github_com_vbegin_bizmall_internal_coupon_dto.CreateCouponRequest": {
             "type": "object",
             "required": [
-                "discount_amount",
                 "end_time",
                 "name",
                 "scope_type",
                 "start_time",
-                "threshold_amount",
                 "total_stock"
             ],
             "properties": {
@@ -14303,7 +14297,7 @@
                     "type": "boolean"
                 },
                 "discount_amount": {
-                    "description": "优惠金额（元），必须 > 0",
+                    "description": "优惠金额（元），必须 > 0（去掉 required：gt=0 已拦截 0.0，required 冗余）",
                     "type": "number"
                 },
                 "end_time": {
@@ -14334,7 +14328,7 @@
                     "type": "string"
                 },
                 "threshold_amount": {
-                    "description": "门槛金额（元），0 表示无门槛",
+                    "description": "门槛金额（元），0 表示无门槛（去掉 required：float64 零值 0.0 被 validator IsZero 误判为空）",
                     "type": "number",
                     "minimum": 0
                 },
