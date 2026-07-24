@@ -17,8 +17,8 @@ import ScrollableModal from '@/components/templates/ScrollableModal';
 // ---- 常量 ----
 
 const COUPON_STATUS_MAP: Record<number, { text: string; color: string }> = {
-  0: { text: '停用', color: 'default' },
-  1: { text: '启用', color: 'green' },
+  0: { text: '启用', color: 'green' },
+  1: { text: '停用', color: 'default' },
 };
 
 const SCOPE_TYPE_MAP: Record<string, string> = {
@@ -34,12 +34,13 @@ const SCOPE_TYPE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { label: '启用', value: 1 },
-  { label: '停用', value: 0 },
+  { label: '启用', value: 0 },
+  { label: '停用', value: 1 },
 ];
 
 const filters: FilterConfig[] = [
   { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
+  { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
 
 // ---- 类型 ----
@@ -61,24 +62,12 @@ interface CouponRecord {
   created_at?: string;
 }
 
-interface ExchangeConfigRecord {
-  id: number;
-  coupon_id: number;
-  points_required: number;
-  total_limit?: number;
-  user_daily_limit?: number;
-  user_total_limit?: number;
-  start_time?: string;
-  end_time?: string;
-  sort_order?: number;
-}
-
 interface CategoryNode { id: number; name: string; children?: CategoryNode[]; }
 interface ProductOption { value: number; label: string; }
 
 const formatAmount = (amount: number) => `¥${(amount / 100).toFixed(2)}`;
 
-// ---- 表单共用组件 ----
+// ---- ScopeFields 组件 ----
 
 const ScopeFields: React.FC<{
   form: any;
@@ -164,7 +153,6 @@ const CouponManagement = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<CouponRecord | null>(null);
-  const [editExchangeConfig, setEditExchangeConfig] = useState<ExchangeConfigRecord | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -177,7 +165,6 @@ const CouponManagement = () => {
   const [sendSubmitting, setSendSubmitting] = useState(false);
 
   const [categories, setCategories] = useState<CategoryNode[]>([]);
-  const [editProductLabels, setEditProductLabels] = useState<ProductOption[]>([]);
   const [addProductLabels, setAddProductLabels] = useState<ProductOption[]>([]);
 
   useEffect(() => {
@@ -191,7 +178,6 @@ const CouponManagement = () => {
     formatResponse: useCallback((res: any) => ({ list: res?.list || [], count: res?.total ?? 0 }), []),
   });
 
-  // ---- 构建 scope_ids ----
   const buildScopeIds = (vals: any): number[] | undefined => {
     if (vals.scope_type === 'all') return undefined;
     if (vals.scope_type === 'category') return vals.category_ids || undefined;
@@ -199,18 +185,10 @@ const CouponManagement = () => {
     return undefined;
   };
 
-  // ---- 构建领取规则数据 ----
-  const buildExchangeConfigData = (vals: any) => ({
-    points_required: vals.points_required,
-    total_limit: vals.total_limit ?? 0,
-    user_daily_limit: vals.user_daily_limit ?? 0,
-    user_total_limit: vals.user_total_limit ?? 0,
-  });
-
   // ---- 添加 ----
   const handleAdd = () => {
     addForm.resetFields();
-    addForm.setFieldsValue({ scope_type: 'all', allow_rollback: true, threshold_amount: 0, user_daily_limit: 1, user_total_limit: 1 });
+    addForm.setFieldsValue({ scope_type: 'all', allow_rollback: true, threshold_amount: 0, user_daily_limit: 0, user_total_limit: 0 });
     setAddProductLabels([]);
     setAddModalOpen(true);
   };
@@ -218,7 +196,6 @@ const CouponManagement = () => {
   const handleAddSubmit = async (vals: any) => {
     setSubmitting(true);
     try {
-      // 1) 创建优惠券
       const couponBody: any = {
         name: vals.name,
         discount_amount: Math.round(vals.discount_amount * 100),
@@ -234,9 +211,8 @@ const CouponManagement = () => {
       const couponId = couponRes?.id ?? couponRes?.data?.id;
       if (!couponId) { success('创建成功（领取规则创建失败）'); setAddModalOpen(false); refresh(); return; }
 
-      // 2) 创建领取规则
       try {
-        const ruleBody: any = { coupon_id: couponId, ...buildExchangeConfigData(vals) };
+        const ruleBody: any = { coupon_id: couponId, points_required: vals.points_required, total_limit: vals.total_limit ?? 0, user_daily_limit: vals.user_daily_limit ?? 0, user_total_limit: vals.user_total_limit ?? 0 };
         await couponApi.createExchangeConfig(ruleBody);
       } catch { /* 规则创建失败不影响优惠券 */ }
 
@@ -251,28 +227,8 @@ const CouponManagement = () => {
   };
 
   // ---- 编辑 ----
-  const loadEditProductLabels = async (scopeIds: number[]) => {
-    const labels: ProductOption[] = [];
-    for (const id of scopeIds) {
-      try { const p: any = await productApi.getProductDetail(id); labels.push({ value: id, label: p?.title || `产品#${id}` }); }
-      catch { labels.push({ value: id, label: `产品#${id}` }); }
-    }
-    setEditProductLabels(labels);
-  };
-
-  const fetchExchangeConfigs = async (couponId: number): Promise<ExchangeConfigRecord | null> => {
-    try {
-      const res: any = await couponApi.getExchangeConfigs({ page: 1, page_size: 100 });
-      const list: any[] = res?.list || [];
-      return list.find((c: any) => c.coupon_id === couponId) || null;
-    } catch { return null; }
-  };
-
-  const handleEdit = async (record: CouponRecord) => {
+  const handleEdit = (record: CouponRecord) => {
     setEditRecord(record);
-    const config = await fetchExchangeConfigs(record.id);
-    setEditExchangeConfig(config);
-
     editForm.setFieldsValue({
       name: record.name,
       discount_amount: record.discount_amount / 100,
@@ -280,21 +236,7 @@ const CouponManagement = () => {
       total_stock: record.total_stock,
       start_time: record.start_time ? dayjs(record.start_time) : undefined,
       end_time: record.end_time ? dayjs(record.end_time) : undefined,
-      scope_type: record.scope_type || 'all',
-      allow_rollback: record.allow_rollback,
-      // 领取规则
-      points_required: config?.points_required ?? undefined,
-      total_limit: config?.total_limit ?? 0,
-      user_daily_limit: config?.user_daily_limit ?? 1,
-      user_total_limit: config?.user_total_limit ?? 0,
     });
-
-    if (record.scope_type === 'category' && record.scope_ids?.length) {
-      editForm.setFieldsValue({ category_ids: record.scope_ids }); setEditProductLabels([]);
-    } else if (record.scope_type === 'product' && record.scope_ids?.length) {
-      editForm.setFieldsValue({ product_ids: record.scope_ids }); loadEditProductLabels(record.scope_ids);
-    } else { setEditProductLabels([]); }
-
     setEditModalOpen(true);
   };
 
@@ -302,35 +244,11 @@ const CouponManagement = () => {
     if (!editRecord) return;
     setSubmitting(true);
     try {
-      // 1) 更新优惠券
       const data: any = {};
       if (vals.name !== editRecord.name) data.name = vals.name;
-      if (vals.discount_amount !== undefined) data.discount_amount = Math.round(vals.discount_amount * 100);
-      if (vals.threshold_amount !== undefined) data.threshold_amount = Math.round(vals.threshold_amount * 100);
-      if (vals.total_stock !== undefined) data.total_stock = vals.total_stock;
       if (vals.start_time !== undefined) data.start_time = vals.start_time ? vals.start_time.toISOString() : '';
       if (vals.end_time !== undefined) data.end_time = vals.end_time ? vals.end_time.toISOString() : '';
-      data.scope_type = vals.scope_type || 'all';
-      data.scope_ids = buildScopeIds(vals);
-      if (vals.allow_rollback !== undefined) data.allow_rollback = vals.allow_rollback;
       await couponApi.updateCoupon(editRecord.id, data);
-
-      // 2) 更新或创建领取规则
-      try {
-        const ruleBody: any = { coupon_id: editRecord.id, ...buildExchangeConfigData(vals) };
-        if (editExchangeConfig?.id) {
-          // 只传变更的字段
-          const ruleUpdate: any = {};
-          if (vals.points_required !== editExchangeConfig.points_required) ruleUpdate.points_required = vals.points_required;
-          if (vals.total_limit !== (editExchangeConfig.total_limit ?? 0)) ruleUpdate.total_limit = vals.total_limit ?? 0;
-          if (vals.user_daily_limit !== (editExchangeConfig.user_daily_limit ?? 0)) ruleUpdate.user_daily_limit = vals.user_daily_limit ?? 0;
-          if (vals.user_total_limit !== (editExchangeConfig.user_total_limit ?? 0)) ruleUpdate.user_total_limit = vals.user_total_limit ?? 0;
-          await couponApi.updateExchangeConfig(editExchangeConfig.id, ruleUpdate);
-        } else {
-          await couponApi.createExchangeConfig(ruleBody);
-        }
-      } catch { /* 规则保存失败不影响优惠券更新 */ }
-
       success('更新成功');
       setEditModalOpen(false); setEditRecord(null);
       refresh();
@@ -351,7 +269,8 @@ const CouponManagement = () => {
   };
 
   const handleStatusToggle = async (record: CouponRecord, checked: boolean) => {
-    try { await couponApi.toggleCouponStatus(record.id, checked ? 1 : 0); success(checked ? '已启用' : '已停用'); refresh(); }
+    if (!record?.id) { showError('优惠券ID缺失'); return; }
+    try { await couponApi.toggleCouponStatus(record.id, checked ? 0 : 1); success(checked ? '已启用' : '已停用'); refresh(); }
     catch (err: any) { showError(err.response?.data?.message || '操作失败'); }
   };
 
@@ -388,7 +307,7 @@ const CouponManagement = () => {
     {
       title: '状态', dataIndex: 'status', key: 'status', width: 100,
       render: (status: number, record: CouponRecord) => (
-        <Switch checked={status === 1} checkedChildren="启用" unCheckedChildren="停用" onChange={(checked) => handleStatusToggle(record, checked)} />
+        <Switch checked={status === 0} checkedChildren="启用" unCheckedChildren="停用" onChange={(checked) => handleStatusToggle(record, checked)} />
       ),
     },
     {
@@ -407,8 +326,8 @@ const CouponManagement = () => {
   const handleSearch = (vals: Record<string, any>) => search(vals);
   const handleReset = () => { setValues({}); search({}); };
 
-  // 表单内容渲染
-  const renderFormFields = (form: any, productLabels: ProductOption[], setProductLabels: React.Dispatch<React.SetStateAction<ProductOption[]>>) => (
+  // 表单内容渲染（disabled 用于编辑模式只读）
+  const renderFormFields = (form: any, productLabels: ProductOption[], setProductLabels: React.Dispatch<React.SetStateAction<ProductOption[]>>, disabled = false) => (
     <>
       <Divider orientation="left" style={{ fontSize: 14, fontWeight: 600, margin: '0 0 16px' }}>优惠券信息</Divider>
       <Form.Item name="name" label="优惠券名称" rules={[{ required: true, message: '请输入名称' }]}>
@@ -416,18 +335,18 @@ const CouponManagement = () => {
       </Form.Item>
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item name="discount_amount" label="优惠金额（元）" rules={[{ required: true, message: '请输入优惠金额' }]}>
-            <InputNumber min={0.01} precision={2} style={{ width: '100%' }} placeholder="请输入优惠金额" />
+          <Form.Item name="discount_amount" label="优惠金额（元）" rules={disabled ? [] : [{ required: true, message: '请输入优惠金额' }]}>
+            <InputNumber min={0.01} precision={2} style={{ width: '100%' }} placeholder="请输入优惠金额" disabled={disabled} />
           </Form.Item>
         </Col>
         <Col span={12}>
           <Form.Item name="threshold_amount" label="满减门槛（元）" extra="0 表示无门槛" initialValue={0}>
-            <InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="0 表示无门槛" />
+            <InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="0 表示无门槛" disabled={disabled} />
           </Form.Item>
         </Col>
       </Row>
-      <Form.Item name="total_stock" label="发放总量" rules={[{ required: true, message: '请输入发放总量' }]}>
-        <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入发放总量" />
+      <Form.Item name="total_stock" label="发放总量" rules={disabled ? [] : [{ required: true, message: '请输入发放总量' }]}>
+        <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入发放总量" disabled={disabled} />
       </Form.Item>
       <Row gutter={16}>
         <Col span={12}>
@@ -441,33 +360,46 @@ const CouponManagement = () => {
           </Form.Item>
         </Col>
       </Row>
-      <ScopeFields form={form} productLabels={productLabels} setProductLabels={setProductLabels} categories={categories} />
-      <Form.Item name="allow_rollback" label="取消退还" initialValue={true} valuePropName="checked">
-        <Switch checkedChildren="是" unCheckedChildren="否" />
-      </Form.Item>
+      {disabled ? (
+        <>
+          <Form.Item label="适用范围"><Input value={SCOPE_TYPE_MAP[editRecord?.scope_type || 'all']} disabled /></Form.Item>
+          {editRecord?.scope_type === 'category' && editRecord?.scope_ids && (
+            <Form.Item label="已选分类"><Input value={editRecord.scope_ids.join(', ')} disabled /></Form.Item>
+          )}
+          {editRecord?.scope_type === 'product' && editRecord?.scope_ids && (
+            <Form.Item label="已选产品"><Input value={editRecord.scope_ids.join(', ')} disabled /></Form.Item>
+          )}
+          <Form.Item label="取消退还"><Switch checked={editRecord?.allow_rollback} disabled /></Form.Item>
+        </>
+      ) : (
+        <>
+          <ScopeFields form={form} productLabels={productLabels} setProductLabels={setProductLabels} categories={categories} />
+          <Form.Item name="allow_rollback" label="取消退还" initialValue={true} valuePropName="checked">
+            <Switch checkedChildren="是" unCheckedChildren="否" />
+          </Form.Item>
+        </>
+      )}
 
       <Divider orientation="left" style={{ fontSize: 14, fontWeight: 600, margin: '24px 0 12px' }}>领取规则</Divider>
       <Row gutter={16}>
         <Col span={12}>
-          <Form.Item name="points_required" label="所需积分" rules={[{ required: true, message: '请输入所需积分' }]}>
-            <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入所需积分" />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="total_limit" label="兑换总量限制" extra="0 表示不限制">
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="0 表示不限制" />
+          <Form.Item name="points_required" label="所需积分" rules={disabled ? [] : [{ required: true, message: '请输入所需积分' }]}>
+            <InputNumber min={1} style={{ width: '100%' }} placeholder="请输入所需积分" disabled={disabled} />
           </Form.Item>
         </Col>
       </Row>
+      <Form.Item name="total_limit" hidden initialValue={0}>
+        <InputNumber />
+      </Form.Item>
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item name="user_daily_limit" label="每人每日限制" extra="0 表示不限制" initialValue={0}>
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="0 表示不限制" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="0 表示不限制" disabled={disabled} />
           </Form.Item>
         </Col>
         <Col span={12}>
           <Form.Item name="user_total_limit" label="每人总量限制" extra="0 表示不限制" initialValue={0}>
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="0 表示不限制" />
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="0 表示不限制" disabled={disabled} />
           </Form.Item>
         </Col>
       </Row>
@@ -485,13 +417,27 @@ const CouponManagement = () => {
         table={<StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} scroll={{ x: 1100 }} />}
       />
 
-      <AddEditModal title="创建优惠券" open={addModalOpen} onCancel={() => setAddModalOpen(false)} onSubmit={handleAddSubmit} submitting={submitting} form={addForm} width={600}>
+      <AddEditModal title="优惠券" open={addModalOpen} onCancel={() => setAddModalOpen(false)} onSubmit={handleAddSubmit} submitting={submitting} form={addForm} width={600}>
         {renderFormFields(addForm, addProductLabels, setAddProductLabels)}
       </AddEditModal>
 
-      <AddEditModal title="编辑优惠券" open={editModalOpen} onCancel={() => { setEditModalOpen(false); setEditRecord(null); }} onSubmit={handleEditSubmit} submitting={submitting} form={editForm} width={600}>
-        {renderFormFields(editForm, editProductLabels, setEditProductLabels)}
-      </AddEditModal>
+      <ScrollableModal
+        title={`编辑优惠券 — ${editRecord?.name || ''}`}
+        open={editModalOpen}
+        onCancel={() => { setEditModalOpen(false); setEditRecord(null); }}
+        width={600}
+        destroyOnHidden
+        footer={
+          <Space>
+            <Button onClick={() => { setEditModalOpen(false); setEditRecord(null); }}>取消</Button>
+            <Button type="primary" loading={submitting} onClick={() => editForm.submit()}>保存</Button>
+          </Space>
+        }
+      >
+        <Form form={editForm} layout="vertical" onFinish={handleEditSubmit} autoComplete="off">
+          {renderFormFields(editForm, [], () => {}, true)}
+        </Form>
+      </ScrollableModal>
 
       <ScrollableModal title={`发放优惠券 — ${sendCouponName}`} open={sendModalOpen} onCancel={() => setSendModalOpen(false)} width={500} destroyOnHidden
         footer={<Space><Button onClick={() => setSendModalOpen(false)}>取消</Button><Button type="primary" loading={sendSubmitting} onClick={handleSend}>发放</Button></Space>}>

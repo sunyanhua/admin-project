@@ -14481,9 +14481,6 @@
         },
         "github_com_vbegin_bizmall_internal_cms_dto.UpdateArticleStatusRequest": {
             "type": "object",
-            "required": [
-                "status"
-            ],
             "properties": {
                 "status": {
                     "type": "integer",
@@ -14633,9 +14630,6 @@
         },
         "github_com_vbegin_bizmall_internal_cms_dto.UpdateNoticeStatusRequest": {
             "type": "object",
-            "required": [
-                "status"
-            ],
             "properties": {
                 "status": {
                     "type": "integer",
@@ -14832,9 +14826,6 @@
         },
         "github_com_vbegin_bizmall_internal_coupon_dto.UpdateCouponStatusRequest": {
             "type": "object",
-            "required": [
-                "status"
-            ],
             "properties": {
                 "status": {
                     "type": "integer",
@@ -15014,8 +15005,7 @@
         "github_com_vbegin_bizmall_internal_order_dto.BatchSelectRequest": {
             "type": "object",
             "required": [
-                "ids",
-                "is_selected"
+                "ids"
             ],
             "properties": {
                 "ids": {
