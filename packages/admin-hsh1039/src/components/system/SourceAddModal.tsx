@@ -18,7 +18,7 @@ const SourceAddModal: React.FC<SourceAddModalProps> = ({ visible, onClose, onSuc
   const handleSubmit = async (values: any) => {
     try {
       setLoading(true);
-      const data: any = { name: values.name };
+      const data: any = { name: values.name, status: 0 };
       if (values.start_time) data.start_time = values.start_time.toISOString();
       if (values.end_time) data.end_time = values.end_time.toISOString();
       await sourceApi.createSource(data);
@@ -48,6 +48,7 @@ const SourceAddModal: React.FC<SourceAddModalProps> = ({ visible, onClose, onSuc
       }
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
+        <Form.Item name="status" hidden initialValue={0}><Input /></Form.Item>
         <Form.Item label="来源名称" name="name" rules={[{ required: true, message: '请输入来源名称' }]}>
           <Input placeholder="请输入来源名称" maxLength={64} />
         </Form.Item>

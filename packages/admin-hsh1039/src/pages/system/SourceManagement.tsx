@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Switch, Typography, Card, Row, Col, DatePicker, Space } from 'antd';
+import { Switch, DatePicker, Button, Modal, Spin } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import {
-  ComposedChart, Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import type { ColumnsType } from 'antd/es/table';
 import { Source, sourceApi } from '@/api/services/source';
@@ -17,7 +17,6 @@ import SourceAddModal from '@/components/system/SourceAddModal';
 import SourceEditModal from '@/components/system/SourceEditModal';
 
 const { RangePicker } = DatePicker;
-const { Title, Text } = Typography;
 
 const SOURCE_STATUS = { ENABLED: 0, DISABLED: 1 } as const;
 
@@ -31,12 +30,137 @@ const filters: FilterConfig[] = [
   { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
 
-interface StatsItem {
-  ref_date: string;
-  [key: string]: any;
+const STATS_COLORS = ['#1890ff', '#52c41a', '#722ed1', '#fa8c16', '#eb2f96', '#13c2c2', '#faad14', '#f5222d'];
+
+// ---------- 单个来源统计弹窗 ----------
+
+interface SourceStatsModalProps {
+  open: boolean;
+  sourceId: number;
+  sourceName: string;
+  onClose: () => void;
 }
 
-const STATS_COLORS = ['#1890ff', '#52c41a', '#722ed1', '#fa8c16', '#eb2f96', '#13c2c2', '#faad14', '#f5222d'];
+const SourceStatsModal: React.FC<SourceStatsModalProps> = ({ open, sourceId, sourceName, onClose }) => {
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs()]);
+  const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [reportKeys, setReportKeys] = useState<string[]>([]);
+
+  const fetchData = useCallback(async () => {
+    if (!dateRange || dateRange.length !== 2) return;
+    setLoading(true);
+    try {
+      const [rRes, pRes]: [any, any] = await Promise.all([
+        sourceApi.getRegisterStats({
+          start_date: dateRange[0].format('YYYY-MM-DD'),
+          end_date: dateRange[1].format('YYYY-MM-DD'),
+        }),
+        sourceApi.getReportStats({
+          start_date: dateRange[0].format('YYYY-MM-DD'),
+          end_date: dateRange[1].format('YYYY-MM-DD'),
+        }),
+      ]);
+      const regData: any[] = Array.isArray(rRes?.data) ? rRes.data : (Array.isArray(rRes) ? rRes : rRes?.list || []);
+      const repData: any[] = Array.isArray(pRes?.data) ? pRes.data : (Array.isArray(pRes) ? pRes : pRes?.list || []);
+
+      // 按日期合并，数据中 source_name 或 source_id 匹配当前来源
+      const dateMap = new Map<string, any>();
+      for (const item of regData) {
+        const match = (item.source_name && item.source_name === sourceName)
+          || (item.source_id && String(item.source_id) === String(sourceId));
+        if (!match) continue;
+        const d = item.ref_date || item.date || '';
+        if (!d) continue;
+        const entry = dateMap.get(d) || {};
+        entry.date = d;
+        for (const [k, v] of Object.entries(item)) {
+          if (!['ref_date', 'date', 'source_name', 'source_id'].includes(k) && typeof v === 'number') {
+            entry[`注册_${k}`] = v;
+          }
+        }
+        dateMap.set(d, entry);
+      }
+      for (const item of repData) {
+        const match = (item.source_name && item.source_name === sourceName)
+          || (item.source_id && String(item.source_id) === String(sourceId));
+        if (!match) continue;
+        const d = item.ref_date || item.date || '';
+        if (!d) continue;
+        const entry = dateMap.get(d) || {};
+        entry.date = d;
+        for (const [k, v] of Object.entries(item)) {
+          if (!['ref_date', 'date', 'source_name', 'source_id'].includes(k) && typeof v === 'number') {
+            entry[`上报_${k}`] = v;
+          }
+        }
+        dateMap.set(d, entry);
+      }
+
+      const sorted = Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      setChartData(sorted);
+
+      // 提取所有数据 key
+      const keys = new Set<string>();
+      for (const item of sorted) {
+        for (const k of Object.keys(item)) {
+          if (k !== 'date' && typeof item[k] === 'number') keys.add(k);
+        }
+      }
+      setReportKeys([...keys]);
+    } catch {
+      setChartData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [dateRange, sourceId, sourceName]);
+
+  useEffect(() => {
+    if (open) fetchData();
+  }, [open, fetchData]);
+
+  return (
+    <Modal
+      title={`${sourceName} — 数据统计`}
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={800}
+      destroyOnHidden
+    >
+      <div style={{ marginBottom: 16 }}>
+        <RangePicker
+          value={dateRange}
+          onChange={(dates) => {
+            if (dates && dates.length === 2) {
+              setDateRange([dates[0] as Dayjs, dates[1] as Dayjs]);
+            }
+          }}
+        />
+      </div>
+      <Spin spinning={loading}>
+        {chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              {reportKeys.map((key, i) => (
+                <Line key={key} type="monotone" dataKey={key} stroke={STATS_COLORS[i % STATS_COLORS.length]} strokeWidth={2} dot={false} name={key} />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ color: '#999', textAlign: 'center', padding: 48 }}>暂无数据</div>
+        )}
+      </Spin>
+    </Modal>
+  );
+};
+
+// ---------- 主页 ----------
 
 const SourceManagement = () => {
   const [values, setValues] = useState<Record<string, any>>({});
@@ -45,13 +169,10 @@ const SourceManagement = () => {
   const [selectedSource, setSelectedSource] = useState<Source | null>(null);
   const { success, error: showError } = useAppNotification();
 
-  // 统计
-  const [statsDateRange, setStatsDateRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(7, 'day'), dayjs(),
-  ]);
-  const [registerStats, setRegisterStats] = useState<StatsItem[]>([]);
-  const [reportStats, setReportStats] = useState<StatsItem[]>([]);
-  const [statsLoading, setStatsLoading] = useState(false);
+  // 单个来源统计弹窗
+  const [statsSourceId, setStatsSourceId] = useState(0);
+  const [statsSourceName, setStatsSourceName] = useState('');
+  const [statsModalOpen, setStatsModalOpen] = useState(false);
 
   const fetchSources = useCallback(async (params: any) => {
     return sourceApi.getSources(params);
@@ -67,33 +188,6 @@ const SourceManagement = () => {
     formatResponse,
   });
 
-  const fetchStats = useCallback(async () => {
-    setStatsLoading(true);
-    try {
-      const [rRes, pRes]: [any, any] = await Promise.all([
-        sourceApi.getRegisterStats({
-          start_date: statsDateRange[0].format('YYYY-MM-DD'),
-          end_date: statsDateRange[1].format('YYYY-MM-DD'),
-        }),
-        sourceApi.getReportStats({
-          start_date: statsDateRange[0].format('YYYY-MM-DD'),
-          end_date: statsDateRange[1].format('YYYY-MM-DD'),
-        }),
-      ]);
-      setRegisterStats(Array.isArray(rRes?.data) ? rRes.data : (rRes?.list || []));
-      setReportStats(Array.isArray(pRes?.data) ? pRes.data : (pRes?.list || []));
-    } catch {
-      setRegisterStats([]);
-      setReportStats([]);
-    } finally {
-      setStatsLoading(false);
-    }
-  }, [statsDateRange]);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
   const handleStatusToggle = async (record: Source, checked: boolean) => {
     try {
       await sourceApi.updateSource(record.id, { status: checked ? SOURCE_STATUS.ENABLED : SOURCE_STATUS.DISABLED });
@@ -104,12 +198,38 @@ const SourceManagement = () => {
     }
   };
 
+  const openStats = (record: Source) => {
+    setStatsSourceId(record.id);
+    setStatsSourceName(record.name);
+    setStatsModalOpen(true);
+  };
+
   const columns: ColumnsType<Source> = [
     {
       title: '来源名称',
       dataIndex: 'name',
       key: 'name',
       render: (text: string) => <div style={{ wordBreak: 'break-word' }}>{text}</div>,
+    },
+    {
+      title: '点击次数',
+      key: 'reportCount',
+      width: 90,
+      render: (_: any, record: any) => (
+        <Button type="link" size="small" onClick={() => openStats(record)}>
+          {record.report_total ?? record.reported_total ?? 0}
+        </Button>
+      ),
+    },
+    {
+      title: '注册人数',
+      key: 'registerCount',
+      width: 90,
+      render: (_: any, record: any) => (
+        <Button type="link" size="small" onClick={() => openStats(record)}>
+          {record.user_total ?? record.register_total ?? 0}
+        </Button>
+      ),
     },
     {
       title: '状态',
@@ -126,15 +246,8 @@ const SourceManagement = () => {
       ),
     },
     ActionColumn({
-      onEdit: (record) => {
-        setSelectedSource(record);
-        setEditModalVisible(true);
-      },
-      onDelete: (record) => confirmDelete({
-        name: record.name,
-        deleteFn: () => sourceApi.deleteSource(record.id),
-        onSuccess: refresh,
-      }),
+      onEdit: (record) => { setSelectedSource(record); setEditModalVisible(true); },
+      onDelete: (record) => confirmDelete({ name: record.name, deleteFn: () => sourceApi.deleteSource(record.id), onSuccess: refresh }),
       showView: false,
     }),
   ];
@@ -142,44 +255,8 @@ const SourceManagement = () => {
   const handleChange = (name: string, value: any) => {
     setValues((prev) => ({ ...prev, [name]: value }));
   };
-
-  const handleSearch = (vals: Record<string, any>) => {
-    search(vals);
-  };
-
-  const handleReset = () => {
-    setValues({});
-    search({});
-  };
-
-  // 构建图表数据：按日期合并 register + report
-  const buildChartData = () => {
-    const dateMap = new Map<string, { date: string; [key: string]: any }>();
-
-    for (const item of registerStats) {
-      const d = item.ref_date || item.date || '';
-      if (!d) continue;
-      const entry = dateMap.get(d) || { date: d };
-      for (const [k, v] of Object.entries(item)) {
-        if (k !== 'ref_date' && k !== 'date' && typeof v === 'number') {
-          entry[`${k}`] = v;
-        }
-      }
-      dateMap.set(d, entry);
-    }
-
-    return Array.from(dateMap.values()).sort((a, b) => a.date.localeCompare(b.date));
-  };
-
-  const chartData = buildChartData();
-
-  // 从 registerStats 提取所有 key 作为 line series
-  const registerKeys = new Set<string>();
-  for (const item of registerStats) {
-    for (const k of Object.keys(item)) {
-      if (k !== 'ref_date' && k !== 'date' && typeof item[k] === 'number') registerKeys.add(k);
-    }
-  }
+  const handleSearch = (vals: Record<string, any>) => { search(vals); };
+  const handleReset = () => { setValues({}); search({}); };
 
   return (
     <>
@@ -187,74 +264,27 @@ const SourceManagement = () => {
         title="来源管理"
         description="管理平台的访问与注册来源，查看来源注册与上报数据统计。"
         showRefreshButton
-        onRefresh={() => { refresh(); fetchStats(); }}
+        onRefresh={refresh}
         showAddButton
         onAdd={() => setAddModalVisible(true)}
         addButtonText="添加来源"
         searchArea={
-          <SearchPanel
-            filters={filters}
-            values={values}
-            onChange={handleChange}
-            onSearch={handleSearch}
-            onReset={handleReset}
-          />
+          <SearchPanel filters={filters} values={values} onChange={handleChange} onSearch={handleSearch} onReset={handleReset} />
         }
         table={
-          <StandardTable
-            columns={columns}
-            dataSource={data}
-            loading={loading}
-            pagination={pagination}
-            onPageChange={onPageChange}
-            scroll={{ x: 600 }}
-          />
+          <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} scroll={{ x: 700 }} />
         }
       />
 
-      {/* 来源统计 */}
-      <Card
-        title="来源数据统计"
-        loading={statsLoading}
-        style={{ marginTop: 24 }}
-        extra={
-          <RangePicker
-            value={statsDateRange}
-            onChange={(dates) => {
-              if (dates && dates.length === 2) {
-                setStatsDateRange([dates[0] as Dayjs, dates[1] as Dayjs]);
-              }
-            }}
-          />
-        }
-      >
-        {chartData.length > 0 ? (
-          <>
-            {registerKeys.size > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontWeight: 600, marginBottom: 8 }}>注册用户（按来源）</div>
-                <ResponsiveContainer width="100%" height={280}>
-                  <ComposedChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    {[...registerKeys].map((key, i) => (
-                      <Line key={key} type="monotone" dataKey={key} stroke={STATS_COLORS[i % STATS_COLORS.length]} strokeWidth={2} dot={false} name={key} />
-                    ))}
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={{ color: '#999', textAlign: 'center', padding: 24 }}>选择日期范围查看来源注册与上报统计</div>
-        )}
-      </Card>
-
       <SourceAddModal visible={addModalVisible} onClose={() => setAddModalVisible(false)} onSuccess={refresh} />
       <SourceEditModal visible={editModalVisible} onClose={() => { setEditModalVisible(false); setSelectedSource(null); }} source={selectedSource} onSuccess={refresh} />
+
+      <SourceStatsModal
+        open={statsModalOpen}
+        sourceId={statsSourceId}
+        sourceName={statsSourceName}
+        onClose={() => setStatsModalOpen(false)}
+      />
     </>
   );
 };

@@ -14673,10 +14673,8 @@
         "github_com_vbegin_bizmall_internal_coupon_dto.CreateCouponRequest": {
             "type": "object",
             "required": [
-                "end_time",
                 "name",
                 "scope_type",
-                "start_time",
                 "total_stock"
             ],
             "properties": {
@@ -14689,7 +14687,7 @@
                     "type": "number"
                 },
                 "end_time": {
-                    "description": "RFC3339 格式",
+                    "description": "RFC3339 格式，可选，空=永久有效",
                     "type": "string"
                 },
                 "name": {
@@ -14712,7 +14710,7 @@
                     ]
                 },
                 "start_time": {
-                    "description": "RFC3339 格式",
+                    "description": "RFC3339 格式，可选，空=即时生效",
                     "type": "string"
                 },
                 "threshold_amount": {
@@ -15127,6 +15125,18 @@
         "github_com_vbegin_bizmall_internal_order_dto.CreateOrderRequest": {
             "type": "object",
             "properties": {
+                "additional_fields": {
+                    "description": "直下单路径附加字段（与 ItemAdditionalFields 互斥，单 SKU 无需 cart_item_id 索引）",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "additional_fields_has_sensitive": {
+                    "type": "boolean"
+                },
+                "additional_fields_summary": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
                 "cart_item_ids": {
                     "description": "购物车路径（与直下单路径二选一）",
                     "type": "array",
@@ -15160,7 +15170,7 @@
                     }
                 },
                 "product_id": {
-                    "description": "直下单路径（与购物车路径二选一）",
+                    "description": "直下单路径（与购物车路径二选一，适用于全部商品类型）",
                     "type": "integer"
                 },
                 "quantity": {
