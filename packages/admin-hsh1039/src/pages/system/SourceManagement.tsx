@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Switch, DatePicker, Button, Modal, Spin } from 'antd';
+import { DatePicker, Button, Modal, Spin } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -11,6 +11,7 @@ import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
+import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import SourceAddModal from '@/components/system/SourceAddModal';
@@ -231,20 +232,7 @@ const SourceManagement = () => {
         </Button>
       ),
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (status: number, record: Source) => (
-        <Switch
-          checked={status === SOURCE_STATUS.ENABLED}
-          onChange={(checked) => handleStatusToggle(record, checked)}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
-        />
-      ),
-    },
+    statusSwitchColumn<Source>('status', SOURCE_STATUS.ENABLED, SOURCE_STATUS.DISABLED, handleStatusToggle),
     ActionColumn({
       onEdit: (record) => { setSelectedSource(record); setEditModalVisible(true); },
       onDelete: (record) => confirmDelete({ name: record.name, deleteFn: () => sourceApi.deleteSource(record.id), onSuccess: refresh }),
