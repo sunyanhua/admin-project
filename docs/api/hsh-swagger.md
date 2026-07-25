@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-24 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-25 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -933,6 +933,37 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | `start_date` | query | string | — | ✅ | 开始日期 (YYYY-MM-DD) |
 | `end_date` | query | string | — | ✅ | 结束日期 (YYYY-MM-DD) |
 | `id` | path | integer | — | ✅ | 来源ID |
+
+## 二十九、Datacube 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/datacube/retain` | 留存分析 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/retain/trend` | 留存趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/summary` | 每日摘要 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/summary/trend` | 每日摘要趋势 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/user-portrait` | 用户画像 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/user-portrait/trend` | 用户画像趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-distribution` | 访问分布 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-distribution/trend` | 访问分布趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-page` | 页面访问 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-page/trend` | 页面访问趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-trend` | 访问趋势 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-trend/trend` | 访问趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `appid` | query | string | — | — | 小程序AppID |
+| `ref_date` | query | string | — | — | 统计日期(YYYYMMDD) |
+| `page` | query | integer | — | — | 页码 |
+| `page_size` | query | integer | — | — | 每页条数 |
+| `start_date` | query | string | — | ✅ | 开始日期(YYYYMMDD) |
+| `end_date` | query | string | — | ✅ | 结束日期(YYYYMMDD) |
+| `key` | query | integer | — | — | 画像维度键 |
+| `index` | query | string | — | — | 分布维度指标 |
+| `path` | query | string | — | — | 页面路径 |
 
 ---
 
