@@ -6,7 +6,7 @@
 
 ## 2. 适用范围
 
-本制度仅适用于项目中的所有文档，包括技术文档、开发规范、接口说明、部署文档等。
+本制度适用于项目中的所有文档，包括技术文档、开发规范、接口说明、部署文档等。
 
 ## 3. 文档存放规范
 
@@ -16,116 +16,71 @@
 
 | 文件 | 用途 | 管理要求 |
 |------|------|----------|
-| `CLAUDE.md` | 管理后台开发宪法 | 核心规则，谨慎更新 |
+| `CLAUDE.md` | 管理后台开发宪法（根级通用规则） | 核心规则，谨慎更新 |
 | `README.md` | 模块快速开始指南 | 随项目演进同步更新 |
 | `*.config.ts` | 配置文件 | Vite/Test等配置 |
-| `.env.example` | 环境变量模板 | 敏感信息脱敏示例 |
+
+各子项目（`packages/<name>/`）可有独立的 `CLAUDE.md` 和 `docs/`。
 
 **禁止**在根目录创建其他 `.md`、临时笔记或过程文档。
 
 ### 3.2 docs/ 目录结构
 
 ```
-docs/
-├── README.md                      # 本文档库入口说明
-├── DOCUMENT_MANAGEMENT.md         # 本文档（管理制度）
-├── TEST_MANAGEMENT.md             # 测试管理制度
-├── testing/                       # 测试相关文档
-│   ├── README.md                  # 测试目录说明
-│   ├── e2e-guide.md               # E2E测试编写指南
-│   ├── unit-guide.md              # 单元测试编写指南
-│   └── fixtures-guide.md          # 测试数据管理指南
-├── architecture/                  # 架构文档
-│   ├── component-design.md        # 组件设计规范
-│   ├── state-management.md        # 状态管理方案
-│   └── routing.md                 # 路由配置说明
-├── api/                           # 接口文档
-│   ├── endpoints.md               # 接口清单
-│   └── error-handling.md          # 错误处理规范
-├── deployment/                    # 部署文档
-│   ├── build-process.md           # 构建流程
-│   └── environment-setup.md       # 环境配置
-└── archive/                       # 归档目录
-    └── README.md                  # 归档索引
+根级 docs/                            # 跨子项目共享
+├── README.md                         # 本文档库入口说明
+├── DOCUMENT_MANAGEMENT.md            # 本文档（管理制度）
+├── development-standards.md          # 代码模板 + 模式参考
+├── PROJECT_MANAGEMENT.md             # 项目管理指南（复制新项目时查阅）
+├── api/                              # 接口文档
+│   ├── hsh-swagger.json              # Swagger 规范文件
+│   └── hsh-swagger.md                # API 参考文档
+└── deployment/                       # 部署文档
+    └── static-export-guide.md        # 静态导出部署指南
+
+子项目 docs/                           # 各子项目独立文档
+├── PROGRESS.md                       # 项目进度（已完成模块、接口清单、待办）
+├── SITEMAP.md                        # 站点地图（菜单结构、路由、文件组织）
+├── backend-requirements.md           # 后端需求说明
+├── backend-requirements-analysis.md  # 后端需求分析
+├── demo-guide.md                     # DEMO 制作指南
+├── frontend-miniapp-guide.md         # 前端小程序开发指南
+└── superpowers/                      # AI 辅助开发产出
+    ├── plans/                        # 实施计划
+    └── specs/                        # 设计文档
 ```
 
 ### 3.3 命名规范
 
-| 文档类型 | 命名格式 | 示例 |
-|----------|----------|------|
-| 规范文档 | `{主题}-guideline.md` | `form-guideline.md` |
-| 架构文档 | `{模块}-design.md` | `auth-design.md` |
-| 流程文档 | `{流程}-process.md` | `deploy-process.md` |
-| 决策记录 | `{YYYYMMDD}-{决策}.md` | `20260408-migrate-to-vite5.md` |
-| 会议纪要 | `{YYYYMMDD}-{主题}.md` | `20260408-tech-review.md` |
-| 质检报告 | `{YYYYMMDD}-{类型}-{模块}-报告.md` | `20260408-cr-login-报告.md` |
-
-**命名规则**：
-- 使用小写英文字母
-- 单词间用连字符 `-` 分隔
+- 使用小写英文字母和连字符 `-` 分隔
 - 禁止使用空格、中文、特殊字符
+- 常见后缀：`-guide.md`（指南）、`-standards.md`（规范）、`-management.md`（管理）
 
 ## 4. 文档编写规范
 
-### 4.1 文件头模板
+### 4.1 基本格式
 
-```markdown
----
-title: 文档标题
-created: YYYY-MM-DD
-updated: YYYY-MM-DD
-author: 作者名
-category: ARCHITECTURE/API/TESTING/DEPLOYMENT
-status: draft/review/approved/deprecated
----
+- 使用 Markdown 格式
+- 文档开头包含标题和一句话概述
+- 关键文档包含"最后更新"日期
 
-# 文档标题
-
-> 一句话概括本文档的核心内容
-
-## 1. 概述
-...
-```
-
-### 4.2 变更日志
-
-所有文档末尾应包含变更日志：
-
-```markdown
-## 变更日志
-
-| 日期 | 版本 | 变更内容 | 作者 |
-|------|------|----------|------|
-| 2026-04-08 | v1.1 | 增加E2E测试规范 | 张三 |
-| 2026-04-01 | v1.0 | 初始版本 | 李四 |
-```
-
-### 4.3 禁止行为
+### 4.2 禁止行为
 
 - ❌ 禁止使用 `.docx`、`.pdf`、`.pptx` 等二进制格式
 - ❌ 禁止在文档中粘贴大段代码（应引用源码路径）
 - ❌ 禁止存放密码、密钥、内网IP等敏感信息
-- ❌ 禁止创建个人工作草稿（使用 `*.local.md` 或本地笔记）
+- ❌ 禁止创建个人工作草稿（使用 `.gitignore` 的本地文件）
 - ❌ 禁止重复复制已归档内容到活跃文档
 - ❌ 禁止在文档中记录临时TODO（使用任务管理工具）
 
 ## 5. 文档生命周期
 
-### 5.1 状态流转
+### 5.1 归档规则
 
-```
-[草稿 draft] → [评审中 review] → [已批准 approved] → [已归档 archived]
-                      ↓
-                [已废弃 deprecated]
-```
-
-### 5.2 归档规则
-
-1. **自动归档**：超过 3 个月未更新的文档
+1. **自动归档**：超过 3 个月未更新的功能需求文档
 2. **手动归档**：功能下线、技术方案替换时
 3. **归档操作**：
    - 移动文件到 `docs/archive/`
-   - 在原文档位置创建 `.archived-{原名}` 标记文件
    - 在 `docs/archive/README.md` 更新索引
 
 ## 6. 审查与清理
@@ -147,16 +102,10 @@ status: draft/review/approved/deprecated
 3. 空文件：0字节文件
 4. 重复文件：内容完全相同的文件
 5. 个人草稿：未按规范命名的临时文件
-6. 过期草稿：`draft-*.md` 超过 1 个月未更新
-
-## 7. 附则
-
-- 本制度自 `2026-04-08` 起生效
-- 新文档创建前请先阅读本制度
-- 对制度有疑问请在 `docs/README.md` 中发起讨论
 
 ---
+
 **适用范围**: 整个项目  
 **制定日期**: 2026-04-08  
-**生效日期**: 2026-04-08  
+**最后更新**: 2026-07-25  
 **维护责任人**: 管理后台技术负责人
