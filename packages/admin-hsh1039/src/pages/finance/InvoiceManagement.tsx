@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Tag, Modal, Descriptions, Button, Space, Avatar } from 'antd';
+import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { invoiceApi } from '@/api/services/invoice';
 import { userApi } from '@/api/services/user';
@@ -158,16 +159,7 @@ const InvoiceManagement = () => {
       width: 100,
       render: (v: number) => formatAmount(v),
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 90,
-      render: (status: number) => {
-        const s = INVOICE_STATUS_MAP[status];
-        return s ? <Tag color={s.color}>{s.text}</Tag> : <Tag>未知</Tag>;
-      },
-    },
+    statusTagColumn<InvoiceRecord>('status', INVOICE_STATUS_MAP, '状态', 90),
     {
       title: '申请时间',
       dataIndex: 'created_at',

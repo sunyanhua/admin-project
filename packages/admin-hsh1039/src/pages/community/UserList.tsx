@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Space, Typography, Switch, Avatar, Button, Modal, Tag, Input } from 'antd';
+import { Typography, Modal, Tag, Input } from 'antd';
+import { statusSwitchColumn, userColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { userApi } from '../../api/services/user';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -13,7 +14,6 @@ import UserDetailSections from '../../components/user/UserDetailSections';
 import request from '@/api';
 import '../../styles/user-detail-modal.css';
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
-import { getAvatarUrl } from '@/utils/imageUtils';
 
 const { Title } = Typography;
 
@@ -193,19 +193,7 @@ const UserList = () => {
   const renderDetailFooter = () => null;
 
   const columns: ColumnsType<any> = [
-    {
-      title: '用户',
-      key: 'user',
-      width: 160,
-      render: (_: any, record: any) => (
-        <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewDetail(record)}>
-          <Space size={4}>
-            <Avatar src={getAvatarUrl(record.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
-            <span style={{ fontSize: 14 }}>{record.nick || record.nickname || '-'}</span>
-          </Space>
-        </Button>
-      ),
-    },
+    userColumn<any>('用户', 'avatar', 'nick', 160, handleViewDetail),
     { title: '姓名', dataIndex: 'name', key: 'name', width: 100, render: (v: string) => v || '-' },
     { title: '手机号', dataIndex: 'phone', key: 'phone', width: 130, render: (v: string) => v || '-' },
     {
@@ -241,23 +229,7 @@ const UserList = () => {
         </div>
       ),
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (status: number, record: any) => {
-        if (status === 3) return <Tag color="default" title="未激活">未激活</Tag>;
-        return (
-          <Switch
-            checked={status === 0}
-            onChange={(checked) => handleStatusToggle(record, checked)}
-            checkedChildren="正常"
-            unCheckedChildren="屏蔽"
-          />
-        );
-      },
-    },
+    statusSwitchColumn<any>('status', 0, 1, handleStatusToggle, '正常', '屏蔽', 100),
     ActionColumn({
       onView: handleViewDetail,
       showView: true,

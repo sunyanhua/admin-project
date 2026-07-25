@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Switch, InputNumber, Space, Form, Input } from 'antd';
+import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { helpsApi, Help } from '@/api/services/helps';
 import { useListPage } from '@/hooks/useListPage';
@@ -173,20 +174,7 @@ const FaqManagement = () => {
         />
       ),
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (status: number, record: Help) => (
-        <Switch
-          checked={status === 0}
-          onChange={(checked) => handleStatusToggle(record, checked)}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
-        />
-      ),
-    },
+    statusSwitchColumn<Help>('status', 0, 1, handleStatusToggle, '启用', '禁用', 100),
     ActionColumn({
       onEdit: (record) => handleEdit(record),
       onDelete: (record) => confirmDelete({

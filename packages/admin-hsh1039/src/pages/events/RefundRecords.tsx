@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Button, Space, Tag, Modal, Descriptions, Avatar } from 'antd';
+import { Tag, Modal, Descriptions } from 'antd';
+import { statusTagColumn, userColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { refundApi } from '@/api/services/order';
 import { userApi } from '@/api/services/user';
@@ -12,7 +13,6 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '@/components/user/UserDetailSections';
 import { formatDateTime, formatDate } from '@/utils/format';
-import { getAvatarUrl } from '@/utils/imageUtils';
 
 // 退款状态
 const REFUND_STATUS_MAP: Record<number, { text: string; color: string }> = {
@@ -98,26 +98,7 @@ const RefundRecords = () => {
   ];
 
   const columns: ColumnsType<RefundRecord> = [
-    {
-      title: '用户',
-      key: 'user',
-      width: 160,
-      render: (_: any, record: RefundRecord) => {
-        const u = record.user;
-        const ud = record.user_data;
-        const avatar = u?.avatar_url || ud?.avatar;
-        const nick = u?.nickname || ud?.nick || '-';
-        const uid = u?.id || ud?.userid;
-        return (
-          <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)} disabled={!uid}>
-            <Space size={4}>
-              <Avatar src={getAvatarUrl(avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
-              <span style={{ fontSize: 14 }}>{nick}</span>
-            </Space>
-          </Button>
-        );
-      },
-    },
+    userColumn<RefundRecord>('用户', 'avatar', 'nick', 160, handleViewUserDetail),
     {
       title: '退款单号',
       dataIndex: 'refund_no',
@@ -141,16 +122,7 @@ const RefundRecords = () => {
       width: 100,
       render: (v: number) => <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>{formatAmount(v)}</span>,
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 90,
-      render: (status: number) => {
-        const s = REFUND_STATUS_MAP[status];
-        return s ? <Tag color={s.color}>{s.text}</Tag> : <Tag>未知</Tag>;
-      },
-    },
+    statusTagColumn<RefundRecord>('status', REFUND_STATUS_MAP, '状态', 90),
     {
       title: '申请时间',
       dataIndex: 'created_at',

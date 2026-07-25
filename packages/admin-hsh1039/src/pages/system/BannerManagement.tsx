@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Switch, InputNumber, Space, Form, Input, DatePicker, Radio, Image } from 'antd';
+import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { BannerStatus } from '@shared/constants';
 import { getFullWidthUrl } from '@/utils/imageUtils';
@@ -248,20 +249,7 @@ const BannerManagement = () => {
         />
       ),
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (status: number, record: Banner) => (
-        <Switch
-          checked={status === BannerStatus.ENABLED}
-          onChange={(checked) => handleStatusToggle(record, checked)}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
-        />
-      ),
-    },
+    statusSwitchColumn<Banner>('status', BannerStatus.ENABLED, BannerStatus.DISABLED, handleStatusToggle, '启用', '禁用', 100),
     ActionColumn({
       onEdit: (record) => handleEdit(record),
       onDelete: (record) => confirmDelete({
