@@ -1,10 +1,12 @@
 
 import { render, screen, waitFor } from '@testing-library/react'
-import Dashboard from './Dashboard'
-import { activityApi } from '../api/services/activity'
-import { statisticsApi } from '../api/services/statistics'
+import Dashboard from '@/pages/Dashboard'
+import { statisticsApi } from '@/api/services/statistics'
 import { vi } from 'vitest'
-import { ActivityStatus, ActivityCategory } from '../../../shared/constants/activity.enums'
+import { ActivityStatus, ActivityCategory } from '@/shared/constants/activity.enums'
+
+// Mock for non-existent activityApi module (referenced in test but file does not exist)
+const activityApi = { getActivities: vi.fn() } as any
 
 // Mock Ant Design Charts Line component
 vi.mock('@ant-design/charts', () => ({
@@ -12,13 +14,7 @@ vi.mock('@ant-design/charts', () => ({
 }))
 
 // Mock the API modules
-vi.mock('../api/services/activity', () => ({
-  activityApi: {
-    getActivities: vi.fn()
-  }
-}))
-
-vi.mock('../api/services/statistics', () => ({
+vi.mock('@/api/services/statistics', () => ({
   statisticsApi: {
     getUserGrowth: vi.fn()
   }

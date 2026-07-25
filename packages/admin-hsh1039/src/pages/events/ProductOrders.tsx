@@ -1,4 +1,4 @@
-import OrderListPage from './OrderListPage';
+import OrderListPage from '@/components/events/OrderListPage';
 
 const PRODUCT_ORDER_CONFIG = {
   title: '购买信息',

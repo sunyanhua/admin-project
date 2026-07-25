@@ -1,4 +1,4 @@
-import OrderListPage from './OrderListPage';
+import OrderListPage from '@/components/events/OrderListPage';
 
 const EVENT_ORDER_CONFIG = {
   title: '活动报名管理',

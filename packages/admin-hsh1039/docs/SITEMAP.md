@@ -173,10 +173,9 @@ src/pages/
 │   └── ProductManagement.tsx          # 商品销售
 │
 ├── events/                            # 订单/事件
-│   ├── EventOrders.tsx                # 活动报名（→ OrderListPage）
-│   ├── TicketOrders.tsx               # 购票信息（→ OrderListPage）
-│   ├── ProductOrders.tsx              # 购买信息（→ OrderListPage）
-│   ├── OrderListPage.tsx              # 订单共享列表组件
+│   ├── EventOrders.tsx                # 活动报名（→ components/events/OrderListPage）
+│   ├── TicketOrders.tsx               # 购票信息（→ components/events/OrderListPage）
+│   ├── ProductOrders.tsx              # 购买信息（→ components/events/OrderListPage）
 │   ├── PaymentRecords.tsx             # 支付记录
 │   ├── RefundRecords.tsx              # 退款记录（v1）
 │   └── SettlementAudit.tsx            # 结算审核
