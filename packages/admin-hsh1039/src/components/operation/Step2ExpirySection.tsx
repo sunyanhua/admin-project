@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button, Radio, Select, DatePicker, TimePicker, InputNumber, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
@@ -36,22 +36,6 @@ interface Step2ExpirySectionProps {
   productMode?: boolean;
 }
 
-const skuColumns: ColumnsType<SkuRow> = [
-  { title: '规格组合', dataIndex: 'specText', key: 'specText', width: 200 },
-  { title: '开始时间', dataIndex: 'usable' as const, key: 'usable', width: 200,
-    render: (v: string | undefined, r: SkuRow, _i: number, { updateStep2Sku }: any) => (
-      <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
-        onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'usable', typeof dateStr === 'string' ? dateStr : null)} />
-    ),
-  },
-  { title: '截止时间', dataIndex: 'expiry' as const, key: 'expiry', width: 200,
-    render: (v: string | undefined, r: SkuRow, _i: number, { updateStep2Sku }: any) => (
-      <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
-        onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'expiry', typeof dateStr === 'string' ? dateStr : '')} />
-    ),
-  },
-];
-
 const Step2ExpirySection: React.FC<Step2ExpirySectionProps> = ({
   expiryMode, setExpiryMode, unifiedUsable, setUnifiedUsable, unifiedExpiry, setUnifiedExpiry,
   step2Skus, wizardSpecs, hasDateSpec, updateStep2Sku, computeRelativeTime, warning, ticketMode, productMode,
@@ -69,25 +53,40 @@ const Step2ExpirySection: React.FC<Step2ExpirySectionProps> = ({
   const [batchExpiryDays, setBatchExpiryDays] = useState<number>(0);
   const [batchExpiryTime, setBatchExpiryTime] = useState<Dayjs | null>(null);
 
+  const columns: ColumnsType<SkuRow> = useMemo(() => [
+    { title: '规格组合', dataIndex: 'specText', key: 'specText', width: 200 },
+    {
+      title: '开始时间', dataIndex: 'usable' as const, key: 'usable', width: 200,
+      render: (v: string | undefined, r: SkuRow) => (
+        <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
+          onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'usable', typeof dateStr === 'string' ? dateStr : null)} />
+      ),
+    },
+    {
+      title: '截止时间', dataIndex: 'expiry' as const, key: 'expiry', width: 200,
+      render: (v: string | undefined, r: SkuRow) => (
+        <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
+          onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'expiry', typeof dateStr === 'string' ? dateStr : '')} />
+      ),
+    },
+  ], [updateStep2Sku]);
+
   const applyStep2Batch = () => {
     if (selectedRowKeys.length === 0) { warning('请先选择SKU行'); return; }
     const selectedSkus = step2Skus.filter((r) => selectedRowKeys.includes(r.key));
-    // update via parent callback
     for (const row of selectedSkus) {
-      let usable: string | null = null;
-      let expiry: string | null = null;
       if (batchEnabled.usable) {
-        usable = (hasDateSpec && batchUsableMode === 'relative')
+        const usable = (hasDateSpec && batchUsableMode === 'relative')
           ? computeRelativeTime(row.dateValue, batchUsableDays, batchUsableTime)
           : batchUsable ? batchUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+        updateStep2Sku(row.spec_indices, 'usable', usable);
       }
       if (batchEnabled.expiry) {
-        expiry = (hasDateSpec && batchExpiryMode === 'relative')
+        const expiry = (hasDateSpec && batchExpiryMode === 'relative')
           ? computeRelativeTime(row.dateValue, batchExpiryDays, batchExpiryTime)
           : batchExpiry ? batchExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+        updateStep2Sku(row.spec_indices, 'expiry', expiry);
       }
-      if (batchEnabled.usable) updateStep2Sku(row.spec_indices, 'usable', usable);
-      if (batchEnabled.expiry) updateStep2Sku(row.spec_indices, 'expiry', expiry);
     }
   };
 
@@ -212,10 +211,8 @@ const Step2ExpirySection: React.FC<Step2ExpirySectionProps> = ({
           )}
 
           <div style={{ background: '#fff', borderRadius: 4, border: '1px solid #d9d9d9', overflow: 'hidden' }}>
-            <Table rowKey="key" columns={skuColumns} dataSource={step2Skus} size="small" pagination={false} scroll={{ y: 280 }}
-              rowSelection={batchMode ? { columnWidth: 32, selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys as string[]) } : undefined}
-              components={{ body: { wrapper: (props: any) => <tbody {...props} /> } }}
-              onRow={(record) => ({ updateStep2Sku }) as any} />
+            <Table rowKey="key" columns={columns} dataSource={step2Skus} size="small" pagination={false} scroll={{ y: 280 }}
+              rowSelection={batchMode ? { columnWidth: 32, selectedRowKeys, onChange: (keys) => setSelectedRowKeys(keys as string[]) } : undefined} />
           </div>
         </div>
       )}
@@ -224,3 +221,4 @@ const Step2ExpirySection: React.FC<Step2ExpirySectionProps> = ({
 };
 
 export default Step2ExpirySection;
+export type { SkuRow, SpecGroup, Step2ExpirySectionProps };
