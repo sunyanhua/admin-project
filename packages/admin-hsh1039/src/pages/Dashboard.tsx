@@ -6,7 +6,7 @@ import { UserOutlined, ShopOutlined, FileTextOutlined, DollarOutlined, CopyOutli
 import { px } from '@/styles/constants';
 import { statisticsApi } from '@/api/services/statistics';
 import { authApi } from '@/api/services/auth';
-import SourceQrcodeModal from '@/components/wechat/SourceQrcodeModal';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { formatDateTime } from '@/utils/format';
 import { useAppNotification } from '@/hooks/useAppNotification';
 
