@@ -4,7 +4,6 @@ import zhCN from 'antd/locale/zh_CN'
 import { AuthProvider } from './contexts/AuthContext'
 import { AppProvider } from './contexts/AppContext'
 import AppRouter from './router'
-import { setMessageHandlers } from './utils/message'
 import { setGlobalErrorHandler } from './api'
 import { setConfirmHandlers } from './components/templates/ConfirmDelete'
 import './App.css'
@@ -40,8 +39,6 @@ function MessageBootstrap() {
   useEffect(() => {
     const s = (msg: string) => notification.success({ message: msg, placement: 'top' });
     const e = (msg: string) => notification.error({ message: msg, placement: 'top' });
-    const w = (msg: string) => notification.warning({ message: msg, placement: 'top' });
-    setMessageHandlers(s, e, w, w);
     setGlobalErrorHandler(e);
     setConfirmHandlers(s, e);
   }, [notification]);

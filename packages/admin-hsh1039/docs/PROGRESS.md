@@ -49,8 +49,7 @@
 - 退款管理（v1 接口迁移）
 
 ### 社区管理
-- 用户列表（v1 接口迁移）、用户统计、协议文档
-- 动态管理、评论管理、话题管理（v6 接口）
+- 用户列表（v1 接口迁移）、用户统计、协议文档（v6 接口）
 
 ---
 
@@ -85,8 +84,7 @@
 | 访问用户统计 | `/admin/v6/wxa/app/datacube/daily/retain/*`、`summary/*` | v1 无对应接口 |
 | 用户统计 | `/admin/v6/user/datacube/*` | v1 无对应接口 |
 | 支付管理 | `/admin/v6/event/order/payment` | 支付记录查询（v1 订单接口已含支付信息） |
-| 动态/评论/话题 | `/admin/v6/feed/*`、`/admin/v6/comment/*`、`/admin/v6/topic/*` | v1 无对应接口 |
-| 提现管理 | `/admin/v6/user/wallet/withdraw` | v1 无对应接口 |
+| 动态/评论/话题 | `/admin/v6/feed/*`、`/admin/v6/comment/*`、`/admin/v6/topic/*` | v1 无对应接口（相关管理页面已移除） |
 
 ---
 
@@ -123,8 +121,7 @@
 
 - 财务统计、工作台整体统计（需后端提供 v1 接口）
 - 支付管理独立页面（目前支付信息内嵌在订单中）
-- 代码拆分：SkuConfigWizard（1012行→拆分）、TopicManagement（685行→拆分）等
-- 死代码清理：约 15 个未路由页面 + 4 个未引用组件
+- 代码拆分：SkuConfigWizard（1012行→拆分）等大文件
 - 提取通用 Columns 渲染器（StatusColumn、DateTimeColumn 等）
 - 测试覆盖（Vitest + React Testing Library）
 - 性能优化（代码分割、懒加载）

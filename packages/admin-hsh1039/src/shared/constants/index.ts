@@ -14,7 +14,6 @@ export * from './banner.enums';
 export * from './category.enums';
 export * from './city.enums';
 export * from './config.enums';
-export * from './coop.enums';
 export * from './event.enums';
 export * from './event-order.enums';
 export * from './feed.enums';

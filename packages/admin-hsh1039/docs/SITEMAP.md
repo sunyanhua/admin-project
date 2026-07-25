@@ -177,20 +177,15 @@ src/pages/
 │   ├── TicketOrders.tsx               # 购票信息（→ components/events/OrderListPage）
 │   ├── ProductOrders.tsx              # 购买信息（→ components/events/OrderListPage）
 │   ├── PaymentRecords.tsx             # 支付记录
-│   ├── RefundRecords.tsx              # 退款记录（v1）
-│   └── SettlementAudit.tsx            # 结算审核
+│   └── RefundRecords.tsx              # 退款记录（v1）
 │
 ├── finance/                           # 财务管理
 │   ├── CouponManagement.tsx           # 优惠券管理（v1）
-│   ├── InvoiceManagement.tsx           # 发票管理（v1）
-│   └── WithdrawalManagement.tsx       # 提现管理（v6）
+│   └── InvoiceManagement.tsx          # 发票管理（v1）
 │
 └── community/                         # 社区管理
     ├── UserList.tsx                   # 注册用户（v1）
     ├── UserStats.tsx                  # 用户统计（v6）
-    ├── FeedManagement.tsx             # 动态管理（v6，未路由）
-    ├── CommentManagement.tsx          # 评论管理（v6，未路由）
-    ├── TopicManagement.tsx            # 话题管理（v6，未路由）
     └── AgreementManagement.tsx        # 协议文档
 ```
 
@@ -217,4 +212,11 @@ src/components/operation/             # 运营共享组件
 ├── EventCategoryEditModal.tsx         # 活动分类编辑弹窗
 ├── MallCategoryEditModal.tsx          # 通用分类编辑弹窗（门票/商品）
 └── CategoryEditModal.tsx              # 运营分类编辑弹窗
+
+src/components/events/                 # 事件共享组件
+├── EventDetailModal.tsx               # 活动详情弹窗
+└── OrderListPage.tsx                  # 订单共享列表（活动/门票/商品复用）
+
+src/components/finance/                # 财务共享组件
+└── ScopeFields.tsx                    # 优惠券适用范围选择器
 ```
