@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Tag } from 'antd';
+import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import { adminApi, AdminUser, AdminRole } from '../../api/services/admin';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDateTime, formatDate } from '@/utils/format';
@@ -128,17 +129,10 @@ const AdminManagement = () => {
         });
       },
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 100,
-      render: (status?: number) => (
-        <Tag color={status === 1 ? 'green' : 'default'} title={status === 1 ? '正常' : '屏蔽'}>
-          {status === 1 ? '正常' : '屏蔽'}
-        </Tag>
-      ),
-    },
+    statusTagColumn<AdminUser>('status', {
+      1: { text: '正常', color: 'green' },
+      0: { text: '屏蔽', color: 'default' },
+    }, '状态', 100),
     {
       title: '最后登录时间',
       dataIndex: 'last_login_at',

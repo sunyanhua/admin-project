@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Button, Space, Tag, Modal, Descriptions, Avatar } from 'antd';
+import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { orderApi } from '@/api/services/order';
 import { userApi } from '@/api/services/user';
@@ -193,16 +194,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
       width: 100,
       render: (v: number) => formatAmount(v),
     },
-    {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 90,
-      render: (status: number) => {
-        const s = ORDER_STATUS_MAP[status];
-        return s ? <Tag color={s.color}>{s.text}</Tag> : <Tag>未知</Tag>;
-      },
-    },
+    statusTagColumn<OrderRecord>('status', ORDER_STATUS_MAP, '状态', 90),
     {
       title: '下单时间',
       dataIndex: 'created_at',

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Button, Switch, Tag, Modal, Form, Input, InputNumber, DatePicker, Space, Divider, Row, Col } from 'antd';
+import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import { EyeOutlined, SendOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
@@ -216,12 +217,7 @@ const CouponManagement = () => {
         return `${start} ~ ${end}`;
       },
     },
-    {
-      title: '状态', dataIndex: 'status', key: 'status', width: 100,
-      render: (status: number, record: CouponRecord) => (
-        <Switch checked={status === 0} checkedChildren="启用" unCheckedChildren="停用" onChange={(checked) => handleStatusToggle(record, checked)} />
-      ),
-    },
+    statusSwitchColumn<CouponRecord>('status', 0, 1, handleStatusToggle, '启用', '停用', 100),
     {
       title: '操作', key: 'action', width: 180, fixed: 'right' as const,
       render: (_: any, r: CouponRecord) => (

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Button, Space, Tag, Typography, Modal, Descriptions, Avatar } from 'antd';
+import { Space, Tag, Modal, Descriptions, Avatar } from 'antd';
+import { userColumn, statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import request from '@/api';
 import { userApi } from '@/api/services/user';
@@ -13,8 +14,6 @@ import UserDetailSections from '../../components/user/UserDetailSections';
 import EventDetailModal from '../../components/events/EventDetailModal';
 import { formatDateTime } from '@/utils/format';
 import { getAvatarUrl } from '@/utils/imageUtils';
-
-const { Title } = Typography;
 
 // 支付状态枚举
 enum PaymentStatus {
@@ -132,19 +131,7 @@ const PaymentRecords = () => {
   };
 
   const columns: ColumnsType<PaymentRecord> = [
-    {
-      title: '报名用户',
-      key: 'user',
-      width: 140,
-      render: (_: any, record: PaymentRecord) => (
-        <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)}>
-          <Space size={4}>
-            <Avatar src={getAvatarUrl(record.user_data?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
-            <span style={{ fontSize: 14 }}>{record.user_data?.nick || record.user_data?.userid || '-'}</span>
-          </Space>
-        </Button>
-      ),
-    },
+    userColumn<PaymentRecord>('报名用户', 'avatar', 'nick', 140, handleViewUserDetail),
     {
       title: '报名活动',
       key: 'event',
@@ -161,17 +148,7 @@ const PaymentRecords = () => {
       width: 100,
       render: (amount: number) => formatAmount(amount),
     },
-    {
-      title: '支付状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 90,
-      render: (status: number) => (
-        <Tag color={STATUS_MAP[status]?.color} title={STATUS_MAP[status]?.text || '其他'}>
-          {STATUS_MAP[status]?.text || '其他'}
-        </Tag>
-      ),
-    },
+    statusTagColumn<PaymentRecord>('status', STATUS_MAP, '支付状态', 90),
     {
       title: '微信支付流水单号',
       dataIndex: 'wxpay_transaction_id',
