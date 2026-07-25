@@ -14,8 +14,8 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 
 const STATUS_OPTIONS = [
-  { label: '正常', value: 1 },
-  { label: '屏蔽', value: 0 },
+  { label: '正常', value: 0 },
+  { label: '屏蔽', value: 1 },
 ];
 
 function buildFilters(allRoles: AdminRole[], isSuperAdmin: boolean): FilterConfig[] {
@@ -130,8 +130,8 @@ const AdminManagement = () => {
       },
     },
     statusTagColumn<AdminUser>('status', {
-      1: { text: '正常', color: 'green' },
-      0: { text: '屏蔽', color: 'default' },
+      0: { text: '正常', color: 'green' },
+      1: { text: '屏蔽', color: 'default' },
     }, '状态', 100),
     {
       title: '最后登录时间',

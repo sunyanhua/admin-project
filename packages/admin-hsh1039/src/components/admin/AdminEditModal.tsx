@@ -59,14 +59,14 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
           real_name: admin.real_name || '',
           phone: admin.phone || '',
           role_id: matchedRole?.id ?? undefined,
-          status: admin.status ?? 1,
+          status: admin.status ?? 0,
         });
       }).catch(() => {
         setRoles([]);
         form.setFieldsValue({
           real_name: admin.real_name || '',
           phone: admin.phone || '',
-          status: admin.status ?? 1,
+          status: admin.status ?? 0,
         });
       });
     }
@@ -183,8 +183,8 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
           name="status"
         >
           <Select>
-            <Select.Option value={1}>正常</Select.Option>
-            <Select.Option value={0}>屏蔽</Select.Option>
+            <Select.Option value={0}>正常</Select.Option>
+            <Select.Option value={1}>屏蔽</Select.Option>
           </Select>
         </Form.Item>
       </Form>

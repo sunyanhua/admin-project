@@ -37,7 +37,7 @@ const SkuFullEditModal: React.FC<{
 }> = ({ open, sku, productGroups, onClose, onApply, ticketMode, productMode }) => {
   const [price, setPrice] = useState(0);
   const [stock, setStock] = useState(0);
-  const [status, setStatus] = useState(1);
+  const [status, setStatus] = useState(0);
   const [usable, setUsable] = useState<Dayjs | null>(null);
   const [expiry, setExpiry] = useState<Dayjs | null>(null);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -143,7 +143,7 @@ const SkuFullEditModal: React.FC<{
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
           <div style={{ fontSize: 13 }}>上架</div>
-          <Switch checked={status === 1} checkedChildren="是" unCheckedChildren="否" onChange={(v) => setStatus(v ? 1 : 0)} />
+          <Switch checked={status === 0} checkedChildren="是" unCheckedChildren="否" onChange={(v) => setStatus(v ? 0 : 1)} />
         </div>
       </div>
     </ScrollableModal>

@@ -206,7 +206,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         fullData[specText] = {
           price: edits.price ?? existing?.price ?? 0,
           stock: edits.stock ?? existing?.stock ?? 0,
-          status: edits.status ?? existing?.status ?? 1,
+          status: edits.status ?? existing?.status ?? 0,
         };
       }
     }
@@ -366,7 +366,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       try {
         const raw: any = await productApi.getSkus(productId);
         const arr: any[] = Array.isArray(raw) ? raw : (raw?.list || []);
-        for (const s of arr) existingByIndices.set(s.spec_indices || '', { price: s.price || 0, stock: s.stock || 0, status: s.status ?? 1 });
+        for (const s of arr) existingByIndices.set(s.spec_indices || '', { price: s.price || 0, stock: s.stock || 0, status: s.status ?? 0 });
       } catch { /* ignore */ }
 
       await productApi.clearAllSkus(productId);
@@ -463,7 +463,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           const existing = existingByText.get(specText);
           const price = wEdits?.price ?? existing?.price ?? 0;
           const stock = ticketMode ? 99999 : (wEdits?.stock ?? existing?.stock ?? 0);
-          const status = wEdits?.status ?? existing?.status ?? 1;
+          const status = wEdits?.status ?? existing?.status ?? 0;
 
           let usable: string | null = null, expiry: string | null = null;
           if (!ticketMode) {

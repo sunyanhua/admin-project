@@ -59,7 +59,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
     const [batchMode, setBatchMode] = useState(false);
     const [batchPrice, setBatchPrice] = useState<number>(0);
     const [batchStock, setBatchStock] = useState<number>(0);
-    const [batchStatus, setBatchStatus] = useState<number>(1);
+    const [batchStatus, setBatchStatus] = useState<number>(0);
     const [selectedSpecFilters, setSelectedSpecFilters] = useState<Record<number, string>>({});
     const [batchEnabled, setBatchEnabled] = useState({ price: true, stock: true, status: true });
     const { success, error: showError, warning } = useAppNotification();
@@ -94,7 +94,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
         setLoadedSkus(list.map((s: any) => ({
           key: String(s.id || Math.random()), spec_indices: s.spec_indices || '',
           specText: s.spec_text || s.spec_indices || '', price: s.price || 0,
-          stock: s.stock || 0, status: s.status ?? 1, skuId: s.id,
+          stock: s.stock || 0, status: s.status ?? 0, skuId: s.id,
         })));
       }).catch(() => { setSpecs([]); setLoadedSkus([]); })
       .finally(() => setLoading(false));
@@ -115,7 +115,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
         const edits = editedSkus[specText] || {};
         return { key: `gen-${idx}`, spec_indices: indices, specText,
           price: edits.price ?? existing?.price ?? 0, stock: edits.stock ?? existing?.stock ?? (ticketMode ? 99999 : 0),
-          status: edits.status ?? existing?.status ?? 1, skuId: existing?.skuId };
+          status: edits.status ?? existing?.status ?? 0, skuId: existing?.skuId };
       });
     }, [specs, loadedSkus, editedSkus]);
 
@@ -201,7 +201,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
               spec_indices: idParts.join('_'),
               price: edits.price ?? 0,
               stock: edits.stock ?? (ticketMode ? 99999 : 0),
-              status: edits.status ?? 1,
+              status: edits.status ?? 0,
             });
           }
           if (skuList.length > 0) { await productApi.batchCreateSkus(productId, skuList); }
@@ -239,7 +239,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
           </span>
         ) }]),
       { title: '上架', dataIndex: 'status', key: 'status', width: 70,
-        render: (v: number, r: SkuRow) => (<Switch checked={v === 1} checkedChildren="上架" unCheckedChildren="下架" onChange={(c) => updateSku(r.key, 'status', c ? 1 : 0)} />) },
+        render: (v: number, r: SkuRow) => (<Switch checked={v === 0} checkedChildren="上架" unCheckedChildren="下架" onChange={(c) => updateSku(r.key, 'status', c ? 0 : 1)} />) },
     ];
 
     return (
@@ -402,7 +402,7 @@ const SkuConfigPanel = forwardRef<SkuConfigPanelHandle, SkuConfigPanelProps>(
               <Select value={batchStatus}
                 disabled={!batchEnabled.status}
                 style={{ opacity: batchEnabled.status ? 1 : 0.5 }}
-                options={[{ label: '上架', value: 1 }, { label: '下架', value: 0 }]}
+                options={[{ label: '上架', value: 0 }, { label: '下架', value: 1 }]}
                 onChange={(v) => setBatchStatus(v)} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

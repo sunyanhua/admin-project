@@ -155,11 +155,11 @@ const AddAdminModal: React.FC<AddAdminModalProps> = ({ visible, roles = [], onCl
         <Form.Item
           label="状态"
           name="status"
-          initialValue={1}
+          initialValue={0}
         >
           <Select>
-            <Select.Option value={1}>正常</Select.Option>
-            <Select.Option value={0}>屏蔽</Select.Option>
+            <Select.Option value={0}>正常</Select.Option>
+            <Select.Option value={1}>屏蔽</Select.Option>
           </Select>
         </Form.Item>
       </Form>

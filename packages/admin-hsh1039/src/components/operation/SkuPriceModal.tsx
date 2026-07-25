@@ -38,7 +38,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
   // 批量设置 — 价格/限额/上架
   const [batchPrice, setBatchPrice] = useState<number>(0);
   const [batchStock, setBatchStock] = useState<number>(0);
-  const [batchStatus, setBatchStatus] = useState<number>(1);
+  const [batchStatus, setBatchStatus] = useState<number>(0);
   const [bpEnabled, setBpEnabled] = useState({ price: true, stock: true, status: true });
   // 批量设置 — 报名期限
   const [batchUsable, setBatchUsable] = useState<Dayjs | null>(null);
@@ -103,7 +103,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
           return {
             key: String(s.id), id: s.id, specText: partsWithNames.join(' | '), specParts,
             spec_indices: s.spec_indices || '',
-            price: s.price || 0, stock: s.stock || 0, status: s.status ?? 1,
+            price: s.price || 0, stock: s.stock || 0, status: s.status ?? 0,
             usable: s.usable || null, expiry: s.expiry || null,
             additional_fields_config: s.additional_fields_config || null,
           };
@@ -313,8 +313,8 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
     {
       title: '上架', dataIndex: 'status', key: 'status', width: 70,
       render: (v: number, r: SkuItem) => (
-        <Switch checked={v === 1} checkedChildren="上架" unCheckedChildren="下架"
-          onChange={(checked) => updateSkuField(r.key, { status: checked ? 1 : 0 })} />
+        <Switch checked={v === 0} checkedChildren="上架" unCheckedChildren="下架"
+          onChange={(checked) => updateSkuField(r.key, { status: checked ? 0 : 1 })} />
       ),
     },
   ];
@@ -415,7 +415,7 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
                 </span>
               )}
               <Select value={batchStatus} disabled={!bpEnabled.status} style={{ opacity: bpEnabled.status ? 1 : 0.5 }}
-                options={[{ label: '上架', value: 1 }, { label: '下架', value: 0 }]} onChange={(v) => setBatchStatus(v)} />
+                options={[{ label: '上架', value: 0 }, { label: '下架', value: 1 }]} onChange={(v) => setBatchStatus(v)} />
             </div>
 
             {/* 报名期限 */}

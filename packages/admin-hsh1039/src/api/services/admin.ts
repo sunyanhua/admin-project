@@ -7,7 +7,7 @@ export interface AdminUser {
   real_name?: string;
   roles?: string[];
   phone?: string;
-  status?: number;   // 0=屏蔽, 1=正常
+  status?: number;   // 0=正常, 1=屏蔽
   created_at?: string;
   last_login_at?: string;
 }
@@ -34,7 +34,7 @@ export interface UpdateAdminData {
   real_name?: string;
   phone?: string;
   role_ids?: number[];
-  status?: number; // 0=启用, 1=禁用
+  status?: number; // 0=正常, 1=屏蔽
 }
 
 // 角色（GET /admin/v1/roles 返回的列表项）
