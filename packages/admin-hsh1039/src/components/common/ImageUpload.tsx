@@ -108,7 +108,6 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         onChange?.(url);
         success('图片上传成功');
       } else {
-        console.error('[ImageUpload] 响应格式不正确:', response);
         error('上传成功但未返回图片URL');
       }
     } catch (error: any) {

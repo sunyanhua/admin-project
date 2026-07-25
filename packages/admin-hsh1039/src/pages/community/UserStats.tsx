@@ -43,8 +43,8 @@ const UserStats = () => {
         ...item,
         name: String(item.name).substring(0, 10),
       })));
-    } catch (error) {
-      console.error('获取注册统计数据失败:', error);
+    } catch {
+      setRegisterData([]);
     } finally {
       setRegisterLoading(false);
     }
@@ -69,8 +69,7 @@ const UserStats = () => {
         setAgeData(ageRes?.data || ageRes || []);
         setZodiacData(zodiacRes?.data || zodiacRes || []);
         setMbtiData(mbtiRes?.data || mbtiRes || []);
-      } catch (error) {
-        console.error('获取统计数据失败:', error);
+      } catch {
       } finally {
         setLoading(false);
       }

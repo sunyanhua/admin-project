@@ -34,11 +34,11 @@ OldSun 自动同步会将外部代码同步到本仓库，可能覆盖本地未�
 
 ### 区域卡片样式（SectionBlock）
 
-配置页面功能区域使用统一卡片样式。色值表 + 代码模板见 `docs/development-standards.md`。
+配置页面功能区域使用统一卡片样式。色值表 + 代码模板见 `../../docs/development-standards.md`。
 
 ### 弹窗模板
 
-所有带表单的弹窗必须用 `ScrollableModal`，**禁止 `import { Modal } from 'antd'` 做表单弹窗**。Props 表 + 代码模板见 `docs/development-standards.md`。
+所有带表单的弹窗必须用 `ScrollableModal`，**禁止 `import { Modal } from 'antd'` 做表单弹窗**。Props 表 + 代码模板见 `../../docs/development-standards.md`。
 
 ### 筛选搜索参数
 

@@ -24,7 +24,6 @@ const navigate = useNavigate();
       success('登录成功');
       navigate('/');
     } catch (err: any) {
-      console.error('登录失败:', err);
       const errorMsg = err.response?.data?.message || err.response?.data?.msg || err.response?.data?.error || err.message || '登录失败，请检查用户名和密码';
       showError(errorMsg);
     } finally {

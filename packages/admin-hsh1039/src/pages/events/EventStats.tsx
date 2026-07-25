@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Card, Row, Col, Statistic, DatePicker, Select, Button, Space, App } from 'antd';
+import { Card, Row, Col, Statistic, DatePicker, Select, Button, Space } from 'antd';
 import { SearchOutlined, TeamOutlined, DollarOutlined, ShopOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import request from '@/api';
 import { statisticsApi } from '@/api/services/statistics';
 import { categoryApi } from '@/api/services/category';
+import { useAppNotification } from '@/hooks/useAppNotification';
 
 const { RangePicker } = DatePicker;
 
@@ -46,7 +47,7 @@ const COOP_ROLE_MAP: Record<number, string> = {
 };
 
 const EventStats = () => {
-  const { message } = App.useApp();
+  const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
@@ -72,7 +73,7 @@ const EventStats = () => {
       const res = await statisticsApi.getEventDatacube(params) as any;
       setStats(res?.data || res || null);
     } catch (err: any) {
-      message.error(err.response?.data?.msg || '获取数据失败');
+      showError(err.response?.data?.msg || '获取数据失败');
     } finally {
       setLoading(false);
     }

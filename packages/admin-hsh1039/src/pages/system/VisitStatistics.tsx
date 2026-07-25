@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, DatePicker, Space, Typography, Table, App } from 'antd';
+import { Card, Row, Col, Statistic, DatePicker, Space, Typography, Table } from 'antd';
 import {
   ComposedChart,
   Line,
@@ -14,6 +14,7 @@ import {
 import { EyeOutlined, UserAddOutlined, ClockCircleOutlined, BarChartOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { statisticsApi } from '@/api/services/statistics';
+import { useAppNotification } from '@/hooks/useAppNotification';
 
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
@@ -40,7 +41,7 @@ interface DailyItem {
 }
 
 const VisitStatistics = () => {
-  const { message } = App.useApp();
+  const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [totalData, setTotalData] = useState<TotalData | null>(null);
   const [dailyData, setDailyData] = useState<DailyItem[]>([]);
@@ -59,7 +60,7 @@ const VisitStatistics = () => {
         setTotalData(null);
       }
     } catch (error: any) {
-      message.error(error.response?.data?.msg || '获取累计数据失败');
+      showError(error.response?.data?.msg || '获取累计数据失败');
       setTotalData(null);
     }
   }, [dateRange]);
@@ -80,7 +81,7 @@ const VisitStatistics = () => {
       );
       setDailyData(sorted);
     } catch (error: any) {
-      message.error(error.response?.data?.msg || '获取趋势数据失败');
+      showError(error.response?.data?.msg || '获取趋势数据失败');
       setDailyData([]);
     } finally {
       setLoading(false);

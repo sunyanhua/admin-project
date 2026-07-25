@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Button, Space, Tag, Typography, Modal, Descriptions, Avatar, App } from 'antd';
+import { Button, Space, Tag, Typography, Modal, Descriptions, Avatar } from 'antd';
 import { EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import request from '@/api';
@@ -13,6 +13,7 @@ import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '../../components/user/UserDetailSections';
 import { formatDateTime } from '@/utils/format';
 import { getAvatarUrl } from '@/utils/imageUtils';
+import { useAppNotification } from '@/hooks/useAppNotification';
 
 const { Title } = Typography;
 
@@ -68,7 +69,7 @@ const formatAmount = (amount?: number) => {
 };
 
 const WithdrawalManagement = () => {
-  const { message } = App.useApp();
+  const { success, error: showError } = useAppNotification();
   const [values, setValues] = useState<Record<string, any>>({});
   const [detailModal, setDetailModal] = useState(false);
   const [auditModal, setAuditModal] = useState(false);
@@ -82,11 +83,11 @@ const WithdrawalManagement = () => {
     try {
       setRevokeLoading(true);
       await request.post('/admin/v6/user/wallet/withdraw/revoke', { id });
-      message.success('撤销成功');
+      success('撤销成功');
       setDetailModal(false);
       refresh();
     } catch (err: any) {
-      message.error(err.response?.data?.msg || '撤销失败');
+      showError(err.response?.data?.msg || '撤销失败');
     } finally {
       setRevokeLoading(false);
     }
@@ -126,7 +127,7 @@ const WithdrawalManagement = () => {
       setUserDetailData(res?.data || res);
       setUserDetailVisible(true);
     } catch (err: any) {
-      console.error('Failed to fetch user detail:', err);
+      showError('获取用户详情失败');
     } finally {
       setUserDetailLoading(false);
     }

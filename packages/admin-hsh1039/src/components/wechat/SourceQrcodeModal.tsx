@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Select, Modal, Image, Divider, Row, Col, App } from 'antd';
+import { Button, Space, Select, Modal, Image, Divider, Row, Col } from 'antd';
 import { QrcodeOutlined, CopyOutlined } from '@ant-design/icons';
 import { statisticsApi } from '@/api/services/statistics';
 import { sourceApi } from '@/api/services/source';
+import { useAppNotification } from '@/hooks/useAppNotification';
 
 const APPID = 'wxb0f15549e07308d5';
 
@@ -12,7 +13,7 @@ export interface SourceQrcodeModalProps {
 }
 
 const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, children }) => {
-  const { message } = App.useApp();
+  const { success } = useAppNotification();
   const [modalVisible, setModalVisible] = useState(false);
   const [sources, setSources] = useState<any[]>([]);
   const [selectedSource, setSelectedSource] = useState<string>('');
@@ -26,7 +27,7 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
         setSources(res?.data || []);
         // 打开弹窗默认选中"无来源"并立即调用接口
         handleSourceChange('');
-      }).catch(console.error);
+      }).catch(() => { /* 获取来源列表失败 */ });
     }
   }, [modalVisible]);
 
@@ -60,8 +61,7 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
         check_path: false,
       });
       setQrcodeUrl(qrRes || '');
-    } catch (err) {
-      console.error(err);
+    } catch { /* qrcode generation failed */
     } finally {
       setQrLoading(false);
     }
@@ -85,8 +85,8 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
         <div style={{ padding: '16px 0' }}>
           <div style={{ marginBottom: 16 }}>
             <Space size={24} split={<Divider type="vertical" />}>
-              <span>原始ID：gh_1a79e8bbfa0f <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('gh_1a79e8bbfa0f'); message.success('复制成功'); }} /></span>
-              <span>微信ID：wxb0f15549e07308d5 <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('wxb0f15549e07308d5'); message.success('复制成功'); }} /></span>
+              <span>原始ID：gh_1a79e8bbfa0f <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('gh_1a79e8bbfa0f'); success('复制成功'); }} /></span>
+              <span>微信ID：wxb0f15549e07308d5 <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('wxb0f15549e07308d5'); success('复制成功'); }} /></span>
             </Space>
           </div>
           <Divider style={{ margin: '16px 0' }} />
@@ -109,7 +109,7 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
               <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>页面路径：</label>
               <Space size={4}>
                 <span>{pagePath}</span>
-                <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(pagePath); message.success('复制成功'); }} />
+                <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(pagePath); success('复制成功'); }} />
               </Space>
             </div>
           )}

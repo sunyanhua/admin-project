@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Col, Row, Statistic, Typography, Table, Empty, Button, Space, Descriptions, App } from 'antd';
+import { Card, Col, Row, Statistic, Typography, Table, Empty, Button, Space, Descriptions } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { UserOutlined, ShopOutlined, FileTextOutlined, DollarOutlined, CopyOutlined } from '@ant-design/icons';
 import { px } from '@/styles/constants';
@@ -8,11 +8,12 @@ import { statisticsApi } from '@/api/services/statistics';
 import { authApi } from '@/api/services/auth';
 import SourceQrcodeModal from '@/components/wechat/SourceQrcodeModal';
 import { formatDateTime } from '@/utils/format';
+import { useAppNotification } from '@/hooks/useAppNotification';
 
 const { Title } = Typography;
 
 const Dashboard = () => {
-  const { message } = App.useApp();
+  const { success, error: showError } = useAppNotification();
   const navigate = useNavigate();
   const [stats, setStats] = useState([
     { title: '用户总数', value: '-', icon: <UserOutlined />, color: '#1890ff', bg: '#e6f7ff', path: '/community/users' },
@@ -32,12 +33,16 @@ const Dashboard = () => {
         { title: '活动总数', value: d.events_total ?? d.event_total ?? '-', icon: <ShopOutlined />, color: '#52c41a', bg: '#f6ffed', path: '/events/list' },
         { title: '收入总额', value: (() => { const v = d.event_order_payable; return v != null ? `¥${(v / 100).toFixed(2)}` : '-'; })(), icon: <DollarOutlined />, color: '#722ed1', bg: '#f9f0ff', path: '/events/finance/payments' },
       ]);
-    }).catch(console.error);
+    }).catch((err: any) => {
+      showError(err?.response?.data?.message || '获取数据看板失败');
+    });
 
     setLogsLoading(true);
     authApi.getMyLogs({ page: 1, page_size: 5 }).then((res: any) => {
       setLogs(res?.list || res || []);
-    }).catch(console.error).finally(() => setLogsLoading(false));
+    }).catch((err: any) => {
+      showError(err?.response?.data?.message || '获取操作日志失败');
+    }).finally(() => setLogsLoading(false));
   }, []);
 
   const logColumns: ColumnsType<any> = [
@@ -62,13 +67,13 @@ const Dashboard = () => {
           <Descriptions.Item label="原始ID">
             <Space size={4}>
               gh_1a79e8bbfa0f
-              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('gh_1a79e8bbfa0f'); message.success('复制成功'); }} />
+              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('gh_1a79e8bbfa0f'); success('复制成功'); }} />
             </Space>
           </Descriptions.Item>
           <Descriptions.Item label="微信ID">
             <Space size={4}>
               wxb0f15549e07308d5
-              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('wxb0f15549e07308d5'); message.success('复制成功'); }} />
+              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('wxb0f15549e07308d5'); success('复制成功'); }} />
             </Space>
           </Descriptions.Item>
                   </Descriptions>

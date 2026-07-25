@@ -69,8 +69,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     try {
       const res = await eventApi.getEventDetail(eventId) as any;
       setData(res?.data || res || {});
-    } catch (err) {
-      console.error('Failed to fetch event detail:', err);
+    } catch {
       setData(null);
     } finally {
       setLoading(false);

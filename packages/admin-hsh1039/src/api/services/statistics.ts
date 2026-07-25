@@ -94,27 +94,6 @@ export const statisticsApi = {
 
   // 获取用户增长数据
   getUserGrowth: (params?: any) => {
-    // 模拟数据支持
-    if (import.meta.env.VITE_USE_MOCK === 'true') {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // 模拟用户增长数据
-          const mockGrowthData = [
-            { date: '2026-03-01', count: 1200 },
-            { date: '2026-03-02', count: 1250 },
-            { date: '2026-03-03', count: 1300 },
-            { date: '2026-03-04', count: 1350 },
-            { date: '2026-03-05', count: 1420 },
-            { date: '2026-03-06', count: 1450 },
-            { date: '2026-03-07', count: 1500 },
-            { date: '2026-03-08', count: 1550 },
-            { date: '2026-03-09', count: 1620 },
-            { date: '2026-03-10', count: 1680 },
-          ];
-          resolve({ data: mockGrowthData });
-        }, 500);
-      });
-    }
     return request.get('/admin/statistics/users/growth', { params });
   },
 

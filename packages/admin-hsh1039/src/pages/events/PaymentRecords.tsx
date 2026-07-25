@@ -111,17 +111,14 @@ const PaymentRecords = () => {
 
   const handleViewUserDetail = async (record: PaymentRecord) => {
     const userid = record.user_data?.userid || record.userid;
-    if (!userid) {
-      console.warn('No userid found for user detail:', record);
-      return;
-    }
+    if (!userid) return;
     setUserDetailLoading(true);
     try {
       const res = await userApi.getUserDetail(userid) as any;
       setUserDetailData(res?.data || res);
       setUserDetailVisible(true);
-    } catch (err: any) {
-      console.error('Failed to fetch user detail:', err);
+    } catch {
+      setUserDetailData(null);
     } finally {
       setUserDetailLoading(false);
     }
@@ -129,10 +126,7 @@ const PaymentRecords = () => {
 
   const handleViewEventDetail = (record: PaymentRecord) => {
     const eventId = record.event_data?.id || record.eventid;
-    if (!eventId) {
-      console.warn('No eventid found for event detail:', record);
-      return;
-    }
+    if (!eventId) return;
     setCurrentEventId(eventId);
     setEventDetailVisible(true);
   };
