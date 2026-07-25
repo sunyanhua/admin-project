@@ -110,7 +110,7 @@ dist-test
 ### 注意事项
 
 1. **端口冲突** - 确保新端口未被其他项目占用
-2. **接口文档** - `docs/openapi.json` 需要手动替换为新项目的接口文档
+2. **接口文档** - `docs/api/hsh-swagger.json` 需要替换为新项目的接口文档（旧项目 `docs/openapi.json` 已废弃，1039发现不兼容）
 3. **环境变量** - 检查 `.env.*` 文件中的 API 地址是否需要修改
 4. **依赖安装** - 本项目使用 npm workspaces，依赖统一在根目录管理，**各子项目不需要也禁止安装 node_modules**。如果子项目中有 node_modules，请删除。
 5. **VITE_PROJECT_ID** — 多项目部署在同一域名下时，VITE_PROJECT_ID 用于隔离各项目的 localStorage（登录态不互串）。复制项目时必须设置。详见步骤 2。
@@ -122,10 +122,11 @@ dist-test
 
 ### PM2 托管配置
 
-项目通过 PM2 托管实现持久化运行。配置文件位于：
+项目通过 PM2 托管实现持久化运行。配置文件位于用户自定义路径（示例）：
 ```
-D:\OneDrive\重要文件\AI_Sync\PM2\ecosystem.config.js
+<PM2_CONFIG_PATH>/ecosystem.config.js
 ```
+> 以下路径为开发者本地配置，其他开发者需根据实际环境调整。
 
 ### 添加新项目到 PM2
 
@@ -141,7 +142,7 @@ D:\OneDrive\重要文件\AI_Sync\PM2\ecosystem.config.js
   windows_hide: true,
   env: {
     NODE_ENV: "development",
-    DEV_CWD: "D:\\GitHub\\admin-project\\packages\\[项目文件夹]",
+    DEV_CWD: "<项目根目录>\\packages\\[项目文件夹]",
     NPM_SCRIPT: "dev",
     BROWSER: "none",
     PORT: [端口号],
@@ -201,11 +202,13 @@ pm2 save
 
 | 功能 | 配置文件 |
 |------|---------|
-| 自动更新接口文档 | `D:\OneDrive\重要文件\AI_Sync\Project\api_tasks.json` |
-| 项目测试 FTP 自动更新 | `D:\OneDrive\重要文件\AI_Sync\Project\projects.json` |
+| 自动更新接口文档 | API 任务配置文件（本地路径） |
+| 项目测试 FTP 自动更新 | 项目部署配置文件（本地路径） |
+
+> 以上配置文件路径为开发者本地环境，请根据实际情况配置。
 
 > 添加新项目后，请手动更新上述两个配置文件，将新项目信息写入对应的 JSON 数组中。
 
 ---
 
-*最后更新：2026-07-10*
+*最后更新：2026-07-25*
