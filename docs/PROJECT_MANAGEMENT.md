@@ -56,7 +56,7 @@ dist-test
   - `.env.development` 的 `VITE_PORT` 和 `VITE_APP_TITLE`
   - `.env.production` 的 `VITE_APP_TITLE`
   - `.env.test` 的 `VITE_APP_TITLE`
-  - `CLAUDE.md` 中的项目定位描述
+  - `CLAUDE.md` 中的项目定位描述、管理后台地址（仅替换目录）
   - `README.md` 中的项目介绍
   - `docs/SITEMAP.md` 中的项目名称
   - `index.html` 的 `<title>` 标签
@@ -103,7 +103,7 @@ dist-test
 | 原关键词 | 替换为 |
 |----------|--------|
 | `搭子计划` | `[新项目名称]` |
-| `admin-template` | `[新项目文件夹]` |
+| `admin-template`（或源项目目录） | `[新项目文件夹]` |
 | `3100`（如需） | `[新端口]` |
 | `VITE_PROJECT_ID=[源项目ID]` | `VITE_PROJECT_ID=[新项目文件夹]` |
 

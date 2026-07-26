@@ -4,6 +4,12 @@
 
 "1039发现"管理后台。基于 React + Ant Design 构建，**PC端WEB为主，兼容手机端**。
 
+管理后台地址：
+| 环境 | 域名 |
+|------|------|
+| 测试环境 | `https://admin-test.vbegin.com.cn/hsh1039` |
+| 正式环境 | `https://admin.vbegin.com.cn/hsh1039` |
+
 ---
 
 ## OldSun 自动同步注意事项
