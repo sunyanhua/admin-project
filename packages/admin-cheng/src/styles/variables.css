@@ -1,0 +1,119 @@
+/* 设计变量 - 统一管理样式变量 */
+
+:root {
+  /* 响应式断点 */
+  --breakpoint-xs: 375px;   /* 手机端 */
+  --breakpoint-sm: 576px;   /* 小屏幕 */
+  --breakpoint-md: 768px;   /* 平板 */
+  --breakpoint-lg: 992px;   /* 桌面 */
+  --breakpoint-xl: 1200px;  /* 大桌面 */
+  --breakpoint-xxl: 1600px; /* 超大桌面 */
+
+  /* 布局变量 */
+  --layout-header-height: 64px;
+  --layout-sider-width: 200px;
+  --layout-sider-collapsed-width: 80px;
+
+  /* 内容区域 */
+  --content-padding-xs: 12px;
+  --content-padding-sm: 16px;
+  --content-padding-md: 20px;
+  --content-padding-lg: 24px;
+  --content-padding-xl: 24px;
+
+  --content-margin-xs: 8px;
+  --content-margin-sm: 12px;
+  --content-margin-md: 16px;
+  --content-margin-lg: 24px;
+  --content-margin-xl: 32px;
+
+  /* 卡片和容器 */
+  --card-padding-xs: 12px;
+  --card-padding-sm: 16px;
+  --card-padding-md: 20px;
+  --card-padding-lg: 24px;
+
+  --container-max-width: 1400px;
+  --container-padding-xs: 12px;
+  --container-padding-sm: 16px;
+  --container-padding-md: 24px;
+  --container-padding-lg: 32px;
+
+  /* 间距系统 */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+
+  /* 圆角 */
+  --border-radius-sm: 4px;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+  --border-radius-xl: 12px;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* 字体大小 - 统一提升两个字号 */
+  --font-size-xs: 14px;
+  --font-size-sm: 16px;
+  --font-size-md: 18px;
+  --font-size-lg: 20px;
+  --font-size-xl: 22px;
+  --font-size-xxl: 26px;
+
+  /* 行高 */
+  --line-height-sm: 1.25;
+  --line-height-md: 1.5;
+  --line-height-lg: 1.75;
+}
+
+/* 响应式工具类 */
+@media (max-width: 575px) {
+  :root {
+    --content-padding: var(--content-padding-xs);
+    --content-margin: var(--content-margin-xs);
+    --card-padding: var(--card-padding-xs);
+    --container-padding: var(--container-padding-xs);
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+  :root {
+    --content-padding: var(--content-padding-sm);
+    --content-margin: var(--content-margin-sm);
+    --card-padding: var(--card-padding-sm);
+    --container-padding: var(--container-padding-sm);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  :root {
+    --content-padding: var(--content-padding-md);
+    --content-margin: var(--content-margin-md);
+    --card-padding: var(--card-padding-md);
+    --container-padding: var(--container-padding-md);
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199px) {
+  :root {
+    --content-padding: var(--content-padding-lg);
+    --content-margin: var(--content-margin-lg);
+    --card-padding: var(--card-padding-lg);
+    --container-padding: var(--container-padding-lg);
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --content-padding: var(--content-padding-xl);
+    --content-margin: var(--content-margin-xl);
+    --card-padding: var(--card-padding-lg);
+    --container-padding: var(--container-padding-lg);
+  }
+}

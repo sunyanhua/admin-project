@@ -1,0 +1,16 @@
+/* 操作按钮列样式：图标与文字更近、按钮之间更紧凑 */
+.action-buttons .ant-btn {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+.action-buttons .ant-btn .anticon {
+  margin-right: 0 !important;
+}
+.action-buttons :where(.css-dev-only-do-not-override-1fslf9k).ant-btn {
+  gap: 3px;
+}
+.action-buttons .ant-space-item {
+  margin-right: 2px !important;
+}

@@ -1,0 +1,259 @@
+import request from '..';
+
+// 商品列表查询参数
+export interface ProductListParams {
+  page?: number;
+  page_size?: number;
+  keyword?: string;
+  category_id?: number;
+  root_category_id?: number;
+  is_listed?: boolean;
+  is_visible?: boolean;
+  is_virtual?: boolean;
+}
+
+// 商品条目
+export interface Product {
+  id: number;
+  title: string;
+  sub_title?: string;
+  category_id?: number;
+  cover_image?: string;
+  carousel_images?: string[];
+  detail_desc?: string;
+  intro?: string;
+  is_virtual?: boolean;
+  is_listed?: boolean;
+  is_visible?: boolean;
+  sort_order?: number;
+  keywords?: string;
+  brand_id?: number;
+  additional_fields_mode?: string;
+  has_ticket?: boolean;
+  has_booking?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// 创建商品参数
+export interface CreateProductData {
+  title: string;
+  sub_title?: string;
+  category_id: number;
+  cover_image?: string;
+  carousel_images?: string[];
+  detail_desc?: string;
+  intro?: string;
+  is_virtual: boolean;
+  is_listed?: boolean;
+  is_visible?: boolean;
+  sort_order?: number;
+  keywords?: string;
+  brand_id?: number;
+  additional_fields_mode?: string;
+  has_ticket?: boolean;
+  has_booking?: boolean;
+}
+
+// 更新商品参数（全部可选）
+export interface UpdateProductData {
+  title?: string;
+  sub_title?: string;
+  category_id?: number;
+  cover_image?: string;
+  carousel_images?: string[];
+  detail_desc?: string;
+  intro?: string;
+  is_virtual?: boolean;
+  is_listed?: boolean;
+  is_visible?: boolean;
+  sort_order?: number;
+  keywords?: string;
+  brand_id?: number;
+  additional_fields_config?: any | null;
+  additional_fields_has_sensitive?: boolean;
+  additional_fields_mode?: string;
+  has_ticket?: boolean;
+  has_booking?: boolean;
+  usable?: string;
+  expiry?: string;
+  refund_type?: number;
+  refund_rule_id?: number | null;
+  refund_base_time?: string;  // nil=不更新, ""=清空, 非空=RFC3339
+}
+
+export const productApi = {
+  // 分页查询 — GET /admin/v1/mall/products
+  getProducts: (params?: ProductListParams) => {
+    return request.get('/admin/v1/mall/products', { params });
+  },
+
+  // 商品详情 — GET /admin/v1/mall/products/{id}
+  getProductDetail: (id: number) => {
+    return request.get(`/admin/v1/mall/products/${id}`);
+  },
+
+  // 创建 — POST /admin/v1/mall/products
+  createProduct: (data: CreateProductData) => {
+    return request.post('/admin/v1/mall/products', data);
+  },
+
+  // 编辑 — PUT /admin/v1/mall/products/{id}
+  updateProduct: (id: number, data: UpdateProductData) => {
+    return request.put(`/admin/v1/mall/products/${id}`, data);
+  },
+
+  // 删除（软删除） — DELETE /admin/v1/mall/products/{id}
+  deleteProduct: (id: number) => {
+    return request.delete(`/admin/v1/mall/products/${id}`);
+  },
+
+  // 上下架 — PUT /admin/v1/mall/products/{id}/list-status
+  updateListStatus: (id: number, is_listed: boolean) => {
+    return request.put(`/admin/v1/mall/products/${id}/list-status`, { is_listed });
+  },
+
+  // 显隐 — PUT /admin/v1/mall/products/{id}/visibility
+  updateVisibility: (id: number, is_visible: boolean) => {
+    return request.put(`/admin/v1/mall/products/${id}/visibility`, { is_visible });
+  },
+
+  // 排序 — PUT /admin/v1/mall/products/{id}/sort-order
+  updateSortOrder: (id: number, sort_order: number) => {
+    return request.put(`/admin/v1/mall/products/${id}/sort-order`, { sort_order });
+  },
+
+  // 商品到期时间 — PUT /admin/v1/mall/products/{id}/expiry
+  updateProductExpiry: (id: number, expiry: string | null) => {
+    return request.put(`/admin/v1/mall/products/${id}/expiry`, { expiry });
+  },
+
+  // 商品生效时间 — PUT /admin/v1/mall/products/{id}/usable
+  updateProductUsable: (id: number, usable: string | null) => {
+    return request.put(`/admin/v1/mall/products/${id}/usable`, { usable });
+  },
+
+  // ====== Specs ======
+
+  // 查询规格组 — GET /admin/v1/mall/products/{id}/specs
+  getSpecs: (productId: number) => {
+    return request.get(`/admin/v1/mall/products/${productId}/specs`);
+  },
+
+  // 创建规格组 — POST /admin/v1/mall/products/{id}/specs
+  // Body: { name, values: [{ value }] }
+  createSpec: (productId: number, data: { name: string; values: { value: string }[] }) => {
+    return request.post(`/admin/v1/mall/products/${productId}/specs`, data);
+  },
+
+  // 编辑规格组 — PUT /admin/v1/mall/products/{id}/specs/{spec_id}
+  updateSpec: (productId: number, specId: number, data: { name?: string; values?: { value: string }[] }) => {
+    return request.put(`/admin/v1/mall/products/${productId}/specs/${specId}`, data);
+  },
+
+  // 删除规格组 — DELETE /admin/v1/mall/products/{id}/specs/{spec_id}
+  deleteSpec: (productId: number, specId: number) => {
+    return request.delete(`/admin/v1/mall/products/${productId}/specs/${specId}`);
+  },
+
+  // ====== SKUs ======
+
+  // 查询SKU列表 — GET /admin/v1/mall/products/{id}/skus
+  getSkus: (productId: number) => {
+    return request.get(`/admin/v1/mall/products/${productId}/skus`);
+  },
+
+  // 批量创建SKU — POST /admin/v1/mall/products/{id}/skus
+  // Body: { skus: [{ price, spec_indices, stock?, sku_code? }] }
+  batchCreateSkus: (productId: number, skus: {
+    price: number; spec_indices: string; stock?: number; sku_code?: string;
+    status?: number; usable?: string; expiry?: string;
+    additional_fields_config?: any | null;
+    refund_base_time?: string;
+  }[]) => {
+    return request.post(`/admin/v1/mall/products/${productId}/skus`, { skus });
+  },
+
+  // 编辑单个SKU — PUT /admin/v1/mall/products/{id}/skus/{sku_id}
+  updateSku: (productId: number, skuId: number, data: {
+    price?: number; stock?: number; status?: number; sku_code?: string;
+    usable?: string | null; expiry?: string | null;
+    additional_fields_config?: any | null;
+    refund_base_time?: string | null;
+  }) => {
+    return request.put(`/admin/v1/mall/products/${productId}/skus/${skuId}`, data);
+  },
+
+  // 删除单个SKU — DELETE /admin/v1/mall/products/{id}/skus/{sku_id}
+  deleteSku: (productId: number, skuId: number) => {
+    return request.delete(`/admin/v1/mall/products/${productId}/skus/${skuId}`);
+  },
+
+  // SKU到期时间 — PUT /admin/v1/mall/products/{id}/skus/{sku_id}/expiry
+  updateSkuExpiry: (productId: number, skuId: number, expiry: string | null) => {
+    return request.put(`/admin/v1/mall/products/${productId}/skus/${skuId}/expiry`, { expiry });
+  },
+
+  // SKU生效时间 — PUT /admin/v1/mall/products/{id}/skus/{sku_id}/usable
+  updateSkuUsable: (productId: number, skuId: number, usable: string | null) => {
+    return request.put(`/admin/v1/mall/products/${productId}/skus/${skuId}/usable`, { usable });
+  },
+
+  // 清空商品全部SKU — DELETE /admin/v1/mall/products/{id}/skus
+  clearAllSkus: (productId: number) => {
+    return request.delete(`/admin/v1/mall/products/${productId}/skus`);
+  },
+};
+
+// ====== Booking Slots ======
+
+export interface BookingSlot {
+  id: number;
+  sku_id: number;
+  title: string;
+  slot_date: string;
+  slot_time?: string;
+  capacity: number;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateBookingSlotData {
+  sku_id: number;
+  slot_date: string;
+  title: string;
+  capacity: number;
+  slot_time?: string;
+}
+
+export interface UpdateBookingSlotData {
+  title?: string;
+  capacity?: number;
+  slot_time?: string;
+}
+
+export const bookingSlotApi = {
+  getSlots: (productId: number, params?: Record<string, unknown>) =>
+    request.get(`/admin/v1/mall/products/${productId}/booking-slots`, { params }),
+
+  createSlot: (productId: number, data: CreateBookingSlotData) =>
+    request.post(`/admin/v1/mall/products/${productId}/booking-slots`, data),
+
+  updateSlot: (productId: number, slotId: number, data: UpdateBookingSlotData) =>
+    request.put(`/admin/v1/mall/products/${productId}/booking-slots/${slotId}`, data),
+
+  toggleSlotStatus: (productId: number, slotId: number, status: string) =>
+    request.put(`/admin/v1/mall/products/${productId}/booking-slots/${slotId}/status`, { status }),
+
+  deleteSlot: (productId: number, slotId: number) =>
+    request.delete(`/admin/v1/mall/products/${productId}/booking-slots/${slotId}`),
+
+  // 批量创建 — POST /admin/v1/mall/products/{id}/booking-slots/batch
+  batchCreateSlots: (productId: number, slots: CreateBookingSlotData[]) =>
+    request.post(`/admin/v1/mall/products/${productId}/booking-slots/batch`, { slots }),
+
+  // 批量删除（清空该产品全部时段） — DELETE /admin/v1/mall/products/{id}/booking-slots
+  deleteAllSlots: (productId: number) =>
+    request.delete(`/admin/v1/mall/products/${productId}/booking-slots`),
+};
