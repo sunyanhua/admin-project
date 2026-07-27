@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
-const BASE_URL = 'https://cheng-test.vbegin.com.cn';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 interface ChunkUploadResult {
   file_id: string;

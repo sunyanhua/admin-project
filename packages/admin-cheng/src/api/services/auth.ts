@@ -1,4 +1,4 @@
-import request, { setTokens } from '..';
+import request from '..';
 import type { AdminLoginRequest, AdminLoginResponse, AdminChangePasswordRequest } from '../types/auth';
 
 // 认证相关API（BizMall 接口）

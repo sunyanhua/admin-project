@@ -3,6 +3,7 @@ import { Tag } from 'antd';
 import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import { adminApi } from '../../api/services/admin';
 import type { AdminUserListItem, AdminRoleItem } from '@/api/types/admin';
+import { AdminUserStatus } from '@/api/types/status';
 
 /** 管理员列表项（运行时包含 roles / last_login_at） */
 type UIAdminUser = AdminUserListItem & { roles?: any[]; last_login_at?: string };
@@ -20,8 +21,8 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 
 const STATUS_OPTIONS = [
-  { label: '正常', value: 0 },
-  { label: '屏蔽', value: 1 },
+  { label: '正常', value: AdminUserStatus.ACTIVE },
+  { label: '屏蔽', value: AdminUserStatus.DISABLED },
 ];
 
 function buildFilters(allRoles: UIRole[], isSuperAdmin: boolean): FilterConfig[] {

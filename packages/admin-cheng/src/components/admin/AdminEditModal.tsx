@@ -4,6 +4,7 @@ import { Form, Input, Select, Button, Space, Divider } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { adminApi } from '../../api/services/admin';
 import type { AdminUserListItem, AdminRoleItem } from '@/api/types/admin';
+import { AdminUserStatus } from '@/api/types/status';
 
 /** 编辑用管理员类型（运行时包含 roles） */
 type UIAdminUser = AdminUserListItem & { roles?: any[] };
@@ -187,8 +188,8 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
           name="status"
         >
           <Select>
-            <Select.Option value={0}>正常</Select.Option>
-            <Select.Option value={1}>屏蔽</Select.Option>
+            <Select.Option value={AdminUserStatus.ACTIVE}>正常</Select.Option>
+            <Select.Option value={AdminUserStatus.DISABLED}>屏蔽</Select.Option>
           </Select>
         </Form.Item>
       </Form>

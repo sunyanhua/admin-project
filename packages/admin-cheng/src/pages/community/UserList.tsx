@@ -6,7 +6,7 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
-import { ActionColumn } from '@/components/templates/ActionColumn';
+
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { ProfileAuditStatus, MatchProfileAuditStatus } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
@@ -102,6 +102,7 @@ const UserList = () => {
       const res = await userApi.getUserDetail(record.user_id || record.id);
       setDetailUser((res as any)?.data || res || null);
     } catch {
+      error('加载用户详情失败');
       setDetailUser(null);
     } finally {
       setDetailLoading(false);

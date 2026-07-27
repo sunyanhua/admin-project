@@ -9,6 +9,7 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { StatusSwitch } from '@/components/templates/StatusSwitch';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { wxaApi } from '@/api/services/wxa';
+import { AdminUserStatus } from '@/api/types/status';
 import { formatDateTime, formatDate } from '@/utils/format';
 
 const filters: FilterConfig[] = [
@@ -50,7 +51,7 @@ const WxaAppManagement: React.FC = () => {
 
   const handleStatusToggle = async (record: any, checked: boolean) => {
     try {
-      await wxaApi.updateStatus(record.id, checked ? 0 : 1);
+      await wxaApi.updateStatus(record.id, checked ? AdminUserStatus.ACTIVE : AdminUserStatus.DISABLED);
       success(checked ? '小程序配置已启用' : '小程序配置已停用');
       refresh();
     } catch (err: any) {
@@ -82,6 +83,7 @@ const WxaAppManagement: React.FC = () => {
         });
       }, 0);
     } catch {
+      showError('加载小程序配置详情失败，使用列表数据编辑');
       setModalOpen(true);
       setTimeout(() => {
         form.setFieldsValue({
@@ -189,7 +191,7 @@ const WxaAppManagement: React.FC = () => {
       key: 'status',
       width: 100,
       render: (_: any, record: any) => (
-        <StatusSwitch checked={record.status === 0} onChange={(checked: boolean) => handleStatusToggle(record, checked)} />
+        <StatusSwitch checked={record.status === AdminUserStatus.ACTIVE} onChange={(checked: boolean) => handleStatusToggle(record, checked)} />
       ),
     },
     {
