@@ -1,35 +1,41 @@
 import request from '..';
+import type { AdminUserListItem, AdminUserDetailResponse, AuditMatchProfileRequest, AdminUpdateBasicProfileRequest } from '../types/user';
 
-// C端用户相关API（v1）
+/** C端用户查询参数 */
+export interface UserListParams {
+  page?: number;
+  size?: number;
+  keyword?: string;
+  gender?: 1 | 2;
+  min_age?: number;
+  max_age?: number;
+  profile_audit_status?: number;
+  match_audit_status?: number;
+}
+
 export const userApi = {
-  // 查询C端用户列表（v1）
-  getUsers: (params?: { page?: number; page_size?: number; keyword?: string; status?: number; gender?: number }) => {
-    return request.get('/admin/v1/mall/users', { params });
+  /** 用户列表 — GET /admin/v1/bizops/user */
+  getUsers: (params?: UserListParams): Promise<{ list: AdminUserListItem[]; total: number }> => {
+    return request.get('/admin/v1/bizops/user', { params }) as any;
   },
 
-  // 获取C端用户详情（v1）
-  getUserDetail: (id: number) => {
-    return request.get(`/admin/v1/mall/users/${id}`);
+  /** 用户详情 — GET /admin/v1/bizops/user/:id */
+  getUserDetail: (id: string | number): Promise<AdminUserDetailResponse> => {
+    return request.get(`/admin/v1/bizops/user/${id}`);
   },
 
-  // 修改C端用户状态 0=启用 1=禁用（v1）
-  updateUserStatus: (id: number, status: number) => {
+  /** 修改用户基础资料 — PUT /admin/v1/bizops/user/:id/basic-profile */
+  updateBasicProfile: (id: string | number, data: AdminUpdateBasicProfileRequest) => {
+    return request.put(`/admin/v1/bizops/user/${id}/basic-profile`, data);
+  },
+
+  /** 审核脱单档案 — PUT /admin/v1/bizops/user/match-profile/:id/audit */
+  auditMatchProfile: (id: string | number, data: AuditMatchProfileRequest) => {
+    return request.put(`/admin/v1/bizops/user/match-profile/${id}/audit`, data);
+  },
+
+  /** 状态切换 — PATCH /admin/v1/mall/users/:id/status（Swagger 暂无此接口，保持） */
+  updateUserStatus: (id: string | number, status: number) => {
     return request.patch(`/admin/v1/mall/users/${id}/status`, { status });
-  },
-
-  // 以下为旧版 v6 API，详情弹窗管理操作仍在使用
-  // 更新用户可见性
-  updateUserVisible: (id: string, visible: boolean) => {
-    return request.post('/admin/v6/user/visible', { id, visible });
-  },
-
-  // 设置/取消官方用户
-  setOfficialUser: (id: string, isOfficial: boolean) => {
-    return request.post('/admin/v6/user/coop', { id, coop_role: isOfficial ? 3 : undefined, coop_auth: isOfficial ? 1 : undefined });
-  },
-
-  // 设置/取消推荐用户
-  setRecommendUser: (id: string, recom: boolean) => {
-    return request.post('/admin/v6/user/recom', { id, recom });
   },
 };

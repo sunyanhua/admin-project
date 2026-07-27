@@ -159,16 +159,9 @@ const UserList = () => {
     }
   };
 
-  const handleRecommendChange = async (checked: boolean) => {
-    if (!detailModalData) return;
-    try {
-      await userApi.setRecommendUser(detailModalData.id, checked);
-      success(checked ? '已设为推荐用户' : '已取消推荐用户');
-      setDetailModalData({ ...detailModalData, recom: checked ? 1 : 0 });
-      refresh();
-    } catch (err: any) {
-      error(err.response?.data?.msg || '操作失败');
-    }
+  // TODO: 后续任务重写 UserList 页面时恢复推荐用户功能（Swagger 暂无对应接口）
+  const handleRecommendChange = async (_checked: boolean) => {
+    // no-op stub — old setRecommendUser v6 API removed
   };
 
   const handleRevokeConfirm = async () => {
