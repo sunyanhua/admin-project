@@ -1,0 +1,69 @@
+import type { UserGender, ProfileAuditStatus, MatchProfileAuditStatus } from './status';
+
+/** C 端用户列表项 — Swagger AdminUserListItem */
+export interface AdminUserListItem {
+  user_id: string;
+  nickname: string;
+  avatar: string;
+  gender: UserGender;
+  age: number;
+  /** 手机号（脱敏，中间四位隐藏） */
+  phone: string;
+  profile_audit_status: ProfileAuditStatus;
+  match_audit_status: MatchProfileAuditStatus;
+  created_at: string;
+  last_active_at: string;
+}
+
+/** C 端用户详情 — Swagger AdminUserDetailResponse */
+export interface AdminUserDetailResponse {
+  user_id: string;
+  nickname: string;
+  avatar: string;
+  real_name: string;
+  phone: string;
+  gender: UserGender;
+  birth_date: string;
+  zodiac: string;
+  cn_zodiac: string;
+  profile_audit_status: ProfileAuditStatus;
+  match_profile?: AdminUserMatchProfileView;
+  created_at: string;
+  last_active_at: string;
+}
+
+/** 脱单档案视图 — Swagger AdminUserMatchProfileView */
+export interface AdminUserMatchProfileView {
+  match_code: string;
+  marital_status: number;
+  education: number;
+  profession: string;
+  income_range: number;
+  height: number;
+  weight: number;
+  hobby_tags: string[];
+  current_city: string;
+  hometown: string;
+  self_intro: string;
+  partner_demand: string;
+  audit_status: MatchProfileAuditStatus;
+  audit_reason: string;
+  audited_at: string;
+  audited_by: string;
+}
+
+/** 审核脱单档案请求 */
+export interface AuditMatchProfileRequest {
+  /** 1=通过, 2=拒绝 */
+  action: 1 | 2;
+  reason: string;
+}
+
+/** 管理员修改 C 端用户基础资料请求 */
+export interface AdminUpdateBasicProfileRequest {
+  real_name: string;
+  gender: 1 | 2;
+  birth_date: string;
+  /** 变更原因（必填） */
+  reason: string;
+}
