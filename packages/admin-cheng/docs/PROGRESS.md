@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-07-25**
+**2026-07-27**
 
 ---
 
@@ -31,6 +31,7 @@
 ### 系统管理
 - 工作台、角色管理、管理账号、管理日志、修改密码、我的日志
 - **来源管理**（v1 接口迁移完成，含单来源注册/上报数据统计弹窗）
+- **小程序配置管理**（v1 接口，含 AppID/密钥/Token 管理）
 
 ### 运营管理
 - 运营分类管理、活动分类管理、活动发布、轮播图管理、协议文档、FAQ管理
@@ -73,8 +74,10 @@
 | 发票管理 | `GET /admin/v1/mall/invoices` | 发票记录查询 |
 | 优惠券管理 | `/admin/v1/mall/coupons` + `/admin/v1/mall/exchange-configs` | 完整 CRUD + 兑换规则 + 发放 |
 | 来源管理 | `/admin/v1/sources` + register-stats + report-stats | v1 完整迁移 |
-| 图片上传 | `POST /admin/v1/upload/image` | vbegin CDN |
-| 日志 | `/admin/v1/logs/audit`、`/admin/v1/logs/my` | |
+| 图片上传 | `POST /admin/v1/upload/image` | 已扩展音频/视频/压缩包 + 分片上传 |
+| C端用户管理 | `/admin/v1/bizops/user` | 列表/详情/资料修改/档案审核 |
+| 小程序配置 | `/admin/v1/wxa/app` | CRUD + Token 过期 + 状态切换 |
+| 日志 | `/admin/v1/audit/logs`、`/admin/v1/login/logs` | |
 
 ### 仍在用 v6 的模块
 
@@ -92,6 +95,9 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-07-27 | 上传增强：非分片上传扩展音频/视频/压缩包 + 分片上传工具 uploadUtils | upload.ts + uploadUtils.ts | （待提交） |
+| 2026-07-27 | 小程序配置管理：wxa service + 管理页面 + 路由/菜单注册 | wxa.ts + WxaAppManagement.tsx + router + menuConfig | （待提交） |
+| 2026-07-27 | auth/admin/user service 路径/类型对齐 Swagger + C端用户管理重构 | auth.ts + admin.ts + user.ts + UserList + UserDetailModal + UserEditProfileModal + MatchProfileAuditModal | （待提交） |
 | 2026-07-25 | useAppNotification + console 清理 | 11 文件，修复 5 个违规 + 10+ 处控制台语句 | （待提交） |
 | 2026-07-25 | CLAUDE.md 文档路径修正 + 发票管理菜单链接 | CLAUDE.md + MainLayout.tsx | （待提交） |
 | 2026-07-25 | 文档同步更新（PROGRESS + SITEMAP） | docs/ | （待提交） |

@@ -19,7 +19,7 @@
 
 ## 最后更新
 
-**2026-07-25**
+**2026-07-27**
 
 ---
 
@@ -36,8 +36,10 @@
 │   │   │   └── 接口: GET/POST/PUT/DELETE /admin/v1/roles
 │   │   ├── 管理账号 #/system/admins
 │   │   │   └── 接口: GET/POST/PUT/DELETE /admin/v1/users
-│   │   └── 管理日志 #/system/admin-logs
-│   │       └── 接口: GET /admin/v1/logs/audit
+│   │   ├── 管理日志 #/system/admin-logs
+│   │   │   └── 接口: GET /admin/v1/audit/logs
+│   │   └── 小程序配置 #/system/wxa-apps
+│   │       └── 接口: GET/POST/PUT/DELETE /admin/v1/wxa/app
 │   │
 │   ├── 🔐 我的账户
 │   │   ├── 修改密码 #/system/change-password
@@ -103,6 +105,7 @@
 | 管理日志 | `#/system/admin-logs` | 审计日志查询 |
 | 修改密码 | `#/system/change-password` | 修改当前登录密码 |
 | 我的日志 | `#/system/my-logs` | 当前管理员操作日志 |
+| 小程序配置 | `#/system/wxa-apps` | 小程序/公众号 AppID、密钥、AccessToken 管理（v1） |
 | 来源管理 | `#/system/sources` | 访问来源管理（v1，含注册/上报统计弹窗） |
 | 访问统计 | `#/system/visits` | 浏览访问数据（v6） |
 | 访问用户统计 | `#/system/visits/users` | 访问用户数据（v6） |
@@ -117,7 +120,7 @@
 | 轮播图管理 | `#/operation/banners` | 全部 | Banner 管理 |
 | 协议文档 | `#/operation/agreements` | 全部 | 协议文档管理 |
 | FAQ管理 | `#/operation/faq` | 全部 | FAQ 管理 |
-| 注册用户 | `#/operation/users` | 全部 | 用户列表（v1 迁移） |
+| 注册用户 | `#/operation/users` | 全部 | 用户列表 + 详情/资料修改/档案审核（v1, bizops/user） |
 | 用户统计 | `#/operation/user-stats` | 全部 | 用户数据统计（v6） |
 | 活动分类管理 | `#/operation/event-categories` | 全部 | 活动分类（上下架/显隐/权重） |
 | 活动发布 | `#/operation/events` | 全部 | 活动 CRUD + 规格/SKU 配置 |
@@ -158,6 +161,7 @@ src/pages/
 │   ├── SourceManagement.tsx           # 来源管理（v1）
 │   ├── VisitStatistics.tsx            # 访问统计（v6）
 │   ├── VisitUserStats.tsx             # 访问用户统计（v6）
+│   ├── WxaAppManagement.tsx           # 小程序配置（v1）
 │   ├── BannerManagement.tsx           # 轮播图管理
 │   └── FaqManagement.tsx              # FAQ管理
 │
