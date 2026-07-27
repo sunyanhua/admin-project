@@ -1,83 +1,35 @@
 import request from '..';
-
-// 管理员（与登录返回的 admin 字段结构一致）
-export interface AdminUser {
-  id: number;
-  username: string;
-  real_name?: string;
-  roles?: string[];
-  phone?: string;
-  status?: number;   // 0=正常, 1=屏蔽
-  created_at?: string;
-  last_login_at?: string;
-}
-
-// 管理员列表查询参数
-export interface AdminListParams {
-  page?: number;
-  page_size?: number;
-  keyword?: string;
-}
-
-// 创建管理员参数
-export interface CreateAdminData {
-  username: string;
-  password: string;
-  real_name?: string;
-  phone?: string;
-  role_ids?: number[];
-}
-
-// 更新管理员参数
-export interface UpdateAdminData {
-  passkeyword?: string;
-  real_name?: string;
-  phone?: string;
-  role_ids?: number[];
-  status?: number; // 0=正常, 1=屏蔽
-}
-
-// 角色（GET /admin/v1/roles 返回的列表项）
-export interface AdminRole {
-  id: number;
-  name: string;
-  code: string;
-  description?: string;
-}
-
-// 权限节点（GET /admin/v1/permissions 返回的树节点）
-export interface PermissionNode {
-  id: number;
-  name: string;
-  urn: string;
-  description?: string;
-  parent_id?: number;
-  children?: PermissionNode[];
-}
+import type { AdminUserStatus } from '../types/status';
+import type {
+  AdminUserListItem,
+  AdminUserDetailResponse,
+  AdminRoleItem,
+  CreateAdminUserRequest,
+  UpdateAdminUserRequest,
+} from '../types/admin';
+import type { PermissionNode } from '../types/permission';
 
 /**
  * 管理员相关API — 严格按照 hsh-swagger 接口文档
  */
 export const adminApi = {
   // 管理员列表 — GET /admin/v1/user
-  getAdmins: async (params?: AdminListParams) => {
+  getAdmins: async (params?: { page?: number; page_size?: number; keyword?: string }): Promise<AdminUserListItem[]> => {
     return request.get('/admin/v1/user', { params });
   },
 
   // 管理员详情 — GET /admin/v1/user/:id
-  getAdminDetail: async (id: number) => {
+  getAdminDetail: async (id: number): Promise<AdminUserDetailResponse> => {
     return request.get(`/admin/v1/user/${id}`);
   },
 
   // 创建管理员 — POST /admin/v1/user
-  // Body: { username, password, real_name?, phone?, role_ids? }
-  createAdmin: async (data: CreateAdminData) => {
+  createAdmin: async (data: CreateAdminUserRequest) => {
     return request.post('/admin/v1/user', data);
   },
 
   // 编辑管理员 — PUT /admin/v1/user/:id
-  // Body: { password?, real_name?, phone?, role_ids?, status? }
-  updateAdmin: async (id: number, data: UpdateAdminData) => {
+  updateAdmin: async (id: number, data: UpdateAdminUserRequest) => {
     return request.put(`/admin/v1/user/${id}`, data);
   },
 
@@ -88,7 +40,7 @@ export const adminApi = {
 
   // 角色列表 — GET /admin/v1/roles
   // 服务端返回 {code:0, data: [{...}]}（纯数组，非分页）
-  getRoles: async (params?: { page?: number; page_size?: number }): Promise<AdminRole[]> => {
+  getRoles: async (params?: { page?: number; page_size?: number }): Promise<AdminRoleItem[]> => {
     const res: any = await request.get('/admin/v1/roles', { params });
     // 拦截器解包后可能是数组或 {list: [...]}
     return Array.isArray(res) ? res : (res?.list || []);

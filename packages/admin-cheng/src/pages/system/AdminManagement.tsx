@@ -1,7 +1,13 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Tag } from 'antd';
 import { statusTagColumn } from '@/components/templates/ColumnHelpers';
-import { adminApi, AdminUser, AdminRole } from '../../api/services/admin';
+import { adminApi } from '../../api/services/admin';
+import type { AdminUserListItem, AdminRoleItem } from '@/api/types/admin';
+
+/** 管理员列表项（运行时包含 roles / last_login_at） */
+type UIAdminUser = AdminUserListItem & { roles?: any[]; last_login_at?: string };
+/** 角色（运行时包含 code） */
+type UIRole = AdminRoleItem & { code: string };
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDateTime, formatDate } from '@/utils/format';
 import AddAdminModal from '../../components/admin/AddAdminModal';
@@ -18,7 +24,7 @@ const STATUS_OPTIONS = [
   { label: '屏蔽', value: 1 },
 ];
 
-function buildFilters(allRoles: AdminRole[], isSuperAdmin: boolean): FilterConfig[] {
+function buildFilters(allRoles: UIRole[], isSuperAdmin: boolean): FilterConfig[] {
   const visibleRoles = isSuperAdmin
     ? allRoles
     : allRoles.filter((r) => r.code !== 'super_admin');
@@ -45,7 +51,7 @@ function extractRoleName(role: any): string {
   return role?.name || role?.code || '';
 }
 
-function userHasRole(user: AdminUser, code: string): boolean {
+function userHasRole(user: UIAdminUser, code: string): boolean {
   if (!user.roles) return false;
   return user.roles.some((r: any) =>
     typeof r === 'string' ? r === code : r?.code === code
@@ -58,8 +64,8 @@ const AdminManagement = () => {
   const [values, setValues] = useState<Record<string, any>>({});
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
-  const [allRoles, setAllRoles] = useState<AdminRole[]>([]);
+  const [selectedAdmin, setSelectedAdmin] = useState<UIAdminUser | null>(null);
+  const [allRoles, setAllRoles] = useState<UIRole[]>([]);
 
   // 非超管可分配的角色列表
   const assignableRoles = useMemo(
@@ -68,7 +74,7 @@ const AdminManagement = () => {
   );
 
   useEffect(() => {
-    adminApi.getRoles().then(setAllRoles).catch(() => setAllRoles([]));
+    adminApi.getRoles().then((list) => setAllRoles(list as UIRole[])).catch(() => setAllRoles([]));
   }, []);
 
   const fetchAdmins = useCallback(async (params: any) => {
@@ -79,16 +85,16 @@ const AdminManagement = () => {
   const formatAdminResponse = useCallback((res: any) => {
     let list = res?.list || [];
     // 隐藏当前登录管理员 + 非超管时隐藏超管用户
-    list = list.filter((item: AdminUser) => item.id !== currentUser?.id);
+    list = list.filter((item: UIAdminUser) => item.id !== currentUser?.id);
     if (!isSuperAdmin) {
-      list = list.filter((item: AdminUser) => !userHasRole(item, 'super_admin'));
+      list = list.filter((item: UIAdminUser) => !userHasRole(item, 'super_admin'));
     }
     const originalTotal = res?.total || 0;
     const hiddenCount = (res?.list?.length || 0) - list.length;
     return { list, count: originalTotal - hiddenCount };
   }, [currentUser?.id, isSuperAdmin]);
 
-  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<AdminUser>({
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<UIAdminUser>({
     fetchFn: fetchAdmins,
     formatResponse: formatAdminResponse,
   });
@@ -129,7 +135,7 @@ const AdminManagement = () => {
         });
       },
     },
-    statusTagColumn<AdminUser>('status', {
+    statusTagColumn<UIAdminUser>('status', {
       0: { text: '正常', color: 'green' },
       1: { text: '屏蔽', color: 'default' },
     }, '状态', 100),

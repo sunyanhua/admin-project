@@ -3,33 +3,41 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { Tree, Button, Space, Spin, Empty } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import type { TreeDataNode } from 'antd';
-import { adminApi, PermissionNode, AdminRole } from '../../api/services/admin';
+import { adminApi } from '../../api/services/admin';
+import type { PermissionNode } from '@/api/types/permission';
+import type { AdminRoleItem } from '@/api/types/admin';
+
+/** 权限树节点（运行时包含 id / name） */
+interface UIPermissionNode extends PermissionNode {
+  id: number;
+  name: string;
+}
 
 export interface PermissionModalProps {
   visible: boolean;
-  role: AdminRole | null;
+  role: AdminRoleItem | null;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
 // 递归收集某个节点的所有子孙节点 ID
-function getDescendantIds(node: PermissionNode): number[] {
+function getDescendantIds(node: UIPermissionNode): number[] {
   const ids: number[] = [];
   if (node.children) {
     node.children.forEach((child) => {
-      ids.push(child.id);
-      ids.push(...getDescendantIds(child));
+      ids.push((child as UIPermissionNode).id);
+      ids.push(...getDescendantIds(child as UIPermissionNode));
     });
   }
   return ids;
 }
 
 // 在 allNodes 中按 ID 查找节点
-function findNode(nodes: PermissionNode[], id: number): PermissionNode | null {
+function findNode(nodes: UIPermissionNode[], id: number): UIPermissionNode | null {
   for (const node of nodes) {
     if (node.id === id) return node;
     if (node.children) {
-      const found = findNode(node.children, id);
+      const found = findNode(node.children as UIPermissionNode[], id);
       if (found) return found;
     }
   }
@@ -38,7 +46,7 @@ function findNode(nodes: PermissionNode[], id: number): PermissionNode | null {
 
 // 构建 TreeDataNode，被祖先勾选的节点设为 disabled
 function buildTreeData(
-  nodes: PermissionNode[],
+  nodes: UIPermissionNode[],
   checkedSet: Set<number>,
   ancestorChecked: boolean,
 ): TreeDataNode[] {
@@ -59,14 +67,14 @@ function buildTreeData(
       ),
       disabled,
       children: node.children
-        ? buildTreeData(node.children, checkedSet, childAncestorChecked)
+        ? buildTreeData(node.children as UIPermissionNode[], checkedSet, childAncestorChecked)
         : undefined,
     };
   });
 }
 
 // 从 checkedKeys 中移除已被祖先节点覆盖的子孙节点
-function filterRedundant(checkedKeys: number[], allNodes: PermissionNode[]): number[] {
+function filterRedundant(checkedKeys: number[], allNodes: UIPermissionNode[]): number[] {
   const checkedSet = new Set(checkedKeys);
   const redundant: Set<number> = new Set();
 
@@ -84,7 +92,7 @@ function filterRedundant(checkedKeys: number[], allNodes: PermissionNode[]): num
 const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [allNodes, setAllNodes] = useState<PermissionNode[]>([]);
+  const [allNodes, setAllNodes] = useState<UIPermissionNode[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [checkedKeys, setCheckedKeys] = useState<number[]>([]);
   const { success, error: showError } = useAppNotification();
@@ -100,7 +108,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
         adminApi.getRolePermissions(role.id),
       ])
         .then(([allPerms, rolePerms]) => {
-          const nodes: PermissionNode[] = Array.isArray(allPerms) ? allPerms : [];
+          const nodes: UIPermissionNode[] = Array.isArray(allPerms) ? allPerms as UIPermissionNode[] : [];
           setAllNodes(nodes);
 
           const ids: number[] = rolePerms?.permission_ids || [];

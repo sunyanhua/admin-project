@@ -2,7 +2,11 @@ import { useState, useCallback } from 'react';
 import type { ColumnsType } from 'antd/es/table';
 import { Tag, Button } from 'antd';
 import { EditOutlined, DeleteOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
-import { adminApi, AdminRole } from '@/api/services/admin';
+import { adminApi } from '@/api/services/admin';
+import type { AdminRoleItem } from '@/api/types/admin';
+
+/** 角色列表项（运行时包含 code 字段） */
+type UIRole = AdminRoleItem & { code: string };
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -20,7 +24,7 @@ const RoleManagement = () => {
   const [values, setValues] = useState<Record<string, any>>({});
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<AdminRole | null>(null);
+  const [selectedRole, setSelectedRole] = useState<AdminRoleItem | null>(null);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
 
   const fetchRoles = useCallback(async (params: any) => {
@@ -32,12 +36,12 @@ const RoleManagement = () => {
     count: Array.isArray(res) ? res.length : (res?.total || 0),
   }), []);
 
-  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<AdminRole>({
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<UIRole>({
     fetchFn: fetchRoles,
     formatResponse: formatResponse,
   });
 
-  const columns: ColumnsType<AdminRole> = [
+  const columns: ColumnsType<UIRole> = [
     {
       title: 'ID',
       dataIndex: 'id',

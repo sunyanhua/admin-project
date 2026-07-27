@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Form, Input, Select, Button, Space, Divider } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import { adminApi, AdminUser, AdminRole } from '../../api/services/admin';
+import { adminApi } from '../../api/services/admin';
+import type { AdminUserListItem, AdminRoleItem } from '@/api/types/admin';
+
+/** 编辑用管理员类型（运行时包含 roles） */
+type UIAdminUser = AdminUserListItem & { roles?: any[] };
 
 export interface AdminEditModalProps {
   visible: boolean;
   onClose: () => void;
-  admin: AdminUser | null;
+  admin: UIAdminUser | null;
   onSuccess?: () => void;
 }
 
@@ -38,11 +42,11 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
   const { success, error: showError } = useAppNotification();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [roles, setRoles] = useState<AdminRole[]>([]);
+  const [roles, setRoles] = useState<AdminRoleItem[]>([]);
 
   useEffect(() => {
     if (admin && visible) {
-      adminApi.getRoles().then((roleList: AdminRole[]) => {
+      adminApi.getRoles().then((roleList: AdminRoleItem[]) => {
         setRoles(roleList);
 
         // admin.roles 返回的是中文名称数组，如 ['全站管理员']
@@ -52,7 +56,7 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
 
         // 优先按 name 匹配，兜底按 code 匹配
         const matchedRole = roleNames.length
-          ? roleList.find((r) => roleNames.includes(r.name) || roleNames.includes(r.code))
+          ? roleList.find((r) => roleNames.includes(r.name) || roleNames.includes((r as any).code))
           : null;
 
         form.setFieldsValue({

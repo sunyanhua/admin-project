@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Form, Input, Select, Button, Space, Divider } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import { adminApi, AdminRole } from '../../api/services/admin';
+import { adminApi } from '../../api/services/admin';
+import type { AdminRoleItem } from '@/api/types/admin';
 
 export interface AddAdminModalProps {
   visible: boolean;
-  roles?: AdminRole[];
+  roles?: AdminRoleItem[];
   onClose: () => void;
   onSuccess?: () => void;
 }
