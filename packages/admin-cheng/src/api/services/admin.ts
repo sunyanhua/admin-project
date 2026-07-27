@@ -59,31 +59,31 @@ export interface PermissionNode {
  * 管理员相关API — 严格按照 hsh-swagger 接口文档
  */
 export const adminApi = {
-  // 管理员列表 — GET /admin/v1/users
+  // 管理员列表 — GET /admin/v1/user
   getAdmins: async (params?: AdminListParams) => {
-    return request.get('/admin/v1/users', { params });
+    return request.get('/admin/v1/user', { params });
   },
 
-  // 管理员详情 — GET /admin/v1/users/:id
+  // 管理员详情 — GET /admin/v1/user/:id
   getAdminDetail: async (id: number) => {
-    return request.get(`/admin/v1/users/${id}`);
+    return request.get(`/admin/v1/user/${id}`);
   },
 
-  // 创建管理员 — POST /admin/v1/users
+  // 创建管理员 — POST /admin/v1/user
   // Body: { username, password, real_name?, phone?, role_ids? }
   createAdmin: async (data: CreateAdminData) => {
-    return request.post('/admin/v1/users', data);
+    return request.post('/admin/v1/user', data);
   },
 
-  // 编辑管理员 — PUT /admin/v1/users/:id
+  // 编辑管理员 — PUT /admin/v1/user/:id
   // Body: { password?, real_name?, phone?, role_ids?, status? }
   updateAdmin: async (id: number, data: UpdateAdminData) => {
-    return request.put(`/admin/v1/users/${id}`, data);
+    return request.put(`/admin/v1/user/${id}`, data);
   },
 
-  // 删除管理员 — DELETE /admin/v1/users/:id
+  // 删除管理员 — DELETE /admin/v1/user/:id
   deleteAdmin: async (id: number) => {
-    return request.delete(`/admin/v1/users/${id}`);
+    return request.delete(`/admin/v1/user/${id}`);
   },
 
   // 角色列表 — GET /admin/v1/roles
@@ -111,9 +111,9 @@ export const adminApi = {
     return request.delete(`/admin/v1/roles/${id}`);
   },
 
-  // 权限树 — GET /admin/v1/permissions
+  // 权限树 — GET /admin/v1/permission/tree
   getPermissions: async (): Promise<PermissionNode[]> => {
-    return request.get('/admin/v1/permissions');
+    return request.get('/admin/v1/permission/tree');
   },
 
   // 查询角色已分配的权限 — GET /admin/v1/roles/:id/permissions
@@ -130,8 +130,15 @@ export const adminApi = {
     });
   },
 
-  // 审计日志列表（管理日志） — GET /admin/v1/logs/audit
-  getLogs: async (params?: { page?: number; page_size?: number; word?: string }) => {
-    return request.get('/admin/v1/logs/audit', { params });
+  // 全局操作日志审计 — GET /admin/v1/audit/logs?page&size&admin_id&action&start_time&end_time
+  getLogs: async (params?: {
+    page?: number;
+    size?: number;
+    admin_id?: string;
+    action?: string;
+    start_time?: string;
+    end_time?: string;
+  }) => {
+    return request.get('/admin/v1/audit/logs', { params });
   },
 };
