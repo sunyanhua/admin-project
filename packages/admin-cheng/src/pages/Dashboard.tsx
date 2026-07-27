@@ -38,7 +38,7 @@ const Dashboard = () => {
     });
 
     setLogsLoading(true);
-    authApi.getMyLogs({ page: 1, page_size: 5 }).then((res: any) => {
+    authApi.getMyLogs({ page: 1, size: 5 }).then((res: any) => {
       setLogs(res?.list || res || []);
     }).catch((err: any) => {
       showError(err?.response?.data?.message || '获取操作日志失败');

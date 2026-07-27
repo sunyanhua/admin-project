@@ -23,10 +23,10 @@ export const authApi = {
   },
 
   // 修改密码
-  // POST /admin/v1/login/pass
+  // PUT /admin/v1/login/change-password
   // Body: { old_password, new_password }
   changePassword: (data: { old_password: string; new_password: string }) => {
-    return request.post('/admin/v1/login/pass', data);
+    return request.put('/admin/v1/login/change-password', data);
   },
 
   // 管理员Token续期
@@ -37,9 +37,9 @@ export const authApi = {
     return request.post('/admin/v1/login/refresh', data);
   },
 
-  // 获取登录日志列表 (我的日志)
-  // GET /admin/v1/logs/my?page={page}&page_size={page_size}&keyword={keyword}
-  getMyLogs: (params: { page?: number; page_size?: number; keyword?: string }) => {
-    return request.get('/admin/v1/logs/my', { params });
+  // 获取我的操作日志
+  // GET /admin/v1/login/logs?page={page}&size={size}
+  getMyLogs: (params: { page?: number; size?: number; keyword?: string }) => {
+    return request.get('/admin/v1/login/logs', { params });
   },
 };
