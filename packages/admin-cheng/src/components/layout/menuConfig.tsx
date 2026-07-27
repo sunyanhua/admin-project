@@ -42,6 +42,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
         { key: '/system/roles', icon: <SafetyCertificateOutlined />, label: '角色管理' },
         { key: '/system/admins', icon: <UserSwitchOutlined />, label: '管理账号' },
         { key: '/system/admin-logs', icon: <AuditOutlined />, label: '管理日志' },
+        { key: '/system/wxa-apps', icon: <TagOutlined />, label: '小程序配置' },
       ],
     },
     {

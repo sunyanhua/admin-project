@@ -14,6 +14,7 @@ import MyLogs from '@/pages/system/MyLogs';
 import SourceManagement from '@/pages/system/SourceManagement';
 import VisitStatistics from '@/pages/system/VisitStatistics';
 import VisitUserStats from '@/pages/system/VisitUserStats';
+import WxaAppManagement from '@/pages/system/WxaAppManagement';
 
 // 运营管理 — 配置管理
 import CategoryManagement from '@/pages/operation/CategoryManagement';
@@ -78,6 +79,7 @@ const router = createHashRouter([
           { path: 'roles', element: <RoleManagement /> },
           { path: 'admins', element: <AdminManagement /> },
           { path: 'admin-logs', element: <AdminLogs /> },
+          { path: 'wxa-apps', element: <WxaAppManagement /> },
           // 我的账户
           { path: 'change-password', element: <ChangePassword /> },
           { path: 'my-logs', element: <MyLogs /> },
