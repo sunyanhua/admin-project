@@ -13,11 +13,6 @@ export const authApi = {
     return request.post('/admin/v1/logout');
   },
 
-  // 获取当前管理员登录状态 — GET /admin/v1/login
-  getLoginStatus: () => {
-    return request.get('/admin/v1/login');
-  },
-
   // 修改密码 — PUT /admin/v1/login/change-password
   changePassword: (data: AdminChangePasswordRequest) => {
     return request.put('/admin/v1/login/change-password', data);

@@ -71,5 +71,5 @@ OldSun 自动同步会将外部代码同步到本仓库，可能覆盖本地未�
 
 | 环境 | 域名 |
 |------|------|
-| 测试环境 | `https://cheng-test.vbegin.com.cn` |
-| 正式环境 | `https://cheng.vbegin.com.cn` |
+| 测试环境 | `https://tlnc-test.vbegin.com.cn` |
+| 正式环境 | `https://tlnc.vbegin.com.cn` |

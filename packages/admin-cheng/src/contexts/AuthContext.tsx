@@ -62,11 +62,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const isAuthenticated = !!user;
 
-  // 检查登录状态，绝不清除有效 token（仅 401 时失败）
+  /** 用已存储 token 调用后端轻量接口验证有效性（仅验证，不获取用户信息） */
+  const verifyToken = async (): Promise<boolean> => {
+    try {
+      await authApi.getMyLogs({ size: 1 });
+      return true;
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        clearTokens();
+        localStorage.removeItem(ADMIN_USER_KEY);
+        setUser(null);
+      }
+      return false;
+    }
+  };
+
+  // 检查登录状态：token 存在则后端验证，再回退到 localStorage 缓存
   const checkAuth = async () => {
     const token = getAccessToken();
     if (!token) {
-      // 无 token → 尝试从 localStorage 恢复用户
       const cached = localStorage.getItem(ADMIN_USER_KEY);
       if (cached) {
         try { setUser(JSON.parse(cached)); } catch { setUser(null); }
@@ -79,99 +93,44 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const response: any = await authApi.getLoginStatus();
-
-      // 服务器可能在 checkAuth 时下发新 token
-      if (response?.token) {
-        setTokens(response.token, '', response.expires_in || 7200);
-      }
-
-      const admin = response?.admin;
-      if (admin) {
-        const roleList: string[] = admin.roles?.map((r: any) =>
-          typeof r === 'string' ? r : r?.code
-        ).filter(Boolean) || [];
-        const userData: User = {
-          id: admin.id,
-          name: admin.real_name || admin.username,
-          role: 0,
-          rule: 0,
-          root: roleList.includes('super_admin'),
-          roles: roleList,
-        };
-        setUser(userData);
-        setMenu(response?.menu || []);
-        setPage(response?.page || []);
-        localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(userData));
-      } else if (response?.user) {
-        setUser(response.user);
-        setMenu(response.menu || []);
-        setPage(response.page || []);
-        localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(response.user));
-      } else {
-        // 响应无预期字段 → 降级用 localStorage 缓存，不清空用户
-        const cached = localStorage.getItem(ADMIN_USER_KEY);
-        if (cached) {
-          try { setUser(JSON.parse(cached)); } catch { /* ignore */ }
-        }
-      }
-    } catch (err: any) {
-      // 仅 401 时才清除 token（真正的过期）
-      if (err?.response?.status === 401) {
-        clearTokens();
-        localStorage.removeItem(ADMIN_USER_KEY);
-        setUser(null);
-        setMenu([]);
-        setPage([]);
-        return;
-      }
-      // 网络瞬时错误 → 从 localStorage 恢复，不丢登录态
+    setIsLoading(true);
+    const valid = await verifyToken();
+    // verifyToken 在 401 时会自动清除用户状态；非 401 失败不丢登录态
+    if (valid) {
+      // token 有效 — 从缓存恢复用户（login 时已写入）
       const cached = localStorage.getItem(ADMIN_USER_KEY);
       if (cached) {
         try { setUser(JSON.parse(cached)); } catch { /* ignore */ }
       }
-    } finally {
-      setIsLoading(false);
     }
+    setMenu([]);
+    setPage([]);
+    setIsLoading(false);
   };
 
   // 登录
-  // POST /admin/v1/login → { token, expires_in, admin: { id, username, real_name, roles, must_change_password } }
+  // POST /admin/v1/login → { access_token, token_type, issued_at, expires_at }
   const login = async (username: string, password: string) => {
     const loginRes: any = await authApi.login({ username, password });
 
-    const accessToken = loginRes?.token;
+    const accessToken = loginRes?.access_token;
     if (!accessToken) {
       throw new Error('登录失败：服务器未返回访问令牌');
     }
 
-    // 存储 token 并记录过期时间（支持主动续期）
-    setTokens(accessToken, '', loginRes?.expires_in || 7200);
+    // Swagger 返回 expires_at（Unix 时间戳），setTokens 需要 duration 秒数
+    const expiresIn = loginRes?.expires_at
+      ? Math.max(0, loginRes.expires_at - Math.floor(Date.now() / 1000))
+      : 7200;
+    setTokens(accessToken, '', expiresIn);
 
-    // 将服务端 admin 对象映射到前端 User 结构
-    if (!loginRes?.admin) {
-      throw new Error('登录失败：无法获取管理员信息');
-    }
-
-    const { admin } = loginRes;
-    const roleList: string[] = admin.roles?.map((r: any) =>
-      typeof r === 'string' ? r : r?.code
-    ).filter(Boolean) || [];
-    const userData: User = {
-      id: admin.id,
-      name: admin.real_name || admin.username,
-      role: 0,
-      rule: 0,
-      root: roleList.includes('super_admin'),
-      roles: roleList,
-    };
-
+    // 用登录用户名创建 user（JWT 为 protobuf 编码，前端无法解码 roles/root）
+    const userData: User = { name: username, role: 0, rule: 0, root: false, roles: [] };
     setUser(userData);
-    setMenu([]);
-    setPage([]);
     localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(userData));
+
+    // 验证 token 有效性
+    await verifyToken();
   };
 
   // 登出

@@ -328,6 +328,9 @@ urn:bizmall:<module>:<action>
 |------|:----:|:----:|------|:----:|------|
 | `page` | query | integer | — | — | 页码 |
 | `page_size` | query | integer | — | — | 每页数量 |
+| `order_id` | query | integer | — | — | 按订单ID筛选 |
+| `order_item_id` | query | integer | — | — | 按订单商品行ID筛选 |
+| `booking_slot_id` | query | integer | — | — | 按预约时段ID筛选 |
 | `id` | path | integer | — | ✅ | 票夹ID |
 
 ## 十、Tickets-Admin 模块

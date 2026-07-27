@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // 代理 API 请求到测试服务器
         '/admin': {
-          target: 'https://cheng-test.vbegin.com.cn',
+          target: 'https://tlnc-test.vbegin.com.cn',
           changeOrigin: true,
           secure: false, // 允许自签名证书
         },

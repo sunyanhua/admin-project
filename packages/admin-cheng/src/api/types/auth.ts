@@ -7,8 +7,9 @@ export interface AdminLoginRequest {
 /** POST /admin/v1/login 响应 data */
 export interface AdminLoginResponse {
   access_token: string;
-  expires_at: string;
-  /** Token 签发时间（Unix timestamp） */
+  /** Token 过期时间（Unix timestamp，秒） */
+  expires_at: number;
+  /** Token 签发时间（Unix timestamp，秒） */
   issued_at: number;
   token_type: string;
 }

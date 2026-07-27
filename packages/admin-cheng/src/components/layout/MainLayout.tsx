@@ -64,42 +64,14 @@ const MainLayout = () => {
   }, [currentPath]);
 
   const rawSidebarMenuItems = sidebarMenuConfig[currentTopMenu] || [];
-  const roles = user?.roles as string[] | undefined;
-  const hasSuper = roles?.includes('super_admin');
 
   const sidebarMenuItems = useMemo(() => {
-    if (currentTopMenu !== 'system' || !rawSidebarMenuItems.length) {
-      return rawSidebarMenuItems;
-    }
-    const hasAllAdmin = roles?.includes('all_admin');
+    return rawSidebarMenuItems;
+  }, [rawSidebarMenuItems, currentTopMenu]);
 
-    // super_admin → 全部显示
-    if (hasSuper) return rawSidebarMenuItems;
-
-    // 既非 super_admin 也非 all_admin → 隐藏整个管理员管理组
-    if (!hasAllAdmin) {
-      return rawSidebarMenuItems.filter((item: any) => item.key !== 'admin-group');
-    }
-
-    // all_admin → 显示管理员管理组但隐藏角色管理
-    return rawSidebarMenuItems.map((item: any) => {
-      if (item.key === 'admin-group' && item.children) {
-        return {
-          ...item,
-          children: item.children.filter(
-            (child: any) => child.key !== '/system/roles'
-          ),
-        };
-      }
-      return item;
-    });
-  }, [rawSidebarMenuItems, currentTopMenu, roles]);
-
-  // 始终剔除 hide 属性（避免传递到 DOM），非 super_admin 时过滤掉隐藏菜单项
+  // 不按角色过滤菜单 — 始终显示全部
   const visibleMenuItems = useMemo(() => {
     const processItem = (item: any): any | null => {
-      // 非 super_admin 且标记隐藏 → 整项不显示
-      if (!hasSuper && item.hide) return null;
       const { hide, ...rest } = item;
       if (rest.children) {
         const filtered = rest.children.map(processItem).filter(Boolean);
@@ -109,7 +81,7 @@ const MainLayout = () => {
       return rest;
     };
     return sidebarMenuItems.map(processItem).filter(Boolean);
-  }, [sidebarMenuItems, hasSuper]);
+  }, [sidebarMenuItems]);
 
   const getOpenKeys = (menuItems: any[], path: string) => {
     const keys: string[] = [];

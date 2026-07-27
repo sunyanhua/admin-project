@@ -14016,6 +14016,24 @@
                         "description": "每页数量",
                         "name": "page_size",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按订单ID筛选",
+                        "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按订单商品行ID筛选",
+                        "name": "order_item_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按预约时段ID筛选",
+                        "name": "booking_slot_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -16404,12 +16422,9 @@
         "github_com_vbegin_bizmall_internal_order_dto.ShippingAddressDTO": {
             "type": "object",
             "required": [
-                "city",
                 "detail",
-                "district",
                 "name",
-                "phone",
-                "province"
+                "phone"
             ],
             "properties": {
                 "city": {

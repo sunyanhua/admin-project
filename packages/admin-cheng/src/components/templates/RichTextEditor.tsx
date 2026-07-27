@@ -45,41 +45,43 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [uploadCount, setUploadCount] = useState(0);
   const { error } = useAppNotification();
 
-  // ReactQuill 的 value/defaultValue 内部走 clipboard.convert() 会把 HTML 当纯文本。
-  // 改为 defaultValue="" 初始化空编辑器，挂载后用 innerHTML 注入真实内容。
-  const loadValueRef = useRef(value);
+  // 跟踪编辑来源：true = 编辑器内部输入，false = 外部 value prop 变化
+  const internalEditRef = useRef(false);
   const prevValueRef = useRef(value);
-  loadValueRef.current = value;
 
-  // 首次挂载注入
+  // 首次挂载注入内容（ReactQuill 的 defaultValue 会把 HTML 当纯文本）
   useEffect(() => {
     let attempts = 0;
     const timer = setInterval(() => {
       const editor = editorRef.current?.getEditor?.();
       if (editor?.root) {
-        editor.root.innerHTML = loadValueRef.current || '';
+        editor.root.innerHTML = value || '';
         clearInterval(timer);
       } else if (++attempts > 50) {
         clearInterval(timer);
       }
     }, 20);
     return () => clearInterval(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // value prop 变化时更新编辑器内容
+  // value prop 变化时同步编辑器 — 仅响应外部变化（切 Tab 等），编辑器内部输入不重置
   useEffect(() => {
+    if (internalEditRef.current) {
+      internalEditRef.current = false;
+      prevValueRef.current = value;
+      return;
+    }
     if (value === prevValueRef.current) return;
     prevValueRef.current = value;
     const editor = editorRef.current?.getEditor?.();
     if (editor?.root) {
-      const cursorPos = editor.getSelection?.()?.index ?? 0;
       editor.root.innerHTML = value || '';
-      // 恢复光标位置
-      try { editor.setSelection(cursorPos, 0); } catch { /* ignore */ }
     }
   }, [value]);
 
   const handleChange = useCallback((html: string) => {
+    internalEditRef.current = true;
     onChange?.(html);
   }, [onChange]);
 
