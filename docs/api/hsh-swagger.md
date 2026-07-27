@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-25 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-27 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -418,6 +418,7 @@ urn:bizmall:<module>:<action>
 | `page` | query | integer | ≥ 1 | — | 页码（默认 1） |
 | `page_size` | query | integer | 1–100 | — | 每页条数（默认 20，最大 100） |
 | `id` | path | integer | ≥ 1 | ✅ | 售后单ID |
+| `after_sale_id` | query | integer | ≥ 1 | — | 售后单 ID（可选筛选） |
 
 ## 十五、RefundRules 模块
 
@@ -573,14 +574,22 @@ urn:bizmall:<module>:<action>
 | GET | `/api/v1/wxa/mall/verification/scan/:code` | 扫码查询核销信息 | WxaAuth | — |
 | POST | `/api/v1/wxa/mall/verification/staff/bind` | 扫码绑定核销人员 | WxaAuth | — |
 | GET | `/api/v1/wxa/mall/verification/staff/status` | 查询绑定状态 | WxaAuth | — |
-| GET | `/api/v1/wxa/mall/verification/tickets` | C端查询核销码列表 | WxaAuth | — |
+| GET | `/api/v1/wxa/mall/verification/tickets` | C端查询核销券列表 | WxaAuth | — |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 人员ID |
-| `code` | path | string | — | ✅ | 核销码 |
+| `page` | query | integer | ≥ 1 | — | 页码 |
+| `page_size` | query | integer | 1–100 | — | 每页条数 |
+| `ticket_code` | query | string | — | — | 核销码筛选 |
+| `operator_id` | query | integer | — | — | 操作人员ID筛选 |
+| `start_date` | query | string | — | — | 开始日期（格式：2006-01-02） |
+| `end_date` | query | string | — | — | 结束日期（格式：2006-01-02） |
+| `keyword` | query | string | — | — | 姓名关键词 |
+| `id` | path | integer | ≥ 1 | ✅ | 人员ID |
+| `code` | path | string | — | ✅ | 核销码（Base32 + HMAC 校验码，长度 ≥ 30） |
+| `status` | query | integer | — | — | 状态筛选：1=有效, 2=已用完, 3=已过期 |
 
 ## 二十一、BookingSlots 模块
 

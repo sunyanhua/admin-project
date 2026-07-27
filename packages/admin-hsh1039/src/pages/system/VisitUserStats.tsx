@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Row, Col, Statistic, DatePicker, Space, Typography, Table } from 'antd';
 import {
   ComposedChart,
@@ -19,6 +19,22 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
 
+interface RetainTrendItem {
+  ref_date: string;
+  appid: string;
+  visit_uv: number;
+  visit_uv_new: number;
+  retain_json: string;
+}
+
+interface SummaryTrendItem {
+  ref_date: string;
+  appid: string;
+  visit_total: number;
+  share_pv: number;
+  share_uv: number;
+}
+
 interface RetainTotalData {
   visit_uv: number;
   visit_uv_new: number;
@@ -30,120 +46,100 @@ interface SummaryTotalData {
   share_uv: number;
 }
 
-interface UserDailyItem {
-  ref_date: string;
-  visit_uv: number;
-  visit_uv_new: number;
-}
-
-interface SummaryDailyItem {
-  ref_date: string;
-  share_pv: number;
-  share_uv: number;
+interface ChartRow {
+  date: string;
+  用户访问: number;
+  用户新增: number;
+  转发次数: number;
+  转发人数: number;
 }
 
 const VisitUserStats = () => {
   const { error: showError } = useAppNotification();
+  const showErrorRef = useRef(showError);
+  showErrorRef.current = showError;
   const [loading, setLoading] = useState(false);
   const [retainTotalData, setRetainTotalData] = useState<RetainTotalData | null>(null);
   const [summaryTotalData, setSummaryTotalData] = useState<SummaryTotalData | null>(null);
-  const [userDailyData, setUserDailyData] = useState<UserDailyItem[]>([]);
-  const [summaryDailyData, setSummaryDailyData] = useState<SummaryDailyItem[]>([]);
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs()]);
+  const [chartData, setChartData] = useState<ChartRow[]>([]);
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs().subtract(1, 'day')]);
 
-  const fetchTotalData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
     try {
-      const [retainRes, summaryRes]: [any, any] = await Promise.all([
-        statisticsApi.getRetainTotal({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
+      const [retainList, summaryList]: [RetainTrendItem[], SummaryTrendItem[]] = await Promise.all([
+        statisticsApi.getRetainTrendAggregation({
+          start_date: dateRange[0].format('YYYYMMDD'),
+          end_date: dateRange[1].format('YYYYMMDD'),
         }),
-        statisticsApi.getSummaryTotal({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
+        statisticsApi.getSummaryTrendAggregation({
+          start_date: dateRange[0].format('YYYYMMDD'),
+          end_date: dateRange[1].format('YYYYMMDD'),
         }),
       ]);
 
-      const retainList = retainRes?.data?.list || retainRes?.data || [];
-      if (retainList.length > 0) {
-        setRetainTotalData(retainList[0]);
+      const validRetain = (retainList || []).filter((item: RetainTrendItem) => item.ref_date);
+      const validSummary = (summaryList || []).filter((item: SummaryTrendItem) => item.ref_date);
+
+      // 计算汇总
+      if (validRetain.length > 0) {
+        setRetainTotalData({
+          visit_uv: validRetain.reduce((sum, item) => sum + (item.visit_uv || 0), 0),
+          visit_uv_new: validRetain.reduce((sum, item) => sum + (item.visit_uv_new || 0), 0),
+        });
       } else {
         setRetainTotalData(null);
       }
 
-      const summaryList = summaryRes?.data?.list || summaryRes?.data || [];
-      if (summaryList.length > 0) {
-        setSummaryTotalData(summaryList[0]);
+      if (validSummary.length > 0) {
+        setSummaryTotalData({
+          visit_total: validSummary.reduce((sum, item) => sum + (item.visit_total || 0), 0),
+          share_pv: validSummary.reduce((sum, item) => sum + (item.share_pv || 0), 0),
+          share_uv: validSummary.reduce((sum, item) => sum + (item.share_uv || 0), 0),
+        });
       } else {
         setSummaryTotalData(null);
       }
-    } catch (error: any) {
-      showError(error.response?.data?.msg || '获取累计数据失败');
+
+      // 按日期合并两个数据集
+      const summaryMap = new Map<string, SummaryTrendItem>();
+      validSummary.forEach((item: SummaryTrendItem) => {
+        summaryMap.set(item.ref_date, item);
+      });
+
+      const merged: ChartRow[] = [];
+      const allDates = new Set<string>();
+      validRetain.forEach((item: RetainTrendItem) => allDates.add(item.ref_date));
+      validSummary.forEach((item: SummaryTrendItem) => allDates.add(item.ref_date));
+
+      Array.from(allDates)
+        .sort((a, b) => dayjs(a).valueOf() - dayjs(b).valueOf())
+        .forEach((refDate) => {
+          const retainItem = validRetain.find((item: RetainTrendItem) => item.ref_date === refDate);
+          const summaryItem = summaryMap.get(refDate);
+          merged.push({
+            date: dayjs(refDate).format('MM/DD'),
+            用户访问: retainItem?.visit_uv || 0,
+            用户新增: retainItem?.visit_uv_new || 0,
+            转发次数: summaryItem?.share_pv || 0,
+            转发人数: summaryItem?.share_uv || 0,
+          });
+        });
+
+      setChartData(merged);
+    } catch (err: any) {
+      showErrorRef.current(err?.response?.data?.message || err?.message || '获取趋势数据失败');
       setRetainTotalData(null);
       setSummaryTotalData(null);
-    }
-  }, [dateRange]);
-
-  const fetchDailyData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [userRes, summaryRes]: [any, any] = await Promise.all([
-        statisticsApi.getRetainDaily({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-          start: 0,
-          length: 100,
-        }),
-        statisticsApi.getSummaryDaily({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-          start: 0,
-          length: 100,
-        }),
-      ]);
-
-      const userList = userRes?.data?.list || userRes?.data || [];
-      const summaryList = summaryRes?.data?.list || summaryRes?.data || [];
-
-      const validUserList = userList.filter((item: UserDailyItem) => item.ref_date);
-      const validSummaryList = summaryList.filter((item: SummaryDailyItem) => item.ref_date);
-
-      const sortedUser = [...validUserList].sort((a: UserDailyItem, b: UserDailyItem) =>
-        dayjs(a.ref_date).valueOf() - dayjs(b.ref_date).valueOf()
-      );
-      const sortedSummary = [...validSummaryList].sort((a: SummaryDailyItem, b: SummaryDailyItem) =>
-        dayjs(a.ref_date).valueOf() - dayjs(b.ref_date).valueOf()
-      );
-
-      setUserDailyData(sortedUser);
-      setSummaryDailyData(sortedSummary);
-    } catch (error: any) {
-      showError(error.response?.data?.msg || '获取趋势数据失败');
-      setUserDailyData([]);
-      setSummaryDailyData([]);
+      setChartData([]);
     } finally {
       setLoading(false);
     }
   }, [dateRange]);
 
   useEffect(() => {
-    fetchTotalData();
-  }, [fetchTotalData]);
-
-  useEffect(() => {
-    fetchDailyData();
-  }, [fetchDailyData]);
-
-  const chartData = userDailyData.map((userItem, index) => {
-    const summaryItem = summaryDailyData[index] || {};
-    return {
-      date: dayjs(userItem.ref_date).format('YYYY-MM-DD'),
-      用户访问: userItem.visit_uv,
-      用户新增: userItem.visit_uv_new,
-      转发次数: summaryItem.share_pv || 0,
-      转发人数: summaryItem.share_uv || 0,
-    };
-  });
+    fetchData();
+  }, [fetchData]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -180,7 +176,7 @@ const VisitUserStats = () => {
         <Col xs={24} sm={12} md={4}>
           <Card loading={!retainTotalData}>
             <Statistic
-              title="用户访问"
+              title="用户访问(UV)"
               value={retainTotalData?.visit_uv ?? 0}
               prefix={<TeamOutlined />}
               valueStyle={{ color: '#52c41a' }}
@@ -225,7 +221,7 @@ const VisitUserStats = () => {
           <Space>
             <RangePicker
               value={dateRange}
-              disabledDate={(current) => current && current < dayjs('2026-06-04').startOf('day')}
+              disabledDate={(current) => current && current.isAfter(dayjs().subtract(1, 'day'))}
               onChange={(dates) => {
                 if (dates && dates.length === 2) {
                   setDateRange([dates[0] as Dayjs, dates[1] as Dayjs]);

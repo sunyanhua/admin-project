@@ -145,33 +145,18 @@ export const statisticsApi = {
     });
   },
 
-  // 访问统计-累计数据
-  getVisitTotal: (params?: any) => {
-    return request.get('/admin/v6/wxa/app/datacube/daily/visit/total', { params });
+  // 访问趋势聚合（访问统计页面）
+  getVisitTrendAggregation: (params: { start_date: string; end_date: string; appid?: string }) => {
+    return request.get('/admin/v1/datacube/visit-trend/trend', { params });
   },
 
-  // 访问统计-每日趋势
-  getVisitDaily: (params?: any) => {
-    return request.get('/admin/v6/wxa/app/datacube/daily/visit', { params });
+  // 留存趋势聚合（访问用户统计页面）
+  getRetainTrendAggregation: (params: { start_date: string; end_date: string; appid?: string }) => {
+    return request.get('/admin/v1/datacube/retain/trend', { params });
   },
 
-  // 访问用户统计-留存总数
-  getRetainTotal: (params?: any) => {
-    return request.get('/admin/v6/wxa/app/datacube/daily/retain/total', { params });
-  },
-
-  // 访问用户统计-汇总总数
-  getSummaryTotal: (params?: any) => {
-    return request.get('/admin/v6/wxa/app/datacube/daily/summary/total', { params });
-  },
-
-  // 访问用户统计-留存每日趋势
-  getRetainDaily: (params?: any) => {
-    return request.get('/admin/v6/wxa/app/datacube/daily/retain', { params });
-  },
-
-  // 访问用户统计-汇总每日趋势
-  getSummaryDaily: (params?: any) => {
-    return request.get('/admin/v6/wxa/app/datacube/daily/summary', { params });
+  // 每日摘要趋势聚合（访问用户统计页面）
+  getSummaryTrendAggregation: (params: { start_date: string; end_date: string; appid?: string }) => {
+    return request.get('/admin/v1/datacube/summary/trend', { params });
   },
 };

@@ -7744,6 +7744,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "后台分页查询所有退款记录，支持按售后单 ID 和退款状态筛选。返回退款单号、关联售后单号/订单号、退款金额、退款状态、微信支付退款单号等信息。",
                 "consumes": [
                     "application/json"
                 ],
@@ -7755,6 +7756,21 @@
                 ],
                 "summary": "退款记录列表",
                 "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "售后单 ID（可选筛选）",
+                        "name": "after_sale_id",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 2,
+                        "minimum": 0,
+                        "type": "integer",
+                        "description": "退款状态（0=待退款 1=退款成功 2=退款失败）",
+                        "name": "status",
+                        "in": "query"
+                    },
                     {
                         "minimum": 1,
                         "type": "integer",
@@ -8257,6 +8273,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "管理员查询全部核销人员的核销记录，支持按核销码（ticket_code）、操作人员（operator_id）、日期范围（start_date/end_date，格式 2006-01-02）筛选，分页返回。批量查询核销码和人员姓名以消除 N+1 查询，查询失败时优雅降级（对应字段为空，记录 Warn 日志）。与 C 端核销记录接口不同的是，此接口不限定 operator_id（Admin JWT 可跨人员查询）。",
                 "produces": [
                     "application/json"
                 ],
@@ -8264,11 +8281,59 @@
                     "Verification"
                 ],
                 "summary": "管理员查询核销记录",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 64,
+                        "type": "string",
+                        "description": "核销码筛选",
+                        "name": "ticket_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作人员ID筛选",
+                        "name": "operator_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期（格式：2006-01-02）",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期（格式：2006-01-02）",
+                        "name": "end_date",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（响应字段：id/ticket_code/times_this/remaining_after/operator_id/operator_name/created_at）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -8329,6 +8394,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "分页查询核销人员列表，支持按姓名关键词模糊筛选。每条记录包含人员 ID、姓名、脱敏手机号、状态（0=启用/1=禁用）、绑定状态（unbound=未绑定/pending=待绑定/bound=已绑定/expired=已过期）、创建时间。绑定状态通过批量查询消除 N+1，查询失败时优雅降级（状态默认为 unbound，记录 Warn 日志）。",
                 "produces": [
                     "application/json"
                 ],
@@ -8336,11 +8402,41 @@
                     "Verification"
                 ],
                 "summary": "管理员分页查询核销人员列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 32,
+                        "type": "string",
+                        "description": "姓名关键词",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（响应字段：id/real_name/phone_masked/status/binding_status/created_at）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -8363,6 +8459,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "创建核销人员流程：① 手机号去重校验（phone_hash 唯一索引） ② 手机号 AES-256-GCM 加密存储 ③ 自动生成绑定码（Base32 随机 + HMAC-SHA256 校验）有效 24 小时 ④ 默认状态为启用（status=0）",
                 "consumes": [
                     "application/json"
                 ],
@@ -8375,7 +8472,7 @@
                 "summary": "管理员创建核销人员",
                 "parameters": [
                     {
-                        "description": "创建请求",
+                        "description": "创建请求（phone: 11位手机号, real_name: 姓名最长32字符）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -8386,13 +8483,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（响应字段：id/real_name/phone_masked/binding_code/binding_code_expired_at/created_at）；业务错误：6013 手机号已存在、6018 绑定码生成失败",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8419,6 +8516,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "查询核销人员详情，包含基本信息（姓名/脱敏手机号/状态）、绑定状态（unbound=未绑定/pending=待绑定/bound=已绑定/expired=已过期）及绑定用户信息（bound_user_id/bound_at）。绑定状态查询失败时优雅降级（记录 Warn 日志，按 pending/expired 显示默认状态）。",
                 "produces": [
                     "application/json"
                 ],
@@ -8428,6 +8526,7 @@
                 "summary": "管理员查询核销人员详情",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "人员ID",
                         "name": "id",
@@ -8437,19 +8536,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（响应字段：id/real_name/phone_masked/status/binding_status/bound_user_id/bound_at/created_at/updated_at）；业务错误：6017 核销人员不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "核销人员不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8468,6 +8573,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "部分更新核销人员信息，支持编辑姓名（最长32字符）和状态（0=启用/1=禁用）。更新时保留已有绑定码，不影响绑定流程。不允许将姓名设为空字符串。返回更新后的 id 和 real_name。",
                 "consumes": [
                     "application/json"
                 ],
@@ -8480,6 +8586,7 @@
                 "summary": "管理员编辑核销人员",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "人员ID",
                         "name": "id",
@@ -8487,7 +8594,7 @@
                         "required": true
                     },
                     {
-                        "description": "更新请求",
+                        "description": "更新请求（real_name: 姓名最长32字符, status: 0=启用/1=禁用）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -8498,19 +8605,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（响应字段：id/real_name）；业务错误：6017 核销人员不存在、6010 请求参数格式错误（姓名为空）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "核销人员不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8529,6 +8642,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "软删除核销人员，通过将状态设为禁用（status=1）实现，保留历史记录。Service 层 Update 自动校验人员是否存在，返回 6017 错误码表示人员不存在。",
                 "produces": [
                     "application/json"
                 ],
@@ -8538,6 +8652,7 @@
                 "summary": "管理员删除核销人员",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "人员ID",
                         "name": "id",
@@ -8547,13 +8662,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；业务错误：6017 核销人员不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8580,9 +8695,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "为指定核销人员重新生成绑定码（Base32 随机数 + HMAC-SHA256 校验），有效期 24 小时。不影响已有绑定关系（已绑定的用户仍可正常核销）。旧绑定码立即失效。",
                 "produces": [
                     "application/json"
                 ],
@@ -8592,6 +8705,7 @@
                 "summary": "管理员重新生成绑定码",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "人员ID",
                         "name": "id",
@@ -8601,13 +8715,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（响应字段：binding_code/binding_code_expired_at）；业务错误：6010 核销人员不存在、6018 绑定码生成失败",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8634,9 +8748,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "解除核销人员与 wxa 用户的绑定关系，将绑定记录状态设为已解绑（status=0）并记录解绑时间。核销人员不存在时返回错误；核销人员存在但无有效绑定时幂等成功。解绑后该核销人员仍可重新扫码绑定。",
                 "produces": [
                     "application/json"
                 ],
@@ -8646,6 +8758,7 @@
                 "summary": "管理员解除绑定",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "人员ID",
                         "name": "id",
@@ -8655,13 +8768,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；业务错误：6010 核销人员不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -14201,6 +14314,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "核销人员确认核销，消耗核销券次数。包含 HMAC 防伪造完整性校验、状态校验（有效/已用完/已过期）、过期懒标记。使用 Redis 分布式锁 + DB 乐观锁双重防并发，事务内原子执行扣减次数与创建核销记录。核销次数默认 1 次，可指定多步核销（上限 100 次）。返回核销码、本次核销次数、剩余次数。",
                 "consumes": [
                     "application/json"
                 ],
@@ -14213,7 +14327,7 @@
                 "summary": "确认核销",
                 "parameters": [
                     {
-                        "description": "确认核销请求",
+                        "description": "确认核销请求（ticket_code 长度 ≥ 30, times 1~100）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -14224,19 +14338,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（业务错误码：6003=核销码无效或已过期, 6004=核销次数已达上限, 6010=核销人员不存在或已禁用, 6017=未绑定核销人员）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（核销码格式错误或请求参数无效）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "核销人员绑定不存在或已禁用",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -14257,6 +14377,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询当前 wxa 用户绑定的核销人员本人的核销记录。系统通过 JWT 获取用户身份 → 查询绑定关系 → 强制限定仅返回该核销人员的操作记录。支持按核销码、日期范围筛选，分页返回。每条记录包含记录 ID、核销码、本次次数、剩余次数、操作人姓名、核销时间。批量查询核销码和人员姓名消除 N+1，查询失败时优雅降级（对应字段为空，记录 Warn 日志）。",
                 "produces": [
                     "application/json"
                 ],
@@ -14264,15 +14385,63 @@
                     "Verification"
                 ],
                 "summary": "Wxa已绑定用户查询核销记录",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "maxLength": 64,
+                        "type": "string",
+                        "description": "核销码筛选",
+                        "name": "ticket_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期（格式：2006-01-02）",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期（格式：2006-01-02）",
+                        "name": "end_date",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（业务错误码：6010=核销人员不存在或已禁用, 6017=未绑定核销人员）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "核销人员绑定不存在或已禁用",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -14293,6 +14462,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "核销人员扫描核销码后，查询凭证详情。包含 HMAC 防伪造完整性校验、状态校验（有效/已用完/已过期）、过期懒标记。返回核销码总次数/已核销/剩余次数，以及关联的订单号、商品名称、持券人昵称。需先通过核销人员绑定接口绑定身份。",
                 "produces": [
                     "application/json"
                 ],
@@ -14302,8 +14472,9 @@
                 "summary": "扫码查询核销信息",
                 "parameters": [
                     {
+                        "minLength": 30,
                         "type": "string",
-                        "description": "核销码",
+                        "description": "核销码（Base32 + HMAC 校验码，长度 ≥ 30）",
                         "name": "code",
                         "in": "path",
                         "required": true
@@ -14311,13 +14482,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（业务错误码：6003=核销码无效或已过期, 6017=未绑定核销人员, 6010=核销人员不存在或已禁用）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "核销码格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "核销人员绑定不存在或已禁用",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -14338,6 +14521,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "扫码绑定核销人员流程：① HMAC-SHA256 校验绑定码完整性 ② 查询核销人员并校验有效期与启用状态 ③ 调用微信 getPhoneNumber 验证手机号 ④ 比对手机号哈希 ⑤ 检查是否已有绑定（staff 维度 + user 维度） ⑥ 创建绑定记录",
                 "consumes": [
                     "application/json"
                 ],
@@ -14361,13 +14545,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；业务错误：6014 绑定码无效或已过期、6015 手机号不匹配、6016 已绑定其他核销人员、6018 绑定码生成失败",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "绑定码无效或请求参数错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -14394,6 +14578,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询当前 wxa 用户的核销人员绑定状态。已绑定时返回 bound=true 及 staff 简要信息（staff_id/real_name/bound_at），未绑定时返回 bound=false",
                 "produces": [
                     "application/json"
                 ],
@@ -14403,7 +14588,7 @@
                 "summary": "查询绑定状态",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；响应：{bound: bool, staff?: {staff_id, real_name, bound_at}}",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -14430,18 +14615,53 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询当前用户的核销券（凭证）列表，支持按状态筛选（1=有效/2=已用完/3=已过期），分页返回。每条记录包含核销码、总次数、已核销次数、剩余次数、关联订单号、状态、过期时间。批量查询订单号消除 N+1，查询失败时优雅降级（订单号字段为空，记录 Warn 日志）。",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Verification"
                 ],
-                "summary": "C端查询核销码列表",
+                "summary": "C端查询核销券列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "description": "状态筛选：1=有效, 2=已用完, 3=已过期",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功（响应字段：id/ticket_code/total_times/used_times/remaining/order_id/order_no/status/expired_at）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -17338,10 +17558,12 @@
             "properties": {
                 "ticket_code": {
                     "type": "string",
-                    "maxLength": 64
+                    "maxLength": 64,
+                    "minLength": 30
                 },
                 "times": {
                     "type": "integer",
+                    "maximum": 100,
                     "minimum": 1
                 }
             }

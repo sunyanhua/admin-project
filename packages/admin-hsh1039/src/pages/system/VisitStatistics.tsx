@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, Row, Col, Statistic, DatePicker, Space, Typography, Table } from 'antd';
 import {
   ComposedChart,
@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { EyeOutlined, UserAddOutlined, ClockCircleOutlined, BarChartOutlined } from '@ant-design/icons';
+import { UserAddOutlined, ClockCircleOutlined, BarChartOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { statisticsApi } from '@/api/services/statistics';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -19,19 +19,18 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
 
-interface TotalData {
-  session_cnt: number;
-  visit_pv: number;
+interface VisitTrendItem {
+  ref_date: string;
+  appid: string;
   visit_uv: number;
   visit_uv_new: number;
+  visit_pv: number;
   stay_time_uv: number;
   stay_time_session: number;
   visit_depth: number;
 }
 
-interface DailyItem {
-  ref_date: string;
-  session_cnt: number;
+interface TotalData {
   visit_pv: number;
   visit_uv: number;
   visit_uv_new: number;
@@ -42,46 +41,49 @@ interface DailyItem {
 
 const VisitStatistics = () => {
   const { error: showError } = useAppNotification();
+  const showErrorRef = useRef(showError);
+  showErrorRef.current = showError;
   const [loading, setLoading] = useState(false);
   const [totalData, setTotalData] = useState<TotalData | null>(null);
-  const [dailyData, setDailyData] = useState<DailyItem[]>([]);
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs()]);
+  const [dailyData, setDailyData] = useState<VisitTrendItem[]>([]);
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs().subtract(1, 'day')]);
 
-  const fetchTotalData = useCallback(async () => {
-    try {
-      const res: any = await statisticsApi.getVisitTotal({
-        date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-        date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-      });
-      const list = res?.list || res?.data || [];
-      if (list.length > 0) {
-        setTotalData(list[0]);
-      } else {
-        setTotalData(null);
-      }
-    } catch (error: any) {
-      showError(error.response?.data?.msg || '获取累计数据失败');
-      setTotalData(null);
-    }
-  }, [dateRange]);
-
-  const fetchDailyData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res: any = await statisticsApi.getVisitDaily({
-        date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-        date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-        start: 0,
-        length: 100,
+      const list: VisitTrendItem[] = await statisticsApi.getVisitTrendAggregation({
+        start_date: dateRange[0].format('YYYYMMDD'),
+        end_date: dateRange[1].format('YYYYMMDD'),
       });
-      const list = res?.list || res?.data || [];
-      const validList = list.filter((item: DailyItem) => item.ref_date);
-      const sorted = [...validList].sort((a: DailyItem, b: DailyItem) =>
+
+      const validList = (list || []).filter((item: VisitTrendItem) => item.ref_date);
+      const sorted = [...validList].sort((a: VisitTrendItem, b: VisitTrendItem) =>
         dayjs(a.ref_date).valueOf() - dayjs(b.ref_date).valueOf()
       );
       setDailyData(sorted);
-    } catch (error: any) {
-      showError(error.response?.data?.msg || '获取趋势数据失败');
+
+      // 前端对趋势数据求和得到汇总卡片值
+      if (sorted.length > 0) {
+        setTotalData({
+          visit_pv: sorted.reduce((sum, item) => sum + (item.visit_pv || 0), 0),
+          visit_uv: sorted.reduce((sum, item) => sum + (item.visit_uv || 0), 0),
+          visit_uv_new: sorted.reduce((sum, item) => sum + (item.visit_uv_new || 0), 0),
+          stay_time_uv: sorted.length > 0
+            ? sorted.reduce((sum, item) => sum + (item.stay_time_uv || 0), 0) / sorted.length
+            : 0,
+          stay_time_session: sorted.length > 0
+            ? sorted.reduce((sum, item) => sum + (item.stay_time_session || 0), 0) / sorted.length
+            : 0,
+          visit_depth: sorted.length > 0
+            ? sorted.reduce((sum, item) => sum + (item.visit_depth || 0), 0) / sorted.length
+            : 0,
+        });
+      } else {
+        setTotalData(null);
+      }
+    } catch (err: any) {
+      showErrorRef.current(err?.response?.data?.message || err?.message || '获取趋势数据失败');
+      setTotalData(null);
       setDailyData([]);
     } finally {
       setLoading(false);
@@ -89,16 +91,11 @@ const VisitStatistics = () => {
   }, [dateRange]);
 
   useEffect(() => {
-    fetchTotalData();
-  }, [fetchTotalData]);
+    fetchData();
+  }, [fetchData]);
 
-  useEffect(() => {
-    fetchDailyData();
-  }, [fetchDailyData]);
-
-  const chartData = dailyData.map((item: DailyItem) => ({
-    date: dayjs(item.ref_date).format('YYYY-MM-DD'),
-    打开次数: item.session_cnt,
+  const chartData = dailyData.map((item: VisitTrendItem) => ({
+    date: dayjs(item.ref_date).format('MM/DD'),
     访问次数: item.visit_pv,
     访问人数: item.visit_uv,
     新用户数: item.visit_uv_new,
@@ -136,17 +133,7 @@ const VisitStatistics = () => {
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={!totalData}>
             <Statistic
-              title="打开次数"
-              value={totalData?.session_cnt ?? 0}
-              prefix={<EyeOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={!totalData}>
-            <Statistic
-              title="访问次数"
+              title="访问次数(PV)"
               value={totalData?.visit_pv ?? 0}
               prefix={<BarChartOutlined />}
               valueStyle={{ color: '#722ed1' }}
@@ -156,10 +143,20 @@ const VisitStatistics = () => {
         <Col xs={24} sm={12} md={8} lg={4}>
           <Card loading={!totalData}>
             <Statistic
-              title="访问人数"
+              title="访问人数(UV)"
               value={totalData?.visit_uv ?? 0}
               prefix={<UserAddOutlined />}
               valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={4}>
+          <Card loading={!totalData}>
+            <Statistic
+              title="新用户数"
+              value={totalData?.visit_uv_new ?? 0}
+              prefix={<UserAddOutlined />}
+              valueStyle={{ color: '#1890ff' }}
             />
           </Card>
         </Col>
@@ -201,7 +198,7 @@ const VisitStatistics = () => {
           <Space>
             <RangePicker
               value={dateRange}
-              disabledDate={(current) => current && current < dayjs('2026-06-04').startOf('day')}
+              disabledDate={(current) => current && current.isAfter(dayjs().subtract(1, 'day'))}
               onChange={(dates) => {
                 if (dates && dates.length === 2) {
                   setDateRange([dates[0] as Dayjs, dates[1] as Dayjs]);
@@ -246,7 +243,6 @@ const VisitStatistics = () => {
             />
             <Bar yAxisId="right" dataKey="访问人数" fill="#52c41a" name="访问人数" />
             <Bar yAxisId="right" dataKey="新用户数" fill="#fa8c16" name="新用户数" />
-            <Line yAxisId="left" type="monotone" dataKey="打开次数" stroke="#1890ff" strokeWidth={2} dot={false} name="打开次数" />
             <Line yAxisId="left" type="monotone" dataKey="访问次数" stroke="#722ed1" strokeWidth={2} dot={false} name="访问次数" />
           </ComposedChart>
         </ResponsiveContainer>
@@ -258,9 +254,8 @@ const VisitStatistics = () => {
           style={{ marginTop: 16 }}
           columns={[
             { title: '日期', dataIndex: 'date', key: 'date', width: 120 },
-            { title: '打开次数', dataIndex: '打开次数', key: '打开次数', width: 100 },
-            { title: '访问次数', dataIndex: '访问次数', key: '访问次数', width: 100 },
-            { title: '访问人数', dataIndex: '访问人数', key: '访问人数', width: 100 },
+            { title: '访问次数(PV)', dataIndex: '访问次数', key: '访问次数', width: 120 },
+            { title: '访问人数(UV)', dataIndex: '访问人数', key: '访问人数', width: 120 },
             { title: '新用户数', dataIndex: '新用户数', key: '新用户数', width: 100 },
           ]}
         />
