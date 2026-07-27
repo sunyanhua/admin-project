@@ -67,7 +67,7 @@ const VisitUserStats = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [retainList, summaryList]: [RetainTrendItem[], SummaryTrendItem[]] = await Promise.all([
+      const [retainRes, summaryRes] = await Promise.all([
         statisticsApi.getRetainTrendAggregation({
           start_date: dateRange[0].format('YYYYMMDD'),
           end_date: dateRange[1].format('YYYYMMDD'),
@@ -77,6 +77,8 @@ const VisitUserStats = () => {
           end_date: dateRange[1].format('YYYYMMDD'),
         }),
       ]);
+      const retainList: RetainTrendItem[] = retainRes?.items || retainRes || [];
+      const summaryList: SummaryTrendItem[] = summaryRes?.items || summaryRes || [];
 
       const validRetain = (retainList || []).filter((item: RetainTrendItem) => item.ref_date);
       const validSummary = (summaryList || []).filter((item: SummaryTrendItem) => item.ref_date);

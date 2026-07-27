@@ -8358,22 +8358,65 @@
                         "AdminAuth": []
                     }
                 ],
-                "produces": [
+                "description": "按筛选条件导出核销记录为 Excel 文件（.xlsx）。默认导出全部记录，支持按核销码/操作人员/日期范围筛选，上限 10000 条。",
+                "consumes": [
                     "application/json"
+                ],
+                "produces": [
+                    "application/octet-stream"
                 ],
                 "tags": [
                     "Verification"
                 ],
                 "summary": "管理员导出核销记录",
+                "parameters": [
+                    {
+                        "maxLength": 64,
+                        "type": "string",
+                        "description": "核销码（精确匹配）",
+                        "name": "ticket_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作人员 ID（精确匹配）",
+                        "name": "operator_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期（YYYY-MM-DD）",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期（YYYY-MM-DD）",
+                        "name": "end_date",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "核销记录 Excel 文件",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误或导出条数超限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无核销管理查看权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -16247,7 +16290,7 @@
                     }
                 },
                 "persons": {
-                    "description": "票夹登记人员信息（has_ticket=true && additional_fields_mode=before_pay 时必填）",
+                    "description": "票夹登记人员信息（由 C 端进行数量和格式校验，后端不做判断）",
                     "type": "array",
                     "maxItems": 50,
                     "items": {

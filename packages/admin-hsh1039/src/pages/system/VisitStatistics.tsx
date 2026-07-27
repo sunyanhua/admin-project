@@ -51,10 +51,11 @@ const VisitStatistics = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const list: VisitTrendItem[] = await statisticsApi.getVisitTrendAggregation({
+      const res = await statisticsApi.getVisitTrendAggregation({
         start_date: dateRange[0].format('YYYYMMDD'),
         end_date: dateRange[1].format('YYYYMMDD'),
       });
+      const list: VisitTrendItem[] = res?.items || res || [];
 
       const validList = (list || []).filter((item: VisitTrendItem) => item.ref_date);
       const sorted = [...validList].sort((a: VisitTrendItem, b: VisitTrendItem) =>

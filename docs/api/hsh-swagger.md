@@ -560,15 +560,15 @@ urn:bizmall:<module>:<action>
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/verification/records` | 管理员查询核销记录 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/verification/records/export` | 管理员导出核销记录 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/verification/staff` | 管理员分页查询核销人员列表 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/verification/staff` | 管理员创建核销人员 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/verification/staff/:id` | 管理员查询核销人员详情 | AdminAuth | AdminAuth |
-| PUT | `/admin/v1/mall/verification/staff/:id` | 管理员编辑核销人员 | AdminAuth | AdminAuth |
-| DELETE | `/admin/v1/mall/verification/staff/:id` | 管理员删除核销人员 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/verification/staff/:id/binding-code` | 管理员重新生成绑定码 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/verification/staff/:id/unbind` | 管理员解除绑定 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/mall/verification/records` | 管理员查询核销记录 | AdminAuth | `urn:bizmall:verification:read` |
+| GET | `/admin/v1/mall/verification/records/export` | 管理员导出核销记录 | AdminAuth | `urn:bizmall:verification:read` |
+| GET | `/admin/v1/mall/verification/staff` | 管理员分页查询核销人员列表 | AdminAuth | `urn:bizmall:verification:read` |
+| POST | `/admin/v1/mall/verification/staff` | 管理员创建核销人员 | AdminAuth | `urn:bizmall:verification:write` |
+| GET | `/admin/v1/mall/verification/staff/:id` | 管理员查询核销人员详情 | AdminAuth | `urn:bizmall:verification:read` |
+| PUT | `/admin/v1/mall/verification/staff/:id` | 管理员编辑核销人员 | AdminAuth | `urn:bizmall:verification:write` |
+| DELETE | `/admin/v1/mall/verification/staff/:id` | 管理员删除核销人员 | AdminAuth | `urn:bizmall:verification:write` |
+| POST | `/admin/v1/mall/verification/staff/:id/binding-code` | 管理员重新生成绑定码 | AdminAuth | `urn:bizmall:verification:write` |
+| POST | `/admin/v1/mall/verification/staff/:id/unbind` | 管理员解除绑定 | AdminAuth | `urn:bizmall:verification:write` |
 | POST | `/api/v1/wxa/mall/verification/confirm` | 确认核销 | WxaAuth | — |
 | GET | `/api/v1/wxa/mall/verification/records` | Wxa已绑定用户查询核销记录 | WxaAuth | — |
 | GET | `/api/v1/wxa/mall/verification/scan/:code` | 扫码查询核销信息 | WxaAuth | — |
