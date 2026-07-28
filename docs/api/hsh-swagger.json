@@ -3800,6 +3800,39 @@
                     "Coupons"
                 ],
                 "summary": "分页查询优惠券模板列表",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "formData"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索关键词",
+                        "name": "keyword",
+                        "in": "formData"
+                    },
+                    {
+                        "enum": [
+                            0,
+                            1
+                        ],
+                        "type": "integer",
+                        "description": "状态（0启用 1停用）",
+                        "name": "status",
+                        "in": "formData"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
@@ -3807,8 +3840,20 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3895,6 +3940,7 @@
                 "summary": "查询优惠券模板详情",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "优惠券ID",
                         "name": "id",
@@ -3909,8 +3955,20 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3941,6 +3999,7 @@
                 "summary": "编辑优惠券模板",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "优惠券ID",
                         "name": "id",
@@ -4002,6 +4061,7 @@
                 "summary": "删除优惠券模板",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "优惠券ID",
                         "name": "id",
@@ -4016,8 +4076,20 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -4050,6 +4122,7 @@
                 "summary": "启用/停用优惠券模板",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "优惠券ID",
                         "name": "id",
@@ -4120,6 +4193,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -4206,6 +4285,7 @@
                 "summary": "编辑兑换配置",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "兑换配置ID",
                         "name": "id",
@@ -12011,6 +12091,7 @@
                 "summary": "领取优惠券",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "优惠券ID",
                         "name": "id",
@@ -12023,6 +12104,12 @@
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -12042,6 +12129,11 @@
         },
         "/api/v1/mall/coupons/available": {
             "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -12057,6 +12149,12 @@
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "500": {
@@ -12085,11 +12183,45 @@
                     "Coupons"
                 ],
                 "summary": "我的优惠券列表",
+                "parameters": [
+                    {
+                        "enum": [
+                            1,
+                            2,
+                            3
+                        ],
+                        "type": "integer",
+                        "description": "状态（1未使用 2已使用 3已过期）",
+                        "name": "status",
+                        "in": "formData"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "formData"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "formData"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {

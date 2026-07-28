@@ -462,7 +462,7 @@ urn:bizmall:<module>:<action>
 | PUT | `/admin/v1/mall/coupons/exchange-configs/:id` | 编辑兑换配置 | AdminAuth | `urn:bizmall:points:config` |
 | POST | `/admin/v1/mall/coupons/send` | 后台手动发放优惠券 | AdminAuth | `urn:bizmall:coupon:write` |
 | POST | `/api/v1/mall/coupons/:id/claim` | 领取优惠券 | WxaAuth | — |
-| GET | `/api/v1/mall/coupons/available` | 可领取优惠券列表 | — | — |
+| GET | `/api/v1/mall/coupons/available` | 可领取优惠券列表 | WxaAuth | — |
 | GET | `/api/v1/mall/coupons/my` | 我的优惠券列表 | WxaAuth | — |
 | POST | `/api/v1/mall/coupons/preview` | 满减试算 | WxaAuth | — |
 
@@ -470,7 +470,11 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 优惠券ID |
+| `page` | formData | integer | ≥ 1 | — | 页码 |
+| `page_size` | formData | integer | 1–100 | — | 每页条数 |
+| `keyword` | formData | string | — | — | 搜索关键词 |
+| `status` | formData | integer | — | — | 状态（0启用 1停用） |
+| `id` | path | integer | ≥ 1 | ✅ | 优惠券ID |
 
 ## 十七、Points 模块
 
