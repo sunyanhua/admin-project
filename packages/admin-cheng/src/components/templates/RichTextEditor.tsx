@@ -114,9 +114,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const results = await Promise.allSettled(
       fileList.map(async (file) => {
         const res = await uploadApi.uploadImage(file) as any;
+        // 拦截器已解包 code===0 → data，所以 res 是 UploadFileResult: { file_id, file_url }
         let url = '';
         if (typeof res === 'string') url = res;
+        else if (res?.file_url) url = res.file_url;
         else if (res?.url) url = res.url;
+        else if (res?.media_url) url = res.media_url;
+        else if (res?.data?.file_url) url = res.data.file_url;
         else if (res?.data?.url) url = res.data.url;
         else if (res?.data?.data?.url) url = res.data.data.url;
         else if (res?.data) url = typeof res.data === 'string' ? res.data : String(res.data.data);

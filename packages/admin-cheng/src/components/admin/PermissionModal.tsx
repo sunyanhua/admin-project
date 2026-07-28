@@ -1,119 +1,48 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Tree, Button, Space, Spin, Empty } from 'antd';
-import ScrollableModal from '@/components/templates/ScrollableModal';
 import type { TreeDataNode } from 'antd';
+import ScrollableModal from '@/components/templates/ScrollableModal';
 import { adminApi } from '../../api/services/admin';
 import type { PermissionNode } from '@/api/types/permission';
-import type { AdminRoleItem } from '@/api/types/admin';
-
-/** 权限树节点（运行时包含 id / name） */
-interface UIPermissionNode extends PermissionNode {
-  id: number;
-  name: string;
-}
+import type { RoleListItem } from '@/api/types/admin';
+import {
+  buildPermissionTreeData,
+  filterRedundantUrns,
+} from '@/utils/permissionTreeUtils';
 
 export interface PermissionModalProps {
   visible: boolean;
-  role: AdminRoleItem | null;
+  role: RoleListItem | null;
   onClose: () => void;
   onSuccess?: () => void;
-}
-
-// 递归收集某个节点的所有子孙节点 ID
-function getDescendantIds(node: UIPermissionNode): number[] {
-  const ids: number[] = [];
-  if (node.children) {
-    node.children.forEach((child) => {
-      ids.push((child as UIPermissionNode).id);
-      ids.push(...getDescendantIds(child as UIPermissionNode));
-    });
-  }
-  return ids;
-}
-
-// 在 allNodes 中按 ID 查找节点
-function findNode(nodes: UIPermissionNode[], id: number): UIPermissionNode | null {
-  for (const node of nodes) {
-    if (node.id === id) return node;
-    if (node.children) {
-      const found = findNode(node.children as UIPermissionNode[], id);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-// 构建 TreeDataNode，被祖先勾选的节点设为 disabled
-function buildTreeData(
-  nodes: UIPermissionNode[],
-  checkedSet: Set<number>,
-  ancestorChecked: boolean,
-): TreeDataNode[] {
-  return nodes.map((node) => {
-    const isChecked = checkedSet.has(node.id);
-    const disabled = ancestorChecked && !isChecked; // 祖先被勾选时，自身未勾选则禁用
-    // 当前节点被勾选后，其子孙都应禁用
-    const childAncestorChecked = ancestorChecked || isChecked;
-    return {
-      key: node.id,
-      title: (
-        <span style={disabled ? { color: '#bfbfbf' } : undefined}>
-          <span style={{ fontWeight: 500 }}>{node.name}</span>
-          <span style={{ color: disabled ? '#d9d9d9' : '#999', marginLeft: 8, fontSize: 12 }}>
-            {node.urn}
-          </span>
-        </span>
-      ),
-      disabled,
-      children: node.children
-        ? buildTreeData(node.children as UIPermissionNode[], checkedSet, childAncestorChecked)
-        : undefined,
-    };
-  });
-}
-
-// 从 checkedKeys 中移除已被祖先节点覆盖的子孙节点
-function filterRedundant(checkedKeys: number[], allNodes: UIPermissionNode[]): number[] {
-  const checkedSet = new Set(checkedKeys);
-  const redundant: Set<number> = new Set();
-
-  for (const key of checkedKeys) {
-    const node = findNode(allNodes, key);
-    if (node) {
-      const descendants = getDescendantIds(node);
-      descendants.forEach((d) => redundant.add(d));
-    }
-  }
-
-  return checkedKeys.filter((k) => !redundant.has(k));
 }
 
 const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [allNodes, setAllNodes] = useState<UIPermissionNode[]>([]);
+  const [allNodes, setAllNodes] = useState<PermissionNode[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
-  const [checkedKeys, setCheckedKeys] = useState<number[]>([]);
+  const [checkedUrns, setCheckedUrns] = useState<string[]>([]);
   const { success, error: showError } = useAppNotification();
 
   // 弹窗打开时加载权限树和角色已有权限
   useEffect(() => {
     if (visible && role) {
       setLoading(true);
-      setCheckedKeys([]);
+      setCheckedUrns([]);
 
       Promise.all([
         adminApi.getPermissions(),
-        adminApi.getRolePermissions(role.id),
+        adminApi.getRoleDetail(role.id),
       ])
-        .then(([allPerms, rolePerms]) => {
-          const nodes: UIPermissionNode[] = Array.isArray(allPerms) ? allPerms as UIPermissionNode[] : [];
+        .then(([allPerms, roleDetail]) => {
+          const nodes: PermissionNode[] = Array.isArray(allPerms) ? allPerms : [];
           setAllNodes(nodes);
 
-          const ids: number[] = rolePerms?.permission_ids || [];
-          setCheckedKeys(ids);
-          setTreeData(buildTreeData(nodes, new Set(ids), false));
+          const urns: string[] = roleDetail?.permissions || [];
+          setCheckedUrns(urns);
+          setTreeData(buildPermissionTreeData(nodes, new Set(urns), false));
         })
         .catch((err: any) => {
           showError(err?.response?.data?.message || err?.message || '加载权限数据失败');
@@ -123,9 +52,11 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
   }, [visible, role]);
 
   const handleCheck = useCallback((keys: any) => {
-    const k: number[] = Array.isArray(keys) ? keys : (keys as any).checked || [];
-    setCheckedKeys(k);
-    setTreeData(buildTreeData(allNodes, new Set(k), false));
+    const raw: string[] = Array.isArray(keys) ? keys : (keys as any).checked || [];
+    // 勾选父级时立即剔除被祖先覆盖的子孙，子级自动取消勾选
+    const compacted = filterRedundantUrns(raw, allNodes);
+    setCheckedUrns(compacted);
+    setTreeData(buildPermissionTreeData(allNodes, new Set(compacted), false));
   }, [allNodes]);
 
   const handleSave = async () => {
@@ -133,8 +64,8 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
     try {
       setSaving(true);
       // 提交前过滤掉被祖先节点覆盖的子孙节点
-      const compacted = filterRedundant(checkedKeys, allNodes);
-      await adminApi.setRolePermissions(role.id, compacted);
+      const compacted = filterRedundantUrns(checkedUrns, allNodes);
+      await adminApi.updateRole(role.id, { permissions: compacted });
       success('权限分配成功');
       onClose();
       if (onSuccess) onSuccess();
@@ -147,7 +78,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
   };
 
   const handleCancel = () => {
-    setCheckedKeys([]);
+    setCheckedUrns([]);
     onClose();
   };
 
@@ -178,7 +109,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
           checkable
           checkStrictly
           defaultExpandAll
-          checkedKeys={checkedKeys}
+          checkedKeys={checkedUrns}
           onCheck={handleCheck}
           treeData={treeData}
         />

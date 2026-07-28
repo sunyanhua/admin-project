@@ -6,8 +6,14 @@ import type {
   AdminRoleItem,
   CreateAdminUserRequest,
   UpdateAdminUserRequest,
+  RoleListItem,
+  RoleDetailResponse,
+  CreateRoleRequest,
+  UpdateRoleRequest,
+  RoleAdminListItem,
 } from '../types/admin';
 import type { PermissionNode } from '../types/permission';
+import type { PagedResponse } from '../types/common';
 
 /**
  * 管理员相关API — 严格按照 hsh-swagger 接口文档
@@ -38,48 +44,44 @@ export const adminApi = {
     return request.delete(`/admin/v1/user/${id}`);
   },
 
-  // 角色列表 — GET /admin/v1/roles
-  // 服务端返回 {code:0, data: [{...}]}（纯数组，非分页）
-  getRoles: async (params?: { page?: number; page_size?: number }): Promise<AdminRoleItem[]> => {
-    const res: any = await request.get('/admin/v1/roles', { params });
-    // 拦截器解包后可能是数组或 {list: [...]}
-    return Array.isArray(res) ? res : (res?.list || []);
+  // 角色列表 — GET /admin/v1/role
+  getRoles: async (params?: { page?: number; size?: number; keyword?: string; status?: number }): Promise<PagedResponse<RoleListItem[]>> => {
+    return request.get('/admin/v1/role', { params });
   },
 
-  // 创建角色 — POST /admin/v1/roles
-  // Body: { code, name, description? }
-  createRole: async (data: { code: string; name: string; description?: string }) => {
-    return request.post('/admin/v1/roles', data);
+  // 角色详情 — GET /admin/v1/role/:id
+  getRoleDetail: async (id: string | number): Promise<RoleDetailResponse> => {
+    return request.get(`/admin/v1/role/${id}`);
   },
 
-  // 编辑角色 — PUT /admin/v1/roles/:id
-  // Body: { name?, description? }
-  updateRole: async (id: number, data: { name?: string; description?: string }) => {
-    return request.put(`/admin/v1/roles/${id}`, data);
+  // 创建角色 — POST /admin/v1/role ({ name, permissions, description? })
+  createRole: async (data: CreateRoleRequest) => {
+    return request.post('/admin/v1/role', data);
   },
 
-  // 删除角色 — DELETE /admin/v1/roles/:id
-  deleteRole: async (id: number) => {
-    return request.delete(`/admin/v1/roles/${id}`);
+  // 更新角色 — PUT /admin/v1/role/:id ({ name?, description?, permissions?, status? })
+  updateRole: async (id: string | number, data: UpdateRoleRequest) => {
+    return request.put(`/admin/v1/role/${id}`, data);
+  },
+
+  // 删除角色 — DELETE /admin/v1/role/:id
+  deleteRole: async (id: string | number) => {
+    return request.delete(`/admin/v1/role/${id}`);
+  },
+
+  // 切换角色状态 — PATCH /admin/v1/role/:id/status ({ status: 0|1 })
+  updateRoleStatus: async (id: string | number, status: number) => {
+    return request.patch(`/admin/v1/role/${id}/status`, { status });
+  },
+
+  // 角色关联管理员列表 — GET /admin/v1/role/:id/users
+  getRoleAdmins: async (id: string | number, params?: { page?: number; size?: number }): Promise<PagedResponse<RoleAdminListItem[]>> => {
+    return request.get(`/admin/v1/role/${id}/users`, { params });
   },
 
   // 权限树 — GET /admin/v1/permission/tree
   getPermissions: async (): Promise<PermissionNode[]> => {
     return request.get('/admin/v1/permission/tree');
-  },
-
-  // 查询角色已分配的权限 — GET /admin/v1/roles/:id/permissions
-  // 返回 { permission_ids: number[] }
-  getRolePermissions: async (roleId: number): Promise<{ permission_ids: number[] }> => {
-    return request.get(`/admin/v1/roles/${roleId}/permissions`);
-  },
-
-  // 为角色分配权限 — PUT /admin/v1/roles/:id/permissions
-  // Body: { permission_ids: number[] }
-  setRolePermissions: async (roleId: number, permissionIds: number[]) => {
-    return request.put(`/admin/v1/roles/${roleId}/permissions`, {
-      permission_ids: permissionIds,
-    });
   },
 
   // 全局操作日志审计 — GET /admin/v1/audit/logs?page&size&admin_id&action&start_time&end_time

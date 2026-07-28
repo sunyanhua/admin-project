@@ -5232,6 +5232,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "管理员手动增减用户积分（范围 ±100000，须填写原因）。正数增加、负数扣减。扣减时余额不足返回错误。事务内原子执行：增减积分 → 创建 adjust 类型流水。完整审计日志。",
                 "consumes": [
                     "application/json"
                 ],
@@ -5244,7 +5245,7 @@
                 "summary": "管理员积分异常修正",
                 "parameters": [
                     {
-                        "description": "积分调整请求",
+                        "description": "积分调整请求（user_id/amount/reason）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5255,19 +5256,37 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：id/user_id/amount/balance_after",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.AdjustPointsResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误/原因为空/金额超限/积分不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5288,6 +5307,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "后台跨用户分页查询积分流水，支持按 user_id 和 change_type（earn/spend/adjust）筛选。默认 page=1、page_size=20，最大 100 条/页。",
                 "produces": [
                     "application/json"
                 ],
@@ -5295,15 +5315,63 @@
                     "Points"
                 ],
                 "summary": "后台积分流水查询",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户ID",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "earn",
+                            "spend",
+                            "adjust"
+                        ],
+                        "type": "string",
+                        "description": "流水类型：earn(获取)/spend(消费)/adjust(调整)",
+                        "name": "change_type",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：分页 + list 含 id/user_id/change_type/amount/balance_after/ref_type/ref_id/remark/created_at",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5324,6 +5392,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "后台分页查询积分规则列表，支持按 rule_type（consume_rebate/sign_in）筛选。默认 page=1、page_size=20。",
                 "produces": [
                     "application/json"
                 ],
@@ -5331,15 +5400,50 @@
                     "Points"
                 ],
                 "summary": "积分规则列表",
+                "parameters": [
+                    {
+                        "enum": [
+                            "consume_rebate",
+                            "sign_in"
+                        ],
+                        "type": "string",
+                        "description": "规则类型",
+                        "name": "rule_type",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：分页 + list 含 id/rule_type/rule_code/description/config_json/status/created_at/updated_at",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5358,6 +5462,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "创建新的积分规则（consume_rebate 消费返积分 / sign_in 签到配置）。rule_code 全局唯一，config_json 须为合法 JSON。status 创建时强制启用。",
                 "consumes": [
                     "application/json"
                 ],
@@ -5370,7 +5475,7 @@
                 "summary": "创建积分规则",
                 "parameters": [
                     {
-                        "description": "创建规则请求",
+                        "description": "创建规则请求（rule_type/rule_code/description/config_json）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5381,19 +5486,37 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：id/rule_code",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.CreatePointsRuleResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误/规则编码重复",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5414,6 +5537,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "部分更新积分规则。可编辑字段：description/description/config_json/status。rule_type + rule_code 不可变更。status 仅允许 0（停用）和 1（启用）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -5426,6 +5550,7 @@
                 "summary": "编辑积分规则",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "规则ID",
                         "name": "id",
@@ -5433,7 +5558,7 @@
                         "required": true
                     },
                     {
-                        "description": "更新规则请求",
+                        "description": "更新规则请求（所有字段可选）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -5444,19 +5569,37 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：id/rule_code",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.UpdatePointsRuleResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误/规则不存在/状态值非法",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -13665,6 +13808,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询当前用户的积分余额、累计获取积分和累计消费积分。账户不存在时返回初始值（0, 0, 0），不视为错误。",
                 "produces": [
                     "application/json"
                 ],
@@ -13674,9 +13818,21 @@
                 "summary": "积分余额查询",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：balance(积分余额)/total_earned(累计获取)/total_spent(累计消费)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.PointsBalanceResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -13701,6 +13857,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询当前用户可兑换的优惠券列表，包含兑换所需积分、优惠券面值/门槛、剩余库存、用户今日/累计已兑换次数。",
                 "produces": [
                     "application/json"
                 ],
@@ -13710,7 +13867,7 @@
                 "summary": "积分商城兑换项列表",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：list 含 id(配置ID)/coupon_name/points_required/coupon_value/threshold_amount/remaining_stock/user_daily_exchanged/user_total_exchanged",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -13737,6 +13894,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "消耗积分兑换指定优惠券。Redis 分布式锁防超兑 → 校验兑换配置/限制/积分余额 → 事务内扣减积分 + 增加兑换计数 + 发放用户优惠券。",
                 "consumes": [
                     "application/json"
                 ],
@@ -13749,6 +13907,7 @@
                 "summary": "积分兑换优惠券",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "兑换配置ID",
                         "name": "config_id",
@@ -13758,13 +13917,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：user_coupon_id/points_spent/balance",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.ExchangeCouponResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误/配置不存在/积分不足/已达兑换上限/库存不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -13791,6 +13962,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "分页查询当前用户的积分流水记录，支持按 change_type（earn/spend/adjust）筛选。默认 page=1、page_size=20，最大 100 条/页。",
                 "produces": [
                     "application/json"
                 ],
@@ -13798,11 +13970,47 @@
                     "Points"
                 ],
                 "summary": "积分流水查询",
+                "parameters": [
+                    {
+                        "enum": [
+                            "earn",
+                            "spend",
+                            "adjust"
+                        ],
+                        "type": "string",
+                        "description": "流水类型：earn(获取)/spend(消费)/adjust(调整)",
+                        "name": "change_type",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 20,
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：分页 + list 含 id/change_type/amount/balance_after/ref_type/ref_id/remark/created_at",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -13827,9 +14035,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "执行每日签到，获取基础积分 + 连续签到阶梯奖励。双重防重：Redis SETNX 快速去重 + 数据库唯一索引兜底。Redis 不可用时降级依赖数据库唯一索引。",
                 "produces": [
                     "application/json"
                 ],
@@ -13839,9 +14045,27 @@
                 "summary": "每日签到",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：points_earned(本次获得积分)/bonus_earned(连续奖励)/consecutive_days(连续天数)/balance(签到后余额)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.SignInResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "已签到/签到规则未启用",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -13866,6 +14090,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询指定月份的签到日历，返回该月所有签到日期、签到类型（normal/makeup）和获得积分。年份 2000-2100，月份 1-12。",
                 "produces": [
                     "application/json"
                 ],
@@ -13873,11 +14098,49 @@
                     "Points"
                 ],
                 "summary": "查询签到日历",
+                "parameters": [
+                    {
+                        "maximum": 2100,
+                        "minimum": 2000,
+                        "type": "integer",
+                        "description": "年份",
+                        "name": "year",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "maximum": 12,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "月份",
+                        "name": "month",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：year/month/records 数组含 sign_date/sign_type/points_earned",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.SignCalendarResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -13902,6 +14165,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "对指定历史日期执行补签，消耗 makeup_cost 积分获取该日基础签到积分。补签不参与连续天数计算、不触发额外奖励。校验：日期范围（最多回溯 makeup_max_days 天）、不可重复签到、本月补签次数上限。",
                 "consumes": [
                     "application/json"
                 ],
@@ -13914,7 +14178,7 @@
                 "summary": "补签",
                 "parameters": [
                     {
-                        "description": "补签请求",
+                        "description": "补签请求（sign_date 格式 2006-01-02）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -13925,13 +14189,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：points_earned(基础积分)/bonus_earned(补签固定为 0)/consecutive_days(补签固定为 0)/balance(补签后余额)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.SignInResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误/日期不合法/已签到/补签次数达上限/积分不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -13958,6 +14234,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "查询当前用户的签到状态：今日是否已签到、连续签到天数（仅统计正常签到）、近 7 天签到历史（含签到类型和获得积分）。未签到/补签时连续天数从昨天往前推算。",
                 "produces": [
                     "application/json"
                 ],
@@ -13967,9 +14244,21 @@
                 "summary": "查询签到状态",
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功：today_signed(今日是否已签到)/consecutive_days(连续天数)/today_sign_type(今日签到类型)/today_points(今日获得积分)/sign_history(近 7 天签到历史)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.SignStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -14019,8 +14308,14 @@
                     },
                     {
                         "type": "integer",
-                        "description": "按订单ID筛选",
+                        "description": "按子单ID筛选",
                         "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按主单ID筛选",
+                        "name": "parent_order_id",
                         "in": "query"
                     },
                     {
@@ -14033,6 +14328,18 @@
                         "type": "integer",
                         "description": "按预约时段ID筛选",
                         "name": "booking_slot_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按商品分类ID筛选",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按根分类ID筛选",
+                        "name": "root_category_id",
                         "in": "query"
                     }
                 ],
@@ -16523,6 +16830,23 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_points_dto.AdjustPointsResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "balance_after": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_points_dto.CreatePointsRuleRequest": {
             "type": "object",
             "required": [
@@ -16552,6 +16876,31 @@
                 }
             }
         },
+        "github_com_vbegin_bizmall_internal_points_dto.CreatePointsRuleResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "rule_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.ExchangeCouponResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "points_spent": {
+                    "type": "integer"
+                },
+                "user_coupon_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_bizmall_internal_points_dto.MakeupSignInRequest": {
             "type": "object",
             "required": [
@@ -16561,6 +16910,120 @@
                 "sign_date": {
                     "description": "补签日期，格式 2006-01-02",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.PointsBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "total_earned": {
+                    "type": "integer"
+                },
+                "total_spent": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.SignCalendarItem": {
+            "type": "object",
+            "properties": {
+                "points_earned": {
+                    "description": "获得积分",
+                    "type": "integer"
+                },
+                "sign_date": {
+                    "description": "签到日期 2006-01-02",
+                    "type": "string"
+                },
+                "sign_type": {
+                    "description": "normal / makeup",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.SignCalendarResponse": {
+            "type": "object",
+            "properties": {
+                "month": {
+                    "type": "integer"
+                },
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.SignCalendarItem"
+                    }
+                },
+                "year": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.SignHistoryItem": {
+            "type": "object",
+            "properties": {
+                "points_earned": {
+                    "description": "获得积分",
+                    "type": "integer"
+                },
+                "sign_date": {
+                    "description": "签到日期 2006-01-02",
+                    "type": "string"
+                },
+                "sign_type": {
+                    "description": "normal / makeup",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.SignInResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "description": "签到后积分余额",
+                    "type": "integer"
+                },
+                "bonus_earned": {
+                    "description": "连续签到额外奖励积分",
+                    "type": "integer"
+                },
+                "consecutive_days": {
+                    "description": "当前连续签到天数",
+                    "type": "integer"
+                },
+                "points_earned": {
+                    "description": "本次签到获得积分（含奖励）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.SignStatusResponse": {
+            "type": "object",
+            "properties": {
+                "consecutive_days": {
+                    "description": "当前连续签到天数",
+                    "type": "integer"
+                },
+                "sign_history": {
+                    "description": "近7天签到历史",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_bizmall_internal_points_dto.SignHistoryItem"
+                    }
+                },
+                "today_points": {
+                    "description": "今日签到获得积分（已签到时返回）",
+                    "type": "integer"
+                },
+                "today_sign_type": {
+                    "description": "今日签到类型（已签到时返回）",
+                    "type": "string"
+                },
+                "today_signed": {
+                    "description": "今日是否已签到",
+                    "type": "boolean"
                 }
             }
         },
@@ -16581,6 +17044,17 @@
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_bizmall_internal_points_dto.UpdatePointsRuleResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "rule_code": {
+                    "type": "string"
                 }
             }
         },

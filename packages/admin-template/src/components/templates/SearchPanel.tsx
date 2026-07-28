@@ -49,9 +49,15 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
     }
   };
 
+  // 渲染顺序：下拉框在前，输入框在后（输入框紧贴搜索按钮）
+  const sorted = [...filters].sort((a, b) => {
+    if (a.type === b.type) return 0;
+    return a.type === 'select' ? -1 : 1;
+  });
+
   return (
     <Space wrap>
-      {filters.map((filter) => (
+      {sorted.map((filter) => (
         <React.Fragment key={filter.name}>
           {filter.type === 'select' ? (
             <Select

@@ -1,60 +1,61 @@
 import { useState, useCallback } from 'react';
 import type { ColumnsType } from 'antd/es/table';
-import { Tag, Button } from 'antd';
+import { Button } from 'antd';
 import { EditOutlined, DeleteOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { adminApi } from '@/api/services/admin';
-import type { AdminRoleItem } from '@/api/types/admin';
-
-/** 角色列表项（运行时包含 code 字段） */
-type UIRole = AdminRoleItem & { code: string };
+import { AdminRoleStatus } from '@/api/types/status';
+import type { RoleListItem } from '@/api/types/admin';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
+import { StatusSwitch } from '@/components/templates/StatusSwitch';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
-import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
+import { SearchPanel, type FilterConfig } from '@/components/templates/SearchPanel';
 import RoleEditModal from '@/components/admin/RoleEditModal';
 import PermissionModal from '@/components/admin/PermissionModal';
 
 const filters: FilterConfig[] = [
-  { name: 'keyword', placeholder: '搜索角色名称或标识', type: 'input' },
+  { name: 'keyword', placeholder: '搜索角色名称', type: 'input' },
+  {
+    name: 'status',
+    placeholder: '全部状态',
+    type: 'select',
+    options: [
+      { label: '启用', value: AdminRoleStatus.ACTIVE },
+      { label: '停用', value: AdminRoleStatus.DISABLED },
+    ],
+  },
 ];
 
 const RoleManagement = () => {
   const [values, setValues] = useState<Record<string, any>>({});
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<AdminRoleItem | null>(null);
+  const [selectedRole, setSelectedRole] = useState<RoleListItem | null>(null);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
 
   const fetchRoles = useCallback(async (params: any) => {
     return adminApi.getRoles(params);
   }, []);
 
-  const formatResponse = useCallback((res: any) => ({
-    list: Array.isArray(res) ? res : (res?.list || []),
-    count: Array.isArray(res) ? res.length : (res?.total || 0),
-  }), []);
+  const formatResponse = useCallback((res: any) => {
+    // PagedResponse 被拦截器解包后可能是数组或 {list,total}
+    if (Array.isArray(res)) return { list: res, count: res.length };
+    return { list: res?.list || [], count: res?.total || res?.pagination?.total || 0 };
+  }, []);
 
-  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<UIRole>({
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<RoleListItem>({
     fetchFn: fetchRoles,
-    formatResponse: formatResponse,
+    formatResponse,
   });
 
-  const columns: ColumnsType<UIRole> = [
-    {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 90,
-    },
-    {
-      title: '角色标识',
-      dataIndex: 'code',
-      key: 'code',
-      width: 90,
-      render: (code: string) => <Tag color="blue" title={code}>{code}</Tag>,
-    },
+  const handleStatusChange = useCallback(async (record: RoleListItem, checked: boolean) => {
+    await adminApi.updateRoleStatus(record.id, checked ? AdminRoleStatus.ACTIVE : AdminRoleStatus.DISABLED);
+    refresh();
+  }, [refresh]);
+
+  const columns: ColumnsType<RoleListItem> = [
     {
       title: '角色名称',
       dataIndex: 'name',
@@ -65,6 +66,32 @@ const RoleManagement = () => {
       dataIndex: 'description',
       key: 'description',
       render: (desc?: string) => desc || '-',
+    },
+    {
+      title: '权限数量',
+      dataIndex: 'permission_count',
+      key: 'permission_count',
+      width: 100,
+      align: 'center',
+    },
+    {
+      title: '关联管理员',
+      dataIndex: 'admin_count',
+      key: 'admin_count',
+      width: 110,
+      align: 'center',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      width: 100,
+      render: (_: any, record: RoleListItem) => (
+        <StatusSwitch
+          checked={record.status === AdminRoleStatus.ACTIVE}
+          onChange={(checked) => handleStatusChange(record, checked)}
+        />
+      ),
     },
     ActionColumn({
       onEdit: (record) => {
@@ -133,7 +160,7 @@ const RoleManagement = () => {
       <StandardPage
         title="角色管理"
         description="管理系统角色，支持创建、编辑、删除角色。角色关联 URN 权限控制。"
-        showRefreshButton={true}
+        showRefreshButton
         onRefresh={refresh}
         searchArea={
           <SearchPanel

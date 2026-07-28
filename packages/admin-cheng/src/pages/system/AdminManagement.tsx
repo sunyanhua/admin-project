@@ -75,7 +75,10 @@ const AdminManagement = () => {
   );
 
   useEffect(() => {
-    adminApi.getRoles().then((list) => setAllRoles(list as UIRole[])).catch(() => setAllRoles([]));
+    adminApi.getRoles().then((res: any) => {
+      const list = res?.list || (Array.isArray(res) ? res : []);
+      setAllRoles(list as UIRole[]);
+    }).catch(() => setAllRoles([]));
   }, []);
 
   const fetchAdmins = useCallback(async (params: any) => {

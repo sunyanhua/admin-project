@@ -1,4 +1,4 @@
-import type { AdminUserStatus } from './status';
+import type { AdminUserStatus, AdminRoleStatus } from './status';
 
 /** 管理员列表项 — Swagger AdminUserListItem */
 export interface AdminUserListItem {
@@ -21,12 +21,68 @@ export interface AdminUserDetailResponse extends AdminUserListItem {
   permissions: string[];
 }
 
-/** 角色 — Swagger AdminRoleItem */
+/** 角色（精简）— Swagger AdminRoleItem */
 export interface AdminRoleItem {
   id: number;
   name: string;
   description: string;
 }
+
+/** ========== 角色管理（Swagger 新增） ========== */
+
+/** 角色列表项 */
+export interface RoleListItem {
+  id: string;
+  name: string;
+  description: string;
+  status: AdminRoleStatus;
+  permission_count: number;
+  admin_count: number;
+  created_at: string;
+}
+
+/** 角色详情 */
+export interface RoleDetailResponse {
+  id: string;
+  name: string;
+  description: string;
+  status: AdminRoleStatus;
+  permissions: string[];
+  admin_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 创建角色请求 */
+export interface CreateRoleRequest {
+  name: string;
+  permissions: string[];
+  description?: string;
+}
+
+/** 更新角色请求（全部可选） */
+export interface UpdateRoleRequest {
+  name?: string;
+  description?: string;
+  permissions?: string[];
+  status?: AdminRoleStatus;
+}
+
+/** 角色关联管理员列表项 */
+export interface RoleAdminListItem {
+  id: string;
+  username: string;
+  real_name: string;
+  status: AdminUserStatus;
+  joined_at: string;
+}
+
+/** 状态切换请求（角色 & 小程序配置共用） */
+export interface UpdateStatusRequest {
+  status: number;
+}
+
+/** ========== 管理员 CRUD ========== */
 
 /** POST /admin/v1/user 请求体 */
 export interface CreateAdminUserRequest {

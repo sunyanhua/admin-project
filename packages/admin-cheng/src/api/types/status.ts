@@ -51,6 +51,15 @@ export const MatchProfileAuditAction = {
 } as const;
 export type MatchProfileAuditAction = (typeof MatchProfileAuditAction)[keyof typeof MatchProfileAuditAction];
 
+/** 角色状态 */
+export const AdminRoleStatus = {
+  /** 启用 */
+  ACTIVE: 0,
+  /** 停用 */
+  DISABLED: 1,
+} as const;
+export type AdminRoleStatus = (typeof AdminRoleStatus)[keyof typeof AdminRoleStatus];
+
 /** 上传状态 */
 export const UploadStatus = {
   /** 上传中（分片未完成或单文件未完成写入） */

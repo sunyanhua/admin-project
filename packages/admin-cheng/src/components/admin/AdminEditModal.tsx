@@ -47,7 +47,8 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
 
   useEffect(() => {
     if (admin && visible) {
-      adminApi.getRoles().then((roleList: AdminRoleItem[]) => {
+      adminApi.getRoles().then((res: any) => {
+        const roleList: AdminRoleItem[] = res?.list || (Array.isArray(res) ? res : []);
         setRoles(roleList);
 
         // admin.roles 返回的是中文名称数组，如 ['全站管理员']

@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-27 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-28 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -328,9 +328,12 @@ urn:bizmall:<module>:<action>
 |------|:----:|:----:|------|:----:|------|
 | `page` | query | integer | — | — | 页码 |
 | `page_size` | query | integer | — | — | 每页数量 |
-| `order_id` | query | integer | — | — | 按订单ID筛选 |
+| `order_id` | query | integer | — | — | 按子单ID筛选 |
+| `parent_order_id` | query | integer | — | — | 按主单ID筛选 |
 | `order_item_id` | query | integer | — | — | 按订单商品行ID筛选 |
 | `booking_slot_id` | query | integer | — | — | 按预约时段ID筛选 |
+| `category_id` | query | integer | — | — | 按商品分类ID筛选 |
+| `root_category_id` | query | integer | — | — | 按根分类ID筛选 |
 | `id` | path | integer | — | ✅ | 票夹ID |
 
 ## 十、Tickets-Admin 模块
@@ -491,8 +494,15 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 规则ID |
-| `config_id` | path | integer | — | ✅ | 兑换配置ID |
+| `user_id` | query | string | — | — | 用户ID |
+| `change_type` | query | string | — | — | 流水类型：earn(获取)/spend(消费)/adjust(调整) |
+| `page` | query | integer | ≥ 1 | — | 页码 |
+| `page_size` | query | integer | 1–100 | — | 每页条数 |
+| `rule_type` | query | string | — | — | 规则类型 |
+| `id` | path | integer | ≥ 1 | ✅ | 规则ID |
+| `config_id` | path | integer | ≥ 1 | ✅ | 兑换配置ID |
+| `year` | query | integer | 2000–2100 | ✅ | 年份 |
+| `month` | query | integer | 1–12 | ✅ | 月份 |
 
 ## 十八、CMS 模块
 
