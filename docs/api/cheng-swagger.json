@@ -564,6 +564,115 @@
                 }
             }
         },
+        "/admin/v1/login/profile": {
+            "get": {
+                "description": "返回当前登录管理员的完整非系统级信息，包含角色列表和权限 URN 列表。需 Admin JWT 认证，免 RBAC。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-认证"
+                ],
+                "summary": "当前管理员信息",
+                "responses": {
+                    "200": {
+                        "description": "当前管理员信息",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "管理员不存在(40003)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "当前管理员自助修改基本资料（real_name、phone、email）。禁止修改 username（不可变）和 password（走独立 PUT /login/change-password）。所有字段可选，nil 表示不修改。需 Admin JWT 认证，免 RBAC。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-认证"
+                ],
+                "summary": "修改个人资料",
+                "parameters": [
+                    {
+                        "description": "修改资料请求（所有字段可选）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminUpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "修改成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "管理员不存在(40003)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/permission/tree": {
             "get": {
                 "description": "返回管理后台全部权限的树形结构，供前端渲染权限分配界面。",
@@ -2806,6 +2915,126 @@
                 }
             }
         },
+        "/api/v1/wxa/rec/match-recommend": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从 Redis 配对缓存中分页获取当前用户的牵线配对推荐列表。用户通过 hash(userID)%10 确定性分配到一个全局 slot。每页返回一组男女配对（含双方完整公开画像），不含匹配度分数（配对按随机排序）。缓存未就绪时返回 40401（503 Service Unavailable）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-推荐"
+                ],
+                "summary": "获取牵线推荐配对列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 50）",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_module_recommend.MatchmakingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "牵线推荐缓存构建中（code=40401）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/rec/recommend": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "从 Redis 推荐缓存中分页获取当前用户的脱单候选用户列表。Cursor 由服务端 Redis 内部维护，前端无需传递分页游标。每次请求返回一页 RichCandidate（含完整公开画像 + 匹配度分数）。缓存未就绪时返回 40401（503 Service Unavailable），请稍后重试。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-推荐"
+                ],
+                "summary": "获取脱单推荐列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 50）",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_module_recommend.RecommendResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "推荐缓存构建中（code=40401）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/upload/image": {
             "post": {
                 "security": [
@@ -2867,6 +3096,50 @@
                 }
             }
         },
+        "/api/v1/wxa/user": {
+            "get": {
+                "description": "返回当前 JWT 用户的全部非系统级信息，聚合账户/基础资料/脱单档案三表数据。未注册返回 null，未填写基础资料时 profile 为 null，脱单档案未提交时 match_profile 为 null。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户模块"
+                ],
+                "summary": "获取当前用户完整信息",
+                "responses": {
+                    "200": {
+                        "description": "返回用户完整信息，未注册时 data 为 null",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.UserInfoResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/user/exit": {
             "post": {
                 "security": [
@@ -2920,54 +3193,6 @@
             }
         },
         "/api/v1/wxa/user/match-profile": {
-            "get": {
-                "description": "返回当前用户的脱单档案完整信息（含审核状态和脱敏信息）。",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "用户模块"
-                ],
-                "summary": "查看自己的脱单档案",
-                "responses": {
-                    "200": {
-                        "description": "返回脱单档案",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.MatchProfileResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "未登录或用户未注册",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "档案不存在",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                        }
-                    },
-                    "500": {
-                        "description": "服务器内部错误",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                        }
-                    }
-                }
-            },
             "post": {
                 "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入等）。POST 首次提交，PATCH 修改。",
                 "consumes": [
@@ -3119,7 +3344,7 @@
         },
         "/api/v1/wxa/user/match-profile/{userID}": {
             "get": {
-                "description": "查看指定用户的脱单档案。仅审核通过且不在拦截集合中的档案可见。",
+                "description": "查看指定用户的脱单档案（仅公开画像）。仅审核通过且不在拦截集合中的档案可见。",
                 "produces": [
                     "application/json"
                 ],
@@ -3138,7 +3363,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "返回脱单档案",
+                        "description": "返回公开画像",
                         "schema": {
                             "allOf": [
                                 {
@@ -3148,7 +3373,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.MatchProfileResponse"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.UserPublicProfileResponse"
                                         }
                                     }
                                 }
@@ -3478,6 +3703,53 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminProfileResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_root": {
+                    "type": "boolean"
+                },
+                "need_change_password": {
+                    "type": "boolean"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "real_name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminRoleItem"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.AdminUserStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminRole": {
             "type": "object",
             "properties": {
@@ -3486,6 +3758,13 @@
                 },
                 "description": {
                     "type": "string"
+                },
+                "ext_params": {
+                    "description": "扩展参数（JSON），不校验内容",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "id": {
                     "type": "string"
@@ -3501,6 +3780,10 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.AdminRoleStatus"
+                },
+                "tag": {
+                    "description": "管理后台可见标记，非必填",
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -3537,6 +3820,23 @@
                     "type": "string"
                 },
                 "urn": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminUpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "description": "邮箱",
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "手机号",
+                    "type": "string"
+                },
+                "real_name": {
+                    "description": "真实姓名",
                     "type": "string"
                 }
             }
@@ -3692,6 +3992,13 @@
                     "description": "角色描述",
                     "type": "string"
                 },
+                "ext_params": {
+                    "description": "扩展参数（JSON，nil 存 NULL）",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "name": {
                     "description": "角色名称",
                     "type": "string"
@@ -3703,6 +4010,10 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "tag": {
+                    "description": "管理后台标记（nil 存 NULL）",
+                    "type": "integer"
                 }
             }
         },
@@ -3738,6 +4049,13 @@
                 "description": {
                     "type": "string"
                 },
+                "ext_params": {
+                    "description": "扩展参数（JSON）",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3752,6 +4070,10 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.AdminRoleStatus"
+                },
+                "tag": {
+                    "description": "管理后台可见标记",
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -3770,6 +4092,13 @@
                 "description": {
                     "type": "string"
                 },
+                "ext_params": {
+                    "description": "扩展参数（JSON）",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "id": {
                     "type": "string"
                 },
@@ -3781,6 +4110,10 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.AdminRoleStatus"
+                },
+                "tag": {
+                    "description": "管理后台可见标记",
+                    "type": "integer"
                 },
                 "updated_at": {
                     "type": "string"
@@ -3820,6 +4153,13 @@
                     "description": "角色描述",
                     "type": "string"
                 },
+                "ext_params": {
+                    "description": "扩展参数（nil=不更新）",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "name": {
                     "description": "角色名称",
                     "type": "string"
@@ -3838,6 +4178,10 @@
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.AdminRoleStatus"
                         }
                     ]
+                },
+                "tag": {
+                    "description": "管理后台标记（nil=不更新）",
+                    "type": "integer"
                 }
             }
         },
@@ -4104,6 +4448,66 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.MatchProfileInfo": {
+            "type": "object",
+            "properties": {
+                "audit_status": {
+                    "type": "integer"
+                },
+                "can_modify_at": {
+                    "type": "string"
+                },
+                "current_city": {
+                    "type": "string"
+                },
+                "education": {
+                    "type": "integer"
+                },
+                "extra": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "hobby_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hometown": {
+                    "type": "string"
+                },
+                "id_card_tail": {
+                    "type": "string"
+                },
+                "income_range": {
+                    "type": "integer"
+                },
+                "marital_status": {
+                    "type": "integer"
+                },
+                "match_code": {
+                    "type": "string"
+                },
+                "partner_demand": {
+                    "type": "string"
+                },
+                "profession": {
+                    "type": "string"
+                },
+                "self_intro": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                },
+                "workplace": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_user_model.MatchProfileResponse": {
             "type": "object",
             "properties": {
@@ -4112,7 +4516,7 @@
                     "type": "string"
                 },
                 "audit_status": {
-                    "description": "AuditStatus 审核状态，见 status.MatchProfileAuditStatus 枚举（0=待审核 1=审核通过 2=审核拒绝 3=已撤销）。",
+                    "description": "── 私有元数据（仅自己可见）───────────────────────────\nAuditStatus 审核状态，见 status.MatchProfileAuditStatus 枚举（0=待审核 1=审核通过 2=审核拒绝 3=已撤销）。",
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
@@ -4128,11 +4532,9 @@
                     "type": "string"
                 },
                 "current_city": {
-                    "description": "CurrentCity 现居城市。",
                     "type": "string"
                 },
                 "education": {
-                    "description": "Education 学历。",
                     "type": "integer"
                 },
                 "extra": {
@@ -4141,46 +4543,36 @@
                     "additionalProperties": {}
                 },
                 "height": {
-                    "description": "Height 身高（厘米）。",
                     "type": "integer"
                 },
                 "hobby_tags": {
-                    "description": "HobbyTags 爱好标签数组。",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "hometown": {
-                    "description": "Hometown 籍贯。",
                     "type": "string"
                 },
                 "id_card_tail": {
-                    "description": "IDCardTail 身份证号后 4 位（脱敏展示）。",
                     "type": "string"
                 },
                 "income_range": {
-                    "description": "IncomeRange 收入范围。",
                     "type": "integer"
                 },
                 "marital_status": {
-                    "description": "MaritalStatus 婚姻状况。",
                     "type": "integer"
                 },
                 "match_code": {
-                    "description": "MatchCode 脱单号（8 位数字）。",
                     "type": "string"
                 },
                 "partner_demand": {
-                    "description": "PartnerDemand 择偶要求。",
                     "type": "string"
                 },
                 "profession": {
-                    "description": "Profession 职业。",
                     "type": "string"
                 },
                 "self_intro": {
-                    "description": "SelfIntro 个人介绍。",
                     "type": "string"
                 },
                 "updated_at": {
@@ -4188,15 +4580,46 @@
                     "type": "string"
                 },
                 "user_id": {
-                    "description": "UserID 用户 ID。",
+                    "description": "── 脱单档案（v6_user_match_profile 公开字段）─────────",
                     "type": "string"
                 },
                 "weight": {
-                    "description": "Weight 体重（公斤）。",
                     "type": "integer"
                 },
                 "workplace": {
-                    "description": "Workplace 工作单位。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.ProfileInfo": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "audit_status": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "description": "\"2006-01-02\" 格式",
+                    "type": "string"
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "is_lunar_birth": {
+                    "type": "boolean"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "zodiac": {
                     "type": "string"
                 }
             }
@@ -4459,6 +4882,215 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.UserInfo": {
+            "type": "object",
+            "properties": {
+                "credits": {
+                    "type": "integer"
+                },
+                "credits_weekly": {
+                    "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_active_at": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "type": "integer"
+                },
+                "wallet_balance": {
+                    "type": "integer"
+                },
+                "zone_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.UserInfoResponse": {
+            "type": "object",
+            "properties": {
+                "match_profile": {
+                    "description": "MatchProfile 脱单档案（v6_user_match_profile 非系统字段，未提交时为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.MatchProfileInfo"
+                        }
+                    ]
+                },
+                "profile": {
+                    "description": "Profile 基础资料（v6_user_profile 非管理字段，未填写时为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.ProfileInfo"
+                        }
+                    ]
+                },
+                "user": {
+                    "description": "User 账户信息（v6_user 非系统字段）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.UserInfo"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.UserPublicProfileResponse": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "description": "由 birth_date 计算",
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "current_city": {
+                    "type": "string"
+                },
+                "education": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "hobby_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hometown": {
+                    "type": "string"
+                },
+                "id_card_tail": {
+                    "type": "string"
+                },
+                "income_range": {
+                    "type": "integer"
+                },
+                "marital_status": {
+                    "type": "integer"
+                },
+                "match_code": {
+                    "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "partner_demand": {
+                    "type": "string"
+                },
+                "profession": {
+                    "type": "string"
+                },
+                "self_intro": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "── 基础信息（v6_user + v6_user_profile）─────────────────",
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                },
+                "workplace": {
+                    "type": "string"
+                },
+                "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "description": "由 birth_date 计算",
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "current_city": {
+                    "type": "string"
+                },
+                "education": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "hobby_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hometown": {
+                    "type": "string"
+                },
+                "id_card_tail": {
+                    "type": "string"
+                },
+                "income_range": {
+                    "type": "integer"
+                },
+                "marital_status": {
+                    "type": "integer"
+                },
+                "match_code": {
+                    "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "partner_demand": {
+                    "type": "string"
+                },
+                "profession": {
+                    "type": "string"
+                },
+                "self_intro": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "── 基础信息（v6_user + v6_user_profile）─────────────────",
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                },
+                "workplace": {
+                    "type": "string"
+                },
+                "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_permission.PermissionNode": {
             "type": "object",
             "properties": {
@@ -4631,6 +5263,126 @@
                 "UserGenderMale",
                 "UserGenderFemale"
             ]
+        },
+        "internal_module_recommend.MatchmakingPairResponse": {
+            "type": "object",
+            "properties": {
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "pair_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_module_recommend.MatchmakingResponse": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_module_recommend.MatchmakingPairResponse"
+                    }
+                }
+            }
+        },
+        "internal_module_recommend.RecommendResponse": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_module_recommend.RichCandidate"
+                    }
+                }
+            }
+        },
+        "internal_module_recommend.RichCandidate": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "description": "由 birth_date 计算",
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "current_city": {
+                    "type": "string"
+                },
+                "education": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "hobby_tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "hometown": {
+                    "type": "string"
+                },
+                "id_card_tail": {
+                    "type": "string"
+                },
+                "income_range": {
+                    "type": "integer"
+                },
+                "marital_status": {
+                    "type": "integer"
+                },
+                "match_code": {
+                    "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
+                    "type": "string"
+                },
+                "matching_score": {
+                    "description": "MatchingScore 匹配度分数（推荐引擎 Redis Sorted Set score）。",
+                    "type": "number"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "partner_demand": {
+                    "type": "string"
+                },
+                "profession": {
+                    "type": "string"
+                },
+                "self_intro": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "── 基础信息（v6_user + v6_user_profile）─────────────────",
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                },
+                "workplace": {
+                    "type": "string"
+                },
+                "zodiac": {
+                    "type": "string"
+                }
+            }
         },
         "internal_module_upload.ChunkResult": {
             "type": "object",
