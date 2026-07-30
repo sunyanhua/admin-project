@@ -37,8 +37,8 @@ interface TicketRecord {
   };
   user_data?: {
     userid?: string;
-    avatar?: string;
-    nick?: string;
+    avatar_url?: string;
+    nickname?: string;
   };
   product?: {
     id: number;
@@ -127,13 +127,13 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
   const holder = config.useUserData
     ? (_: any, record: TicketRecord) => {
         const ud = record.user_data;
-        const nick = ud?.nick || '-';
+        const nickname = ud?.nickname || '-';
         const uid = ud?.userid;
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }} disabled={!uid}>
             <Space size={4}>
-              <Avatar src={getAvatarUrl(ud?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
-              <span style={{ fontSize: 14 }}>{nick}</span>
+              <Avatar src={getAvatarUrl(ud?.avatar_url)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
             </Space>
           </Button>
         );
