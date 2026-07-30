@@ -7,6 +7,7 @@ export const orderApi = {
     order_no?: string;
     status?: number;
     order_type?: string;
+    root_category_id?: number;
     start_date?: string;
     end_date?: string;
     page?: number;

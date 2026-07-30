@@ -27,11 +27,6 @@ const ORDER_STATUS_MAP: Record<number, { text: string; color: string }> = {
   7: { text: '售后中', color: 'purple' },
 };
 
-const STATUS_OPTIONS = Object.entries(ORDER_STATUS_MAP).map(([value, { text }]) => ({
-  label: text,
-  value: Number(value),
-}));
-
 const formatAmount = (amount?: number) => {
   if (amount === undefined || amount === null) return '-';
   return `¥${(amount / 100).toFixed(2)}`;
@@ -40,13 +35,18 @@ const formatAmount = (amount?: number) => {
 interface OrderConfig {
   title: string;
   description: string;
-  defaultOrderType?: string; // 'verification' | 'physical'
+  defaultOrderType?: string; // 'verify' | 'physical'
+  defaultRootCategoryId?: number; // 1=活动 2=门票 3=商品
+  hideOrderNo?: boolean;
+  productColumnTitle?: string; // 自定义产品列标题，如"活动项目"
+  statusMap?: Record<number, { text: string; color: string }>; // 自定义状态映射
 }
 
 interface OrderItem {
   product_title?: string;
   product_cover?: string;
   sku_name?: string;
+  sku_spec_text?: string; // 规格文本（如"成人票 / 上午场"）
   quantity?: number;
   unit_price?: number;
 }
@@ -92,13 +92,23 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
   const [userDetailData, setUserDetailData] = useState<any>(null);
   const { success, error: showError } = useAppNotification();
 
+  const activeStatusMap = config.statusMap || ORDER_STATUS_MAP;
+
+  const statusOptions = Object.entries(activeStatusMap).map(([value, { text }]) => ({
+    label: text,
+    value: Number(value),
+  }));
+
   const fetchOrders = useCallback(async (params: any) => {
     const apiParams: Record<string, any> = { ...params };
     if (config.defaultOrderType) {
       apiParams.order_type = config.defaultOrderType;
     }
+    if (config.defaultRootCategoryId) {
+      apiParams.root_category_id = config.defaultRootCategoryId;
+    }
     return orderApi.getOrders(apiParams);
-  }, [config.defaultOrderType]);
+  }, [config.defaultOrderType, config.defaultRootCategoryId]);
 
   const formatOrderResponse = useCallback((res: any) => ({
     list: res?.list || [],
@@ -134,9 +144,11 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
   };
 
   const filters: FilterConfig[] = [
-    { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
+    { name: 'status', placeholder: '全部状态', type: 'select', options: statusOptions },
     { name: 'keyword', placeholder: '订单号搜索', type: 'input' },
   ];
+
+  const productColumnTitle = config.productColumnTitle || '商品/活动';
 
   const columns: ColumnsType<OrderRecord> = [
     {
@@ -159,22 +171,37 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         );
       },
     },
-    {
-      title: '订单号',
-      dataIndex: 'order_no',
+    ...(config.hideOrderNo ? [] : [{
+      title: '订单号' as const,
+      dataIndex: 'order_no' as const,
       key: 'order_no',
       width: 200,
       ellipsis: true,
       render: (v: string) => v || '-',
-    },
+    }]),
     {
-      title: '商品/活动',
+      title: productColumnTitle,
       key: 'product',
+      ...(config.productColumnTitle ? { width: 180 } : {}),
       render: (_: any, record: OrderRecord) => {
-        if (record.items && record.items.length > 0) {
+        const firstItem = record.items?.[0];
+        if (firstItem) {
+          if (config.productColumnTitle) {
+            // 活动报名/购票信息模式：两行展示
+            return (
+              <div style={{ lineHeight: 1.6 }}>
+                <div style={{ wordBreak: 'break-word' }}>{firstItem.product_title || '-'}</div>
+                <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>
+                  {firstItem.sku_spec_text || firstItem.sku_name || ''}
+                  {firstItem.quantity != null ? ` × ${firstItem.quantity}` : ''}
+                </div>
+              </div>
+            );
+          }
+          // 默认模式（商品/活动）：展示所有子项
           return (
             <span style={{ wordBreak: 'break-word' }}>
-              {record.items.map((item, i) => (
+              {record.items!.map((item, i) => (
                 <span key={i}>
                   {item.product_title || '-'}
                   {item.sku_name ? ` (${item.sku_name})` : ''}
@@ -194,7 +221,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
       width: 100,
       render: (v: number) => formatAmount(v),
     },
-    statusTagColumn<OrderRecord>('status', ORDER_STATUS_MAP, '状态', 90),
+    statusTagColumn<OrderRecord>('status', activeStatusMap, '状态', 90),
     {
       title: '下单时间',
       dataIndex: 'created_at',
@@ -248,7 +275,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
           <Descriptions.Item label="订单号" span={2}>{master.order_no || d.order_no || '-'}</Descriptions.Item>
           <Descriptions.Item label="订单状态">
-            <Tag color={ORDER_STATUS_MAP[master.status]?.color}>{ORDER_STATUS_MAP[master.status]?.text || '其他'}</Tag>
+            <Tag color={activeStatusMap[master.status]?.color}>{activeStatusMap[master.status]?.text || '其他'}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="订单类型">{master.order_type === 'physical' ? '实物' : '核销'}</Descriptions.Item>
           <Descriptions.Item label="用户昵称">{user?.nickname || d.user_data?.nick || '-'}</Descriptions.Item>
@@ -310,7 +337,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
             loading={loading}
             pagination={pagination}
             onPageChange={onPageChange}
-            scroll={{ x: 1000 }}
+            scroll={{ x: config.hideOrderNo ? 750 : 1000 }}
           />
         }
       />
