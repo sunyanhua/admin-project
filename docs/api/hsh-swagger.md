@@ -133,29 +133,41 @@ urn:bizmall:<module>:<action>
 
 ---
 
-## 二、Users 模块
+## 二、Excel 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/users` | 查询C端用户列表 | AdminAuth | `urn:bizmall:user:read` |
-| GET | `/admin/v1/mall/users/:id` | 查询C端用户详情 | AdminAuth | `urn:bizmall:user:read` |
-| PATCH | `/admin/v1/mall/users/:id/status` | 修改C端用户状态（启用/禁用） | AdminAuth | `urn:bizmall:user:write` |
-| POST | `/api/v1/wxa/phone` | 获取微信手机号 | WxaAuth | — |
-| GET | `/api/v1/wxa/user` | 获取当前用户个人信息 | WxaAuth | — |
-| PUT | `/api/v1/wxa/user` | 更新用户昵称和头像 | WxaAuth | — |
-| POST | `/api/v1/wxa/user/register` | 用户注册 | WxaAuth | — |
+| POST | `/admin/v1/excel/build` | 构建 Excel 文件 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/excel/parse` | 解析 Excel 文件 | AdminAuth | AdminAuth |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `file` | formData | file | — | ✅ | Excel 文件（.xlsx） |
+
+## 三、退款规则 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/refund-rules` | 退款规则列表 | AdminAuth | `urn:bizmall:refundrule:read` |
+| POST | `/admin/v1/mall/refund-rules` | 创建退款规则 | AdminAuth | `urn:bizmall:refundrule:write` |
+| GET | `/admin/v1/mall/refund-rules/:id` | 退款规则详情 | AdminAuth | `urn:bizmall:refundrule:read` |
+| PUT | `/admin/v1/mall/refund-rules/:id` | 更新退款规则 | AdminAuth | `urn:bizmall:refundrule:write` |
+| DELETE | `/admin/v1/mall/refund-rules/:id` | 删除退款规则 | AdminAuth | `urn:bizmall:refundrule:delete` |
+| PUT | `/admin/v1/mall/refund-rules/:id/hidden` | 更新退款规则隐藏状态 | AdminAuth | `urn:bizmall:refundrule:write` |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
 | `page` | query | integer | — | — | 页码 |
-| `page_size` | query | integer | — | — | 每页条数 |
-| `keyword` | query | string | — | — | 关键词搜索（昵称） |
-| `source_id` | query | integer | — | — | 来源ID筛选（不传=不筛选） |
-| `id` | path | string | — | ✅ | 用户ID（HashID） |
+| `page_size` | query | integer | — | — | 每页数量 |
+| `is_system` | query | boolean | — | — | 是否系统级 |
+| `is_hidden` | query | boolean | — | — | 是否隐藏 |
+| `id` | path | integer | — | ✅ | 规则ID |
 
-## 三、Auth 模块
+## 四、认证模块 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -166,77 +178,98 @@ urn:bizmall:<module>:<action>
 | POST | `/admin/v1/logout` | 管理员登出 | AdminAuth | — |
 | POST | `/api/v1/wxa/login` | 微信小程序登录 | — | — |
 
-## 四、Admin 模块
+## 五、数据统计 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/permissions` | 获取完整权限树 | AdminAuth | `urn:bizmall:admin:role:read` |
-| GET | `/admin/v1/roles` | 角色列表 | AdminAuth | `urn:bizmall:admin:role:read` |
-| POST | `/admin/v1/roles` | 创建角色 | AdminAuth | `urn:bizmall:admin:role:write` |
-| PUT | `/admin/v1/roles/:id` | 编辑角色 | AdminAuth | `urn:bizmall:admin:role:write` |
-| DELETE | `/admin/v1/roles/:id` | 删除角色 | AdminAuth | `urn:bizmall:admin:role:delete` |
-| GET | `/admin/v1/roles/:id/permissions` | 查询角色已分配的权限列表 | AdminAuth | `urn:bizmall:admin:role:read` |
-| PUT | `/admin/v1/roles/:id/permissions` | 为角色分配权限 | AdminAuth | `urn:bizmall:admin:role:write` |
-| GET | `/admin/v1/users` | 管理员列表 | AdminAuth | `urn:bizmall:admin:user:read` |
-| POST | `/admin/v1/users` | 创建管理员 | AdminAuth | `urn:bizmall:admin:user:write` |
-| GET | `/admin/v1/users/:id` | 管理员详情 | AdminAuth | `urn:bizmall:admin:user:read` |
-| PUT | `/admin/v1/users/:id` | 编辑管理员 | AdminAuth | `urn:bizmall:admin:user:write` |
-| DELETE | `/admin/v1/users/:id` | 删除管理员 | AdminAuth | `urn:bizmall:admin:user:delete` |
+| GET | `/admin/v1/datacube/retain` | 留存分析 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/retain/trend` | 留存趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/summary` | 每日摘要 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/summary/trend` | 每日摘要趋势 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/user-portrait` | 用户画像 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/user-portrait/trend` | 用户画像趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-distribution` | 访问分布 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-distribution/trend` | 访问分布趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-page` | 页面访问 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-page/trend` | 页面访问趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-trend` | 访问趋势 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/admin/v1/datacube/visit-trend/trend` | 访问趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
+| `appid` | query | string | — | — | 小程序AppID |
+| `ref_date` | query | string | — | — | 统计日期(YYYYMMDD) |
 | `page` | query | integer | — | — | 页码 |
 | `page_size` | query | integer | — | — | 每页条数 |
-| `id` | path | integer | — | ✅ | 角色ID |
-| `keyword` | query | string | — | — | 关键词搜索（用户名/姓名） |
-| `role_id` | query | integer | — | — | 角色ID筛选 |
-| `status` | query | integer | — | — | 状态筛选（0=禁用，1=启用，不传=不筛选） |
+| `start_date` | query | string | — | ✅ | 开始日期(YYYYMMDD) |
+| `end_date` | query | string | — | ✅ | 结束日期(YYYYMMDD) |
+| `key` | query | integer | — | — | 画像维度键 |
+| `index` | query | string | — | — | 分布维度指标 |
+| `path` | query | string | — | — | 页面路径 |
 
-## 五、Products 模块
+## 六、支付模块 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| POST | `/api/v1/wxa/mall/orders/:id/cancel` | 取消订单 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/orders/:id/pay` | 发起支付 | WxaAuth | — |
+| GET | `/api/v1/wxa/mall/orders/:id/pay-status` | 查询支付状态 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/orders/:id/payment-success` | 支付成功上报 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/orders/:id/query-payment` | 主动查询支付 | WxaAuth | — |
+| POST | `/notify/v1/mall/payment/wechat/:mix` | 支付回调通知 | NotifySign | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `id` | path | integer | — | ✅ | 订单ID（正整数） |
+| `mix` | path | string | — | ✅ | 混淆编码 |
+
+## 七、商品模块 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
 | GET | `/admin/v1/mall/brands` | 分页查询品牌列表（后台） | AdminAuth | `urn:bizmall:product:read` |
 | POST | `/admin/v1/mall/brands` | 创建品牌 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/brands/{id}` | 编辑品牌 | AdminAuth | `urn:bizmall:product:write` |
-| DELETE | `/admin/v1/mall/brands/{id}` | 删除品牌 | AdminAuth | `urn:bizmall:product:delete` |
+| PUT | `/admin/v1/mall/brands/:id` | 编辑品牌 | AdminAuth | `urn:bizmall:product:write` |
+| DELETE | `/admin/v1/mall/brands/:id` | 删除品牌 | AdminAuth | `urn:bizmall:product:delete` |
 | GET | `/admin/v1/mall/categories` | 获取完整分类树（后台） | AdminAuth | `urn:bizmall:product:read` |
 | POST | `/admin/v1/mall/categories` | 创建分类 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/categories/{id}` | 编辑分类 | AdminAuth | `urn:bizmall:product:write` |
-| DELETE | `/admin/v1/mall/categories/{id}` | 删除分类 | AdminAuth | `urn:bizmall:product:delete` |
-| PUT | `/admin/v1/mall/categories/{id}/list-status` | 更新分类上下架状态 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/categories/{id}/sort-order` | 更新分类排序 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/categories/{id}/visibility` | 更新分类可见性 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/categories/:id` | 编辑分类 | AdminAuth | `urn:bizmall:product:write` |
+| DELETE | `/admin/v1/mall/categories/:id` | 删除分类 | AdminAuth | `urn:bizmall:product:delete` |
+| PUT | `/admin/v1/mall/categories/:id/list-status` | 更新分类上下架状态 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/categories/:id/sort-order` | 更新分类排序 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/categories/:id/visibility` | 更新分类可见性 | AdminAuth | `urn:bizmall:product:write` |
 | GET | `/admin/v1/mall/products` | 分页查询商品列表（后台） | AdminAuth | `urn:bizmall:product:read` |
 | POST | `/admin/v1/mall/products` | 创建商品 | AdminAuth | `urn:bizmall:product:write` |
-| GET | `/admin/v1/mall/products/{id}` | 查询商品详情（后台） | AdminAuth | `urn:bizmall:product:read` |
-| PUT | `/admin/v1/mall/products/{id}` | 编辑商品 | AdminAuth | `urn:bizmall:product:write` |
-| DELETE | `/admin/v1/mall/products/{id}` | 删除商品（软删除） | AdminAuth | `urn:bizmall:product:delete` |
-| PUT | `/admin/v1/mall/products/{id}/additional-fields` | 独立更新商品附加字段配置 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/expiry` | 更新商品售卖截止时间 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/lbs` | 更新商品经纬度 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/list-status` | 更新商品上下架状态 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/refund-rule` | 更新商品退款规则关联 | AdminAuth | `urn:bizmall:product:write` |
-| GET | `/admin/v1/mall/products/{id}/skus` | 查询商品SKU列表 | AdminAuth | `urn:bizmall:product:read` |
-| POST | `/admin/v1/mall/products/{id}/skus` | 批量创建SKU | AdminAuth | `urn:bizmall:product:write` |
-| DELETE | `/admin/v1/mall/products/{id}/skus` | 删除商品全部SKU | AdminAuth | `urn:bizmall:product:delete` |
-| PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}` | 编辑单个SKU | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}/additional-fields` | 独立更新SKU附加字段配置 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}/expiry` | 更新SKU过期时间 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/skus/{sku_id}/usable` | 更新SKU生效时间 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/sort-order` | 更新商品排序 | AdminAuth | `urn:bizmall:product:write` |
-| GET | `/admin/v1/mall/products/{id}/specs` | 查询商品规格组列表 | AdminAuth | `urn:bizmall:product:read` |
-| POST | `/admin/v1/mall/products/{id}/specs` | 创建规格组及规格值 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/specs/{spec_id}` | 编辑规格组 | AdminAuth | `urn:bizmall:product:write` |
-| DELETE | `/admin/v1/mall/products/{id}/specs/{spec_id}` | 删除规格组 | AdminAuth | `urn:bizmall:product:delete` |
-| PUT | `/admin/v1/mall/products/{id}/usable` | 更新商品售卖开始时间 | AdminAuth | `urn:bizmall:product:write` |
-| PUT | `/admin/v1/mall/products/{id}/visibility` | 更新商品可见性 | AdminAuth | `urn:bizmall:product:write` |
+| GET | `/admin/v1/mall/products/:id` | 查询商品详情（后台） | AdminAuth | `urn:bizmall:product:read` |
+| PUT | `/admin/v1/mall/products/:id` | 编辑商品 | AdminAuth | `urn:bizmall:product:write` |
+| DELETE | `/admin/v1/mall/products/:id` | 删除商品（软删除） | AdminAuth | `urn:bizmall:product:delete` |
+| PUT | `/admin/v1/mall/products/:id/additional-fields` | 独立更新商品附加字段配置 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/expiry` | 更新商品售卖截止时间 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/lbs` | 更新商品经纬度 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/list-status` | 更新商品上下架状态 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/refund-rule` | 更新商品退款规则关联 | AdminAuth | `urn:bizmall:product:write` |
+| GET | `/admin/v1/mall/products/:id/skus` | 查询商品SKU列表 | AdminAuth | `urn:bizmall:product:read` |
+| POST | `/admin/v1/mall/products/:id/skus` | 批量创建SKU | AdminAuth | `urn:bizmall:product:write` |
+| DELETE | `/admin/v1/mall/products/:id/skus` | 删除商品全部SKU | AdminAuth | `urn:bizmall:product:delete` |
+| PUT | `/admin/v1/mall/products/:id/skus/:sku_id` | 编辑单个SKU | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/skus/:sku_id/additional-fields` | 独立更新SKU附加字段配置 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/skus/:sku_id/expiry` | 更新SKU过期时间 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/skus/:sku_id/usable` | 更新SKU生效时间 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/sort-order` | 更新商品排序 | AdminAuth | `urn:bizmall:product:write` |
+| GET | `/admin/v1/mall/products/:id/specs` | 查询商品规格组列表 | AdminAuth | `urn:bizmall:product:read` |
+| POST | `/admin/v1/mall/products/:id/specs` | 创建规格组及规格值 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/specs/:spec_id` | 编辑规格组 | AdminAuth | `urn:bizmall:product:write` |
+| DELETE | `/admin/v1/mall/products/:id/specs/:spec_id` | 删除规格组 | AdminAuth | `urn:bizmall:product:delete` |
+| PUT | `/admin/v1/mall/products/:id/usable` | 更新商品售卖开始时间 | AdminAuth | `urn:bizmall:product:write` |
+| PUT | `/admin/v1/mall/products/:id/visibility` | 更新商品可见性 | AdminAuth | `urn:bizmall:product:write` |
 | GET | `/api/v1/mall/brands` | 获取启用品牌列表（C端） | — | — |
 | GET | `/api/v1/mall/categories` | 获取分类树（C端） | — | — |
 | GET | `/api/v1/mall/products` | 商品搜索/列表（C端） | — | — |
-| GET | `/api/v1/mall/products/{id}` | 商品详情（C端） | — | — |
+| GET | `/api/v1/mall/products/:id` | 商品详情（C端） | — | — |
 
 **参数约束：**
 
@@ -258,250 +291,38 @@ urn:bizmall:<module>:<action>
 | `max_price` | query | number | — | — | 最高价格（元） |
 | `root_category_id` | query | integer | — | — | 根级分类ID |
 
-## 六、Cart 模块
+## 八、文件上传 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/api/v1/cart` | 购物车列表 | WxaAuth | — |
-| POST | `/api/v1/cart` | 添加至购物车 | WxaAuth | — |
-| DELETE | `/api/v1/cart` | 清空购物车 | WxaAuth | — |
-| PUT | `/api/v1/cart/:id` | 修改购物车项 | WxaAuth | — |
-| DELETE | `/api/v1/cart/:id` | 删除购物车项 | WxaAuth | — |
-| PUT | `/api/v1/cart/batch-select` | 批量选中/取消 | WxaAuth | — |
+| POST | `/admin/v1/upload/archive` | 上传压缩包（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/archive/chunk` | 压缩包分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/archive/chunk/abort` | 取消压缩包分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/audio` | 上传音频（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/audio/chunk` | 音频分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/audio/chunk/abort` | 取消音频分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/image` | 上传图片（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/image/chunk` | 图片分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/image/chunk/abort` | 取消图片分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/video` | 上传视频（后台） | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/video/chunk` | 视频分片上传 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/upload/video/chunk/abort` | 取消视频分片上传 | AdminAuth | AdminAuth |
+| GET | `/api/v1/wxa/upload/image` | 获取媒体文件 | WxaAuth | — |
+| POST | `/api/v1/wxa/upload/image` | 上传图片（C端） | WxaAuth | — |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | ≥ 1 | ✅ | 购物车项ID |
+| `file` | formData | file | — | ✅ | 归档文件 |
+| `chunk_index` | formData | integer | — | ✅ | 当前分片序号（从0开始） |
+| `total_chunks` | formData | integer | — | ✅ | 总分片数 |
+| `file_name` | formData | string | — | — | 原始文件名（首片必填） |
+| `file_size` | formData | integer | — | — | 完整文件预期总大小（首片必填） |
+| `upload_token` | formData | string | — | — | 上传令牌（续片必填） |
+| `media_id` | query | string | — | ✅ | 媒体文件ID（minLength=32） |
 
-## 七、Orders 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/logistics-companies` | 物流公司列表 | AdminAuth | `urn:bizmall:order:read` |
-| POST | `/admin/v1/mall/logistics-companies` | 创建物流公司 | AdminAuth | `urn:bizmall:order:write` |
-| PUT | `/admin/v1/mall/logistics-companies/:id` | 编辑物流公司 | AdminAuth | `urn:bizmall:order:write` |
-| DELETE | `/admin/v1/mall/logistics-companies/:id` | 删除物流公司 | AdminAuth | `urn:bizmall:order:write` |
-| GET | `/admin/v1/mall/orders` | 后台订单列表 | AdminAuth | `urn:bizmall:order:read` |
-| GET | `/admin/v1/mall/orders/:id` | 后台订单详情 | AdminAuth | `urn:bizmall:order:read` |
-| POST | `/admin/v1/mall/orders/:id/remark` | 添加订单备注 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/mall/orders/:id/ship` | 手动发货 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/mall/orders/export` | 导出订单 | AdminAuth | `urn:bizmall:order:read` |
-| POST | `/admin/v1/mall/orders/import/ship` | 批量发货导入 | AdminAuth | `urn:bizmall:order:write` |
-| GET | `/api/v1/wxa/mall/orders` | C端订单列表 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/orders` | 创建订单 | WxaAuth | — |
-| GET | `/api/v1/wxa/mall/orders/:id` | C端订单详情 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/orders/:id/confirm-receipt` | 确认收货 | WxaAuth | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 物流公司ID |
-| `order_no` | query | string | — | — | 订单号（模糊搜索） |
-| `status` | query | integer | — | — | 订单状态（0待支付 1已支付 2待发货 3已发货 4已收货 5已完成 6已取消 7售后中） |
-| `order_type` | query | string | — | — | 订单类型（physical/verification） |
-| `start_date` | query | string | — | — | 开始日期（YYYY-MM-DD） |
-| `end_date` | query | string | — | — | 结束日期（YYYY-MM-DD） |
-| `page` | query | integer | — | — | 页码（默认1） |
-| `page_size` | query | integer | — | — | 每页数量（默认20，最大100） |
-
-## 八、Payment 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| POST | `/api/v1/wxa/mall/orders/:id/cancel` | 取消订单 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/orders/:id/pay` | 发起支付 | WxaAuth | — |
-| GET | `/api/v1/wxa/mall/orders/:id/pay-status` | 查询支付状态 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/orders/:id/payment-success` | 支付成功上报 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/orders/:id/query-payment` | 主动查询支付 | WxaAuth | — |
-| POST | `/notify/v1/mall/payment/wechat/:mix` | 支付回调通知 | NotifySign | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 订单ID（正整数） |
-| `mix` | path | string | — | ✅ | 混淆编码 |
-
-## 九、Tickets 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/api/v1/wxa/mall/tickets` | C端票夹列表 | WxaAuth | — |
-| GET | `/api/v1/wxa/mall/tickets/:id` | C端票夹详情 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/tickets/:id/book` | C端预约票夹 | WxaAuth | — |
-| PUT | `/api/v1/wxa/mall/tickets/:id/register` | 登记票夹人员信息 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/tickets/:id/transfer` | 发起转赠 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/tickets/transfer/accept` | 接收转赠 | WxaAuth | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `page` | query | integer | — | — | 页码 |
-| `page_size` | query | integer | — | — | 每页数量 |
-| `order_id` | query | integer | — | — | 按子单ID筛选 |
-| `parent_order_id` | query | integer | — | — | 按主单ID筛选 |
-| `order_item_id` | query | integer | — | — | 按订单商品行ID筛选 |
-| `booking_slot_id` | query | integer | — | — | 按预约时段ID筛选 |
-| `category_id` | query | integer | — | — | 按商品分类ID筛选 |
-| `root_category_id` | query | integer | — | — | 按根分类ID筛选 |
-| `id` | path | integer | — | ✅ | 票夹ID |
-
-## 十、Tickets-Admin 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/tickets` | 管理后台票夹列表 | AdminAuth | `urn:bizmall:ticket:read` |
-| GET | `/admin/v1/mall/tickets/:code` | 扫码查询票夹 | AdminAuth | `urn:bizmall:ticket:read` |
-| PUT | `/admin/v1/mall/tickets/:id/booking/cancel` | 管理后台取消预约 | AdminAuth | `urn:bizmall:ticket:write` |
-| POST | `/admin/v1/mall/tickets/:id/verify` | 核销卡券 | AdminAuth | `urn:bizmall:ticket:verify` |
-| POST | `/admin/v1/mall/tickets/batch-verify` | 批量核销 | AdminAuth | `urn:bizmall:ticket:verify` |
-| GET | `/admin/v1/mall/transfers` | 转赠记录列表 | AdminAuth | `urn:bizmall:ticket:read` |
-| GET | `/admin/v1/mall/verifications` | 核销记录列表 | AdminAuth | `urn:bizmall:ticket:read` |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `page` | query | integer | — | — | 页码（默认 1） |
-| `page_size` | query | integer | — | — | 每页数量（默认 20，最大 50） |
-| `order_id` | query | integer | — | — | 按子单ID筛选 |
-| `parent_order_id` | query | integer | — | — | 按主单ID筛选 |
-| `order_item_id` | query | integer | — | — | 按订单商品行ID筛选 |
-| `holder_id` | query | string | — | — | 按持有人ID筛选（HashID 精确匹配） |
-| `category_id` | query | integer | — | — | 按商品分类ID筛选 |
-| `root_category_id` | query | integer | — | — | 按根分类ID筛选 |
-| `booking_slot_id` | query | integer | — | — | 按预约时段ID筛选 |
-| `is_verified` | query | boolean | — | — | 按核销状态筛选 |
-| `is_transferred` | query | boolean | — | — | 按转赠状态筛选 |
-| `is_refunded` | query | boolean | — | — | 按退款状态筛选 |
-| `code` | path | string | — | ✅ | 票夹码/ID |
-| `id` | path | integer | — | ✅ | 票夹ID |
-
-## 十一、Invoices 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/api/v1/wxa/mall/orders/{id}/invoice` | 查询发票状态 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/orders/{id}/invoice` | 申请发票 | WxaAuth | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 订单ID |
-
-## 十二、Invoices-Admin 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/invoices` | 管理后台发票列表 | AdminAuth | AdminAuth |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `page` | query | integer | — | — | 页码 |
-| `page_size` | query | integer | — | — | 每页数量 |
-
-## 十三、Addresses 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/api/v1/wxa/addresses` | C端收货地址列表 | WxaAuth | — |
-| POST | `/api/v1/wxa/addresses` | 新增收货地址 | WxaAuth | — |
-| PUT | `/api/v1/wxa/addresses/{id}` | 编辑收货地址 | WxaAuth | — |
-| DELETE | `/api/v1/wxa/addresses/{id}` | 删除收货地址 | WxaAuth | — |
-| PUT | `/api/v1/wxa/addresses/{id}/default` | 设为默认地址 | WxaAuth | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 地址ID |
-
-## 十四、AfterSale 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/after-sales` | 后台售后列表 | AdminAuth | `urn:bizmall:after_sale:read` |
-| GET | `/admin/v1/mall/after-sales/:id` | 后台售后详情 | AdminAuth | `urn:bizmall:after_sale:read` |
-| POST | `/admin/v1/mall/after-sales/:id/confirm-return` | 确认收到退货 | AdminAuth | `urn:bizmall:after_sale:write` |
-| POST | `/admin/v1/mall/after-sales/:id/refund` | 执行退款 | AdminAuth | `urn:bizmall:after_sale:write` |
-| POST | `/admin/v1/mall/after-sales/:id/review` | 审核售后单 | AdminAuth | `urn:bizmall:after_sale:write` |
-| GET | `/admin/v1/mall/refunds` | 退款记录列表 | AdminAuth | AdminAuth |
-| GET | `/api/v1/wxa/mall/after-sales` | C端售后列表 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/after-sales` | 提交售后申请 | WxaAuth | — |
-| GET | `/api/v1/wxa/mall/after-sales/:id` | C端售后详情 | WxaAuth | — |
-| POST | `/api/v1/wxa/mall/after-sales/:id/return-logistics` | 填写退货物流 | WxaAuth | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `status` | query | integer | 0–5 | — | 售后状态（0=待审核 1=审核通过 2=审核拒绝 3=已退货 4=退款完成 5=已关闭，不传=不限） |
-| `type` | query | string | — | — | 售后类型（refund=仅退款 return_refund=退货退款，不传=不限） |
-| `start_date` | query | string | — | — | 创建起始日期（格式 2006-01-02） |
-| `end_date` | query | string | — | — | 创建截止日期（格式 2006-01-02） |
-| `page` | query | integer | ≥ 1 | — | 页码（默认 1） |
-| `page_size` | query | integer | 1–100 | — | 每页条数（默认 20，最大 100） |
-| `id` | path | integer | ≥ 1 | ✅ | 售后单ID |
-| `after_sale_id` | query | integer | ≥ 1 | — | 售后单 ID（可选筛选） |
-
-## 十五、RefundRules 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/refund-rules` | 退款规则列表 | AdminAuth | `urn:bizmall:refundrule:read` |
-| POST | `/admin/v1/mall/refund-rules` | 创建退款规则 | AdminAuth | `urn:bizmall:refundrule:write` |
-| GET | `/admin/v1/mall/refund-rules/{id}` | 退款规则详情 | AdminAuth | `urn:bizmall:refundrule:read` |
-| PUT | `/admin/v1/mall/refund-rules/{id}` | 更新退款规则 | AdminAuth | `urn:bizmall:refundrule:write` |
-| DELETE | `/admin/v1/mall/refund-rules/{id}` | 删除退款规则 | AdminAuth | `urn:bizmall:refundrule:delete` |
-| PUT | `/admin/v1/mall/refund-rules/{id}/hidden` | 更新退款规则隐藏状态 | AdminAuth | `urn:bizmall:refundrule:write` |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `page` | query | integer | — | — | 页码 |
-| `page_size` | query | integer | — | — | 每页数量 |
-| `is_system` | query | boolean | — | — | 是否系统级 |
-| `is_hidden` | query | boolean | — | — | 是否隐藏 |
-| `id` | path | integer | — | ✅ | 规则ID |
-
-## 十六、Coupons 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/coupons` | 分页查询优惠券模板列表 | AdminAuth | `urn:bizmall:coupon:read` |
-| POST | `/admin/v1/mall/coupons` | 创建优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
-| GET | `/admin/v1/mall/coupons/:id` | 查询优惠券模板详情 | AdminAuth | `urn:bizmall:coupon:read` |
-| PUT | `/admin/v1/mall/coupons/:id` | 编辑优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
-| DELETE | `/admin/v1/mall/coupons/:id` | 删除优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
-| PUT | `/admin/v1/mall/coupons/:id/status` | 启用/停用优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
-| GET | `/admin/v1/mall/coupons/exchange-configs` | 查询兑换配置列表 | AdminAuth | `urn:bizmall:coupon:read` |
-| POST | `/admin/v1/mall/coupons/exchange-configs` | 创建兑换配置 | AdminAuth | `urn:bizmall:points:config` |
-| PUT | `/admin/v1/mall/coupons/exchange-configs/:id` | 编辑兑换配置 | AdminAuth | `urn:bizmall:points:config` |
-| POST | `/admin/v1/mall/coupons/send` | 后台手动发放优惠券 | AdminAuth | `urn:bizmall:coupon:write` |
-| POST | `/api/v1/mall/coupons/:id/claim` | 领取优惠券 | WxaAuth | — |
-| GET | `/api/v1/mall/coupons/available` | 可领取优惠券列表 | WxaAuth | — |
-| GET | `/api/v1/mall/coupons/my` | 我的优惠券列表 | WxaAuth | — |
-| POST | `/api/v1/mall/coupons/preview` | 满减试算 | WxaAuth | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `page` | formData | integer | ≥ 1 | — | 页码 |
-| `page_size` | formData | integer | 1–100 | — | 每页条数 |
-| `keyword` | formData | string | — | — | 搜索关键词 |
-| `status` | formData | integer | — | — | 状态（0启用 1停用） |
-| `id` | path | integer | ≥ 1 | ✅ | 优惠券ID |
-
-## 十七、Points 模块
+## 九、积分模块 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -533,44 +354,44 @@ urn:bizmall:<module>:<action>
 | `year` | query | integer | 2000–2100 | ✅ | 年份 |
 | `month` | query | integer | 1–12 | ✅ | 月份 |
 
-## 十八、CMS 模块
+## 十、内容管理 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
 | GET | `/admin/v1/cms/articles` | 分页查询资讯列表（后台） | AdminAuth | `urn:bizmall:cms:read` |
 | POST | `/admin/v1/cms/articles` | 创建资讯 | AdminAuth | `urn:bizmall:cms:write` |
-| GET | `/admin/v1/cms/articles/{id}` | 查询资讯详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
-| PUT | `/admin/v1/cms/articles/{id}` | 编辑资讯 | AdminAuth | `urn:bizmall:cms:write` |
-| DELETE | `/admin/v1/cms/articles/{id}` | 删除资讯（软删除） | AdminAuth | `urn:bizmall:cms:delete` |
-| PUT | `/admin/v1/cms/articles/{id}/status` | 更新资讯上架/下架状态 | AdminAuth | `urn:bizmall:cms:write` |
-| PUT | `/admin/v1/cms/articles/{id}/visibility` | 更新资讯可见性 | AdminAuth | `urn:bizmall:cms:write` |
+| GET | `/admin/v1/cms/articles/:id` | 查询资讯详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
+| PUT | `/admin/v1/cms/articles/:id` | 编辑资讯 | AdminAuth | `urn:bizmall:cms:write` |
+| DELETE | `/admin/v1/cms/articles/:id` | 删除资讯（软删除） | AdminAuth | `urn:bizmall:cms:delete` |
+| PUT | `/admin/v1/cms/articles/:id/status` | 更新资讯上架/下架状态 | AdminAuth | `urn:bizmall:cms:write` |
+| PUT | `/admin/v1/cms/articles/:id/visibility` | 更新资讯可见性 | AdminAuth | `urn:bizmall:cms:write` |
 | GET | `/admin/v1/cms/banners` | 分页查询Banner列表（后台） | AdminAuth | `urn:bizmall:cms:read` |
 | POST | `/admin/v1/cms/banners` | 创建Banner | AdminAuth | `urn:bizmall:cms:write` |
-| GET | `/admin/v1/cms/banners/{id}` | 查询Banner详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
-| PUT | `/admin/v1/cms/banners/{id}` | 编辑Banner | AdminAuth | `urn:bizmall:cms:write` |
-| DELETE | `/admin/v1/cms/banners/{id}` | 删除Banner（硬删除） | AdminAuth | `urn:bizmall:cms:delete` |
+| GET | `/admin/v1/cms/banners/:id` | 查询Banner详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
+| PUT | `/admin/v1/cms/banners/:id` | 编辑Banner | AdminAuth | `urn:bizmall:cms:write` |
+| DELETE | `/admin/v1/cms/banners/:id` | 删除Banner（硬删除） | AdminAuth | `urn:bizmall:cms:delete` |
 | GET | `/admin/v1/cms/help-categories` | 分页查询帮助分类列表（后台） | AdminAuth | `urn:bizmall:cms:read` |
 | POST | `/admin/v1/cms/help-categories` | 创建帮助分类 | AdminAuth | `urn:bizmall:cms:write` |
-| PUT | `/admin/v1/cms/help-categories/{id}` | 编辑帮助分类 | AdminAuth | `urn:bizmall:cms:write` |
-| DELETE | `/admin/v1/cms/help-categories/{id}` | 删除帮助分类 | AdminAuth | `urn:bizmall:cms:delete` |
+| PUT | `/admin/v1/cms/help-categories/:id` | 编辑帮助分类 | AdminAuth | `urn:bizmall:cms:write` |
+| DELETE | `/admin/v1/cms/help-categories/:id` | 删除帮助分类 | AdminAuth | `urn:bizmall:cms:delete` |
 | GET | `/admin/v1/cms/helps` | 分页查询帮助文章列表（后台） | AdminAuth | `urn:bizmall:cms:read` |
 | POST | `/admin/v1/cms/helps` | 创建帮助文章 | AdminAuth | `urn:bizmall:cms:write` |
-| GET | `/admin/v1/cms/helps/{id}` | 查询帮助文章详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
-| PUT | `/admin/v1/cms/helps/{id}` | 编辑帮助文章 | AdminAuth | `urn:bizmall:cms:write` |
-| DELETE | `/admin/v1/cms/helps/{id}` | 删除帮助文章（软删除） | AdminAuth | `urn:bizmall:cms:delete` |
+| GET | `/admin/v1/cms/helps/:id` | 查询帮助文章详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
+| PUT | `/admin/v1/cms/helps/:id` | 编辑帮助文章 | AdminAuth | `urn:bizmall:cms:write` |
+| DELETE | `/admin/v1/cms/helps/:id` | 删除帮助文章（软删除） | AdminAuth | `urn:bizmall:cms:delete` |
 | GET | `/admin/v1/cms/notices` | 分页查询公告列表（后台） | AdminAuth | `urn:bizmall:cms:read` |
 | POST | `/admin/v1/cms/notices` | 创建公告 | AdminAuth | `urn:bizmall:cms:write` |
-| GET | `/admin/v1/cms/notices/{id}` | 查询公告详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
-| PUT | `/admin/v1/cms/notices/{id}` | 编辑公告 | AdminAuth | `urn:bizmall:cms:write` |
-| DELETE | `/admin/v1/cms/notices/{id}` | 删除公告（软删除） | AdminAuth | `urn:bizmall:cms:delete` |
-| PUT | `/admin/v1/cms/notices/{id}/status` | 更新公告状态（草稿/发布/撤销） | AdminAuth | `urn:bizmall:cms:write` |
-| PUT | `/admin/v1/cms/notices/{id}/visibility` | 更新公告可见性 | AdminAuth | `urn:bizmall:cms:write` |
+| GET | `/admin/v1/cms/notices/:id` | 查询公告详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
+| PUT | `/admin/v1/cms/notices/:id` | 编辑公告 | AdminAuth | `urn:bizmall:cms:write` |
+| DELETE | `/admin/v1/cms/notices/:id` | 删除公告（软删除） | AdminAuth | `urn:bizmall:cms:delete` |
+| PUT | `/admin/v1/cms/notices/:id/status` | 更新公告状态（草稿/发布/撤销） | AdminAuth | `urn:bizmall:cms:write` |
+| PUT | `/admin/v1/cms/notices/:id/visibility` | 更新公告可见性 | AdminAuth | `urn:bizmall:cms:write` |
 | GET | `/api/v1/cms/articles` | 资讯列表（C端） | — | — |
-| GET | `/api/v1/cms/articles/{id}` | 资讯详情（C端） | — | — |
+| GET | `/api/v1/cms/articles/:id` | 资讯详情（C端） | — | — |
 | GET | `/api/v1/cms/banners` | Banner列表（C端，仅上架且在有效期内） | — | — |
 | GET | `/api/v1/cms/help-categories` | 帮助分类列表（C端，含嵌套文章） | — | — |
 | GET | `/api/v1/cms/helps` | 帮助文章列表（C端） | — | — |
-| GET | `/api/v1/cms/helps/{id}` | 帮助文章详情（C端） | — | — |
+| GET | `/api/v1/cms/helps/:id` | 帮助文章详情（C端） | — | — |
 | GET | `/api/v1/cms/notices` | 公告列表（C端） | — | — |
 
 **参数约束：**
@@ -579,26 +400,55 @@ urn:bizmall:<module>:<action>
 |------|:----:|:----:|------|:----:|------|
 | `id` | path | integer | ≥ 1 | ✅ | 资讯ID |
 
-## 十九、Notifications 模块
+## 十一、操作日志 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/mall/notification-templates` | 通知模板列表 | AdminAuth | `urn:bizmall:cms:read` |
-| POST | `/admin/v1/mall/notification-templates` | 创建通知模板 | AdminAuth | `urn:bizmall:cms:write` |
-| PUT | `/admin/v1/mall/notification-templates/:id` | 编辑通知模板 | AdminAuth | `urn:bizmall:cms:write` |
-| GET | `/admin/v1/mall/notifications` | 后台通知发送记录列表 | AdminAuth | AdminAuth |
-| GET | `/api/v1/notifications` | 站内信列表 | WxaAuth | — |
-| PUT | `/api/v1/notifications/:id/read` | 标记单条已读 | WxaAuth | — |
-| PUT | `/api/v1/notifications/read-all` | 全部标记已读 | WxaAuth | — |
-| GET | `/api/v1/notifications/unread-count` | 未读消息数 | WxaAuth | — |
+| GET | `/admin/v1/logs/audit` | 审计日志列表 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/logs/audit/:id` | 审计日志详情 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/logs/audit/archive` | 归档日志 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/logs/audit/verify` | 验证哈希链完整性 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/logs/my` | 我的日志列表 | AdminAuth | AdminAuth |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | ≥ 1 | ✅ | 模板ID |
+| `id` | path | integer | ≥ 1 | ✅ | 日志ID |
 
-## 二十、Verification 模块
+## 十二、订单模块 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/logistics-companies` | 物流公司列表 | AdminAuth | `urn:bizmall:order:read` |
+| POST | `/admin/v1/mall/logistics-companies` | 创建物流公司 | AdminAuth | `urn:bizmall:order:write` |
+| PUT | `/admin/v1/mall/logistics-companies/:id` | 编辑物流公司 | AdminAuth | `urn:bizmall:order:write` |
+| DELETE | `/admin/v1/mall/logistics-companies/:id` | 删除物流公司 | AdminAuth | `urn:bizmall:order:write` |
+| GET | `/admin/v1/mall/orders` | 后台订单列表 | AdminAuth | `urn:bizmall:order:read` |
+| GET | `/admin/v1/mall/orders/:id` | 后台订单详情 | AdminAuth | `urn:bizmall:order:read` |
+| POST | `/admin/v1/mall/orders/:id/remark` | 添加订单备注 | AdminAuth | AdminAuth |
+| POST | `/admin/v1/mall/orders/:id/ship` | 手动发货 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/mall/orders/export` | 导出订单 | AdminAuth | `urn:bizmall:order:read` |
+| POST | `/admin/v1/mall/orders/import/ship` | 批量发货导入 | AdminAuth | `urn:bizmall:order:write` |
+| GET | `/api/v1/wxa/mall/orders` | C端订单列表 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/orders` | 创建订单 | WxaAuth | — |
+| GET | `/api/v1/wxa/mall/orders/:id` | C端订单详情 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/orders/:id/confirm-receipt` | 确认收货 | WxaAuth | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `id` | path | integer | — | ✅ | 物流公司ID |
+| `order_no` | query | string | — | — | 订单号（模糊搜索） |
+| `status` | query | integer | — | — | 订单状态（0待支付 1已支付 2待发货 3已发货 4已收货 5已完成 6已取消 7售后中） |
+| `order_type` | query | string | — | — | 订单类型（physical/verification） |
+| `start_date` | query | string | — | — | 开始日期（YYYY-MM-DD） |
+| `end_date` | query | string | — | — | 结束日期（YYYY-MM-DD） |
+| `page` | query | integer | — | — | 页码（默认1） |
+| `page_size` | query | integer | — | — | 每页数量（默认20，最大100） |
+
+## 十三、核销模块 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -633,7 +483,114 @@ urn:bizmall:<module>:<action>
 | `code` | path | string | — | ✅ | 核销码（Base32 + HMAC 校验码，长度 ≥ 30） |
 | `status` | query | integer | — | — | 状态筛选：1=有效, 2=已用完, 3=已过期 |
 
-## 二十一、BookingSlots 模块
+## 十四、管理后台 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/permissions` | 获取完整权限树 | AdminAuth | `urn:bizmall:admin:role:read` |
+| GET | `/admin/v1/roles` | 角色列表 | AdminAuth | `urn:bizmall:admin:role:read` |
+| POST | `/admin/v1/roles` | 创建角色 | AdminAuth | `urn:bizmall:admin:role:write` |
+| PUT | `/admin/v1/roles/:id` | 编辑角色 | AdminAuth | `urn:bizmall:admin:role:write` |
+| DELETE | `/admin/v1/roles/:id` | 删除角色 | AdminAuth | `urn:bizmall:admin:role:delete` |
+| GET | `/admin/v1/roles/:id/permissions` | 查询角色已分配的权限列表 | AdminAuth | `urn:bizmall:admin:role:read` |
+| PUT | `/admin/v1/roles/:id/permissions` | 为角色分配权限 | AdminAuth | `urn:bizmall:admin:role:write` |
+| GET | `/admin/v1/users` | 管理员列表 | AdminAuth | `urn:bizmall:admin:user:read` |
+| POST | `/admin/v1/users` | 创建管理员 | AdminAuth | `urn:bizmall:admin:user:write` |
+| GET | `/admin/v1/users/:id` | 管理员详情 | AdminAuth | `urn:bizmall:admin:user:read` |
+| PUT | `/admin/v1/users/:id` | 编辑管理员 | AdminAuth | `urn:bizmall:admin:user:write` |
+| DELETE | `/admin/v1/users/:id` | 删除管理员 | AdminAuth | `urn:bizmall:admin:user:delete` |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `page` | query | integer | — | — | 页码 |
+| `page_size` | query | integer | — | — | 每页条数 |
+| `id` | path | integer | — | ✅ | 角色ID |
+| `keyword` | query | string | — | — | 关键词搜索（用户名/姓名） |
+| `role_id` | query | integer | — | — | 角色ID筛选 |
+| `status` | query | integer | — | — | 状态筛选（0=禁用，1=启用，不传=不筛选） |
+
+## 十五、票夹模块 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/wxa/mall/tickets` | C端票夹列表 | WxaAuth | — |
+| GET | `/api/v1/wxa/mall/tickets/:id` | C端票夹详情 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/tickets/:id/book` | C端预约票夹 | WxaAuth | — |
+| PUT | `/api/v1/wxa/mall/tickets/:id/register` | 登记票夹人员信息 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/tickets/:id/transfer` | 发起转赠 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/tickets/transfer/accept` | 接收转赠 | WxaAuth | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `page` | query | integer | — | — | 页码 |
+| `page_size` | query | integer | — | — | 每页数量 |
+| `order_id` | query | integer | — | — | 按子单ID筛选 |
+| `parent_order_id` | query | integer | — | — | 按主单ID筛选 |
+| `order_item_id` | query | integer | — | — | 按订单商品行ID筛选 |
+| `booking_slot_id` | query | integer | — | — | 按预约时段ID筛选 |
+| `category_id` | query | integer | — | — | 按商品分类ID筛选 |
+| `root_category_id` | query | integer | — | — | 按根分类ID筛选 |
+| `id` | path | integer | — | ✅ | 票夹ID |
+
+## 十六、优惠券模块 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/coupons` | 分页查询优惠券模板列表 | AdminAuth | `urn:bizmall:coupon:read` |
+| POST | `/admin/v1/mall/coupons` | 创建优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
+| GET | `/admin/v1/mall/coupons/:id` | 查询优惠券模板详情 | AdminAuth | `urn:bizmall:coupon:read` |
+| PUT | `/admin/v1/mall/coupons/:id` | 编辑优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
+| DELETE | `/admin/v1/mall/coupons/:id` | 删除优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
+| PUT | `/admin/v1/mall/coupons/:id/status` | 启用/停用优惠券模板 | AdminAuth | `urn:bizmall:coupon:write` |
+| GET | `/admin/v1/mall/coupons/exchange-configs` | 查询兑换配置列表 | AdminAuth | `urn:bizmall:coupon:read` |
+| POST | `/admin/v1/mall/coupons/exchange-configs` | 创建兑换配置 | AdminAuth | `urn:bizmall:points:config` |
+| PUT | `/admin/v1/mall/coupons/exchange-configs/:id` | 编辑兑换配置 | AdminAuth | `urn:bizmall:points:config` |
+| POST | `/admin/v1/mall/coupons/send` | 后台手动发放优惠券 | AdminAuth | `urn:bizmall:coupon:write` |
+| POST | `/api/v1/mall/coupons/:id/claim` | 领取优惠券 | WxaAuth | — |
+| GET | `/api/v1/mall/coupons/available` | 可领取优惠券列表 | WxaAuth | — |
+| GET | `/api/v1/mall/coupons/my` | 我的优惠券列表 | WxaAuth | — |
+| POST | `/api/v1/mall/coupons/preview` | 满减试算 | WxaAuth | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `page` | query | integer | ≥ 1 | — | 页码 |
+| `page_size` | query | integer | 1–100 | — | 每页条数 |
+| `keyword` | query | string | — | — | 搜索关键词 |
+| `status` | query | integer | — | — | 状态（0启用 1停用） |
+| `id` | path | integer | ≥ 1 | ✅ | 优惠券ID |
+
+## 十七、微信配置 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/wxa/apps` | 小程序应用列表 | AdminAuth | `urn:bizmall:wxa:app:read` |
+| POST | `/admin/v1/wxa/apps` | 创建小程序应用 | AdminAuth | `urn:bizmall:wxa:app:write` |
+| GET | `/admin/v1/wxa/apps/:id` | 小程序应用详情 | AdminAuth | `urn:bizmall:wxa:app:read` |
+| PUT | `/admin/v1/wxa/apps/:id` | 更新小程序应用 | AdminAuth | `urn:bizmall:wxa:app:write` |
+| DELETE | `/admin/v1/wxa/apps/:id` | 禁用小程序应用 | AdminAuth | `urn:bizmall:wxa:app:delete` |
+| GET | `/admin/v1/wxa/machs` | 商户配置列表 | AdminAuth | `urn:bizmall:wxa:mach:read` |
+| POST | `/admin/v1/wxa/machs` | 创建商户配置 | AdminAuth | `urn:bizmall:wxa:mach:write` |
+| GET | `/admin/v1/wxa/machs/:id` | 商户配置详情 | AdminAuth | `urn:bizmall:wxa:mach:read` |
+| PUT | `/admin/v1/wxa/machs/:id` | 更新商户配置 | AdminAuth | `urn:bizmall:wxa:mach:write` |
+| DELETE | `/admin/v1/wxa/machs/:id` | 禁用商户配置 | AdminAuth | `urn:bizmall:wxa:mach:delete` |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `keyword` | query | string | — | — | 搜索关键词（appid） |
+| `page` | query | integer | — | — | 页码 |
+| `page_size` | query | integer | ≤ 100 | — | 每页条数 |
+| `id` | path | string | — | ✅ | 小程序应用 ID |
+| `status` | query | integer | — | — | 状态过滤：1-启用 0-禁用 |
+
+## 十八、预约时段 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
@@ -661,247 +618,48 @@ urn:bizmall:<module>:<action>
 | `month` | query | string | — | ✅ | 月份 YYYY-MM |
 | `date` | query | string | — | ✅ | 日期 YYYY-MM-DD |
 
-## 二十二、Upload 模块
+## 十九、票夹管理 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| POST | `/admin/v1/upload/archive` | 上传压缩包（后台） | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/archive/chunk` | 压缩包分片上传 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/archive/chunk/abort` | 取消压缩包分片上传 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/audio` | 上传音频（后台） | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/audio/chunk` | 音频分片上传 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/audio/chunk/abort` | 取消音频分片上传 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/image` | 上传图片（后台） | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/image/chunk` | 图片分片上传 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/image/chunk/abort` | 取消图片分片上传 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/video` | 上传视频（后台） | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/video/chunk` | 视频分片上传 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/upload/video/chunk/abort` | 取消视频分片上传 | AdminAuth | AdminAuth |
-| GET | `/api/v1/wxa/upload/image` | 获取媒体文件 | WxaAuth | — |
-| POST | `/api/v1/wxa/upload/image` | 上传图片（C端） | WxaAuth | — |
+| GET | `/admin/v1/mall/tickets` | 管理后台票夹列表 | AdminAuth | `urn:bizmall:ticket:read` |
+| GET | `/admin/v1/mall/tickets/:code` | 扫码查询票夹 | AdminAuth | `urn:bizmall:ticket:read` |
+| PUT | `/admin/v1/mall/tickets/:id/booking/cancel` | 管理后台取消预约 | AdminAuth | `urn:bizmall:ticket:write` |
+| POST | `/admin/v1/mall/tickets/:id/verify` | 核销卡券 | AdminAuth | `urn:bizmall:ticket:verify` |
+| POST | `/admin/v1/mall/tickets/batch-verify` | 批量核销 | AdminAuth | `urn:bizmall:ticket:verify` |
+| GET | `/admin/v1/mall/transfers` | 转赠记录列表 | AdminAuth | `urn:bizmall:ticket:read` |
+| GET | `/admin/v1/mall/verifications` | 核销记录列表 | AdminAuth | `urn:bizmall:ticket:read` |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `file` | formData | file | — | ✅ | 分片二进制数据 |
-| `chunk_index` | formData | integer | — | ✅ | 当前分片序号（从0开始） |
-| `total_chunks` | formData | integer | — | ✅ | 总分片数 |
-| `file_name` | formData | string | — | — | 原始文件名（首片必填） |
-| `file_size` | formData | integer | — | — | 完整文件预期总大小（首片必填） |
-| `upload_token` | formData | string | — | — | 上传令牌（续片必填） |
-| `media_id` | query | string | — | ✅ | 媒体文件ID（minLength=32） |
+| `page` | query | integer | — | — | 页码（默认 1） |
+| `page_size` | query | integer | — | — | 每页数量（默认 20，最大 50） |
+| `order_id` | query | integer | — | — | 按子单ID筛选 |
+| `parent_order_id` | query | integer | — | — | 按主单ID筛选 |
+| `order_item_id` | query | integer | — | — | 按订单商品行ID筛选 |
+| `holder_id` | query | string | — | — | 按持有人ID筛选（HashID 精确匹配） |
+| `category_id` | query | integer | — | — | 按商品分类ID筛选 |
+| `root_category_id` | query | integer | — | — | 按根分类ID筛选 |
+| `booking_slot_id` | query | integer | — | — | 按预约时段ID筛选 |
+| `is_verified` | query | boolean | — | — | 按核销状态筛选 |
+| `is_transferred` | query | boolean | — | — | 按转赠状态筛选 |
+| `is_refunded` | query | boolean | — | — | 按退款状态筛选 |
+| `code` | path | string | — | ✅ | 票夹码/ID |
+| `id` | path | integer | — | ✅ | 票夹ID |
 
-### 上传模块使用详解
-
-文件上传模块支持**单文件上传**与**分片上传**两种模式，覆盖图片、音频、视频、压缩包四类文件。
-所有上传端点均要求 `Content-Type: multipart/form-data`，并在请求头中携带 `Authorization: Bearer <admin_token>`（后台管理鉴权）。
-
-#### 1. 单文件上传
-
-适用于小文件（≤ 各类上限），一次请求完成上传。
-
-**端点：** `POST /admin/v1/upload/{type}`，其中 `{type}` ∈ `{image, audio, video, archive}`
-
-**请求参数（multipart/form-data）：**
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|:----:|:----:|------|
-| `file` | File | ✅ | 要上传的文件二进制数据 |
-
-**各类型文件限制：**
-
-| 类型 | MIME 白名单 | 扩展名 | 大小上限 | 魔数校验 |
-|:----:|------------|--------|:------:|:------:|
-| `image` | image/jpeg, png, gif, webp | jpg, jpeg, png, gif, webp | 20MB | ✅ |
-| `audio` | audio/mpeg, wav, ogg, aac, flac, mp4 | mp3, wav, ogg, aac, flac, m4a | 100MB | ✅ |
-| `video` | video/mp4, webm, quicktime, x-msvideo | mp4, webm, mov, avi | 500MB | ✅ |
-| `archive` | application/zip, rar, 7z, gzip, tar | zip, rar, 7z, gz, tar | 200MB | — |
-
-**请求示例（curl）：**
-
-```bash
-curl -X POST https://api.example.com/admin/v1/upload/image \
-  -H "Authorization: Bearer <admin_token>" \
-  -F "file=@/path/to/photo.jpg"
-```
-
-**成功响应：**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "url": "https://cdn.example.com/permanent/2026-07/a1b2c3d4.jpg"
-  }
-}
-```
-
-**常见错误码：**
-
-| 错误码 | 含义 |
-|:------:|------|
-| 7002 | 文件大小超出该类型上限 |
-| 7003 | 文件扩展名或 MIME 类型不被允许 |
-| 7001 | 上传到 OSS 失败 |
-
-#### 2. 分片上传
-
-适用于大文件（如 GB 级视频）。**Init + Chunk + Complete 三阶段合并为单一 `/chunk` 端点**，按 `chunk_index` 自动分阶段：
-
-- **chunk_index = 0**（首个分片）→ 自动初始化会话，返回 `upload_token`
-- **chunk_index = 1..N-2**（中间分片）→ 追加写入 OSS
-- **chunk_index = N-1**（末片）→ 追加写入 + 完整性校验 + 返回 CDN URL
-
-**端点：** `POST /admin/v1/upload/{type}/chunk`，其中 `{type}` ∈ `{image, audio, video, archive}`
-
-**请求参数（multipart/form-data）：**
-
-| 字段 | 类型 | 必传阶段 | 说明 |
-|------|:----:|:------:|------|
-| `file` | File | 始终 | 分片二进制数据 |
-| `chunk_index` | int | 始终 | 当前分片序号（从 0 开始） |
-| `total_chunks` | int | 始终 | 总分片数，每片需一致 |
-| `file_name` | string | chunk 0 | 原始文件名（含扩展名） |
-| `file_size` | int64 | chunk 0 | 完整文件预期总大小（字节） |
-| `upload_token` | string | chunk > 0 | chunk 0 响应返回的上传令牌 |
-
-**每片大小：** 固定 `10MB`（可通过配置 `chunk_size` 调整）。末片允许小于 10MB，其余各片必须精确等于 10MB。
-
-**分阶段响应格式：**
-
-| 阶段 | 关键响应字段 | 说明 |
-|:----:|-------------|------|
-| chunk 0（首片） | `upload_token`, `expires_at`, `chunk_index:0`, `received:1` | 获取令牌，有效期 2h |
-| chunk 1..N-2（中间） | `chunk_index`, `received`, `total_chunks` | 确认进度 |
-| chunk N-1（末片） | `url`, `file_size`, `content_type` | 最终 CDN 地址 |
-
-**请求示例 — 首片初始化（curl）：**
-
-```bash
-curl -X POST https://api.example.com/admin/v1/upload/video/chunk \
-  -H "Authorization: Bearer <admin_token>" \
-  -F "file=@part0.bin" \
-  -F "chunk_index=0" \
-  -F "total_chunks=5" \
-  -F "file_name=video.mp4" \
-  -F "file_size=52428800"
-```
-
-**请求示例 — 后续分片续传（curl）：**
-
-```bash
-curl -X POST https://api.example.com/admin/v1/upload/video/chunk \
-  -H "Authorization: Bearer <admin_token>" \
-  -F "file=@part1.bin" \
-  -F "chunk_index=1" \
-  -F "total_chunks=5" \
-  -F "upload_token=<chunk_0_response_token>"
-```
-
-**首片成功响应：**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "upload_token": "a1b2c3d4e5f6...",
-    "chunk_index": 0,
-    "received": 1,
-    "total_chunks": 5,
-    "expires_at": "2026-07-12T14:00:00Z"
-  }
-}
-```
-
-**末片完成响应：**
-
-```json
-{
-  "code": 0,
-  "message": "success",
-  "data": {
-    "url": "https://cdn.example.com/permanent/2026-07/a1b2c3d4.mp4",
-    "file_size": 52428800,
-    "content_type": "video/mp4",
-    "chunk_index": 4,
-    "received": 5,
-    "total_chunks": 5
-  }
-}
-```
-
-#### 3. 取消分片上传
-
-终止进行中的分片上传，清理 OSS 已追加数据和 Redis 会话。
-
-**端点：** `POST /admin/v1/upload/{type}/chunk/abort`
-
-**请求参数（multipart/form-data）：**
-
-| 字段 | 类型 | 必填 | 说明 |
-|------|:----:|:----:|------|
-| `upload_token` | string | ✅ | 首片返回的上传令牌 |
-
-**请求示例（curl）：**
-
-```bash
-curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
-  -H "Authorization: Bearer <admin_token>" \
-  -F "upload_token=a1b2c3d4e5f6..."
-```
-
-#### 4. 分片上传错误码速查
-
-| 错误码 | 含义 | 触发场景 |
-|:------:|------|------|
-| 7006 | 上传令牌不存在或已过期 | upload_token 无效 / Redis 中无对应会话 |
-| 7007 | 分片序号无效 | chunk_index < 0 或 >= total_chunks，或 total_chunks 中途变更 |
-| 7008 | 分片大小不匹配 | 非末片大小 ≠ 10MB，或末片 > 10MB |
-| 7009 | 分片需按顺序上传 | chunk_index > next_index（跳过了前面的分片） |
-| 7010 | 文件完整性校验失败 | 末片追加后 nextPosition ≠ fileSize |
-| 7011 | 上传会话已超时 | Redis 会话超过 2h TTL 未续期 |
-
-#### 5. 关键注意事项
-
-1. **有序性** —— 分片必须按 `chunk_index` 从 0 到 `total_chunks-1` 顺序上传，乱序将返回 7009。
-2. **幂等性** —— 已接收的分片重复上传不会重复写入 OSS，直接返回当前进度。网络超时后可从失败的 index 安全重试。
-3. **大小约束** —— 非末片大小必须精确等于 10MB。前端分片时应固定 chunk 大小，仅最后一片允许 ≤ 10MB。
-4. **会话有效期** —— 上传令牌有效期 2h。超时未完成需从 chunk 0 重新发起。
-5. **完整性校验** —— 末片完成后自动校验 `nextPosition == fileSize`，不匹配返回 7010。
-6. **鉴权要求** —— 所有上传端点（含分片）均要求 `AdminAuth`（管理员 JWT），无细粒度 URN 要求。
-7. **CORS 配置** —— 前端跨域调用时，请勿设置 `withCredentials: true` / `credentials: 'include'`，否则服务端返回 403。
-8. **图片保护后缀** —— 开启 `image_protection` 后，图片 CDN URL 末尾带 `/0` 后缀（如 `.../photo.jpg/0`），其他类型不带。
-9. **分片大小配置** —— 默认 10MB/片，可通过配置文件 `chunk_size` 调整。计算 `total_chunks = ceil(file_size / chunk_size)`。
-
-## 二十三、Audit 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/logs/audit` | 审计日志列表 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/logs/audit/:id` | 审计日志详情 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/logs/audit/archive` | 归档日志 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/logs/audit/verify` | 验证哈希链完整性 | AdminAuth | AdminAuth |
-| GET | `/admin/v1/logs/my` | 我的日志列表 | AdminAuth | AdminAuth |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | ≥ 1 | ✅ | 日志ID |
-
-## 二十四、后台-系统设置 模块
+## 二十、系统设置 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
 | GET | `/admin/v1/settings` | 设置项列表 | — | — |
 | POST | `/admin/v1/settings` | 创建设置项 | — | — |
-| GET | `/admin/v1/settings/{id}` | 设置项详情 | — | — |
-| PUT | `/admin/v1/settings/{id}` | 更新设置项 | — | — |
-| DELETE | `/admin/v1/settings/{id}` | 删除设置项 | — | — |
-| PUT | `/admin/v1/settings/{id}/enabled` | 启用/禁用设置项 | — | — |
+| GET | `/admin/v1/settings/:id` | 设置项详情 | — | — |
+| PUT | `/admin/v1/settings/:id` | 更新设置项 | — | — |
+| DELETE | `/admin/v1/settings/:id` | 删除设置项 | — | — |
+| PUT | `/admin/v1/settings/:id/enabled` | 启用/禁用设置项 | — | — |
+| GET | `/api/v1/settings/:key` | 读取公开设置 | — | — |
 
 **参数约束：**
 
@@ -913,108 +671,156 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 | `page` | query | integer | — | — | 页码 |
 | `page_size` | query | integer | ≤ 100 | — | 每页条数 |
 | `id` | path | integer | — | ✅ | 设置项 ID |
-
-## 二十五、C端-系统设置 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/api/v1/settings/{key}` | 读取公开设置 | — | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
 | `key` | path | string | — | ✅ | 设置项 key |
 
-## 二十六、Excel 模块
+## 二十一、用户模块 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| POST | `/admin/v1/excel/build` | 构建 Excel 文件 | AdminAuth | AdminAuth |
-| POST | `/admin/v1/excel/parse` | 解析 Excel 文件 | AdminAuth | AdminAuth |
+| GET | `/admin/v1/mall/users` | 查询C端用户列表 | AdminAuth | `urn:bizmall:user:read` |
+| GET | `/admin/v1/mall/users/:id` | 查询C端用户详情 | AdminAuth | `urn:bizmall:user:read` |
+| PATCH | `/admin/v1/mall/users/:id/status` | 修改C端用户状态（启用/禁用） | AdminAuth | `urn:bizmall:user:write` |
+| POST | `/api/v1/wxa/phone` | 获取微信手机号 | WxaAuth | — |
+| GET | `/api/v1/wxa/user` | 获取当前用户个人信息 | WxaAuth | — |
+| PUT | `/api/v1/wxa/user` | 更新用户昵称和头像 | WxaAuth | — |
+| POST | `/api/v1/wxa/user/register` | 用户注册 | WxaAuth | — |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `file` | formData | file | — | ✅ | Excel 文件（.xlsx） |
-
-## 二十七、后台-微信配置 模块
-
-| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
-|:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/wxa/apps` | 小程序应用列表 | — | — |
-| POST | `/admin/v1/wxa/apps` | 创建小程序应用 | — | — |
-| GET | `/admin/v1/wxa/apps/{id}` | 小程序应用详情 | — | — |
-| PUT | `/admin/v1/wxa/apps/{id}` | 更新小程序应用 | — | — |
-| DELETE | `/admin/v1/wxa/apps/{id}` | 禁用小程序应用 | — | — |
-| GET | `/admin/v1/wxa/machs` | 商户配置列表 | — | — |
-| POST | `/admin/v1/wxa/machs` | 创建商户配置 | — | — |
-| GET | `/admin/v1/wxa/machs/{id}` | 商户配置详情 | — | — |
-| PUT | `/admin/v1/wxa/machs/{id}` | 更新商户配置 | — | — |
-| DELETE | `/admin/v1/wxa/machs/{id}` | 禁用商户配置 | — | — |
-
-**参数约束：**
-
-| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
-|------|:----:|:----:|------|:----:|------|
-| `keyword` | query | string | — | — | 搜索关键词（appid） |
 | `page` | query | integer | — | — | 页码 |
-| `page_size` | query | integer | ≤ 100 | — | 每页条数 |
-| `id` | path | string | — | ✅ | 小程序应用 ID |
-| `status` | query | integer | — | — | 状态过滤：1-启用 0-禁用 |
+| `page_size` | query | integer | — | — | 每页条数 |
+| `keyword` | query | string | — | — | 关键词搜索（昵称） |
+| `source_id` | query | integer | — | — | 来源ID筛选（不传=不筛选） |
+| `id` | path | string | — | ✅ | 用户ID（HashID） |
 
-## 二十八、Source 模块
+## 二十二、地址管理 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/wxa/addresses` | C端收货地址列表 | WxaAuth | — |
+| POST | `/api/v1/wxa/addresses` | 新增收货地址 | WxaAuth | — |
+| PUT | `/api/v1/wxa/addresses/:id` | 编辑收货地址 | WxaAuth | — |
+| DELETE | `/api/v1/wxa/addresses/:id` | 删除收货地址 | WxaAuth | — |
+| PUT | `/api/v1/wxa/addresses/:id/default` | 设为默认地址 | WxaAuth | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `id` | path | integer | — | ✅ | 地址ID |
+
+## 二十三、售后模块 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/after-sales` | 后台售后列表 | AdminAuth | `urn:bizmall:after_sale:read` |
+| GET | `/admin/v1/mall/after-sales/:id` | 后台售后详情 | AdminAuth | `urn:bizmall:after_sale:read` |
+| POST | `/admin/v1/mall/after-sales/:id/confirm-return` | 确认收到退货 | AdminAuth | `urn:bizmall:after_sale:write` |
+| POST | `/admin/v1/mall/after-sales/:id/refund` | 执行退款 | AdminAuth | `urn:bizmall:after_sale:write` |
+| POST | `/admin/v1/mall/after-sales/:id/review` | 审核售后单 | AdminAuth | `urn:bizmall:after_sale:write` |
+| GET | `/admin/v1/mall/refunds` | 退款记录列表 | AdminAuth | AdminAuth |
+| GET | `/api/v1/wxa/mall/after-sales` | C端售后列表 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/after-sales` | 提交售后申请 | WxaAuth | — |
+| GET | `/api/v1/wxa/mall/after-sales/:id` | C端售后详情 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/after-sales/:id/return-logistics` | 填写退货物流 | WxaAuth | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `status` | query | integer | 0–5 | — | 售后状态（0=待审核 1=审核通过 2=审核拒绝 3=已退货 4=退款完成 5=已关闭，不传=不限） |
+| `type` | query | string | — | — | 售后类型（refund=仅退款 return_refund=退货退款，不传=不限） |
+| `start_date` | query | string | — | — | 创建起始日期（格式 2006-01-02） |
+| `end_date` | query | string | — | — | 创建截止日期（格式 2006-01-02） |
+| `page` | query | integer | ≥ 1 | — | 页码（默认 1） |
+| `page_size` | query | integer | 1–100 | — | 每页条数（默认 20，最大 100） |
+| `id` | path | integer | ≥ 1 | ✅ | 售后单ID |
+| `after_sale_id` | query | integer | ≥ 1 | — | 售后单 ID（可选筛选） |
+
+## 二十四、发票管理 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/invoices` | 管理后台发票列表 | AdminAuth | AdminAuth |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `page` | query | integer | — | — | 页码 |
+| `page_size` | query | integer | — | — | 每页数量 |
+
+## 二十五、通知模块 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/notification-templates` | 通知模板列表 | AdminAuth | `urn:bizmall:cms:read` |
+| POST | `/admin/v1/mall/notification-templates` | 创建通知模板 | AdminAuth | `urn:bizmall:cms:write` |
+| PUT | `/admin/v1/mall/notification-templates/:id` | 编辑通知模板 | AdminAuth | `urn:bizmall:cms:write` |
+| GET | `/admin/v1/mall/notifications` | 后台通知发送记录列表 | AdminAuth | AdminAuth |
+| GET | `/api/v1/notifications` | 站内信列表 | WxaAuth | — |
+| PUT | `/api/v1/notifications/:id/read` | 标记单条已读 | WxaAuth | — |
+| PUT | `/api/v1/notifications/read-all` | 全部标记已读 | WxaAuth | — |
+| GET | `/api/v1/notifications/unread-count` | 未读消息数 | WxaAuth | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `id` | path | integer | ≥ 1 | ✅ | 模板ID |
+
+## 二十六、来源管理 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
 | GET | `/admin/v1/sources` | 分页查询来源列表（后台） | AdminAuth | `urn:bizmall:source:read` |
 | POST | `/admin/v1/sources` | 创建来源 | AdminAuth | `urn:bizmall:source:write` |
+| GET | `/admin/v1/sources/:id` | 查询来源详情（后台） | AdminAuth | `urn:bizmall:source:read` |
+| PUT | `/admin/v1/sources/:id` | 编辑来源 | AdminAuth | `urn:bizmall:source:write` |
+| DELETE | `/admin/v1/sources/:id` | 删除来源（软删除） | AdminAuth | `urn:bizmall:source:delete` |
 | GET | `/admin/v1/sources/register-stats` | 注册用户按天汇总 | AdminAuth | `urn:bizmall:source:read` |
 | GET | `/admin/v1/sources/report-stats` | 上报日志按天汇总 | AdminAuth | `urn:bizmall:source:read` |
-| GET | `/admin/v1/sources/{id}` | 查询来源详情（后台） | AdminAuth | `urn:bizmall:source:read` |
-| PUT | `/admin/v1/sources/{id}` | 编辑来源 | AdminAuth | `urn:bizmall:source:write` |
-| DELETE | `/admin/v1/sources/{id}` | 删除来源（软删除） | AdminAuth | `urn:bizmall:source:delete` |
 | POST | `/api/v1/source/report` | 来源上报（C 端，无需鉴权） | — | — |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
+| `id` | path | integer | — | ✅ | 来源ID |
 | `start_date` | query | string | — | ✅ | 开始日期 (YYYY-MM-DD) |
 | `end_date` | query | string | — | ✅ | 结束日期 (YYYY-MM-DD) |
-| `id` | path | integer | — | ✅ | 来源ID |
 
-## 二十九、Datacube 模块
+## 二十七、购物车 模块
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
-| GET | `/admin/v1/datacube/retain` | 留存分析 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/retain/trend` | 留存趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/summary` | 每日摘要 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/summary/trend` | 每日摘要趋势 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/user-portrait` | 用户画像 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/user-portrait/trend` | 用户画像趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/visit-distribution` | 访问分布 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/visit-distribution/trend` | 访问分布趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/visit-page` | 页面访问 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/visit-page/trend` | 页面访问趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/visit-trend` | 访问趋势 | AdminAuth | `urn:bizmall:datacube:read` |
-| GET | `/admin/v1/datacube/visit-trend/trend` | 访问趋势聚合 | AdminAuth | `urn:bizmall:datacube:read` |
+| GET | `/api/v1/cart` | 购物车列表 | WxaAuth | — |
+| POST | `/api/v1/cart` | 添加至购物车 | WxaAuth | — |
+| DELETE | `/api/v1/cart` | 清空购物车 | WxaAuth | — |
+| PUT | `/api/v1/cart/:id` | 修改购物车项 | WxaAuth | — |
+| DELETE | `/api/v1/cart/:id` | 删除购物车项 | WxaAuth | — |
+| PUT | `/api/v1/cart/batch-select` | 批量选中/取消 | WxaAuth | — |
 
 **参数约束：**
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `appid` | query | string | — | — | 小程序AppID |
-| `ref_date` | query | string | — | — | 统计日期(YYYYMMDD) |
-| `page` | query | integer | — | — | 页码 |
-| `page_size` | query | integer | — | — | 每页条数 |
-| `start_date` | query | string | — | ✅ | 开始日期(YYYYMMDD) |
-| `end_date` | query | string | — | ✅ | 结束日期(YYYYMMDD) |
-| `key` | query | integer | — | — | 画像维度键 |
-| `index` | query | string | — | — | 分布维度指标 |
-| `path` | query | string | — | — | 页面路径 |
+| `id` | path | integer | ≥ 1 | ✅ | 购物车项ID |
+
+## 二十八、发票模块 模块
+
+| 方法 | 路径 | 摘要 | 认证 | 所需权限 |
+|:----:|------|------|:----:|:----:|
+| GET | `/api/v1/wxa/mall/orders/:id/invoice` | 查询发票状态 | WxaAuth | — |
+| POST | `/api/v1/wxa/mall/orders/:id/invoice` | 申请发票 | WxaAuth | — |
+
+**参数约束：**
+
+| 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
+|------|:----:|:----:|------|:----:|------|
+| `id` | path | integer | — | ✅ | 订单ID |
 
 ---
 

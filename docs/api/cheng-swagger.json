@@ -2845,6 +2845,772 @@
                 }
             }
         },
+        "/api/v1/wxa/pair/feeling": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户的 feeling（关注/无感）操作历史。仅返回活跃记录（is_hidden=false AND is_revoked=false），按 created_at DESC 倒序。支持可选 feeling_type 筛选（0=无感 1=关注，不传为全部）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "feeling 操作列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "feeling 类型筛选：0=无感 1=关注，不传为全部",
+                        "name": "feeling_type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "对目标用户执行关注或对某用户无感操作。关注：不可撤销、不可隐藏。无感：可撤销（撤销后释放已操作集合，可重新关注或对某用户无感）。异性配对、双表审核通过、账户未退出等前置条件不满足时返回 42201。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "关注/无感操作",
+                "parameters": [
+                    {
+                        "description": "操作请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（自操作返回 40001，重复操作返回 40302）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "操作者或目标用户不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "业务规则不满足（code=42201：审核未通过/性别未设置/同性/账户已停用；code=40302：重复操作）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/feeling/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询单条 feeling 记录完整信息，含目标用户的完整公开画像（21 字段 PublicProfile，与推荐一致）。仅记录所有者可查——非本人记录返回 404（不暴露越权信息）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "feeling 记录详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "feeling 记录 ID（VARCHAR(32) HashID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "记录不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "撤销一条无感记录。撤销后 is_revoked=true + 已操作集合释放 + couple.matching 回滚。撤销后可重新对该用户执行关注或对某用户无感。关注记录不可撤销。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "撤销无感记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "feeling 记录 ID（VARCHAR(32) HashID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "feeling 记录不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "仅无感可撤销（code=42201）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/feeling/{id}/hidden": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "隐藏某条关注记录。仅关注可隐藏，无感记录不支持。操作不可逆——无取消隐藏 API。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "隐藏关注记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "feeling 记录 ID（VARCHAR(32) HashID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "feeling 记录不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "仅关注可隐藏（code=42201）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/loves": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户的心动操作历史（append-only log，包含每次心动的独立记录）。按 created_at DESC 倒序。目标用户信息使用独立的 4 字段摘要（昵称/头像/性别/年龄），不揭示脱单档案敏感数据。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "心动历史列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesLogItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "对目标用户执行心动操作。每日限制 5 次（自然日 00:00 刷新）。首次心动累加 matching（+500），后续心动仅增加人气值（+50）。不加入已操作集合（可对同一用户重复心动）。不触发通知。异性配对、双表审核通过、账户未退出等前置条件不满足时返回 42201。Redis 计数故障或 DB 查询故障时阻断操作。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "心动操作",
+                "parameters": [
+                    {
+                        "description": "操作请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（自操作返回 40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "操作者或目标用户不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "业务规则不满足（code=42201：审核未通过/性别未设置/同性/账户已停用；code=42205：每日限额已用完/计数服务暂不可用）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/opinion": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前牵线用户的撮合/拆散操作历史（按 created_at DESC 倒序）。可选按 opinion_type 筛选（1=撮合/2=拆散）。列表项含男女双方摘要（昵称/头像/年龄 各 3 字段）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "Opinion 历史列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "筛选类型：1=撮合 2=拆散，不填返回全部",
+                        "name": "opinion_type",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "牵线用户（红娘）对配对组合（男方+女方）执行撮合或拆散操作。配对 ID 由服务端根据男女双方 ID 独立计算。不允许多次对同一配对操作同一类型。撮合+1 匹配度（帮TA选来源 +20），拆散-1 匹配度（帮TA选来源 -20）。帮TA选来源需校验亲友团关系。撮合操作若使匹配度达到 1314 阈值则触发 IM 开通。操作后加入已操作集合。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "撮合/拆散操作",
+                "parameters": [
+                    {
+                        "description": "撮合/拆散请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "操作禁止（code=40301 非亲友团成员 / code=40302 重复操作）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "业务规则不满足（code=42201：审核未通过/性别未设置/账户已停用）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/relatives": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询加入当前用户（脱单用户）亲友团的牵线用户列表。按 created_at DESC 倒序。成员信息使用独立的 4 字段摘要（昵称/头像/性别/年龄），不揭示脱单档案敏感数据。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "我的亲友团成员",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/relatives/join": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "牵线用户主动申请加入一个脱单用户的亲友团（单向申请，无需对方同意）。每人最多加入 5 个亲友团（可配置）。终身绑定，不可退出。目标用户需 is_active=true 且双表审核通过。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "加入亲友团",
+                "parameters": [
+                    {
+                        "description": "目标脱单用户 ID",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesJoinRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（自操作返回 40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "目标用户不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "已是亲友团成员（code=40304）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "业务规则不满足（code=42201：审核未通过/已退出；code=40303：上限）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/relatives/joined": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前牵线用户已加入的脱单用户列表。按 created_at DESC 倒序。目标脱单用户信息使用独立的 4 字段摘要（昵称/头像/性别/年龄）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "我加入的亲友团",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/phone": {
             "post": {
                 "description": "通过微信 getPhoneNumber API 获取用户手机号，生成 6 位验证码（5 分钟有效）返回前端。",
@@ -3793,13 +4559,31 @@
         "github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminRoleItem": {
             "type": "object",
             "properties": {
+                "created_at": {
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
+                },
+                "ext_params": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 },
                 "id": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.AdminRoleStatus"
+                },
+                "tag": {
+                    "type": "integer"
+                },
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -4193,6 +4977,343 @@
             "properties": {
                 "status": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feeling_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "is_revoked": {
+                    "type": "boolean"
+                },
+                "target_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "target_user_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "feeling_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "target": {
+                    "description": "目标用户摘要",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingTargetSummary"
+                        }
+                    ]
+                },
+                "target_user_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingRequest": {
+            "type": "object",
+            "required": [
+                "target_user_id"
+            ],
+            "properties": {
+                "feeling_type": {
+                    "enum": [
+                        0,
+                        1
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType"
+                        }
+                    ]
+                },
+                "target_user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingTargetSummary": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesLogItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "daily_count": {
+                    "description": "当日第 N 次心动（1-based）",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_first": {
+                    "description": "是否首次对该目标用户心动（badge 展示）",
+                    "type": "boolean"
+                },
+                "target": {
+                    "description": "目标用户摘要",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesTargetSummary"
+                        }
+                    ]
+                },
+                "target_user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesRequest": {
+            "type": "object",
+            "required": [
+                "target_user_id"
+            ],
+            "properties": {
+                "target_user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesTargetSummary": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionListItem": {
+            "type": "object",
+            "properties": {
+                "agree_percentage": {
+                    "type": "integer"
+                },
+                "couple_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "credits": {
+                    "type": "integer"
+                },
+                "female_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "male_id": {
+                    "type": "string"
+                },
+                "matching_delta": {
+                    "type": "integer"
+                },
+                "opinion_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionType"
+                },
+                "phrase": {
+                    "type": "string"
+                },
+                "source": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource"
+                },
+                "target": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionTargetSummary"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionRequest": {
+            "type": "object",
+            "required": [
+                "female_id",
+                "male_id",
+                "opinion_type",
+                "source"
+            ],
+            "properties": {
+                "female_id": {
+                    "type": "string"
+                },
+                "male_id": {
+                    "type": "string"
+                },
+                "opinion_type": {
+                    "enum": [
+                        1,
+                        2
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionType"
+                        }
+                    ]
+                },
+                "source": {
+                    "enum": [
+                        1,
+                        2
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionResponse": {
+            "type": "object",
+            "properties": {
+                "agree_percentage": {
+                    "type": "integer"
+                },
+                "couple_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "credits": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "matching_delta": {
+                    "type": "integer"
+                },
+                "phrase": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionTargetSummary": {
+            "type": "object",
+            "properties": {
+                "female_age": {
+                    "type": "integer"
+                },
+                "female_avatar_url": {
+                    "type": "string"
+                },
+                "female_nickname": {
+                    "type": "string"
+                },
+                "male_age": {
+                    "type": "integer"
+                },
+                "male_avatar_url": {
+                    "type": "string"
+                },
+                "male_nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesJoinRequest": {
+            "type": "object",
+            "required": [
+                "user_id"
+            ],
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "target": {
+                    "description": "对方用户摘要（4 字段）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesTargetSummary"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "description": "对方用户 ID（脱单用户 或 牵线用户，视端点而定）",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesTargetSummary": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "gender": {
+                    "description": "1=男 2=女",
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
                 }
             }
         },
@@ -5209,6 +6330,26 @@
                 "AdminUserStatusDisabled"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-comments": {
+                "FeelingDislike": "无感",
+                "FeelingLike": "关注"
+            },
+            "x-enum-descriptions": [
+                "无感",
+                "关注"
+            ],
+            "x-enum-varnames": [
+                "FeelingDislike",
+                "FeelingLike"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditAction": {
             "type": "integer",
             "format": "int32",
@@ -5255,6 +6396,46 @@
                 "MatchProfileAuditApproved",
                 "MatchProfileAuditRejected",
                 "MatchProfileAuditRevoked"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "OpinionSourceHelpSelect": "帮TA选",
+                "OpinionSourceRecommend": "牵线推荐"
+            },
+            "x-enum-descriptions": [
+                "牵线推荐",
+                "帮TA选"
+            ],
+            "x-enum-varnames": [
+                "OpinionSourceRecommend",
+                "OpinionSourceHelpSelect"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "OpinionTypeMatch": "撮合",
+                "OpinionTypeSplit": "拆散"
+            },
+            "x-enum-descriptions": [
+                "撮合",
+                "拆散"
+            ],
+            "x-enum-varnames": [
+                "OpinionTypeMatch",
+                "OpinionTypeSplit"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus": {
