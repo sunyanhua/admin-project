@@ -1,5 +1,5 @@
 import request from '..';
-import type { AdminLoginRequest, AdminLoginResponse, AdminChangePasswordRequest } from '../types/auth';
+import type { AdminLoginRequest, AdminLoginResponse, AdminChangePasswordRequest, AdminProfileResponse } from '../types/auth';
 
 // 认证相关API（BizMall 接口）
 export const authApi = {
@@ -26,5 +26,10 @@ export const authApi = {
   // 我的操作日志 — GET /admin/v1/login/logs
   getMyLogs: (params: { page?: number; size?: number; keyword?: string }) => {
     return request.get('/admin/v1/login/logs', { params });
+  },
+
+  // 当前管理员信息 — GET /admin/v1/login/profile
+  getProfile: (): Promise<AdminProfileResponse> => {
+    return request.get('/admin/v1/login/profile');
   },
 };

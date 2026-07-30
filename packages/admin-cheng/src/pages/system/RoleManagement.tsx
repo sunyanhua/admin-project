@@ -32,7 +32,7 @@ const RoleManagement = () => {
   const [values, setValues] = useState<Record<string, any>>({});
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<RoleListItem | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
 
   const fetchRoles = useCallback(async (params: any) => {
@@ -95,7 +95,7 @@ const RoleManagement = () => {
     },
     ActionColumn({
       onEdit: (record) => {
-        setSelectedRole(record);
+        setSelectedRoleId(record.id);
         setEditMode('edit');
         setEditModalVisible(true);
       },
@@ -108,13 +108,13 @@ const RoleManagement = () => {
       render: (record) => (
         <>
           <Button type="link" size="small" icon={<SafetyCertificateOutlined />} onClick={() => {
-            setSelectedRole(record);
+            setSelectedRoleId(record.id);
             setPermissionModalVisible(true);
           }}>
             权限
           </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => {
-            setSelectedRole(record);
+            setSelectedRoleId(record.id);
             setEditMode('edit');
             setEditModalVisible(true);
           }}>
@@ -150,7 +150,7 @@ const RoleManagement = () => {
   };
 
   const handleAdd = () => {
-    setSelectedRole(null);
+    setSelectedRoleId(null);
     setEditMode('create');
     setEditModalVisible(true);
   };
@@ -188,20 +188,20 @@ const RoleManagement = () => {
       <RoleEditModal
         visible={editModalVisible}
         mode={editMode}
-        role={selectedRole}
+        roleId={selectedRoleId}
         onClose={() => {
           setEditModalVisible(false);
-          setSelectedRole(null);
+          setSelectedRoleId(null);
         }}
         onSuccess={refresh}
       />
 
       <PermissionModal
         visible={permissionModalVisible}
-        role={selectedRole}
+        roleId={selectedRoleId}
         onClose={() => {
           setPermissionModalVisible(false);
-          setSelectedRole(null);
+          setSelectedRoleId(null);
         }}
         onSuccess={refresh}
       />

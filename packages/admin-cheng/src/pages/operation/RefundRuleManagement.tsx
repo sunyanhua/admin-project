@@ -59,7 +59,7 @@ const RefundRuleManagement = () => {
   const [submitting, setSubmitting] = useState(false);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
-  const hasSuper = useMemo(() => (user?.roles || []).includes('super_admin'), [user]);
+  const hasSuper = useMemo(() => user?.isRoot ?? false, [user]);
 
   const fetchRules = useCallback(async (params: any) => {
     // 非超级管理员不加载系统级规则

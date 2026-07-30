@@ -51,10 +51,10 @@ const MainLayout = () => {
     let topMenu = 'system';
     if (currentPath === '/' || currentPath.startsWith('/system')) {
       topMenu = 'system';
+    } else if (currentPath.startsWith('/community')) {
+      topMenu = 'community';
     } else if (currentPath.startsWith('/operation')) {
       topMenu = 'operation';
-    } else if (currentPath.startsWith('/finance')) {
-      topMenu = 'finance';
     }
     setCurrentTopMenu(topMenu);
 
@@ -69,10 +69,13 @@ const MainLayout = () => {
     return rawSidebarMenuItems;
   }, [rawSidebarMenuItems, currentTopMenu]);
 
-  // 不按角色过滤菜单 — 始终显示全部
+  // 仅 is_root 控制"基础配置"和"我的账户"可见性
   const visibleMenuItems = useMemo(() => {
+    const isRoot = user?.isRoot ?? false;
+    const rootOnlyGroups = new Set(['admin-group', 'account-group']);
     const processItem = (item: any): any | null => {
       const { hide, ...rest } = item;
+      if (rootOnlyGroups.has(rest.key) && !isRoot) return null;
       if (rest.children) {
         const filtered = rest.children.map(processItem).filter(Boolean);
         if (filtered.length === 0) return null;
@@ -81,7 +84,7 @@ const MainLayout = () => {
       return rest;
     };
     return sidebarMenuItems.map(processItem).filter(Boolean);
-  }, [sidebarMenuItems]);
+  }, [sidebarMenuItems, user?.isRoot]);
 
   const getOpenKeys = (menuItems: any[], path: string) => {
     const keys: string[] = [];

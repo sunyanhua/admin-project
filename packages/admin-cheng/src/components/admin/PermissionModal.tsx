@@ -5,7 +5,6 @@ import type { TreeDataNode } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { adminApi } from '../../api/services/admin';
 import type { PermissionNode } from '@/api/types/permission';
-import type { RoleListItem } from '@/api/types/admin';
 import {
   buildPermissionTreeData,
   filterRedundantUrns,
@@ -13,34 +12,36 @@ import {
 
 export interface PermissionModalProps {
   visible: boolean;
-  role: RoleListItem | null;
+  roleId: string | null;
   onClose: () => void;
   onSuccess?: () => void;
 }
 
-const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClose, onSuccess }) => {
+const PermissionModal: React.FC<PermissionModalProps> = ({ visible, roleId, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [allNodes, setAllNodes] = useState<PermissionNode[]>([]);
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [checkedUrns, setCheckedUrns] = useState<string[]>([]);
+  const [roleName, setRoleName] = useState('');
   const { success, error: showError } = useAppNotification();
 
   // 弹窗打开时加载权限树和角色已有权限
   useEffect(() => {
-    if (visible && role) {
+    if (visible && roleId) {
       setLoading(true);
       setCheckedUrns([]);
 
       Promise.all([
         adminApi.getPermissions(),
-        adminApi.getRoleDetail(role.id),
+        adminApi.getRoleDetail(roleId),
       ])
         .then(([allPerms, roleDetail]) => {
           const nodes: PermissionNode[] = Array.isArray(allPerms) ? allPerms : [];
           setAllNodes(nodes);
 
           const urns: string[] = roleDetail?.permissions || [];
+          setRoleName(roleDetail?.name || '');
           setCheckedUrns(urns);
           setTreeData(buildPermissionTreeData(nodes, new Set(urns), false));
         })
@@ -49,7 +50,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
         })
         .finally(() => setLoading(false));
     }
-  }, [visible, role]);
+  }, [visible, roleId]);
 
   const handleCheck = useCallback((keys: any) => {
     const raw: string[] = Array.isArray(keys) ? keys : (keys as any).checked || [];
@@ -60,12 +61,11 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
   }, [allNodes]);
 
   const handleSave = async () => {
-    if (!role) return;
+    if (!roleId) return;
     try {
       setSaving(true);
-      // 提交前过滤掉被祖先节点覆盖的子孙节点
       const compacted = filterRedundantUrns(checkedUrns, allNodes);
-      await adminApi.updateRole(role.id, { permissions: compacted });
+      await adminApi.updateRole(roleId, { permissions: compacted });
       success('权限分配成功');
       onClose();
       if (onSuccess) onSuccess();
@@ -84,7 +84,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, role, onClos
 
   return (
     <ScrollableModal
-      title={`角色权限 — ${role?.name || ''}`}
+      title={`角色权限 — ${roleName || roleId || ''}`}
       open={visible}
       onCancel={handleCancel}
       width={640}

@@ -2623,7 +2623,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_module_wxa.createWxaAppRequest"
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_model.CreateWxaAppRequest"
                         }
                     }
                 ],
@@ -2682,7 +2682,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_module_wxa.updateWxaAppRequest"
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_model.UpdateWxaAppRequest"
                         }
                     }
                 ],
@@ -2767,7 +2767,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_module_wxa.updateWxaAppStatusRequest"
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_model.UpdateWxaAppStatusRequest"
                         }
                     }
                 ],
@@ -5017,6 +5017,67 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_wxa_model.CreateWxaAppRequest": {
+            "type": "object",
+            "required": [
+                "app_id",
+                "app_name",
+                "app_secret",
+                "app_type"
+            ],
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "app_name": {
+                    "type": "string"
+                },
+                "app_secret": {
+                    "type": "string"
+                },
+                "app_type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_wxa_model.UpdateWxaAppRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "app_name": {
+                    "type": "string"
+                },
+                "app_secret": {
+                    "type": "string"
+                },
+                "app_type": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_wxa_model.UpdateWxaAppStatusRequest": {
+            "type": "object",
+            "required": [
+                "id",
+                "status"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile": {
             "type": "object",
             "properties": {
@@ -5436,67 +5497,6 @@
                 },
                 "media_url": {
                     "type": "string"
-                }
-            }
-        },
-        "internal_module_wxa.createWxaAppRequest": {
-            "type": "object",
-            "required": [
-                "app_id",
-                "app_name",
-                "app_secret",
-                "app_type"
-            ],
-            "properties": {
-                "app_id": {
-                    "type": "string"
-                },
-                "app_name": {
-                    "type": "string"
-                },
-                "app_secret": {
-                    "type": "string"
-                },
-                "app_type": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_module_wxa.updateWxaAppRequest": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "app_name": {
-                    "type": "string"
-                },
-                "app_secret": {
-                    "type": "string"
-                },
-                "app_type": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_module_wxa.updateWxaAppStatusRequest": {
-            "type": "object",
-            "required": [
-                "id",
-                "status"
-            ],
-            "properties": {
-                "id": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
                 }
             }
         }

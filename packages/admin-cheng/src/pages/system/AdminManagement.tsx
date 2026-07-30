@@ -61,7 +61,7 @@ function userHasRole(user: UIAdminUser, code: string): boolean {
 
 const AdminManagement = () => {
   const { user: currentUser } = useAuth();
-  const isSuperAdmin = currentUser?.roles?.includes?.('super_admin') ?? false;
+  const isSuperAdmin = currentUser?.isRoot ?? false;
   const [values, setValues] = useState<Record<string, any>>({});
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -89,7 +89,7 @@ const AdminManagement = () => {
   const formatAdminResponse = useCallback((res: any) => {
     let list = res?.list || [];
     // 隐藏当前登录管理员 + 非超管时隐藏超管用户
-    list = list.filter((item: UIAdminUser) => item.id !== currentUser?.id);
+    list = list.filter((item: UIAdminUser) => String(item.id) !== currentUser?.id);
     if (!isSuperAdmin) {
       list = list.filter((item: UIAdminUser) => !userHasRole(item, 'super_admin'));
     }

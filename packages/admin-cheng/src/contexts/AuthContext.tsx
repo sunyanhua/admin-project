@@ -18,14 +18,19 @@ interface PageItem {
 }
 
 interface User {
-  id?: number;
+  id: string;
+  username: string;
   name: string;
-  role: number;
-  rule: number;
-  root: boolean;
-  roles: string[];
-  login?: string;
-  logip?: string;
+  realName: string;
+  email: string;
+  phone: string;
+  isRoot: boolean;
+  roles: { id: string; name: string; description: string }[];
+  permissions: string[];
+  status: number;
+  needChangePassword: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AuthContextType {
@@ -62,10 +67,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const isAuthenticated = !!user;
 
-  /** 用已存储 token 调用后端轻量接口验证有效性（仅验证，不获取用户信息） */
-  const verifyToken = async (): Promise<boolean> => {
+  /** 调用 /admin/v1/login/profile 获取当前管理员完整信息 */
+  const fetchProfile = async (): Promise<boolean> => {
     try {
-      await authApi.getMyLogs({ size: 1 });
+      const profile = await authApi.getProfile();
+      const userData: User = {
+        id: profile.id,
+        username: profile.username,
+        name: profile.real_name || profile.username,
+        realName: profile.real_name || '',
+        email: profile.email || '',
+        phone: profile.phone || '',
+        isRoot: profile.is_root,
+        roles: profile.roles || [],
+        permissions: profile.permissions || [],
+        status: profile.status,
+        needChangePassword: profile.need_change_password,
+        createdAt: profile.created_at || '',
+        updatedAt: profile.updated_at || '',
+      };
+      setUser(userData);
+      localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(userData));
       return true;
     } catch (err: any) {
       if (err?.response?.status === 401) {
@@ -77,16 +99,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // 检查登录状态：token 存在则后端验证，再回退到 localStorage 缓存
+  // 检查登录状态：token 存在则调 profile 验证并获取用户信息
   const checkAuth = async () => {
     const token = getAccessToken();
     if (!token) {
-      const cached = localStorage.getItem(ADMIN_USER_KEY);
-      if (cached) {
-        try { setUser(JSON.parse(cached)); } catch { setUser(null); }
-      } else {
-        setUser(null);
-      }
+      localStorage.removeItem(ADMIN_USER_KEY);
+      setUser(null);
       setMenu([]);
       setPage([]);
       setIsLoading(false);
@@ -94,18 +112,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
 
     setIsLoading(true);
-    const valid = await verifyToken();
-    // verifyToken 在 401 时会自动清除用户状态；非 401 失败不丢登录态
-    if (valid) {
-      // token 有效 — 从缓存恢复用户（login 时已写入）
-      const cached = localStorage.getItem(ADMIN_USER_KEY);
-      if (cached) {
-        try { setUser(JSON.parse(cached)); } catch { /* ignore */ }
-      }
+    try {
+      await fetchProfile();
+    } catch {
+      // fetchProfile 已自行处理 401，此处兜底防止 isLoading 永远卡住
+      setUser(null);
+    } finally {
+      setMenu([]);
+      setPage([]);
+      setIsLoading(false);
     }
-    setMenu([]);
-    setPage([]);
-    setIsLoading(false);
   };
 
   // 登录
@@ -124,13 +140,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       : 7200;
     setTokens(accessToken, '', expiresIn);
 
-    // 用登录用户名创建 user（JWT 为 protobuf 编码，前端无法解码 roles/root）
-    const userData: User = { name: username, role: 0, rule: 0, root: false, roles: [] };
-    setUser(userData);
-    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(userData));
-
-    // 验证 token 有效性
-    await verifyToken();
+    // 调用 profile 获取管理员完整信息
+    await fetchProfile();
   };
 
   // 登出

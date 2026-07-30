@@ -15,39 +15,17 @@ import SourceManagement from '@/pages/system/SourceManagement';
 import VisitStatistics from '@/pages/system/VisitStatistics';
 import VisitUserStats from '@/pages/system/VisitUserStats';
 import WxaAppManagement from '@/pages/system/WxaAppManagement';
-
-// 运营管理 — 配置管理
-import CategoryManagement from '@/pages/operation/CategoryManagement';
-import PageConfigManagement from '@/pages/operation/PageConfigManagement';
 import BannerManagement from '@/pages/system/BannerManagement';
-import RefundRuleManagement from '@/pages/operation/RefundRuleManagement';
-import AgreementManagement from '@/pages/community/AgreementManagement';
 import FaqManagement from '@/pages/system/FaqManagement';
 
-// 运营管理 — 用户管理
-import UserList from '@/pages/community/UserList';
-import UserStats from '@/pages/community/UserStats';
-
-// 运营管理 — 活动管理
-import EventCategories from '@/pages/operation/EventCategoryManagement';
+// 运营管理页面
 import EventList from '@/pages/operation/EventManagement';
 import EventOrders from '@/pages/events/EventOrders';
-import TicketOrders from '@/pages/events/TicketOrders';
-import ProductOrders from '@/pages/events/ProductOrders';
+import PageConfigManagement from '@/pages/operation/PageConfigManagement';
 
-// 运营管理 — 门票管理
-import TicketManagement from '@/pages/operation/TicketManagement';
-
-// 财务管理
-import PaymentRecords from '@/pages/events/PaymentRecords';
-import RefundRecords from '@/pages/events/RefundRecords';
-import InvoiceManagement from '@/pages/finance/InvoiceManagement';
-import CouponManagement from '@/pages/finance/CouponManagement';
-
-// 运营管理 — 门票/商品分类
-import TicketCategoryManagement from '@/pages/operation/TicketCategoryManagement';
-import ProductCategoryManagement from '@/pages/operation/ProductCategoryManagement';
-import ProductManagement from '@/pages/operation/ProductManagement';
+// 社区管理页面
+import UserList from '@/pages/community/UserList';
+import AgreementManagement from '@/pages/community/AgreementManagement';
 
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
@@ -59,10 +37,7 @@ const ProtectedLayout = () => (
 );
 
 const router = createHashRouter([
-  {
-    path: '/login',
-    element: <Login />,
-  },
+  { path: '/login', element: <Login /> },
   {
     path: '/',
     element: <ProtectedLayout />,
@@ -74,12 +49,12 @@ const router = createHashRouter([
       {
         path: 'system',
         children: [
-          { index: true, element: <Dashboard /> },
-          // 管理员管理
+          // 基础配置
           { path: 'roles', element: <RoleManagement /> },
           { path: 'admins', element: <AdminManagement /> },
           { path: 'admin-logs', element: <AdminLogs /> },
           { path: 'wxa-apps', element: <WxaAppManagement /> },
+          { path: 'page-config', element: <PageConfigManagement /> },
           // 我的账户
           { path: 'change-password', element: <ChangePassword /> },
           { path: 'my-logs', element: <MyLogs /> },
@@ -87,6 +62,29 @@ const router = createHashRouter([
           { path: 'sources', element: <SourceManagement /> },
           { path: 'visits', element: <VisitStatistics /> },
           { path: 'visits/users', element: <VisitUserStats /> },
+          // 配置管理
+          { path: 'banners', element: <BannerManagement /> },
+          { path: 'popups', element: <PlaceholderPage title="弹窗管理" /> },
+          { path: 'agreements', element: <AgreementManagement /> },
+          { path: 'faq', element: <FaqManagement /> },
+          { path: 'points', element: <PlaceholderPage title="积分配置" /> },
+        ],
+      },
+
+      // ========== 社区管理 ==========
+      {
+        path: 'community',
+        children: [
+          // 用户资料
+          { path: 'users', element: <UserList /> },
+          { path: 'match-profiles', element: <PlaceholderPage title="脱单资料管理" /> },
+          { path: 'user-verify', element: <PlaceholderPage title="用户认证" /> },
+          // 互动管理
+          { path: 'gifts', element: <PlaceholderPage title="礼物管理" /> },
+          { path: 'lottery', element: <PlaceholderPage title="抽奖管理" /> },
+          // 社区统计
+          { path: 'stats', element: <PlaceholderPage title="平台数据统计" /> },
+          { path: 'trends', element: <PlaceholderPage title="趋势统计" /> },
         ],
       },
 
@@ -94,44 +92,18 @@ const router = createHashRouter([
       {
         path: 'operation',
         children: [
-          { index: true, element: <BannerManagement /> },
-          // 配置管理
-          { path: 'page-config', element: <PageConfigManagement /> },
-          { path: 'categories', element: <CategoryManagement /> },
-          { path: 'refund-rules', element: <RefundRuleManagement /> },
-          { path: 'banners', element: <BannerManagement /> },
-          { path: 'agreements', element: <AgreementManagement /> },
-          { path: 'faq', element: <FaqManagement /> },
-          // 用户管理
-          { path: 'users', element: <UserList /> },
-          { path: 'user-stats', element: <UserStats /> },
+          // 节目管理
+          { path: 'programs', element: <PlaceholderPage title="广播节目管理" /> },
+          { path: 'program-submissions', element: <PlaceholderPage title="广播投稿管理" /> },
           // 活动管理
-          { path: 'event-categories', element: <EventCategories /> },
           { path: 'events', element: <EventList /> },
           { path: 'event-orders', element: <EventOrders /> },
-          // 门票管理
-          { path: 'ticket-categories', element: <TicketCategoryManagement /> },
-          { path: 'tickets', element: <TicketManagement /> },
-          { path: 'ticket-orders', element: <TicketOrders /> },
-          // 商品管理
-          { path: 'product-categories', element: <ProductCategoryManagement /> },
-          { path: 'products', element: <ProductManagement /> },
-          { path: 'product-orders', element: <ProductOrders /> },
-        ],
-      },
-
-      // ========== 财务管理 ==========
-      {
-        path: 'finance',
-        children: [
-          { index: true, element: <PaymentRecords /> },
-          // 财务信息
-          { path: 'payments', element: <PaymentRecords /> },
-          { path: 'refunds', element: <RefundRecords /> },
-          { path: 'invoices', element: <InvoiceManagement /> },
-          { path: 'coupons', element: <CouponManagement /> },
-          // 财务统计（待开发）
-          { path: 'stats', element: <PlaceholderPage title="财务统计管理" /> },
+          // 合作管理
+          { path: 'cooperation', element: <PlaceholderPage title="合作专区管理" /> },
+          { path: 'cooperation-verify', element: <PlaceholderPage title="专区用户认证" /> },
+          // 财务管理
+          { path: 'orders', element: <PlaceholderPage title="订单管理" /> },
+          { path: 'finance-stats', element: <PlaceholderPage title="财务统计" /> },
         ],
       },
 
