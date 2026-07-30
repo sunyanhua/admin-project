@@ -39,6 +39,7 @@ interface OrderConfig {
   defaultRootCategoryId?: number; // 1=活动 2=门票 3=商品
   hideOrderNo?: boolean;
   productColumnTitle?: string; // 自定义产品列标题，如"活动项目"
+  showAllItems?: boolean; // 自定义产品列是否遍历展示所有 items（默认只取第一项）
   statusMap?: Record<number, { text: string; color: string }>; // 自定义状态映射
 }
 
@@ -184,20 +185,25 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
       key: 'product',
       ...(config.productColumnTitle ? { width: 180 } : {}),
       render: (_: any, record: OrderRecord) => {
+        if (config.productColumnTitle && record.items && record.items.length > 0) {
+          // 自定义列标题模式：两行展示每个子项
+          const displayItems = config.showAllItems ? record.items : [record.items[0]];
+          return (
+            <div style={{ lineHeight: 1.6 }}>
+              {displayItems.map((item, i) => (
+                <div key={i} style={{ marginBottom: i < displayItems.length - 1 ? 6 : 0 }}>
+                  <div style={{ wordBreak: 'break-word' }}>{item.product_title || '-'}</div>
+                  <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>
+                    {item.sku_spec_text || item.sku_name || ''}
+                    {item.quantity != null ? ` × ${item.quantity}` : ''}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        }
         const firstItem = record.items?.[0];
         if (firstItem) {
-          if (config.productColumnTitle) {
-            // 活动报名/购票信息模式：两行展示
-            return (
-              <div style={{ lineHeight: 1.6 }}>
-                <div style={{ wordBreak: 'break-word' }}>{firstItem.product_title || '-'}</div>
-                <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>
-                  {firstItem.sku_spec_text || firstItem.sku_name || ''}
-                  {firstItem.quantity != null ? ` × ${firstItem.quantity}` : ''}
-                </div>
-              </div>
-            );
-          }
           // 默认模式（商品/活动）：展示所有子项
           return (
             <span style={{ wordBreak: 'break-word' }}>
