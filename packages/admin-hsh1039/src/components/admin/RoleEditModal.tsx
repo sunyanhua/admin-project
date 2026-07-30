@@ -22,7 +22,6 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, role, onCl
     if (visible) {
       if (role && !isCreate) {
         form.setFieldsValue({
-          code: role.code || '',
           name: role.name || '',
           description: role.description || '',
         });
@@ -46,7 +45,6 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, role, onCl
       } else {
         if (!role) return;
         await adminApi.updateRole(role.id, {
-          code: values.code,
           name: values.name,
           description: values.description || undefined,
         });
@@ -89,18 +87,20 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, role, onCl
         onFinish={handleSubmit}
         autoComplete="off"
       >
-        <Form.Item
-          label="标识"
-          name="code"
-          extra={isCreate ? "唯一标识，创建后不可修改，如 super_admin" : undefined}
-          rules={[
-            { required: true, message: '请输入角色标识' },
-            { max: 32, message: '标识最多32个字符' },
-            { pattern: /^[a-z][a-z0-9_]*$/, message: '仅支持小写字母、数字、下划线，以字母开头' },
-          ]}
-        >
-          <Input placeholder="如 super_admin" disabled={!isCreate} />
-        </Form.Item>
+        {isCreate && (
+          <Form.Item
+            label="角色标识"
+            name="code"
+            extra="唯一标识，创建后不可修改，如 super_admin"
+            rules={[
+              { required: true, message: '请输入角色标识' },
+              { max: 32, message: '角色标识最多32个字符' },
+              { pattern: /^[a-z][a-z0-9_]*$/, message: '仅支持小写字母、数字、下划线，以字母开头' },
+            ]}
+          >
+            <Input placeholder="如 super_admin" />
+          </Form.Item>
+        )}
 
         <Form.Item
           label="角色名称"

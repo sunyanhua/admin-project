@@ -45,7 +45,7 @@ const RoleManagement = () => {
       width: 90,
     },
     {
-      title: '标识',
+      title: '角色标识',
       dataIndex: 'code',
       key: 'code',
       width: 90,
@@ -55,6 +55,12 @@ const RoleManagement = () => {
       title: '角色名称',
       dataIndex: 'name',
       key: 'name',
+    },
+    {
+      title: '描述',
+      dataIndex: 'description',
+      key: 'description',
+      render: (desc?: string) => desc || '-',
     },
     ActionColumn({
       onEdit: (record) => {
