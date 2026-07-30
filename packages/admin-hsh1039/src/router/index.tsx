@@ -33,6 +33,8 @@ import EventList from '@/pages/operation/EventManagement';
 import EventOrders from '@/pages/events/EventOrders';
 import TicketOrders from '@/pages/events/TicketOrders';
 import ProductOrders from '@/pages/events/ProductOrders';
+import EventTicketManagement from '@/pages/events/EventTicketManagement';
+import TicketWalletManagement from '@/pages/events/TicketWalletManagement';
 
 // 运营管理 — 门票管理
 import TicketManagement from '@/pages/operation/TicketManagement';
@@ -107,10 +109,12 @@ const router = createHashRouter([
           { path: 'event-categories', element: <EventCategories /> },
           { path: 'events', element: <EventList /> },
           { path: 'event-orders', element: <EventOrders /> },
+          { path: 'event-tickets', element: <EventTicketManagement /> },
           // 门票管理
           { path: 'ticket-categories', element: <TicketCategoryManagement /> },
           { path: 'tickets', element: <TicketManagement /> },
           { path: 'ticket-orders', element: <TicketOrders /> },
+          { path: 'ticket-wallet', element: <TicketWalletManagement /> },
           // 商品管理
           { path: 'product-categories', element: <ProductCategoryManagement /> },
           { path: 'products', element: <ProductManagement /> },

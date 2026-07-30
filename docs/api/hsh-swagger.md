@@ -1,6 +1,6 @@
 # BizMall 前端接口文档
 
-> 版本：v1.1 | 日期：2026-07-28 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
+> 版本：v1.1 | 日期：2026-07-30 | 协议：HTTPS | 格式：JSON | 编码：UTF-8
 
 > 本文档与 Swagger 注释同步维护，与 API 接口颗粒度对齐。
 
@@ -149,7 +149,11 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 用户ID |
+| `page` | query | integer | — | — | 页码 |
+| `page_size` | query | integer | — | — | 每页条数 |
+| `keyword` | query | string | — | — | 关键词搜索（昵称） |
+| `source_id` | query | integer | — | — | 来源ID筛选（不传=不筛选） |
+| `id` | path | string | — | ✅ | 用户ID（HashID） |
 
 ## 三、Auth 模块
 
@@ -183,9 +187,9 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 角色ID |
 | `page` | query | integer | — | — | 页码 |
 | `page_size` | query | integer | — | — | 每页条数 |
+| `id` | path | integer | — | ✅ | 角色ID |
 | `keyword` | query | string | — | — | 关键词搜索（用户名/姓名） |
 | `role_id` | query | integer | — | — | 角色ID筛选 |
 | `status` | query | integer | — | — | 状态筛选（0=禁用，1=启用，不传=不筛选） |
@@ -238,11 +242,21 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 品牌ID |
+| `page` | query | integer | ≥ 1 | — | 页码（默认 1） |
+| `page_size` | query | integer | 1–100 | — | 每页数量（最大 100） |
+| `keyword` | query | string | — | — | 搜索关键词 |
+| `id` | path | integer | ≥ 1 | ✅ | 品牌ID |
 | `is_listed` | query | boolean | — | — | 筛选上架状态 |
 | `is_visible` | query | boolean | — | — | 筛选可见状态 |
-| `sku_id` | path | integer | — | ✅ | SKU ID |
-| `spec_id` | path | integer | — | ✅ | 规格组ID |
+| `category_id` | query | integer | — | — | 分类ID |
+| `brand_id` | query | integer | — | — | 品牌ID |
+| `product_type` | query | string | — | — | 商品类型（physical/virtual） |
+| `sku_id` | path | integer | ≥ 1 | ✅ | SKU ID |
+| `spec_id` | path | integer | ≥ 1 | ✅ | 规格组ID |
+| `sort_by` | query | string | — | — | 排序字段（price_asc/price_desc/sold_desc/newest） |
+| `min_price` | query | number | — | — | 最低价格（元） |
+| `max_price` | query | number | — | — | 最高价格（元） |
+| `root_category_id` | query | integer | — | — | 根级分类ID |
 
 ## 六、Cart 模块
 
@@ -259,7 +273,7 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 购物车项ID |
+| `id` | path | integer | ≥ 1 | ✅ | 购物车项ID |
 
 ## 七、Orders 模块
 
@@ -340,6 +354,7 @@ urn:bizmall:<module>:<action>
 
 | 方法 | 路径 | 摘要 | 认证 | 所需权限 |
 |:----:|------|------|:----:|:----:|
+| GET | `/admin/v1/mall/tickets` | 管理后台票夹列表 | AdminAuth | `urn:bizmall:ticket:read` |
 | GET | `/admin/v1/mall/tickets/:code` | 扫码查询票夹 | AdminAuth | `urn:bizmall:ticket:read` |
 | PUT | `/admin/v1/mall/tickets/:id/booking/cancel` | 管理后台取消预约 | AdminAuth | `urn:bizmall:ticket:write` |
 | POST | `/admin/v1/mall/tickets/:id/verify` | 核销卡券 | AdminAuth | `urn:bizmall:ticket:verify` |
@@ -351,10 +366,20 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
+| `page` | query | integer | — | — | 页码（默认 1） |
+| `page_size` | query | integer | — | — | 每页数量（默认 20，最大 50） |
+| `order_id` | query | integer | — | — | 按子单ID筛选 |
+| `parent_order_id` | query | integer | — | — | 按主单ID筛选 |
+| `order_item_id` | query | integer | — | — | 按订单商品行ID筛选 |
+| `holder_id` | query | string | — | — | 按持有人ID筛选（HashID 精确匹配） |
+| `category_id` | query | integer | — | — | 按商品分类ID筛选 |
+| `root_category_id` | query | integer | — | — | 按根分类ID筛选 |
+| `booking_slot_id` | query | integer | — | — | 按预约时段ID筛选 |
+| `is_verified` | query | boolean | — | — | 按核销状态筛选 |
+| `is_transferred` | query | boolean | — | — | 按转赠状态筛选 |
+| `is_refunded` | query | boolean | — | — | 按退款状态筛选 |
 | `code` | path | string | — | ✅ | 票夹码/ID |
 | `id` | path | integer | — | ✅ | 票夹ID |
-| `page` | query | integer | — | — | 页码 |
-| `page_size` | query | integer | — | — | 每页数量 |
 
 ## 十一、Invoices 模块
 
@@ -538,7 +563,7 @@ urn:bizmall:<module>:<action>
 | GET | `/admin/v1/cms/notices/{id}` | 查询公告详情（后台） | AdminAuth | `urn:bizmall:cms:read` |
 | PUT | `/admin/v1/cms/notices/{id}` | 编辑公告 | AdminAuth | `urn:bizmall:cms:write` |
 | DELETE | `/admin/v1/cms/notices/{id}` | 删除公告（软删除） | AdminAuth | `urn:bizmall:cms:delete` |
-| PUT | `/admin/v1/cms/notices/{id}/status` | 更新公告上架/下架状态 | AdminAuth | `urn:bizmall:cms:write` |
+| PUT | `/admin/v1/cms/notices/{id}/status` | 更新公告状态（草稿/发布/撤销） | AdminAuth | `urn:bizmall:cms:write` |
 | PUT | `/admin/v1/cms/notices/{id}/visibility` | 更新公告可见性 | AdminAuth | `urn:bizmall:cms:write` |
 | GET | `/api/v1/cms/articles` | 资讯列表（C端） | — | — |
 | GET | `/api/v1/cms/articles/{id}` | 资讯详情（C端） | — | — |
@@ -552,7 +577,7 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 资讯ID |
+| `id` | path | integer | ≥ 1 | ✅ | 资讯ID |
 
 ## 十九、Notifications 模块
 
@@ -571,7 +596,7 @@ urn:bizmall:<module>:<action>
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 模板ID |
+| `id` | path | integer | ≥ 1 | ✅ | 模板ID |
 
 ## 二十、Verification 模块
 
@@ -665,7 +690,7 @@ urn:bizmall:<module>:<action>
 | `file_name` | formData | string | — | — | 原始文件名（首片必填） |
 | `file_size` | formData | integer | — | — | 完整文件预期总大小（首片必填） |
 | `upload_token` | formData | string | — | — | 上传令牌（续片必填） |
-| `media_id` | query | string | — | ✅ | 媒体文件ID |
+| `media_id` | query | string | — | ✅ | 媒体文件ID（minLength=32） |
 
 ### 上传模块使用详解
 
@@ -865,7 +890,7 @@ curl -X POST https://api.example.com/admin/v1/upload/video/chunk/abort \
 
 | 参数 | 位置 | 类型 | 约束 | 必填 | 说明 |
 |------|:----:|:----:|------|:----:|------|
-| `id` | path | integer | — | ✅ | 日志ID |
+| `id` | path | integer | ≥ 1 | ✅ | 日志ID |
 
 ## 二十四、后台-系统设置 模块
 

@@ -42,6 +42,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -96,6 +102,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -121,6 +133,7 @@
                 "summary": "查询资讯详情（后台）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "资讯ID",
                         "name": "id",
@@ -135,8 +148,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资讯不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -167,6 +198,7 @@
                 "summary": "编辑资讯",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "资讯ID",
                         "name": "id",
@@ -202,6 +234,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资讯不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -225,6 +269,7 @@
                 "summary": "删除资讯（软删除）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "资讯ID",
                         "name": "id",
@@ -239,8 +284,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资讯不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -273,6 +336,7 @@
                 "summary": "更新资讯上架/下架状态",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "资讯ID",
                         "name": "id",
@@ -308,6 +372,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资讯不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -336,6 +412,7 @@
                 "summary": "更新资讯可见性",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "资讯ID",
                         "name": "id",
@@ -367,6 +444,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资讯不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -403,6 +492,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -461,6 +556,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -486,6 +587,7 @@
                 "summary": "查询Banner详情（后台）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "Banner ID",
                         "name": "id",
@@ -500,8 +602,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Banner不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -532,6 +652,7 @@
                 "summary": "编辑Banner",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "Banner ID",
                         "name": "id",
@@ -567,6 +688,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Banner不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -590,6 +723,7 @@
                 "summary": "删除Banner（硬删除）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "Banner ID",
                         "name": "id",
@@ -604,8 +738,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Banner不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -642,6 +794,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -700,6 +858,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -728,6 +892,7 @@
                 "summary": "编辑帮助分类",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分类ID",
                         "name": "id",
@@ -763,6 +928,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "帮助分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -786,6 +963,7 @@
                 "summary": "删除帮助分类",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分类ID",
                         "name": "id",
@@ -800,8 +978,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "帮助分类不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -838,6 +1034,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -896,6 +1098,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -921,6 +1129,7 @@
                 "summary": "查询帮助文章详情（后台）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "文章ID",
                         "name": "id",
@@ -935,8 +1144,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "帮助文章不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -967,6 +1194,7 @@
                 "summary": "编辑帮助文章",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "文章ID",
                         "name": "id",
@@ -1002,6 +1230,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "帮助文章不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -1025,6 +1265,7 @@
                 "summary": "删除帮助文章（软删除）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "文章ID",
                         "name": "id",
@@ -1039,8 +1280,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "帮助文章不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -1077,6 +1336,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -1135,6 +1400,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -1160,6 +1431,7 @@
                 "summary": "查询公告详情（后台）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "公告ID",
                         "name": "id",
@@ -1174,8 +1446,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "公告不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -1206,6 +1496,7 @@
                 "summary": "编辑公告",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "公告ID",
                         "name": "id",
@@ -1241,6 +1532,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "公告不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -1264,6 +1567,7 @@
                 "summary": "删除公告（软删除）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "公告ID",
                         "name": "id",
@@ -1278,8 +1582,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "公告不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -1309,9 +1631,10 @@
                 "tags": [
                     "CMS"
                 ],
-                "summary": "更新公告上架/下架状态",
+                "summary": "更新公告状态（草稿/发布/撤销）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "公告ID",
                         "name": "id",
@@ -1347,6 +1670,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "公告不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -1375,6 +1710,7 @@
                 "summary": "更新公告可见性",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "公告ID",
                         "name": "id",
@@ -1406,6 +1742,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "公告不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -2663,6 +3011,7 @@
                 "summary": "审计日志详情",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "日志ID",
                         "name": "id",
@@ -2685,6 +3034,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "日志不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3202,6 +3557,29 @@
                     "Products"
                 ],
                 "summary": "分页查询品牌列表（后台）",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量（最大 100）",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索关键词",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
@@ -3211,6 +3589,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3269,6 +3653,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -3297,6 +3687,7 @@
                 "summary": "编辑品牌",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "品牌ID",
                         "name": "id",
@@ -3332,6 +3723,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "品牌不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -3355,6 +3758,7 @@
                 "summary": "删除品牌",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "品牌ID",
                         "name": "id",
@@ -3369,8 +3773,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "品牌不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3421,6 +3843,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3479,6 +3907,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -3507,6 +3941,7 @@
                 "summary": "编辑分类",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分类ID",
                         "name": "id",
@@ -3542,6 +3977,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -3565,6 +4012,7 @@
                 "summary": "删除分类",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分类ID",
                         "name": "id",
@@ -3579,8 +4027,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -3613,6 +4079,7 @@
                 "summary": "更新分类上下架状态",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分类ID",
                         "name": "id",
@@ -3648,6 +4115,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -3676,6 +4155,7 @@
                 "summary": "更新分类排序",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分类ID",
                         "name": "id",
@@ -3711,6 +4191,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -3739,6 +4231,7 @@
                 "summary": "更新分类可见性",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "分类ID",
                         "name": "id",
@@ -3770,6 +4263,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -4710,6 +5215,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限访问",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -4764,6 +5275,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "无权限访问",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -4792,6 +5309,7 @@
                 "summary": "编辑通知模板",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "模板ID",
                         "name": "id",
@@ -4823,6 +5341,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限访问",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "模板不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5707,6 +6237,59 @@
                     "Products"
                 ],
                 "summary": "分页查询商品列表（后台）",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量（最大 100）",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索关键词",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分类ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "品牌ID",
+                        "name": "brand_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "筛选上架状态",
+                        "name": "is_listed",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "筛选可见状态",
+                        "name": "is_visible",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "商品类型（physical/virtual）",
+                        "name": "product_type",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
@@ -5716,6 +6299,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5770,6 +6359,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -5928,6 +6523,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6062,6 +6663,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "预约时段不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6123,6 +6730,12 @@
                     },
                     "403": {
                         "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "预约时段不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6199,6 +6812,12 @@
                     },
                     "403": {
                         "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "预约时段不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6297,6 +6916,7 @@
                 "summary": "查询商品详情（后台）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6313,6 +6933,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6343,6 +6975,7 @@
                 "summary": "编辑商品",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6378,6 +7011,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6402,6 +7047,7 @@
                 "summary": "删除商品（软删除）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6418,6 +7064,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6451,6 +7109,7 @@
                 "summary": "独立更新商品附加字段配置",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6469,9 +7128,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "2001 商品不存在",
+                        "description": "成功",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
@@ -6482,6 +7141,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6514,6 +7185,7 @@
                 "summary": "更新商品售卖截止时间",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6549,6 +7221,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6577,6 +7261,7 @@
                 "summary": "更新商品经纬度",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6612,6 +7297,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6640,6 +7337,7 @@
                 "summary": "更新商品上下架状态",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6675,6 +7373,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6703,6 +7413,7 @@
                 "summary": "更新商品退款规则关联",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6738,6 +7449,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6763,6 +7486,7 @@
                 "summary": "查询商品SKU列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6779,6 +7503,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6810,6 +7540,7 @@
                 "summary": "批量创建SKU",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6845,6 +7576,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6869,6 +7606,7 @@
                 "summary": "删除商品全部SKU",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6891,6 +7629,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -6923,6 +7667,7 @@
                 "summary": "编辑单个SKU",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -6930,6 +7675,7 @@
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "SKU ID",
                         "name": "sku_id",
@@ -6965,6 +7711,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "SKU不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -6994,6 +7752,7 @@
                 "summary": "独立更新SKU附加字段配置",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7001,6 +7760,7 @@
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "SKU ID",
                         "name": "sku_id",
@@ -7019,9 +7779,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "4004 SKU不存在",
+                        "description": "成功",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
@@ -7032,6 +7792,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "SKU不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -7061,6 +7833,7 @@
                 "summary": "更新SKU过期时间",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7068,6 +7841,7 @@
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "SKU ID",
                         "name": "sku_id",
@@ -7096,6 +7870,30 @@
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "SKU不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
                     }
                 }
             }
@@ -7116,6 +7914,7 @@
                 "summary": "更新SKU生效时间",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7123,6 +7922,7 @@
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "SKU ID",
                         "name": "sku_id",
@@ -7151,6 +7951,30 @@
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "SKU不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
                     }
                 }
             }
@@ -7174,6 +7998,7 @@
                 "summary": "更新商品排序",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7209,6 +8034,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -7234,6 +8071,7 @@
                 "summary": "查询商品规格组列表",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7250,6 +8088,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -7280,6 +8124,7 @@
                 "summary": "创建规格组及规格值",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7315,6 +8160,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -7343,6 +8194,7 @@
                 "summary": "编辑规格组",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7350,6 +8202,7 @@
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "规格组ID",
                         "name": "spec_id",
@@ -7385,6 +8238,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "规格组不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -7408,6 +8273,7 @@
                 "summary": "删除规格组",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7415,6 +8281,7 @@
                         "required": true
                     },
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "规格组ID",
                         "name": "spec_id",
@@ -7429,8 +8296,26 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "规格组不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -7463,6 +8348,7 @@
                 "summary": "更新商品售卖开始时间",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7498,6 +8384,18 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -7526,6 +8424,7 @@
                 "summary": "更新商品可见性",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -7557,6 +8456,18 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "商品不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8044,6 +8955,126 @@
                 }
             }
         },
+        "/admin/v1/mall/tickets": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "全量票夹列表（不限持有人），支持多维组合 AND 筛选 + 全量关联信息（商品/SKU/用户/订单）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Tickets-Admin"
+                ],
+                "summary": "管理后台票夹列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 50）",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按子单ID筛选",
+                        "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按主单ID筛选",
+                        "name": "parent_order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按订单商品行ID筛选",
+                        "name": "order_item_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "按持有人ID筛选（HashID 精确匹配）",
+                        "name": "holder_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按商品分类ID筛选",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按根分类ID筛选",
+                        "name": "root_category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "按预约时段ID筛选",
+                        "name": "booking_slot_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "按核销状态筛选",
+                        "name": "is_verified",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "按转赠状态筛选",
+                        "name": "is_transferred",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "按退款状态筛选",
+                        "name": "is_refunded",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/mall/tickets/:code": {
             "get": {
                 "security": [
@@ -8356,6 +9387,32 @@
                     "Users"
                 ],
                 "summary": "查询C端用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键词搜索（昵称）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "来源ID筛选（不传=不筛选）",
+                        "name": "source_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
@@ -8397,8 +9454,8 @@
                 "summary": "查询C端用户详情",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "用户ID",
+                        "type": "string",
+                        "description": "用户ID（HashID）",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -8411,8 +9468,20 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -8445,8 +9514,8 @@
                 "summary": "修改C端用户状态（启用/禁用）",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "用户ID",
+                        "type": "string",
+                        "description": "用户ID（HashID）",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -8476,6 +9545,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -9175,6 +10250,20 @@
                     "Admin"
                 ],
                 "summary": "角色列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
@@ -9395,6 +10484,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "角色不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -10463,6 +11558,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "后台管理员上传图片到 OSS 永久存储，三重校验（扩展名/MIME/文件头魔数）+ 文件大小上限 20MB，返回 CDN URL；支持 jpg/jpeg/png/gif/webp",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -10473,21 +11569,36 @@
                     "Upload"
                 ],
                 "summary": "上传图片（后台）",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "图片文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；响应字段：url",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（文件类型不支持/文件过大）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限（仅 AdminAuth，无细粒度 URN）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -10877,7 +11988,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功，响应字段含 phone_masked 和 roles（id+code+name 对象数组）",
+                        "description": "成功，响应字段含 phone（完整手机号）和 roles（id+code+name 对象数组）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
@@ -11600,7 +12711,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "2012 商品已下架",
+                        "description": "2013 商品不在售卖时间内",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -11683,6 +12794,7 @@
                 "summary": "修改购物车项",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "购物车项ID",
                         "name": "id",
@@ -11718,6 +12830,12 @@
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
+                    "404": {
+                        "description": "购物车项不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "服务器内部错误",
                         "schema": {
@@ -11744,6 +12862,7 @@
                 "summary": "删除购物车项",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "购物车项ID",
                         "name": "id",
@@ -11753,13 +12872,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "3001 购物车项不存在",
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "购物车项不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -11865,6 +12996,7 @@
                 "summary": "资讯详情（C端）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "资讯ID",
                         "name": "id",
@@ -11877,6 +13009,18 @@
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "资讯不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "500": {
@@ -11974,6 +13118,7 @@
                 "summary": "帮助文章详情（C端）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "文章ID",
                         "name": "id",
@@ -11986,6 +13131,18 @@
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "帮助文章不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "500": {
@@ -12304,11 +13461,76 @@
                     "Products"
                 ],
                 "summary": "商品搜索/列表（C端）",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "description": "每页数量（最大 100）",
+                        "name": "page_size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索关键词",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分类ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "品牌ID",
+                        "name": "brand_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序字段（price_asc/price_desc/sold_desc/newest）",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "最低价格（元）",
+                        "name": "min_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "number",
+                        "description": "最高价格（元）",
+                        "name": "max_price",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "根级分类ID",
+                        "name": "root_category_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "500": {
@@ -12432,6 +13654,7 @@
                 "summary": "商品详情（C端）",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "商品ID",
                         "name": "id",
@@ -12442,6 +13665,12 @@
                 "responses": {
                     "200": {
                         "description": "2001 商品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -12510,6 +13739,7 @@
                 "summary": "标记单条已读",
                 "parameters": [
                     {
+                        "minimum": 1,
                         "type": "integer",
                         "description": "通知ID",
                         "name": "id",
@@ -12532,6 +13762,12 @@
                     },
                     "401": {
                         "description": "未登录或已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "通知不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -15242,6 +16478,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "通过 media_id 读取已上传的图片，仅允许访问自己上传的文件；返回图片二进制流（Content-Type 为实际 MIME 类型），缓存 24h",
                 "consumes": [
                     "application/json"
                 ],
@@ -15255,7 +16492,7 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "媒体文件ID",
+                        "description": "媒体文件ID（minLength=32）",
                         "name": "media_id",
                         "in": "query",
                         "required": true
@@ -15266,6 +16503,12 @@
                         "description": "图片二进制数据",
                         "schema": {
                             "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数错误（media_id 为空）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
                     },
                     "401": {
@@ -15288,6 +16531,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "C 端用户上传图片，三重校验（扩展名/MIME/文件头魔数），返回 media_id（类似微信临时素材）；支持 jpg/jpeg/png/gif/webp，默认上限 256MB（受微信小程序 20MB 限制实际有效上限为 20MB）",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -15298,15 +16542,24 @@
                     "Upload"
                 ],
                 "summary": "上传图片（C端）",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "图片文件",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；响应字段：media_id/created_at",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数错误（文件类型不支持/文件过大）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -15333,7 +16586,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "返回当前登录用户的个人资料；若用户已通过微信登录但尚未注册，返回 data:null（code=0），前端据此判断是否需要引导注册",
+                "description": "返回当前登录用户的个人资料（昵称/头像/手机号/姓名/性别/生日/区县/注册时间）；若用户已通过微信登录但尚未注册，返回 data:null（code=0），前端据此判断是否需要引导注册",
                 "consumes": [
                     "application/json"
                 ],
@@ -15346,7 +16599,7 @@
                 "summary": "获取当前用户个人信息",
                 "responses": {
                     "200": {
-                        "description": "成功；未注册时 data 为 null",
+                        "description": "成功；响应字段：id/nickname/avatar_url/phone/name/gender/birthday/district/created_at；未注册时 data 为 null",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -15371,6 +16624,7 @@
                         "WxaAuth": []
                     }
                 ],
+                "description": "部分更新当前用户个人资料（可编辑字段：nickname/avatar_url/name/gender/birthday/district）；avatar_url 支持 media_id（自动转永久 CDN URL）和标准 URL；空字段不更新",
                 "consumes": [
                     "application/json"
                 ],
@@ -15383,7 +16637,7 @@
                 "summary": "更新用户昵称和头像",
                 "parameters": [
                     {
-                        "description": "更新资料请求参数",
+                        "description": "更新资料请求参数（nickname max=64/avatar_url max=512/name max=64/gender oneof=0 1 2/birthday YYYY-MM-DD/district max=128）",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -15394,13 +16648,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功",
+                        "description": "成功；响应字段：id/nickname/avatar_url/phone/name/gender/birthday/district/created_at",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
                     },
                     "400": {
-                        "description": "请求参数错误",
+                        "description": "请求参数格式错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerErrorResponse"
                         }
@@ -16747,11 +18001,14 @@
                     }
                 },
                 "persons": {
-                    "description": "票夹登记人员信息（由 C 端进行数量和格式校验，后端不做判断）",
+                    "description": "票夹登记人员信息（二维数组：外层按 Ticket 序号，内层为每个 Ticket 的人员列表）。\n\nbefore_pay 模式下 C 端按购买数量提交每个 Ticket 对应的人员信息，\n后端 Ticket 拆分时根据序号分别分配到不同 Ticket。\n\n示例（SKU-A × 2）：\n  [[{\"name\":\"张三\",\"mobile\":\"13800000001\"}], [{\"name\":\"李四\",\"mobile\":\"13800000002\"}]]\n示例（团票 × 1，一票 3 人）：\n  [[{\"name\":\"爸爸\",...}, {\"name\":\"妈妈\",...}, {\"name\":\"孩子\",...}]]",
                     "type": "array",
                     "maxItems": 50,
                     "items": {
-                        "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.PersonInfo"
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/github_com_vbegin_bizmall_internal_order_dto.PersonInfo"
+                        }
                     }
                 },
                 "product_id": {

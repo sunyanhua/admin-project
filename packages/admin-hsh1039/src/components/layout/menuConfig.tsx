@@ -20,6 +20,7 @@ import {
   QuestionCircleOutlined,
   ShoppingCartOutlined,
   WalletOutlined,
+  IdcardOutlined,
 } from '@ant-design/icons';
 
 /** 顶部一级菜单配置 */
@@ -97,6 +98,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
         { key: '/operation/event-categories', icon: <UnorderedListOutlined />, label: '活动分类管理' },
         { key: '/operation/events', icon: <FileTextOutlined />, label: '活动发布' },
         { key: '/operation/event-orders', icon: <FormOutlined />, label: '活动报名' },
+        { key: '/operation/event-tickets', icon: <IdcardOutlined />, label: '入场券管理' },
       ],
     },
     {
@@ -107,6 +109,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
         { key: '/operation/ticket-categories', icon: <UnorderedListOutlined />, label: '门票分类管理' },
         { key: '/operation/tickets', icon: <FileTextOutlined />, label: '门票销售' },
         { key: '/operation/ticket-orders', icon: <ShoppingCartOutlined />, label: '购票信息' },
+        { key: '/operation/ticket-wallet', icon: <WalletOutlined />, label: '票夹管理' },
       ],
     },
     {
