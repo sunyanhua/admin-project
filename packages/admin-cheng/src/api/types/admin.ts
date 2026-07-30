@@ -35,6 +35,7 @@ export interface RoleListItem {
   id: string;
   name: string;
   description: string;
+  tag?: number;
   status: AdminRoleStatus;
   permission_count: number;
   admin_count: number;
@@ -46,6 +47,7 @@ export interface RoleDetailResponse {
   id: string;
   name: string;
   description: string;
+  tag?: number;
   status: AdminRoleStatus;
   permissions: string[];
   admin_count: number;
@@ -58,6 +60,7 @@ export interface CreateRoleRequest {
   name: string;
   permissions: string[];
   description?: string;
+  tag?: number;
 }
 
 /** 更新角色请求（全部可选） */
@@ -66,6 +69,7 @@ export interface UpdateRoleRequest {
   description?: string;
   permissions?: string[];
   status?: AdminRoleStatus;
+  tag?: number;
 }
 
 /** 角色关联管理员列表项 */

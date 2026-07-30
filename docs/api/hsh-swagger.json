@@ -16970,6 +16970,7 @@
             ],
             "properties": {
                 "evidence_images": {
+                    "description": "凭证图片（可选，允许不上传）",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -16983,12 +16984,8 @@
                     "type": "string",
                     "maxLength": 256
                 },
-                "refund_amount": {
-                    "description": "元（去掉 required：float64 零值 0.0 已被 gt=0 拦截，required 冗余且语义混淆）",
-                    "type": "number"
-                },
                 "related_after_sale_id": {
-                    "description": "关联的上一次售后单 ID（重新发起售后时传入）",
+                    "description": "关联的上一次售后单 ID（重新发起售后时传入，需校验关联单已处于终态）",
                     "type": "integer"
                 },
                 "type": {

@@ -62,10 +62,12 @@ const RoleManagement = () => {
       key: 'name',
     },
     {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-      render: (desc?: string) => desc || '-',
+      title: '标识',
+      dataIndex: 'tag',
+      key: 'tag',
+      width: 90,
+      align: 'center',
+      render: (tag?: number) => (tag != null ? tag : '-'),
     },
     {
       title: '权限数量',

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Form, Input, Button, Space, Tree, Spin, Empty } from 'antd';
+import { Form, Input, InputNumber, Button, Space, Tree, Spin, Empty } from 'antd';
 import type { TreeDataNode } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { adminApi } from '../../api/services/admin';
@@ -61,6 +61,7 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
           form.setFieldsValue({
             name: detail.name || '',
             description: detail.description || '',
+            tag: detail.tag,
           });
         })
         .catch((err) => {
@@ -97,6 +98,7 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
           name: values.name,
           description: values.description || undefined,
           permissions: compacted,
+          tag: values.tag,
         });
         success('角色创建成功');
       } else {
@@ -104,6 +106,7 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
         await adminApi.updateRole(roleId, {
           name: values.name,
           description: values.description || undefined,
+          tag: values.tag,
         });
         success('角色更新成功');
       }
@@ -168,6 +171,14 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
             ]}
           >
             <Input placeholder="如 超级管理员" />
+          </Form.Item>
+
+          <Form.Item
+            label="标识"
+            name="tag"
+            rules={[{ required: true, message: '请输入标识' }]}
+          >
+            <InputNumber placeholder="数字标识" style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
