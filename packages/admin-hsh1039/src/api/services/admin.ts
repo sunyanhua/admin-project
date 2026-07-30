@@ -101,8 +101,8 @@ export const adminApi = {
   },
 
   // 编辑角色 — PUT /admin/v1/roles/:id
-  // Body: { name?, description? }
-  updateRole: async (id: number, data: { name?: string; description?: string }) => {
+  // Body: { name?, description?, code? }
+  updateRole: async (id: number, data: { name?: string; description?: string; code?: string }) => {
     return request.put(`/admin/v1/roles/${id}`, data);
   },
 
