@@ -30,6 +30,8 @@ interface TicketRecord {
   is_refunded: boolean;
   verified_at?: string;
   created_at?: string;
+  product_title?: string;
+  sku_spec_text?: string;
   holder?: {
     id: string;
     nickname?: string;
@@ -157,12 +159,10 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
 
   const productRenderer = config.productColumnTitle
     ? (_: any, record: TicketRecord) => {
-        const p = record.product;
-        const s = record.sku;
         return (
           <div style={{ lineHeight: 1.6 }}>
-            <div style={{ wordBreak: 'break-word' }}>{p?.title || '-'}</div>
-            {s?.spec_text && <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>{s.spec_text}</div>}
+            <div style={{ wordBreak: 'break-word' }}>{record.product_title || '-'}</div>
+            {record.sku_spec_text && <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>{record.sku_spec_text}</div>}
           </div>
         );
       }
@@ -187,16 +187,12 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
       title: productColumnTitle,
       key: 'product',
       ...(config.productColumnTitle ? { width: 180 } : {}),
-      render: productRenderer || ((_: any, record: TicketRecord) => {
-        const p = record.product;
-        const s = record.sku;
-        return (
-          <div style={{ lineHeight: 1.6 }}>
-            <div style={{ wordBreak: 'break-word' }}>{p?.title || '-'}</div>
-            {s?.spec_text && <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>{s.spec_text}</div>}
-          </div>
-        );
-      }),
+      render: productRenderer || ((_: any, record: TicketRecord) => (
+        <div style={{ lineHeight: 1.6 }}>
+          <div style={{ wordBreak: 'break-word' }}>{record.product_title || '-'}</div>
+          {record.sku_spec_text && <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>{record.sku_spec_text}</div>}
+        </div>
+      )),
     },
     {
       title: '核销',
@@ -290,8 +286,8 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
         {detailData && (
           <Descriptions column={2} bordered size="small">
             <Descriptions.Item label="票夹码" span={2}>{detailData.code || '-'}</Descriptions.Item>
-            <Descriptions.Item label="活动/门票">{detailData.product?.title || '-'}</Descriptions.Item>
-            <Descriptions.Item label="规格">{detailData.sku?.spec_text || detailData.sku?.name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="活动/门票">{detailData.product_title || '-'}</Descriptions.Item>
+            <Descriptions.Item label="规格">{detailData.sku_spec_text || '-'}</Descriptions.Item>
             <Descriptions.Item label="持有人">{detailData.holder?.nickname || '-'}</Descriptions.Item>
             <Descriptions.Item label="核销状态">
               <Tag color={detailData.is_verified ? 'green' : 'default'}>{detailData.is_verified ? '已核销' : '未核销'}</Tag>
