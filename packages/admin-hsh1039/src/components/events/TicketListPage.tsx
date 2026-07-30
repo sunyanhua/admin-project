@@ -17,6 +17,9 @@ interface TicketConfig {
   title: string;
   description: string;
   defaultRootCategoryId?: number;
+  hideCode?: boolean;
+  productColumnTitle?: string;
+  useUserData?: boolean; // 使用 user_data 字段而非 holder
 }
 
 interface TicketRecord {
@@ -31,6 +34,11 @@ interface TicketRecord {
     id: string;
     nickname?: string;
     avatar_url?: string;
+  };
+  user_data?: {
+    userid?: string;
+    avatar?: string;
+    nick?: string;
   };
   product?: {
     id: number;
@@ -116,12 +124,21 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
     { name: 'keyword', placeholder: '票夹码/持有人搜索', type: 'input' },
   ];
 
-  const columns: ColumnsType<TicketRecord> = [
-    {
-      title: '持有人',
-      key: 'holder',
-      width: 160,
-      render: (_: any, record: TicketRecord) => {
+  const holder = config.useUserData
+    ? (_: any, record: TicketRecord) => {
+        const ud = record.user_data;
+        const nick = ud?.nick || '-';
+        const uid = ud?.userid;
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }} disabled={!uid}>
+            <Space size={4}>
+              <Avatar src={getAvatarUrl(ud?.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+              <span style={{ fontSize: 14 }}>{nick}</span>
+            </Space>
+          </Button>
+        );
+      }
+    : (_: any, record: TicketRecord) => {
         const h = record.holder;
         const avatar = h?.avatar_url;
         const nick = h?.nickname || '-';
@@ -134,20 +151,12 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
             </Space>
           </Button>
         );
-      },
-    },
-    {
-      title: '票夹码',
-      dataIndex: 'code',
-      key: 'code',
-      width: 180,
-      ellipsis: true,
-      render: (v: string) => v || '-',
-    },
-    {
-      title: '活动/门票',
-      key: 'product',
-      render: (_: any, record: TicketRecord) => {
+      };
+
+  const productColumnTitle = config.productColumnTitle || '活动/门票';
+
+  const productRenderer = config.productColumnTitle
+    ? (_: any, record: TicketRecord) => {
         const p = record.product;
         const s = record.sku;
         return (
@@ -156,7 +165,38 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
             {s?.spec_text && <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>{s.spec_text}</div>}
           </div>
         );
-      },
+      }
+    : undefined;
+
+  const columns: ColumnsType<TicketRecord> = [
+    {
+      title: '持有人',
+      key: 'holder',
+      width: 160,
+      render: holder,
+    },
+    ...(config.hideCode ? [] : [{
+      title: '票夹码' as const,
+      dataIndex: 'code' as const,
+      key: 'code',
+      width: 180,
+      ellipsis: true,
+      render: (v: string) => v || '-',
+    }]),
+    {
+      title: productColumnTitle,
+      key: 'product',
+      ...(config.productColumnTitle ? { width: 180 } : {}),
+      render: productRenderer || ((_: any, record: TicketRecord) => {
+        const p = record.product;
+        const s = record.sku;
+        return (
+          <div style={{ lineHeight: 1.6 }}>
+            <div style={{ wordBreak: 'break-word' }}>{p?.title || '-'}</div>
+            {s?.spec_text && <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>{s.spec_text}</div>}
+          </div>
+        );
+      }),
     },
     {
       title: '核销',
@@ -235,7 +275,7 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
             loading={loading}
             pagination={pagination}
             onPageChange={onPageChange}
-            scroll={{ x: 920 }}
+            scroll={{ x: config.hideCode ? 740 : 920 }}
           />
         }
       />
