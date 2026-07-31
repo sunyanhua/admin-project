@@ -3681,6 +3681,91 @@
                 }
             }
         },
+        "/api/v1/wxa/rec/help-select/:user_id": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "为当前登录用户的亲友团成员获取帮TA选异性推荐候选列表。需先通过亲友团 API 加入该用户。缓存未命中时自动触发异步构建，返回 40401 提示稍后刷新。Cursor 由服务端 Redis 内部维护，前端无需传递分页游标。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-推荐"
+                ],
+                "summary": "帮TA选",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "脱单用户 ID",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 50）",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_module_recommend.HelpSelectResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "不能帮自己选（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "非亲友团成员（code=40301）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "脱单用户状态不满足条件（code=42201）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "推荐缓存构建中/无可用数据（code=40401）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/rec/match-recommend": {
             "get": {
                 "security": [
@@ -5551,10 +5636,6 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.LoginWxaResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "description": "AccessToken C 端 JWT 访问令牌。",
-                    "type": "string"
-                },
                 "expires_at": {
                     "description": "ExpiresAt Token 过期时间（Unix 时间戳）。",
                     "type": "string"
@@ -5565,6 +5646,10 @@
                 },
                 "issued_at": {
                     "description": "IssuedAt Token 签发时间（Unix 时间戳）。",
+                    "type": "string"
+                },
+                "token": {
+                    "description": "Token C 端 JWT 访问令牌。",
                     "type": "string"
                 }
             }
@@ -6505,6 +6590,20 @@
                 "UserGenderMale",
                 "UserGenderFemale"
             ]
+        },
+        "internal_module_recommend.HelpSelectResponse": {
+            "type": "object",
+            "properties": {
+                "has_more": {
+                    "type": "boolean"
+                },
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_module_recommend.RichCandidate"
+                    }
+                }
+            }
         },
         "internal_module_recommend.MatchmakingPairResponse": {
             "type": "object",

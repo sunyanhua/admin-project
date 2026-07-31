@@ -6,7 +6,6 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
-
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { ProfileAuditStatus, MatchProfileAuditStatus } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
@@ -38,7 +37,7 @@ const filters: FilterConfig[] = [
   { name: 'gender', placeholder: '全部性别', type: 'select', options: GENDER_OPTIONS },
   { name: 'profile_audit_status', placeholder: '全部资料审核状态', type: 'select', options: PROFILE_AUDIT_OPTIONS },
   { name: 'match_audit_status', placeholder: '全部档案审核状态', type: 'select', options: MATCH_AUDIT_OPTIONS },
-  { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
+  { name: 'keyword', placeholder: '搜索昵称或手机号', type: 'input' },
 ];
 
 const PROFILE_AUDIT_MAP: Record<number, { color: string; text: string }> = {
@@ -140,18 +139,24 @@ const UserList = () => {
       ),
     },
     {
+      title: '手机号',
+      dataIndex: 'phone',
+      key: 'phone',
+      width: 140,
+      render: (v: string) => v || '-',
+    },
+    {
       title: '性别',
       dataIndex: 'gender',
       key: 'gender',
       width: 60,
-      render: (g: number) => GENDER_LABEL[g] || '未知',
+      render: (g: number) => GENDER_LABEL[g] || '-',
     },
     {
       title: '年龄',
       dataIndex: 'age',
       key: 'age',
       width: 60,
-      render: (v: number) => (v != null ? v : '-'),
     },
     {
       title: '资料审核',
@@ -159,7 +164,7 @@ const UserList = () => {
       key: 'profile_audit_status',
       width: 100,
       render: (s: number) => {
-        const info = PROFILE_AUDIT_MAP[s] || { color: 'default', text: '未知' };
+        const info = PROFILE_AUDIT_MAP[s] || { color: 'default', text: '-' };
         return <Tag color={info.color}>{info.text}</Tag>;
       },
     },
@@ -168,20 +173,21 @@ const UserList = () => {
       dataIndex: 'match_audit_status',
       key: 'match_audit_status',
       width: 100,
-      render: (s: number) => {
-        const info = MATCH_AUDIT_MAP[s] || { color: 'default', text: '未知' };
+      render: (s: number | null) => {
+        if (s == null) return <Tag>未提交</Tag>;
+        const info = MATCH_AUDIT_MAP[s] || { color: 'default', text: '-' };
         return <Tag color={info.color}>{info.text}</Tag>;
       },
     },
     {
-      title: '最后活跃',
+      title: '最近活跃',
       dataIndex: 'last_active_at',
       key: 'last_active_at',
       width: 120,
       render: (t: string) => (
         <div style={{ lineHeight: 1.6 }}>
-          <div>{formatDate(t)}</div>
-          <div style={{ color: '#666', fontSize: 12 }}>{t ? formatDateTime(t).split(' ')[1] : '-'}</div>
+          <div>{t ? formatDate(t) : '-'}</div>
+          <div style={{ color: '#666', fontSize: 12 }}>{t ? formatDateTime(t).split(' ')[1] : ''}</div>
         </div>
       ),
     },
@@ -193,7 +199,7 @@ const UserList = () => {
       render: (t: string) => (
         <div style={{ lineHeight: 1.6 }}>
           <div>{formatDate(t)}</div>
-          <div style={{ color: '#666', fontSize: 12 }}>{t ? formatDateTime(t).split(' ')[1] : '-'}</div>
+          <div style={{ color: '#666', fontSize: 12 }}>{formatDateTime(t).split(' ')[1]}</div>
         </div>
       ),
     },
@@ -229,8 +235,8 @@ const UserList = () => {
   return (
     <>
       <StandardPage
-        title="注册用户管理"
-        description="管理平台的注册用户信息，支持按性别、年龄、审核状态筛选，查看用户基础资料和脱单档案详情，审核脱单档案。"
+        title="基础资料管理"
+        description="查看和管理平台注册用户的基础资料，支持按性别、审核状态筛选，可查看详情及修改用户资料。"
         showRefreshButton
         onRefresh={refresh}
         searchArea={
@@ -249,7 +255,7 @@ const UserList = () => {
             loading={loading}
             pagination={pagination}
             onPageChange={onPageChange}
-            scroll={{ x: 900 }}
+            scroll={{ x: 1000 }}
           />
         }
       />
