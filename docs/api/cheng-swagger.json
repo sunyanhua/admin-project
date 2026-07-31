@@ -3991,6 +3991,203 @@
                 }
             }
         },
+        "/api/v1/wxa/user/checkin": {
+            "get": {
+                "description": "分页返回当前用户的签到记录列表，按签到日期倒序排列。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户模块"
+                ],
+                "summary": "签到记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 50）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "签到记录列表",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.CheckinListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "执行每日签到操作。同一用户同一天不可重复签到（Redis SETNX 去重 + DB UNIQUE 约束兜底）。签到成功后异步发放积分金币奖励。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户模块"
+                ],
+                "summary": "每日签到",
+                "responses": {
+                    "200": {
+                        "description": "签到成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "今日已签到(42214)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/user/credits/log": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户的嗑学分变化记录，按 created_at DESC 倒序。默认 page=1/size=20/max=100。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "嗑学分变化记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（1-based，默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.CreditsLogItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/user/credits/rank": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "返回 TOP N 嗑学分周排行榜（按 credits_weekly DESC）+ 当前用户排名和上周排名。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "嗑学分周排行榜",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.CreditsRankResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/user/exit": {
             "post": {
                 "security": [
@@ -4324,7 +4521,7 @@
         },
         "/api/v1/wxa/user/register": {
             "post": {
-                "description": "提交手机号和验证码完成注册，创建用户记录并绑定到登录会话。手机号已绑定或验证码无效时返回错误。",
+                "description": "提交手机号和验证码完成注册或激活迁移用户。已绑定微信返回 40303，手机号已绑定返回 42202。",
                 "consumes": [
                     "application/json"
                 ],
@@ -4348,7 +4545,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "注册成功，返回用户 ID",
+                        "description": "注册成功，返回用户 ID 和迁移标识",
                         "schema": {
                             "allOf": [
                                 {
@@ -4373,6 +4570,12 @@
                     },
                     "401": {
                         "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "微信已绑定账户(40303)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -4454,6 +4657,66 @@
                     },
                     "500": {
                         "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/user/wallet/transaction": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询积分金币交易流水，按 created_at DESC 排序。默认 page=1 / size=20 / max=50。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "交易流水查询",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（1-based，默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 50）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.WalletTransactionItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -5154,7 +5417,7 @@
                     "type": "string"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "nickname": {
                     "type": "string"
@@ -5395,7 +5658,11 @@
                 },
                 "gender": {
                     "description": "1=男 2=女",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                        }
+                    ]
                 },
                 "nickname": {
                     "type": "string"
@@ -5420,10 +5687,6 @@
                         2
                     ]
                 },
-                "real_name": {
-                    "description": "RealName 真实姓名，不为 nil 时更新。",
-                    "type": "string"
-                },
                 "reason": {
                     "description": "Reason 变更原因，必填。",
                     "type": "string"
@@ -5446,7 +5709,7 @@
                     "type": "string"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "last_active_at": {
                     "type": "string"
@@ -5461,7 +5724,7 @@
                     "type": "string"
                 },
                 "profile_audit_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
                 },
                 "real_name": {
                     "type": "string"
@@ -5487,13 +5750,13 @@
                     "type": "string"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "last_active_at": {
                     "type": "string"
                 },
                 "match_audit_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
                 },
                 "nickname": {
                     "type": "string"
@@ -5502,7 +5765,7 @@
                     "type": "string"
                 },
                 "profile_audit_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
                 },
                 "user_id": {
                     "type": "string"
@@ -5516,7 +5779,7 @@
                     "type": "string"
                 },
                 "audit_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
                 },
                 "audited_at": {
                     "type": "string"
@@ -5528,7 +5791,7 @@
                     "type": "string"
                 },
                 "education": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
                 "height": {
                     "type": "integer"
@@ -5543,7 +5806,7 @@
                     "type": "string"
                 },
                 "income_range": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
                 "match_code": {
                     "type": "string"
@@ -5583,6 +5846,121 @@
                 "reason": {
                     "description": "Reason 审核意见（拒绝时建议填写原因）。",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.CheckinListItem": {
+            "type": "object",
+            "properties": {
+                "checkin_date": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.CheckinListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.CheckinListItem"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "page_size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.CreditsLogItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "credits_after": {
+                    "type": "integer"
+                },
+                "credits_delta": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "source_id": {
+                    "type": "string"
+                },
+                "source_type": {
+                    "description": "1=opinion / 2=weekly_reset",
+                    "type": "integer"
+                },
+                "weekly_after": {
+                    "type": "integer"
+                },
+                "weekly_delta": {
+                    "type": "integer"
+                },
+                "weekly_rank": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.CreditsRankItem": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "weekly_credits": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.CreditsRankResponse": {
+            "type": "object",
+            "properties": {
+                "last_week_rank": {
+                    "description": "上周排名，无数据时为 null",
+                    "type": "integer"
+                },
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.CreditsRankItem"
+                    }
+                },
+                "my_credits": {
+                    "type": "integer"
+                },
+                "my_rank": {
+                    "description": "未上榜时为 null",
+                    "type": "integer"
                 }
             }
         },
@@ -5658,16 +6036,19 @@
             "type": "object",
             "properties": {
                 "audit_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
                 },
                 "can_modify_at": {
+                    "type": "string"
+                },
+                "cn_zodiac": {
                     "type": "string"
                 },
                 "current_city": {
                     "type": "string"
                 },
                 "education": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
                 "extra": {
                     "type": "object",
@@ -5689,10 +6070,13 @@
                     "type": "string"
                 },
                 "income_range": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                },
+                "is_active": {
+                    "type": "boolean"
                 },
                 "marital_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
                 "match_code": {
                     "type": "string"
@@ -5700,16 +6084,25 @@
                 "partner_demand": {
                     "type": "string"
                 },
+                "popularity": {
+                    "type": "integer"
+                },
                 "profession": {
                     "type": "string"
                 },
                 "self_intro": {
                     "type": "string"
                 },
+                "visibility": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility"
+                },
                 "weight": {
                     "type": "integer"
                 },
                 "workplace": {
+                    "type": "string"
+                },
+                "zone_id": {
                     "type": "string"
                 }
             }
@@ -5733,6 +6126,9 @@
                     "description": "CanModifyAt 下次可修改时间（审核通过后每周一次）。",
                     "type": "string"
                 },
+                "cn_zodiac": {
+                    "type": "string"
+                },
                 "created_at": {
                     "description": "CreatedAt 创建时间。",
                     "type": "string"
@@ -5741,7 +6137,7 @@
                     "type": "string"
                 },
                 "education": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
                 "extra": {
                     "description": "Extra 扩展字段（JSONB）。",
@@ -5764,10 +6160,10 @@
                     "type": "string"
                 },
                 "income_range": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
                 "marital_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
                 "match_code": {
                     "type": "string"
@@ -5804,7 +6200,7 @@
                     "type": "integer"
                 },
                 "audit_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
                 },
                 "avatar": {
                     "type": "string"
@@ -5813,14 +6209,8 @@
                     "description": "\"2006-01-02\" 格式",
                     "type": "string"
                 },
-                "cn_zodiac": {
-                    "type": "string"
-                },
                 "gender": {
-                    "type": "integer"
-                },
-                "is_lunar_birth": {
-                    "type": "boolean"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "nickname": {
                     "type": "string"
@@ -5844,16 +6234,16 @@
                 "phone": {
                     "description": "Phone 手机号。",
                     "type": "string"
-                },
-                "zone_id": {
-                    "description": "ZoneID 专区 ID（可选，UUID v7 格式）。\n传入空字符串或省略则不分配专区。注册时设定后不可修改。",
-                    "type": "string"
                 }
             }
         },
         "github_com_vbegin_tlnc_v6_internal_module_user_model.RegisterResponse": {
             "type": "object",
             "properties": {
+                "is_migrated": {
+                    "description": "IsMigrated 本次是否为迁移用户激活（true=迁移用户激活，false=正常新用户注册）。\n前端据此展示差异化引导流程。",
+                    "type": "boolean"
+                },
                 "user_id": {
                     "description": "UserID 新创建的用户 ID。",
                     "type": "string"
@@ -5863,6 +6253,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.SubmitMatchProfileRequest": {
             "type": "object",
             "properties": {
+                "cn_zodiac": {
+                    "description": "CnZodiac 生肖（用户可提交，也可由后端根据出生日期自动计算）。",
+                    "type": "string"
+                },
                 "current_city": {
                     "description": "CurrentCity 现居城市。",
                     "type": "string"
@@ -5931,6 +6325,10 @@
                     "description": "Profession 职业。",
                     "type": "string"
                 },
+                "real_name": {
+                    "description": "RealName 真实姓名（明文，后端 AES-256-GCM 加密存储 + SHA-256 哈希用于搜索）。",
+                    "type": "string"
+                },
                 "self_intro": {
                     "description": "SelfIntro 个人介绍，上限 5000 字符。",
                     "type": "string"
@@ -5946,6 +6344,10 @@
                 "workplace": {
                     "description": "Workplace 工作单位。",
                     "type": "string"
+                },
+                "zone_id": {
+                    "description": "ZoneID 专区 ID（可选，UUID v7 格式，仅首次提交脱单档案时写入）。",
+                    "type": "string"
                 }
             }
         },
@@ -5957,49 +6359,23 @@
                     "type": "string"
                 },
                 "birth_date": {
-                    "description": "BirthDate 出生日期，格式 YYYY-MM-DD，仅可设置一次。",
+                    "description": "BirthDate 出生日期，格式 YYYY-MM-DD，可多次修改。",
                     "type": "string"
                 },
-                "cn_zodiac": {
-                    "description": "CnZodiac 生肖；用户提交时始终接受（农历/公历年份差可由用户手动纠正）。",
-                    "type": "string",
-                    "enum": [
-                        "鼠",
-                        "牛",
-                        "虎",
-                        "兔",
-                        "龙",
-                        "蛇",
-                        "马",
-                        "羊",
-                        "猴",
-                        "鸡",
-                        "狗",
-                        "猪"
-                    ]
-                },
                 "gender": {
-                    "description": "Gender 性别：1=男 2=女，仅可设置一次。",
+                    "description": "Gender 性别：1=男 2=女，可多次修改。",
                     "type": "integer",
                     "enum": [
                         1,
                         2
                     ]
                 },
-                "is_lunar_birth": {
-                    "description": "IsLunarBirth 出生日期是否为农历（true=农历 false=公历）。",
-                    "type": "boolean"
-                },
                 "nickname": {
                     "description": "Nickname 昵称，可多次修改。",
                     "type": "string"
                 },
-                "real_name": {
-                    "description": "RealName 真实姓名，仅可设置一次（AES-256-GCM 加密存储）。",
-                    "type": "string"
-                },
                 "zodiac": {
-                    "description": "Zodiac 星座；is_lunar_birth=true 时接受用户提交值，false 时由后端自动计算覆盖。",
+                    "description": "Zodiac 星座，由后端自动计算（忽略前端提交值）。",
                     "type": "string",
                     "enum": [
                         "白羊座",
@@ -6037,10 +6413,6 @@
                     "description": "BirthDate 出生日期，格式 YYYY-MM-DD。",
                     "type": "string"
                 },
-                "cn_zodiac": {
-                    "description": "CnZodiac 生肖（后端根据 birth_date 自动计算或用户自主提交）。",
-                    "type": "string"
-                },
                 "gender": {
                     "description": "Gender 性别，见 status.UserGender 枚举（1=男 2=女）。",
                     "allOf": [
@@ -6049,16 +6421,8 @@
                         }
                     ]
                 },
-                "is_lunar_birth": {
-                    "description": "IsLunarBirth 出生日期是否为农历。",
-                    "type": "boolean"
-                },
                 "nickname": {
                     "description": "Nickname 昵称。",
-                    "type": "string"
-                },
-                "real_name": {
-                    "description": "RealName 真实姓名（脱敏显示为 \"***\"）。",
                     "type": "string"
                 },
                 "user_id": {
@@ -6066,7 +6430,7 @@
                     "type": "string"
                 },
                 "zodiac": {
-                    "description": "Zodiac 星座（后端根据 birth_date 自动计算或用户自主提交）。",
+                    "description": "Zodiac 星座（后端根据 birth_date 自动计算）。",
                     "type": "string"
                 }
             }
@@ -6097,9 +6461,6 @@
                 "credits_weekly": {
                     "type": "integer"
                 },
-                "is_active": {
-                    "type": "boolean"
-                },
                 "last_active_at": {
                     "type": "string"
                 },
@@ -6109,14 +6470,8 @@
                 "user_id": {
                     "type": "string"
                 },
-                "visibility": {
-                    "type": "integer"
-                },
                 "wallet_balance": {
                     "type": "integer"
-                },
-                "zone_id": {
-                    "type": "string"
                 }
             }
         },
@@ -6146,6 +6501,14 @@
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.UserInfo"
                         }
                     ]
+                },
+                "wallet": {
+                    "description": "Wallet 钱包信息（v6_user_wallet，钱包不存在时为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.WalletInfo"
+                        }
+                    ]
                 }
             }
         },
@@ -6166,10 +6529,10 @@
                     "type": "string"
                 },
                 "education": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "height": {
                     "type": "integer"
@@ -6187,10 +6550,10 @@
                     "type": "string"
                 },
                 "income_range": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
                 "marital_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
                 "match_code": {
                     "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
@@ -6219,6 +6582,56 @@
                     "type": "string"
                 },
                 "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.WalletInfo": {
+            "type": "object",
+            "properties": {
+                "coins": {
+                    "type": "integer"
+                },
+                "coins_earned": {
+                    "type": "integer"
+                },
+                "coins_spent": {
+                    "type": "integer"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "points_earned": {
+                    "type": "integer"
+                },
+                "points_spent": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.WalletTransactionItem": {
+            "type": "object",
+            "properties": {
+                "coins_after": {
+                    "type": "integer"
+                },
+                "coins_delta": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "points_after": {
+                    "type": "integer"
+                },
+                "points_delta": {
+                    "type": "integer"
+                },
+                "reason": {
                     "type": "string"
                 }
             }
@@ -6301,10 +6714,10 @@
                     "type": "string"
                 },
                 "education": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "height": {
                     "type": "integer"
@@ -6322,10 +6735,10 @@
                     "type": "string"
                 },
                 "income_range": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
                 "marital_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
                 "match_code": {
                     "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
@@ -6415,6 +6828,38 @@
                 "AdminUserStatusDisabled"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.Education": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3,
+                4,
+                5
+            ],
+            "x-enum-comments": {
+                "EducationAssociate": "大专",
+                "EducationBachelor": "本科",
+                "EducationDoctorate": "博士及以上",
+                "EducationHighSchool": "高中及以下",
+                "EducationMaster": "硕士"
+            },
+            "x-enum-descriptions": [
+                "高中及以下",
+                "大专",
+                "本科",
+                "硕士",
+                "博士及以上"
+            ],
+            "x-enum-varnames": [
+                "EducationHighSchool",
+                "EducationAssociate",
+                "EducationBachelor",
+                "EducationMaster",
+                "EducationDoctorate"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType": {
             "type": "integer",
             "format": "int32",
@@ -6433,6 +6878,66 @@
             "x-enum-varnames": [
                 "FeelingDislike",
                 "FeelingLike"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ],
+            "x-enum-comments": {
+                "IncomeRange10KTo20K": "10K–20K",
+                "IncomeRange20KTo50K": "20K–50K",
+                "IncomeRange3KTo5K": "3K–5K",
+                "IncomeRange5KTo10K": "5K–10K",
+                "IncomeRangeAbove50K": "50K 以上",
+                "IncomeRangeBelow3K": "3K 以下"
+            },
+            "x-enum-descriptions": [
+                "3K 以下",
+                "3K–5K",
+                "5K–10K",
+                "10K–20K",
+                "20K–50K",
+                "50K 以上"
+            ],
+            "x-enum-varnames": [
+                "IncomeRangeBelow3K",
+                "IncomeRange3KTo5K",
+                "IncomeRange5KTo10K",
+                "IncomeRange10KTo20K",
+                "IncomeRange20KTo50K",
+                "IncomeRangeAbove50K"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "MaritalStatusDivorced": "离异",
+                "MaritalStatusUnmarried": "未婚",
+                "MaritalStatusWidowed": "丧偶"
+            },
+            "x-enum-descriptions": [
+                "未婚",
+                "离异",
+                "丧偶"
+            ],
+            "x-enum-varnames": [
+                "MaritalStatusUnmarried",
+                "MaritalStatusDivorced",
+                "MaritalStatusWidowed"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditAction": {
@@ -6591,6 +7096,30 @@
                 "UserGenderFemale"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "UserVisibilityFull": "全开放 — 所有用户可见",
+                "UserVisibilityHide": "全隐藏 — 不对任何人展示",
+                "UserVisibilityZone": "仅专区 — 仅配对关系用户可见"
+            },
+            "x-enum-descriptions": [
+                "全开放 — 所有用户可见",
+                "仅专区 — 仅配对关系用户可见",
+                "全隐藏 — 不对任何人展示"
+            ],
+            "x-enum-varnames": [
+                "UserVisibilityFull",
+                "UserVisibilityZone",
+                "UserVisibilityHide"
+            ]
+        },
         "internal_module_recommend.HelpSelectResponse": {
             "type": "object",
             "properties": {
@@ -6664,10 +7193,10 @@
                     "type": "string"
                 },
                 "education": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "height": {
                     "type": "integer"
@@ -6685,10 +7214,10 @@
                     "type": "string"
                 },
                 "income_range": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
                 "marital_status": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
                 "match_code": {
                     "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
