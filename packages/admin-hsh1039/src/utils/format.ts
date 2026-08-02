@@ -5,16 +5,16 @@
  */
 export function parseAsLocal(dateStr: string): Date | null {
   // 匹配 "YYYY-MM-DD HH:mm:ss" 或 "YYYY-MM-DDTHH:mm:ss" 等变体
-  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
-  if (!m) return null;
-  return new Date(
-    +m[1],           // year
-    +m[2] - 1,       // month (0-based)
-    +m[3],           // day
-    +m[4],           // hours
-    +m[5],           // minutes
-    +m[6],           // seconds
-  );
+  let m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
+  if (m) {
+    return new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
+  }
+  // 匹配纯日期 "YYYY-MM-DD"
+  m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    return new Date(+m[1], +m[2] - 1, +m[3]);
+  }
+  return null;
 }
 
 /**
