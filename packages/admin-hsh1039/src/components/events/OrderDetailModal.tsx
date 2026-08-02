@@ -65,8 +65,8 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ data: d, statusMap,
         <>
           <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>收货地址</div>
           <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="收货人">{shipping.recipient_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="联系电话">{shipping.recipient_phone || '-'}</Descriptions.Item>
+            <Descriptions.Item label="收货人">{shipping.name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="联系电话">{shipping.phone || '-'}</Descriptions.Item>
             <Descriptions.Item label="地址" span={2}>{`${shipping.province || ''}${shipping.city || ''}${shipping.district || ''} ${shipping.detail || ''}`}</Descriptions.Item>
           </Descriptions>
         </>
