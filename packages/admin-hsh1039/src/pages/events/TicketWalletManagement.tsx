@@ -5,6 +5,7 @@ const TICKET_WALLET_CONFIG = {
   description: '管理门票票夹，查看持有人、核销状态、转赠记录及退款情况。',
   defaultRootCategoryId: 2,
   useUserData: true,
+  hideCode: true,
 };
 
 const TicketWalletManagement = () => {

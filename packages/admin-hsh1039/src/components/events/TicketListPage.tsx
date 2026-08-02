@@ -26,6 +26,7 @@ interface TicketRecord {
   is_verified: boolean;
   is_transferred: boolean;
   is_refunded: boolean;
+  has_booking: boolean;
   verified_at?: string;
   created_at?: string;
   product_title?: string;
@@ -210,6 +211,13 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
       render: (v: boolean) => v ? <Tag color="red">已退款</Tag> : <Tag>未退款</Tag>,
     },
     {
+      title: '预约',
+      dataIndex: 'has_booking',
+      key: 'has_booking',
+      width: 80,
+      render: (v: boolean) => v ? <Tag color="purple">已预约</Tag> : <Tag>未预约</Tag>,
+    },
+    {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
@@ -265,7 +273,7 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
             loading={loading}
             pagination={pagination}
             onPageChange={onPageChange}
-            scroll={{ x: config.hideCode ? 740 : 920 }}
+            scroll={{ x: config.hideCode ? 820 : 1000 }}
           />
         }
       />
