@@ -252,7 +252,7 @@ const FaqManagement = () => {
             <RichTextEditor placeholder="请输入文章内容" />
           </Form.Item>
 
-          <Form.Item label="权重" name="sort_order" extra="数字越大排序越靠前">
+          <Form.Item label="权重" name="sort_order" extra="权重越大越靠前，默认为0">
             <InputNumber min={0} precision={0} placeholder="请输入权重" style={{ width: '100%' }} />
           </Form.Item>
 

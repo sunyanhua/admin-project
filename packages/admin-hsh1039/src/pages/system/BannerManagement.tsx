@@ -97,14 +97,14 @@ const BannerManagement = () => {
     }
   };
 
-  // 排序修改
+  // 权重修改
   const handleOrderChange = async (record: Banner, value: number | null) => {
     try {
       await bannerApi.updateBanner(record.id, { sort_order: value ?? undefined });
-      success('排序更新成功');
+      success('权重更新成功');
       refresh();
     } catch (err: any) {
-      showError(err?.response?.data?.message || '排序更新失败');
+      showError(err?.response?.data?.message || '权重更新失败');
     }
   };
 
@@ -354,7 +354,7 @@ const BannerManagement = () => {
             <DatePicker showTime format="YYYY/MM/DD HH:mm:ss" placeholder="选择结束时间" style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item label="权重" name="sort_order" extra="数字越大排序越靠前">
+          <Form.Item label="权重" name="sort_order" extra="权重越大越靠前，默认为0">
             <InputNumber min={0} precision={0} placeholder="请输入权重" style={{ width: '100%' }} />
           </Form.Item>
 

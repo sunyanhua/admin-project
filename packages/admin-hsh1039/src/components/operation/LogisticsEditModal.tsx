@@ -123,9 +123,9 @@ const LogisticsEditModal: React.FC<LogisticsEditModalProps> = ({ visible, mode, 
         </Form.Item>
 
         <Form.Item
-          label="排序"
+          label="权重"
           name="sort_order"
-          extra="数值越小越靠前"
+          extra="权重越大越靠前，默认为0"
         >
           <InputNumber min={0} precision={0} style={{ width: 120 }} />
         </Form.Item>

@@ -143,13 +143,13 @@ export function userColumn<T extends Record<string, any>>(
   };
 }
 
-// ====== 排序 InputNumber 列 ======
+// ====== 权重 InputNumber 列 ======
 
 /**
- * 生成排序输入列（内联编辑 + 失焦保存）。
+ * 生成权重输入列（内联编辑 + 失焦保存）。
  *
  * @param recordIdKey - 记录 ID 字段（默认 'id'）
- * @param onSortChange - 排序变更回调 (id, newValue)
+ * @param onSortChange - 权重变更回调 (id, newValue)
  * @param width - 列宽（默认 120）
  */
 export function sortOrderColumn<T extends Record<string, any>>(
@@ -158,7 +158,7 @@ export function sortOrderColumn<T extends Record<string, any>>(
   width: number = 120,
 ) {
   return {
-    title: '排序',
+    title: '权重',
     dataIndex: 'sort_order',
     key: 'sort_order',
     width,

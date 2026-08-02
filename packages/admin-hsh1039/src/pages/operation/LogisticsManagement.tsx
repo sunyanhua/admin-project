@@ -39,7 +39,7 @@ const LogisticsManagement = () => {
   const handleSortOrderChange = async (record: LogisticsCompany, value: number | null) => {
     if (value == null) return;
     await logisticsApi.updateCompany(record.id, { sort_order: value });
-    success('排序更新成功');
+    success('权重更新成功');
     refresh();
   };
 
@@ -65,7 +65,7 @@ const LogisticsManagement = () => {
       render: (v: string) => v ? <a href={v} target="_blank" rel="noopener noreferrer">{v}</a> : '-',
     },
     {
-      title: '排序',
+      title: '权重',
       dataIndex: 'sort_order',
       key: 'sort_order',
       width: 120,
@@ -110,7 +110,7 @@ const LogisticsManagement = () => {
     <>
       <StandardPage
         title="物流管理"
-        description="管理平台物流公司信息，支持增删改查及排序。"
+        description="管理平台物流公司信息，支持增删改查及权重排序。"
         showRefreshButton
         onRefresh={refresh}
         showAddButton
