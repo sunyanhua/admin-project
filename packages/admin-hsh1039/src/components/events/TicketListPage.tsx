@@ -89,10 +89,8 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
   });
 
   const handleViewUserDetail = async (record: TicketRecord) => {
-    const rawId = record.holder?.id;
-    if (!rawId) return;
-    const uid = Number(rawId);
-    if (isNaN(uid)) return;
+    const uid = record.holder?.id;
+    if (!uid) return;
     try {
       const res: any = await userApi.getUserDetail(uid);
       setUserDetailData(res?.data || res);

@@ -69,10 +69,10 @@ const UserDetailSections = ({ user, onStatusChange, onOfficialChange, onRecommen
     {
       title: <><UserOutlined style={{ fontSize: 18, color: '#1890ff', marginRight: 6 }} />基本信息</>,
       items: [
-        { label: '头像', value: d.avatar ? <Avatar src={getAvatarUrl(d.avatar)} size={48} style={{ borderRadius: 8 }} /> : '-' },
-        { label: '昵称', value: <span style={{ fontSize: 16, fontWeight: 600 }}>{d.nick || '-'}</span> },
+        { label: '头像', value: d.avatar_url ? <Avatar src={getAvatarUrl(d.avatar_url)} size={48} style={{ borderRadius: 8 }} /> : '-' },
+        { label: '昵称', value: <span style={{ fontSize: 16, fontWeight: 600 }}>{d.nickname || '-'}</span> },
         { label: '真实姓名', value: d.name || '-' },
-        { label: '手机号', value: d.phone || '-' },
+        { label: '手机号', value: d.phone_masked || d.phone || '-' },
         { label: '性别', value: GENDER_MAP[d.gender] || '未知' },
         { label: '生日', value: d.birthday ? formatDate(d.birthday) : '-' },
         { label: '年龄', value: getAge(d.birthday) },
@@ -106,7 +106,7 @@ const UserDetailSections = ({ user, onStatusChange, onOfficialChange, onRecommen
         items: [
           { label: '用户状态', value: d.status === 3 ? <Tag color="default">未激活</Tag> : <Switch checked={d.status === 0} disabled={disabled} onChange={onStatusChange} checkedChildren="正常" unCheckedChildren="屏蔽" />, span: 1 },
           { label: '最后活跃IP', value: d.last_active_ip || '-', span: 1 },
-          { label: '注册时间', value: d.insertat ? formatDateTime(d.insertat) : '-', span: 1 },
+          { label: '注册时间', value: d.created_at || d.insertat ? formatDateTime(d.created_at || d.insertat) : '-', span: 1 },
           { label: '最后活跃时间', value: d.last_active_at ? formatDateTime(d.last_active_at) : '-', span: 1 },
         ],
       },

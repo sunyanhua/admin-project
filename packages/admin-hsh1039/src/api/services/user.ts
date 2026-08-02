@@ -8,13 +8,13 @@ export const userApi = {
   },
 
   // 获取C端用户详情（v1）
-  getUserDetail: (id: number) => {
-    return request.get(`/admin/v1/mall/users/${id}`);
+  getUserDetail: (id: string) => {
+    return request.get(`/admin/v1/mall/users/${encodeURIComponent(id)}`);
   },
 
   // 修改C端用户状态 0=启用 1=禁用（v1）
-  updateUserStatus: (id: number, status: number) => {
-    return request.patch(`/admin/v1/mall/users/${id}/status`, { status });
+  updateUserStatus: (id: string, status: number) => {
+    return request.patch(`/admin/v1/mall/users/${encodeURIComponent(id)}/status`, { status });
   },
 
   // 以下为旧版 v6 API，详情弹窗管理操作仍在使用
