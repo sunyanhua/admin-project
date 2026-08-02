@@ -30,6 +30,7 @@ interface TicketRecord {
   created_at?: string;
   product_title?: string;
   sku_spec_text?: string;
+  holder_id?: string;
   holder?: {
     id: string;
     nickname?: string;
@@ -87,7 +88,7 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
   });
 
   const handleViewUserDetail = (record: TicketRecord) => {
-    const uid = record.holder?.id || record.user_data?.userid;
+    const uid = record.holder_id || record.holder?.id || record.user_data?.userid;
     if (!uid) return;
     setSelectedUserId(uid);
     setUserDetailVisible(true);
@@ -123,9 +124,9 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
     ? (_: any, record: TicketRecord) => {
         const ud = record.user_data;
         const nickname = ud?.nickname || '-';
-        const uid = ud?.userid;
+        const uid = record.holder_id || ud?.userid;
         return (
-          <Button type="link" style={{ padding: 0, height: 'auto' }} disabled={!uid}>
+          <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)} disabled={!uid}>
             <Space size={4}>
               <Avatar src={getAvatarUrl(ud?.avatar_url)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
@@ -137,7 +138,7 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
         const h = record.holder;
         const avatar = h?.avatar_url;
         const nick = h?.nickname || '-';
-        const uid = h?.id;
+        const uid = record.holder_id || h?.id;
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)} disabled={!uid}>
             <Space size={4}>
