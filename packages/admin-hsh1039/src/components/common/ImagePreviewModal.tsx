@@ -23,6 +23,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
 }) => {
   return (
     <Modal
+      maskClosable={false}
       title={title}
       open={visible}
       onCancel={onClose}

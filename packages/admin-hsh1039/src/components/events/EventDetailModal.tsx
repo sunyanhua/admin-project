@@ -173,6 +173,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   return (
     <>
       <Modal
+        maskClosable={false}
         title="活动详情"
         open={open}
         onCancel={onClose}
@@ -292,6 +293,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
       </Modal>
 
       <Modal
+        maskClosable={false}
         title="编辑活动"
         open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}

@@ -25,6 +25,7 @@ export const confirmDelete = (options: ConfirmDeleteOptions) => {
     content: options.content || `确定要删除 "${options.name}" 吗？此操作不可恢复。`,
     okText: options.okText || '删除',
     cancelText: options.cancelText || '取消',
+    maskClosable: false,
     okType: 'danger',
     onOk: async () => {
       try {
@@ -54,6 +55,7 @@ export const confirmBatchDelete = (options: ConfirmBatchDeleteOptions) => {
     content: `确定要删除选中的 ${options.count} 项吗？此操作不可恢复。`,
     okText: options.okText || '删除',
     cancelText: options.cancelText || '取消',
+    maskClosable: false,
     okType: 'danger',
     onOk: async () => {
       try {

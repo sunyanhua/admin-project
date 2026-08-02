@@ -202,6 +202,7 @@ const PaymentRecords = () => {
       />
 
       <Modal
+        maskClosable={false}
         title="支付详情"
         open={!!detailData}
         onCancel={() => setDetailData(null)}

@@ -182,6 +182,7 @@ const RefundRecords = () => {
       />
 
       <Modal
+        maskClosable={false}
         title="退款详情"
         open={!!detailData}
         onCancel={() => setDetailData(null)}

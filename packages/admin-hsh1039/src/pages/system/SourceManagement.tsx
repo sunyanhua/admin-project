@@ -122,6 +122,7 @@ const SourceStatsModal: React.FC<SourceStatsModalProps> = ({ open, sourceId, sou
 
   return (
     <Modal
+      maskClosable={false}
       title={`${sourceName} — 数据统计`}
       open={open}
       onCancel={onClose}

@@ -219,6 +219,7 @@ const InvoiceManagement = () => {
       />
 
       <Modal
+        maskClosable={false}
         title="发票详情"
         open={!!detailData}
         onCancel={() => setDetailData(null)}

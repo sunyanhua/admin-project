@@ -346,6 +346,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
       />
 
       <Modal
+        maskClosable={false}
         title="订单详情"
         open={!!detailData}
         onCancel={() => setDetailData(null)}

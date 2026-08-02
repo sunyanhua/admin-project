@@ -279,6 +279,7 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
       />
 
       <Modal
+        maskClosable={false}
         title="票夹详情"
         open={!!detailData}
         onCancel={() => setDetailData(null)}

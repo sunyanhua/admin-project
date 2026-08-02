@@ -46,6 +46,16 @@ OldSun 自动同步会将外部代码同步到本仓库，可能覆盖本地未�
 
 所有带表单的弹窗必须用 `ScrollableModal`，**禁止 `import { Modal } from 'antd'` 做表单弹窗**。Props 表 + 代码模板见 `../../docs/development-standards.md`。
 
+### 弹窗关闭行为（强制遵守）
+
+**所有弹窗必须 `maskClosable={false}`**，禁止点击遮罩层（弹窗外的空白区域）关闭弹窗，只能通过弹窗内的关闭/取消按钮关闭。这适用于：
+
+- ✅ `ScrollableModal` — 已内置 `maskClosable={false}`
+- ✅ `DetailModal` — 已内置 `maskClosable={false}`
+- ✅ `AddEditModal` — 基于 ScrollableModal
+- ✅ `Modal.confirm`（`confirmDelete` / `confirmBatchDelete`）— 已内置
+- ⚠️ **`<Modal>`** — 直接使用 antd Modal 时**必须**显式添加 `maskClosable={false}`
+
 ### 筛选搜索参数
 
 全系统关键词搜索参数统一为 **`keyword`**（非 `word`）。
