@@ -7,6 +7,7 @@ const EVENT_TICKET_CONFIG = {
   hideCode: true,
   productColumnTitle: '报名项目',
   useUserData: true,
+  hideBooking: true,
 };
 
 const EventTicketManagement = () => {

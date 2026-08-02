@@ -16,6 +16,7 @@ interface TicketConfig {
   description: string;
   defaultRootCategoryId?: number;
   hideCode?: boolean;
+  hideBooking?: boolean;
   productColumnTitle?: string;
   useUserData?: boolean; // 使用 user_data 字段而非 holder
 }
@@ -210,13 +211,13 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
       width: 80,
       render: (v: boolean) => v ? <Tag color="red">已退款</Tag> : <Tag>未退款</Tag>,
     },
-    {
-      title: '预约',
-      dataIndex: 'has_booking',
+    ...(config.hideBooking ? [] : [{
+      title: '预约' as const,
+      dataIndex: 'has_booking' as const,
       key: 'has_booking',
       width: 80,
       render: (v: boolean) => v ? <Tag color="purple">已预约</Tag> : <Tag>未预约</Tag>,
-    },
+    }]),
     {
       title: '创建时间',
       dataIndex: 'created_at',
@@ -273,7 +274,7 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
             loading={loading}
             pagination={pagination}
             onPageChange={onPageChange}
-            scroll={{ x: config.hideCode ? 820 : 1000 }}
+            scroll={{ x: config.hideBooking ? 740 : config.hideCode ? 820 : 1000 }}
           />
         }
       />
