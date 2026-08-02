@@ -60,8 +60,8 @@ const UserDetailSections = ({ user }: UserDetailSectionsProps) => {
     {
       title: <><AccountBookOutlined style={{ fontSize: 18, color: '#1890ff', marginRight: 6 }} />账户信息</>,
       items: [
-        { label: '积分余额', value: d.points_balance != null ? d.points_balance : '-' },
-        { label: '订单数', value: d.order_count != null ? d.order_count : '-' },
+        { label: '积分余额', value: d.points != null ? d.points : '-' },
+        { label: '订单数', value: d.order_counts != null ? d.order_counts : '-' },
       ],
     },
   ];
