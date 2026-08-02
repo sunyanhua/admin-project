@@ -8,8 +8,7 @@ import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { DetailModal } from '@/components/templates/DetailModal';
-import UserDetailSections from '../../components/user/UserDetailSections';
+import UserDetailModal from '@/components/user/UserDetailModal';
 import '../../styles/user-detail-modal.css';
 import { formatDateTime, formatDate } from '@/utils/format';
 
@@ -25,8 +24,8 @@ const filters: FilterConfig[] = [
 
 const UserList = () => {
   const [values, setValues] = useState<Record<string, any>>({});
-  const [detailModalData, setDetailModalData] = useState<any>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | number>('');
 
   const fetchUsers = useCallback(async (params: any) => {
     return userApi.getUsers(params);
@@ -54,15 +53,9 @@ const UserList = () => {
     }
   };
 
-  const handleViewDetail = async (record: any) => {
-    setDetailModalData(null);
-    setDetailLoading(true);
-    try {
-      const res = await userApi.getUserDetail(record.id) as any;
-      setDetailModalData(res?.data || res || {});
-    } catch { /* ignore */ } finally {
-      setDetailLoading(false);
-    }
+  const handleViewDetail = (record: any) => {
+    setSelectedUserId(record.id);
+    setUserDetailVisible(true);
   };
 
   const columns: ColumnsType<any> = [
@@ -137,16 +130,11 @@ const UserList = () => {
         }
       />
 
-      <DetailModal
-        title="用户详情"
-        open={!!detailModalData}
-        onClose={() => setDetailModalData(null)}
-        entity={detailModalData}
-        className="user-detail-modal"
-        footer={null}
-      >
-        {(d) => UserDetailSections({ user: d })}
-      </DetailModal>
+      <UserDetailModal
+        userId={selectedUserId}
+        open={userDetailVisible}
+        onClose={() => setUserDetailVisible(false)}
+      />
     </>
   );
 };

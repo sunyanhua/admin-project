@@ -2,14 +2,12 @@ import { useState, useCallback } from 'react';
 import { Button, Space, Tag, Avatar, Descriptions, Modal } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { ticketApi } from '@/api/services/ticket';
-import { userApi } from '@/api/services/user';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { DetailModal } from '@/components/templates/DetailModal';
-import UserDetailSections from '@/components/user/UserDetailSections';
+import UserDetailModal from '@/components/user/UserDetailModal';
 import { formatDateTime, formatDate } from '@/utils/format';
 import { getAvatarUrl } from '@/utils/imageUtils';
 
@@ -67,7 +65,7 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
   const [values, setValues] = useState<Record<string, any>>({});
   const [detailData, setDetailData] = useState<TicketRecord | null>(null);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
-  const [userDetailData, setUserDetailData] = useState<any>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | number>('');
   const { success, error: showError } = useAppNotification();
 
   const fetchTickets = useCallback(async (params: any) => {
@@ -88,14 +86,11 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
     formatResponse,
   });
 
-  const handleViewUserDetail = async (record: TicketRecord) => {
-    const uid = record.holder?.id;
+  const handleViewUserDetail = (record: TicketRecord) => {
+    const uid = record.holder?.id || record.user_data?.userid;
     if (!uid) return;
-    try {
-      const res: any = await userApi.getUserDetail(uid);
-      setUserDetailData(res?.data || res);
-      setUserDetailVisible(true);
-    } catch { /* ignore */ }
+    setSelectedUserId(uid);
+    setUserDetailVisible(true);
   };
 
   const handleViewDetail = (record: TicketRecord) => {
@@ -309,16 +304,11 @@ const TicketListPage: React.FC<{ config: TicketConfig }> = ({ config }) => {
         )}
       </Modal>
 
-      <DetailModal
-        title="用户详情"
+      <UserDetailModal
+        userId={selectedUserId}
         open={userDetailVisible}
         onClose={() => setUserDetailVisible(false)}
-        entity={userDetailData}
-        className="user-detail-modal"
-        footer={null}
-      >
-        {(d: any) => UserDetailSections({ user: d })}
-      </DetailModal>
+      />
     </>
   );
 };

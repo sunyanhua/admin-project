@@ -3,15 +3,13 @@ import { Button, Space, Tag, Modal, Descriptions, Avatar } from 'antd';
 import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { orderApi } from '@/api/services/order';
-import { userApi } from '@/api/services/user';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { DetailModal } from '@/components/templates/DetailModal';
-import UserDetailSections from '@/components/user/UserDetailSections';
+import UserDetailModal from '@/components/user/UserDetailModal';
 import { formatDateTime, formatDate } from '@/utils/format';
 import { getAvatarUrl } from '@/utils/imageUtils';
 
@@ -90,7 +88,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
   const [detailData, setDetailData] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
-  const [userDetailData, setUserDetailData] = useState<any>(null);
+  const [selectedUserId, setSelectedUserId] = useState<string | number>('');
   const { success, error: showError } = useAppNotification();
 
   const activeStatusMap = config.statusMap || ORDER_STATUS_MAP;
@@ -134,14 +132,11 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
     }
   };
 
-  const handleViewUserDetail = async (record: OrderRecord) => {
+  const handleViewUserDetail = (record: OrderRecord) => {
     const uid = record.user?.id;
     if (!uid) return;
-    try {
-      const res: any = await userApi.getUserDetail(uid);
-      setUserDetailData(res?.data || res);
-      setUserDetailVisible(true);
-    } catch { /* ignore */ }
+    setSelectedUserId(uid);
+    setUserDetailVisible(true);
   };
 
   const filters: FilterConfig[] = [
@@ -359,16 +354,11 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         {detailData && renderDetail(detailData)}
       </Modal>
 
-      <DetailModal
-        title="用户详情"
+      <UserDetailModal
+        userId={selectedUserId}
         open={userDetailVisible}
         onClose={() => setUserDetailVisible(false)}
-        entity={userDetailData}
-        className="user-detail-modal"
-        footer={null}
-      >
-        {(d: any) => UserDetailSections({ user: d })}
-      </DetailModal>
+      />
     </>
   );
 };

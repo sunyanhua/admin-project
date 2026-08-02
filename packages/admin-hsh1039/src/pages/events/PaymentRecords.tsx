@@ -3,14 +3,12 @@ import { Space, Tag, Modal, Descriptions, Avatar } from 'antd';
 import { userColumn, statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import request from '@/api';
-import { userApi } from '@/api/services/user';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { DetailModal } from '@/components/templates/DetailModal';
-import UserDetailSections from '../../components/user/UserDetailSections';
+import UserDetailModal from '@/components/user/UserDetailModal';
 import EventDetailModal from '../../components/events/EventDetailModal';
 import { formatDateTime } from '@/utils/format';
 import { getAvatarUrl } from '@/utils/imageUtils';
@@ -76,8 +74,7 @@ const PaymentRecords = () => {
   const [detailData, setDetailData] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
-  const [userDetailData, setUserDetailData] = useState<any>(null);
-  const [userDetailLoading, setUserDetailLoading] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | number>('');
   const [eventDetailVisible, setEventDetailVisible] = useState(false);
   const [currentEventId, setCurrentEventId] = useState<number>(0);
 
@@ -108,19 +105,11 @@ const PaymentRecords = () => {
     }
   };
 
-  const handleViewUserDetail = async (record: PaymentRecord) => {
+  const handleViewUserDetail = (record: PaymentRecord) => {
     const userid = record.user_data?.userid || record.userid;
     if (!userid) return;
-    setUserDetailLoading(true);
-    try {
-      const res = await userApi.getUserDetail(userid) as any;
-      setUserDetailData(res?.data || res);
-      setUserDetailVisible(true);
-    } catch {
-      setUserDetailData(null);
-    } finally {
-      setUserDetailLoading(false);
-    }
+    setSelectedUserId(userid);
+    setUserDetailVisible(true);
   };
 
   const handleViewEventDetail = (record: PaymentRecord) => {
@@ -244,17 +233,11 @@ const PaymentRecords = () => {
         )}
       </Modal>
 
-      {/* 用户详情弹窗 */}
-      <DetailModal
-        title="用户详情"
+      <UserDetailModal
+        userId={selectedUserId}
         open={userDetailVisible}
         onClose={() => setUserDetailVisible(false)}
-        entity={userDetailData}
-        className="user-detail-modal"
-        footer={null}
-      >
-        {(d: any) => UserDetailSections({ user: d })}
-      </DetailModal>
+      />
 
       {/* 活动详情弹窗 */}
       <EventDetailModal
