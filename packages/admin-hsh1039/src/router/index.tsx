@@ -49,6 +49,7 @@ import CouponManagement from '@/pages/finance/CouponManagement';
 import TicketCategoryManagement from '@/pages/operation/TicketCategoryManagement';
 import ProductCategoryManagement from '@/pages/operation/ProductCategoryManagement';
 import ProductManagement from '@/pages/operation/ProductManagement';
+import LogisticsManagement from '@/pages/operation/LogisticsManagement';
 
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
@@ -119,6 +120,7 @@ const router = createHashRouter([
           { path: 'product-categories', element: <ProductCategoryManagement /> },
           { path: 'products', element: <ProductManagement /> },
           { path: 'product-orders', element: <ProductOrders /> },
+          { path: 'logistics', element: <LogisticsManagement /> },
         ],
       },
 

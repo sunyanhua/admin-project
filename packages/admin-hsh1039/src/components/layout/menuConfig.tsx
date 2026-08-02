@@ -21,6 +21,7 @@ import {
   ShoppingCartOutlined,
   WalletOutlined,
   IdcardOutlined,
+  CarOutlined,
 } from '@ant-design/icons';
 
 /** 顶部一级菜单配置 */
@@ -120,6 +121,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
         { key: '/operation/product-categories', icon: <UnorderedListOutlined />, label: '商品分类管理' },
         { key: '/operation/products', icon: <FileTextOutlined />, label: '商品销售' },
         { key: '/operation/product-orders', icon: <ShoppingCartOutlined />, label: '购买信息' },
+        { key: '/operation/logistics', icon: <CarOutlined />, label: '物流管理' },
       ],
     },
   ],
