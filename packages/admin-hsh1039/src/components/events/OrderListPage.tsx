@@ -26,7 +26,7 @@ const ORDER_STATUS_MAP: Record<number, { text: string; color: string }> = {
 };
 
 const formatAmount = (amount?: number) => {
-  if (amount === undefined || amount === null) return '-';
+  if (amount === undefined || amount === null) return '¥0.00';
   return `¥${(amount / 100).toFixed(2)}`;
 };
 
@@ -55,8 +55,10 @@ interface OrderRecord {
   order_no: string;
   status: number;
   order_type: string;
+  user_id?: string;
   total_amount: number;
   discount_amount: number;
+  pay_amount: number;
   payable_amount: number;
   paid_at?: string;
   created_at?: string;
@@ -133,7 +135,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
   };
 
   const handleViewUserDetail = (record: OrderRecord) => {
-    const uid = record.user?.id;
+    const uid = record.user?.id || record.user_id;
     if (!uid) return;
     setSelectedUserId(uid);
     setUserDetailVisible(true);
@@ -154,9 +156,9 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
       render: (_: any, record: OrderRecord) => {
         const u = record.user;
         const ud = record.user_data;
-        const avatar = u?.avatar_url || ud?.avatar;
-        const nick = u?.nickname || ud?.nick || '-';
-        const uid = u?.id || ud?.userid;
+        const avatar = u?.avatar_url || ud?.avatar_url;
+        const nick = u?.nickname || ud?.nickname || '-';
+        const uid = u?.id || record.user_id;
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)} disabled={!uid}>
             <Space size={4}>
@@ -217,10 +219,10 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
     },
     {
       title: '金额',
-      dataIndex: 'payable_amount',
-      key: 'payable_amount',
+      dataIndex: 'pay_amount',
+      key: 'pay_amount',
       width: 100,
-      render: (v: number) => formatAmount(v),
+      render: (_: any, record: OrderRecord) => formatAmount(record.pay_amount ?? record.payable_amount),
     },
     statusTagColumn<OrderRecord>('status', activeStatusMap, '状态', 90),
     {
@@ -279,10 +281,10 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
             <Tag color={activeStatusMap[master.status]?.color}>{activeStatusMap[master.status]?.text || '其他'}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="订单类型">{master.order_type === 'physical' ? '实物' : '核销'}</Descriptions.Item>
-          <Descriptions.Item label="用户昵称">{user?.nickname || d.user_data?.nick || '-'}</Descriptions.Item>
-          <Descriptions.Item label="用户手机">{user?.phone_masked || d.user_data?.phone || '-'}</Descriptions.Item>
+          <Descriptions.Item label="用户昵称">{user?.nickname || d.user_data?.nickname || '-'}</Descriptions.Item>
+          <Descriptions.Item label="用户手机">{user?.phone_masked || d.user_data?.phone_masked || '-'}</Descriptions.Item>
           <Descriptions.Item label="应付金额">{formatAmount(master.total_amount || d.total_amount)}</Descriptions.Item>
-          <Descriptions.Item label="实付金额">{formatAmount(master.payable_amount || d.payable_amount)}</Descriptions.Item>
+          <Descriptions.Item label="实付金额">{formatAmount(master.pay_amount ?? master.payable_amount ?? d.pay_amount ?? d.payable_amount)}</Descriptions.Item>
           <Descriptions.Item label="优惠金额">{formatAmount(master.discount_amount || d.discount_amount)}</Descriptions.Item>
           <Descriptions.Item label="创建时间">{master.created_at ? formatDateTime(master.created_at) : '-'}</Descriptions.Item>
           <Descriptions.Item label="支付时间">{master.paid_at ? formatDateTime(master.paid_at) : '-'}</Descriptions.Item>
