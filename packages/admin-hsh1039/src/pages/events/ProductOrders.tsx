@@ -7,6 +7,7 @@ const PRODUCT_ORDER_CONFIG = {
   defaultRootCategoryId: 3, // 商品
   hideOrderNo: true,
   productColumnTitle: '购买商品',
+  productLabel: '购买商品',
   showAllItems: true,
   statusMap: {
     0: { text: '待支付', color: 'orange' },

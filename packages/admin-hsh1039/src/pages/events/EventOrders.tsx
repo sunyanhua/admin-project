@@ -7,6 +7,7 @@ const EVENT_ORDER_CONFIG = {
   defaultRootCategoryId: 1, // 活动
   hideOrderNo: true,
   productColumnTitle: '活动项目',
+  productLabel: '报名项目',
   statusMap: {
     0: { text: '待支付', color: 'orange' },
     1: { text: '已支付', color: 'blue' },

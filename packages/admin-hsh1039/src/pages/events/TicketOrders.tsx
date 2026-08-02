@@ -7,6 +7,7 @@ const TICKET_ORDER_CONFIG = {
   defaultRootCategoryId: 2, // 门票
   hideOrderNo: true,
   productColumnTitle: '购票项目',
+  productLabel: '购票项目',
   statusMap: {
     0: { text: '待支付', color: 'orange' },
     1: { text: '已支付', color: 'blue' },

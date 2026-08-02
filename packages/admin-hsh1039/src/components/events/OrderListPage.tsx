@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Button, Space, Tag, Modal, Descriptions, Avatar } from 'antd';
+import { Button, Space, Modal, Avatar } from 'antd';
 import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { orderApi } from '@/api/services/order';
@@ -10,6 +10,7 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import UserDetailModal from '@/components/user/UserDetailModal';
+import OrderDetailModal from '@/components/events/OrderDetailModal';
 import { formatDateTime, formatDate } from '@/utils/format';
 import { getAvatarUrl } from '@/utils/imageUtils';
 
@@ -37,6 +38,7 @@ interface OrderConfig {
   defaultRootCategoryId?: number; // 1=活动 2=门票 3=商品
   hideOrderNo?: boolean;
   productColumnTitle?: string; // 自定义产品列标题，如"活动项目"
+  productLabel?: string; // 详情弹窗项目区域标题，如"报名项目"
   showAllItems?: boolean; // 自定义产品列是否遍历展示所有 items（默认只取第一项）
   statusMap?: Record<number, { text: string; color: string }>; // 自定义状态映射
 }
@@ -266,58 +268,6 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
     search({});
   };
 
-  const renderDetail = (d: any) => {
-    const master = d.master_order || d;
-    const subOrders = d.sub_orders || [];
-    const user = d.user;
-    const shipping = d.shipping_address;
-    // 详情接口的 items 在 sub_orders[].items[] 中（列表接口在顶层 items）
-    const detailItems: any[] = subOrders.length > 0
-      ? subOrders.flatMap((so: any) => so.items || [])
-      : (d.items || []);
-
-    return (
-      <div>
-        <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
-          <Descriptions.Item label="订单状态">
-            <Tag color={activeStatusMap[master.status]?.color}>{activeStatusMap[master.status]?.text || '其他'}</Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="订单类型">{master.order_type === 'physical' ? '实物' : '核销'}</Descriptions.Item>
-          <Descriptions.Item label="用户昵称">{user?.nickname || d.user_data?.nickname || '-'}</Descriptions.Item>
-          <Descriptions.Item label="用户手机">{user?.phone_masked || d.user_data?.phone_masked || '-'}</Descriptions.Item>
-          <Descriptions.Item label="应付金额">{formatAmount(master.total_amount || d.total_amount)}</Descriptions.Item>
-          <Descriptions.Item label="实付金额">{formatAmount(master.pay_amount ?? master.payable_amount ?? d.pay_amount ?? d.payable_amount)}</Descriptions.Item>
-          <Descriptions.Item label="下单时间">{master.created_at ? formatDateTime(master.created_at) : '-'}</Descriptions.Item>
-          <Descriptions.Item label="支付时间">{master.paid_at ? formatDateTime(master.paid_at) : '-'}</Descriptions.Item>
-          {detailItems.length > 0 && (
-            <Descriptions.Item label="报名项目" span={2}>
-              {detailItems.map((item: any, i: number) => (
-                <div key={i} style={{ lineHeight: 1.6, marginBottom: i < detailItems.length - 1 ? 6 : 0 }}>
-                  <div style={{ wordBreak: 'break-word' }}>{item.product_title || '-'}</div>
-                  <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>
-                    {item.sku_spec_text || item.sku_name || ''}
-                    {item.quantity != null ? ` × ${item.quantity}` : ''}
-                  </div>
-                </div>
-              ))}
-            </Descriptions.Item>
-          )}
-        </Descriptions>
-
-        {shipping && (
-          <>
-            <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>收货地址</div>
-            <Descriptions column={1} bordered size="small">
-              <Descriptions.Item label="收货人">{shipping.recipient_name || '-'}</Descriptions.Item>
-              <Descriptions.Item label="联系电话">{shipping.recipient_phone || '-'}</Descriptions.Item>
-              <Descriptions.Item label="地址">{`${shipping.province || ''}${shipping.city || ''}${shipping.district || ''} ${shipping.detail || ''}`}</Descriptions.Item>
-            </Descriptions>
-          </>
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
       <StandardPage
@@ -355,7 +305,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         width={720}
         confirmLoading={detailLoading}
       >
-        {detailData && renderDetail(detailData)}
+        <OrderDetailModal data={detailData} statusMap={activeStatusMap} productLabel={config.productLabel} />
       </Modal>
 
       <UserDetailModal
