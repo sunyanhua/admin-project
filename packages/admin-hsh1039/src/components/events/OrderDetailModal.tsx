@@ -76,9 +76,3 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ data: d, statusMap,
 };
 
 export default OrderDetailModal;
-
-/** 金额格式化（与 OrderListPage 共用） */
-export function formatAmount(amount?: number): string {
-  if (amount === undefined || amount === null) return '¥0.00';
-  return `¥${(amount / 100).toFixed(2)}`;
-}
