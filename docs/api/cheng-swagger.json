@@ -253,7 +253,7 @@
         },
         "/admin/v1/bizops/user/{id}": {
             "get": {
-                "description": "查询指定用户的详细资料（基础资料 + 脱单档案），手机号脱敏返回，真实姓名返回完整值。",
+                "description": "查询指定用户的详细资料（基础资料 + 脱单档案 + 钱包积分金币），手机号脱敏返回，真实姓名返回完整值。隐私安全模式开启时敏感字段进一步脱敏（手机→138****1234, 姓名→张*, 邮箱→u***@example.com）。",
                 "produces": [
                     "application/json"
                 ],
@@ -324,7 +324,7 @@
         },
         "/admin/v1/bizops/user/{id}/basic-profile": {
             "put": {
-                "description": "管理后台修改 C 端用户的基础资料（真实姓名、性别、出生日期），变更原因必填。变更同时写入管理员操作日志和数据变更日志。",
+                "description": "管理后台修改 C 端用户的基础资料（昵称、头像、性别、出生日期、星座），变更原因必填。Zodiac 可提交指定值，为 nil 时自动计算。变更同时写入管理员操作日志和数据变更日志。",
                 "consumes": [
                     "application/json"
                 ],
@@ -2919,7 +2919,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "对目标用户执行关注或对某用户无感操作。关注：不可撤销、不可隐藏。无感：可撤销（撤销后释放已操作集合，可重新关注或对某用户无感）。异性配对、双表审核通过、账户未退出等前置条件不满足时返回 42201。",
+                "description": "对目标用户执行关注或对某用户无感操作。关注：不可撤销但可隐藏（PATCH /feeling/:id/hidden，隐藏后前端不展示，不可逆）。无感：可撤销（撤销后释放已操作集合，couple.matching 回滚 +50，可重新操作）。异性配对、双表审核通过、账户未退出等前置条件不满足时返回 42201。",
                 "consumes": [
                     "application/json"
                 ],
@@ -3949,7 +3949,7 @@
         },
         "/api/v1/wxa/user": {
             "get": {
-                "description": "返回当前 JWT 用户的全部非系统级信息，聚合账户/基础资料/脱单档案三表数据。未注册返回 null，未填写基础资料时 profile 为 null，脱单档案未提交时 match_profile 为 null。",
+                "description": "返回当前 JWT 用户的全部非系统级信息，聚合账户/基础资料/脱单档案/钱包四表数据。未注册返回 null，未填写基础资料时 profile 为 null，脱单档案未提交时 match_profile 为 null，钱包未创建时 wallet 为 null。",
                 "produces": [
                     "application/json"
                 ],
@@ -4242,7 +4242,7 @@
         },
         "/api/v1/wxa/user/match-profile": {
             "post": {
-                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入等）。POST 首次提交，PATCH 修改。",
+                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入、身高、兴趣标签、自我介绍、真实姓名、生肖、微信号、身份证号等）。前置条件：基础资料 UGC 审核通过（42209）。POST 首次提交生成 8 位脱单号，PATCH 修改保持脱单号不变，修改频次限制默认 7 天（42204）。提交后进入审核流程，审核期间暂停档案公开。",
                 "consumes": [
                     "application/json"
                 ],
@@ -4316,7 +4316,7 @@
                 }
             },
             "patch": {
-                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入等）。POST 首次提交，PATCH 修改。",
+                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入、身高、兴趣标签、自我介绍、真实姓名、生肖、微信号、身份证号等）。前置条件：基础资料 UGC 审核通过（42209）。POST 首次提交生成 8 位脱单号，PATCH 修改保持脱单号不变，修改频次限制默认 7 天（42204）。提交后进入审核流程，审核期间暂停档案公开。",
                 "consumes": [
                     "application/json"
                 ],
@@ -4451,7 +4451,7 @@
         },
         "/api/v1/wxa/user/profile": {
             "patch": {
-                "description": "更新用户基础资料（昵称、头像、真实姓名、性别、出生日期）。昵称/头像可多次修改，姓名/性别/出生日期仅首次设置时生效。",
+                "description": "更新用户基础资料（昵称、头像、性别、出生日期）。首次完善资料时必须同时提交昵称和头像，后续可选择性提交（PATCH 语义）。昵称不可为纯空白（40001），不可与其他用户重复——不区分大小写 SHA-256 哈希去重（42215）。昵称/头像每次修改后自动触发 UGC 内容审核，审核期间返回 audit_status=0（待审核）。性别/出生日期仅首次设置时生效，已设置后再次修改返回 42204；例外：审核拒绝（audit_status=2）时允许重新设置并再次触发审核。Zodiac 由出生日期自动计算，不接受前端提交。",
                 "consumes": [
                     "application/json"
                 ],
@@ -5669,110 +5669,7 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUpdateBasicProfileRequest": {
-            "type": "object",
-            "required": [
-                "reason"
-            ],
-            "properties": {
-                "birth_date": {
-                    "description": "BirthDate 出生日期，格式 YYYY-MM-DD，不为 nil 时更新。",
-                    "type": "string"
-                },
-                "gender": {
-                    "description": "Gender 性别：1=男 2=女，不为 nil 时更新。",
-                    "type": "integer",
-                    "enum": [
-                        1,
-                        2
-                    ]
-                },
-                "reason": {
-                    "description": "Reason 变更原因，必填。",
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserDetailResponse": {
-            "type": "object",
-            "properties": {
-                "avatar": {
-                    "type": "string"
-                },
-                "birth_date": {
-                    "type": "string"
-                },
-                "cn_zodiac": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "gender": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
-                },
-                "last_active_at": {
-                    "type": "string"
-                },
-                "match_profile": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserMatchProfileView"
-                },
-                "nickname": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profile_audit_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
-                },
-                "real_name": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "type": "string"
-                },
-                "zodiac": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserListItem": {
-            "type": "object",
-            "properties": {
-                "age": {
-                    "type": "integer"
-                },
-                "avatar": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "gender": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
-                },
-                "last_active_at": {
-                    "type": "string"
-                },
-                "match_audit_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
-                },
-                "nickname": {
-                    "type": "string"
-                },
-                "phone": {
-                    "type": "string"
-                },
-                "profile_audit_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
-                },
-                "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserMatchProfileView": {
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminMatchProfileInfo": {
             "type": "object",
             "properties": {
                 "audit_reason": {
@@ -5787,11 +5684,29 @@
                 "audited_by": {
                     "type": "string"
                 },
+                "blood_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
+                },
+                "can_modify_at": {
+                    "type": "string"
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
                 "current_city": {
                     "type": "string"
                 },
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
+                },
+                "ethnicity": {
+                    "type": "string"
+                },
+                "extra": {
+                    "type": "string"
                 },
                 "height": {
                     "type": "integer"
@@ -5805,8 +5720,20 @@
                 "hometown": {
                     "type": "string"
                 },
+                "household_registration": {
+                    "type": "string"
+                },
+                "id_card_tail": {
+                    "type": "string"
+                },
                 "income_range": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "marital_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
                 "match_code": {
                     "type": "string"
@@ -5814,13 +5741,252 @@
                 "partner_demand": {
                     "type": "string"
                 },
+                "popularity": {
+                    "type": "integer"
+                },
                 "profession": {
+                    "type": "string"
+                },
+                "real_name": {
                     "type": "string"
                 },
                 "self_intro": {
                     "type": "string"
                 },
+                "specialties": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility"
+                },
                 "weight": {
+                    "type": "integer"
+                },
+                "workplace": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUpdateBasicProfileRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "avatar": {
+                    "description": "Avatar 头像 URL，不为 nil 时更新（需通过 URL 白名单校验）。",
+                    "type": "string"
+                },
+                "birth_date": {
+                    "description": "BirthDate 出生日期，格式 YYYY-MM-DD，不为 nil 时更新。",
+                    "type": "string"
+                },
+                "gender": {
+                    "description": "Gender 性别：1=男 2=女，不为 nil 时更新。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "nickname": {
+                    "description": "Nickname 昵称，不为 nil 时更新。",
+                    "type": "string"
+                },
+                "reason": {
+                    "description": "Reason 变更原因，必填。",
+                    "type": "string"
+                },
+                "zodiac": {
+                    "description": "Zodiac 星座，不为 nil 时直接使用提交值；为 nil 且 BirthDate 变更时自动计算。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserDetailResponse": {
+            "type": "object",
+            "properties": {
+                "match_profile": {
+                    "description": "MatchProfile v6_user_match_profile 表非系统字段（LEFT JOIN，未提交时为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminMatchProfileInfo"
+                        }
+                    ]
+                },
+                "profile": {
+                    "description": "Profile v6_user_profile 表非系统字段（INNER JOIN，始终存在）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo"
+                        }
+                    ]
+                },
+                "user": {
+                    "description": "User v6_user 表非系统字段。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo"
+                        }
+                    ]
+                },
+                "wallet": {
+                    "description": "Wallet v6_user_wallet 表字段（LEFT JOIN，钱包不存在时为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo": {
+            "type": "object",
+            "properties": {
+                "activated_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "credits": {
+                    "type": "integer"
+                },
+                "credits_weekly": {
+                    "type": "integer"
+                },
+                "credits_weekly_rank": {
+                    "type": "integer"
+                },
+                "is_activated": {
+                    "type": "boolean"
+                },
+                "is_migrated": {
+                    "type": "boolean"
+                },
+                "last_active_at": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "wallet_balance": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserListItem": {
+            "type": "object",
+            "properties": {
+                "match_profile": {
+                    "description": "MatchProfile v6_user_match_profile 表非系统字段（LEFT JOIN，未提交时为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminMatchProfileInfo"
+                        }
+                    ]
+                },
+                "profile": {
+                    "description": "Profile v6_user_profile 表非系统字段（INNER JOIN，始终存在）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo"
+                        }
+                    ]
+                },
+                "user": {
+                    "description": "User v6_user 表非系统字段。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo"
+                        }
+                    ]
+                },
+                "wallet": {
+                    "description": "Wallet v6_user_wallet 表字段（LEFT JOIN，钱包不存在时为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo": {
+            "type": "object",
+            "properties": {
+                "coins": {
+                    "type": "integer"
+                },
+                "coins_earned": {
+                    "type": "integer"
+                },
+                "coins_spent": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "points_earned": {
+                    "type": "integer"
+                },
+                "points_spent": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "version": {
                     "type": "integer"
                 }
             }
@@ -6122,6 +6288,9 @@
                         }
                     ]
                 },
+                "blood_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
+                },
                 "can_modify_at": {
                     "description": "CanModifyAt 下次可修改时间（审核通过后每周一次）。",
                     "type": "string"
@@ -6139,10 +6308,12 @@
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
+                "ethnicity": {
+                    "type": "string"
+                },
                 "extra": {
-                    "description": "Extra 扩展字段（JSONB）。",
-                    "type": "object",
-                    "additionalProperties": {}
+                    "description": "Extra 扩展字段，服务端不解析不校验，完全由前端自主控制内容。",
+                    "type": "string"
                 },
                 "height": {
                     "type": "integer"
@@ -6154,6 +6325,9 @@
                     }
                 },
                 "hometown": {
+                    "type": "string"
+                },
+                "household_registration": {
                     "type": "string"
                 },
                 "id_card_tail": {
@@ -6176,6 +6350,12 @@
                 },
                 "self_intro": {
                     "type": "string"
+                },
+                "specialties": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "updated_at": {
                     "description": "UpdatedAt 最后更新时间。",
@@ -6253,6 +6433,16 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.SubmitMatchProfileRequest": {
             "type": "object",
             "properties": {
+                "blood_type": {
+                    "description": "BloodType 血型，见 status.BloodType 枚举值（选填，nil 表示不更新）。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ]
+                },
                 "cn_zodiac": {
                     "description": "CnZodiac 生肖（用户可提交，也可由后端根据出生日期自动计算）。",
                     "type": "string"
@@ -6272,10 +6462,13 @@
                         5
                     ]
                 },
+                "ethnicity": {
+                    "description": "Ethnicity 民族。",
+                    "type": "string"
+                },
                 "extra": {
-                    "description": "Extra 扩展字段（JSONB 自由存储）。",
-                    "type": "object",
-                    "additionalProperties": {}
+                    "description": "Extra 扩展字段，服务端不解析不校验，完全由前端自主控制内容。",
+                    "type": "string"
                 },
                 "height": {
                     "description": "Height 身高（厘米）。",
@@ -6290,6 +6483,10 @@
                 },
                 "hometown": {
                     "description": "Hometown 籍贯。",
+                    "type": "string"
+                },
+                "household_registration": {
+                    "description": "HouseholdRegistration 户口所在地。",
                     "type": "string"
                 },
                 "id_card": {
@@ -6333,6 +6530,10 @@
                     "description": "SelfIntro 个人介绍，上限 5000 字符。",
                     "type": "string"
                 },
+                "specialties": {
+                    "description": "Specialties 特长（逗号分隔或前端数组序列化）。",
+                    "type": "string"
+                },
                 "wechat": {
                     "description": "Wechat 微信号（明文，后端 AES-256-GCM 加密存储）。",
                     "type": "string"
@@ -6359,11 +6560,11 @@
                     "type": "string"
                 },
                 "birth_date": {
-                    "description": "BirthDate 出生日期，格式 YYYY-MM-DD，可多次修改。",
+                    "description": "BirthDate 出生日期，格式 YYYY-MM-DD，仅首次设置时生效。",
                     "type": "string"
                 },
                 "gender": {
-                    "description": "Gender 性别：1=男 2=女，可多次修改。",
+                    "description": "Gender 性别：1=男 2=女，仅首次设置时生效。",
                     "type": "integer",
                     "enum": [
                         1,
@@ -6373,24 +6574,6 @@
                 "nickname": {
                     "description": "Nickname 昵称，可多次修改。",
                     "type": "string"
-                },
-                "zodiac": {
-                    "description": "Zodiac 星座，由后端自动计算（忽略前端提交值）。",
-                    "type": "string",
-                    "enum": [
-                        "白羊座",
-                        "金牛座",
-                        "双子座",
-                        "巨蟹座",
-                        "狮子座",
-                        "处女座",
-                        "天秤座",
-                        "天蝎座",
-                        "射手座",
-                        "摩羯座",
-                        "水瓶座",
-                        "双鱼座"
-                    ]
                 }
             }
         },
@@ -6826,6 +7009,38 @@
             "x-enum-varnames": [
                 "AdminUserStatusActive",
                 "AdminUserStatusDisabled"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-comments": {
+                "BloodTypeA": "A型",
+                "BloodTypeAB": "AB型",
+                "BloodTypeB": "B型",
+                "BloodTypeO": "O型",
+                "BloodTypeUnset": "未设置"
+            },
+            "x-enum-descriptions": [
+                "未设置",
+                "A型",
+                "B型",
+                "AB型",
+                "O型"
+            ],
+            "x-enum-varnames": [
+                "BloodTypeUnset",
+                "BloodTypeA",
+                "BloodTypeB",
+                "BloodTypeAB",
+                "BloodTypeO"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.Education": {

@@ -5461,11 +5461,23 @@
                         "description": "每页数量（默认20，最大100）",
                         "name": "page_size",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "商品一级分类ID（按分类筛选）",
+                        "name": "root_category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "下单用户手机号（精确匹配）",
+                        "name": "phone",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功（分页查询主单列表，含子单Brief + 订单号/状态/类型/日期多维筛选）",
+                        "description": "成功（分页查询主单列表，含收货地址 shipping_address + 子单Brief（含物流追踪 logistics）+ 用户信息 user_data + 多维筛选）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerPageResponse"
                         }
@@ -5519,7 +5531,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功（返回主单详情 master_order + 子单列表 sub_orders + 商品行 items + 物流信息 logistics + 备注 remarks + 收货地址 shipping_address）",
+                        "description": "成功（返回主单详情 master_order + 子单列表 sub_orders + 商品行 items + 物流信息 logistics + 备注 remarks + 收货地址 shipping_address + 票夹 tickets + has_ticket + can_refund）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -16676,7 +16688,7 @@
                 "summary": "获取当前用户个人信息",
                 "responses": {
                     "200": {
-                        "description": "成功；响应字段：id/nickname/avatar_url/phone/name/gender/birthday/district/created_at；未注册时 data 为 null",
+                        "description": "成功；响应字段：id/nickname/avatar_url/phone/name/gender/birthday/age/district/points/order_count/created_at；未注册时 data 为 null",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
@@ -16725,7 +16737,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "成功；响应字段：id/nickname/avatar_url/phone/name/gender/birthday/district/created_at",
+                        "description": "成功；响应字段：id/nickname/avatar_url/phone/name/gender/birthday/age/district/points/order_count/created_at",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_bizmall_pkg_response.SwaggerResponse"
                         }
