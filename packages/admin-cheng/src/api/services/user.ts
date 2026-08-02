@@ -1,21 +1,15 @@
 import request from '..';
-import type { AdminUserListItem, AdminUserDetailResponse, AuditMatchProfileRequest, AdminUpdateBasicProfileRequest } from '../types/user';
-
-/** C端用户查询参数 */
-export interface UserListParams {
-  page?: number;
-  size?: number;
-  keyword?: string;
-  gender?: 1 | 2;
-  min_age?: number;
-  max_age?: number;
-  profile_audit_status?: number;
-  match_audit_status?: number;
-}
+import type {
+  AdminUserDetailResponse,
+  AuditMatchProfileRequest,
+  AdminUpdateBasicProfileRequest,
+  CommunityUserItem,
+  CommunityUserListParams,
+} from '../types/user';
 
 export const userApi = {
-  /** 用户列表 — GET /admin/v1/bizops/user */
-  getUsers: (params?: UserListParams): Promise<{ list: AdminUserListItem[]; total: number }> => {
+  /** 社区用户列表 — GET /admin/v1/bizops/user */
+  getUsers: (params?: CommunityUserListParams): Promise<{ list: CommunityUserItem[]; total: number }> => {
     return request.get('/admin/v1/bizops/user', { params }) as any;
   },
 
@@ -34,8 +28,8 @@ export const userApi = {
     return request.put(`/admin/v1/bizops/user/match-profile/${id}/audit`, data);
   },
 
-  /** 状态切换 — PATCH /admin/v1/mall/users/:id/status（Swagger 暂无此接口，保持） */
+  /** 用户状态切换 — PATCH /admin/v1/bizops/user/:id/status（占位） */
   updateUserStatus: (id: string | number, status: number) => {
-    return request.patch(`/admin/v1/mall/users/${id}/status`, { status });
+    return request.patch(`/admin/v1/bizops/user/${id}/status`, { status });
   },
 };

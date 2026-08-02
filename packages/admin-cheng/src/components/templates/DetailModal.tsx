@@ -54,6 +54,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         className={className}
         destroyOnHidden
         confirmLoading={confirmLoading}
+        maskClosable={false}
       >
         {entity ? null : <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>暂无数据</div>}
       </Modal>
@@ -70,6 +71,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       className={className}
       destroyOnHidden
       confirmLoading={confirmLoading}
+      maskClosable={false}
     >
       {sections.map((section, idx) => (
         <Descriptions

@@ -128,6 +128,7 @@ const SourceStatsModal: React.FC<SourceStatsModalProps> = ({ open, sourceId, sou
       footer={null}
       width={800}
       destroyOnHidden
+      maskClosable={false}
     >
       <div style={{ marginBottom: 16 }}>
         <RangePicker

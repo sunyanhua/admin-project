@@ -1,0 +1,247 @@
+import { useState, useCallback, useMemo } from 'react';
+import { Tag, Avatar, Button, Space } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+import { EyeOutlined } from '@ant-design/icons';
+import { userApi } from '../../api/services/user';
+import { useListPage } from '@/hooks/useListPage';
+import { StandardPage } from '@/components/templates/StandardPage';
+import { StandardTable } from '@/components/templates/StandardTable';
+import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
+import { DetailModal } from '@/components/templates/DetailModal';
+import { buildUserDetailSections } from '@/components/user/UserDetailSections';
+import { MatchProfileAuditStatus } from '@/api/types/status';
+import { getAvatarUrl } from '@/utils/imageUtils';
+import type { CommunityUserItem } from '@/api/types/user';
+import '@/styles/user-detail-modal.css';
+
+const AUDIT_STATUS_OPTIONS = [
+  { label: '待审核', value: MatchProfileAuditStatus.PENDING },
+  { label: '审核通过', value: MatchProfileAuditStatus.APPROVED },
+  { label: '审核拒绝', value: MatchProfileAuditStatus.REJECTED },
+  { label: '已撤销', value: MatchProfileAuditStatus.REVOKED },
+];
+
+const DISPLAY_STATUS_OPTIONS = [
+  { label: '公开', value: 'normal' },
+  { label: '已隐藏', value: 'hidden' },
+  { label: '已退出', value: 'quit' },
+];
+
+const filters: FilterConfig[] = [
+  { name: 'audit_status', placeholder: '全部审核状态', type: 'select', options: AUDIT_STATUS_OPTIONS },
+  { name: 'display_status', placeholder: '全部显示状态', type: 'select', options: DISPLAY_STATUS_OPTIONS },
+  { name: 'keyword', placeholder: '搜索昵称、姓名或手机号', type: 'input' },
+];
+
+const AUDIT_MAP: Record<number, { color: string; text: string }> = {
+  [MatchProfileAuditStatus.PENDING]: { color: 'processing', text: '审核中' },
+  [MatchProfileAuditStatus.APPROVED]: { color: 'success', text: '已通过' },
+  [MatchProfileAuditStatus.REJECTED]: { color: 'error', text: '已拒绝' },
+  [MatchProfileAuditStatus.REVOKED]: { color: 'default', text: '已撤销' },
+};
+
+const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
+const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
+
+/** 显示状态: 正常 / 已隐藏(visibility=3) / 已退出(is_active=false) */
+function getDisplayStatus(mp: CommunityUserItem['match_profile']): { text: string; color: string } {
+  if (!mp) return { text: '-', color: 'default' };
+  if (!mp.is_active) return { text: '已退出', color: 'default' };
+  if (mp.visibility === 3) return { text: '已隐藏', color: 'warning' };
+  return { text: '公开', color: 'success' };
+}
+
+/** 匹配显示状态筛选 */
+function matchDisplayFilter(mp: CommunityUserItem['match_profile'], filter: string): boolean {
+  if (!mp) return false;
+  if (filter === 'normal') return mp.is_active && mp.visibility !== 3;
+  if (filter === 'hidden') return mp.visibility === 3;
+  if (filter === 'quit') return !mp.is_active;
+  return true;
+}
+
+const MatchProfileManagement = () => {
+  const [values, setValues] = useState<Record<string, any>>({});
+
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState<CommunityUserItem | null>(null);
+
+  const fetchUsers = useCallback(async (params: any) => {
+    return userApi.getUsers({
+      page: params.page,
+      size: params.page_size || params.size,
+      keyword: params.keyword || undefined,
+      has_match_profile: true,
+      match_audit_status: params.audit_status != null ? params.audit_status : undefined,
+    });
+  }, []);
+
+  const formatUserResponse = useCallback((res: any) => {
+    if (Array.isArray(res)) return { list: res, count: res.length };
+    return { list: res?.list || [], count: res?.total ?? 0 };
+  }, []);
+
+  const { data: rawData, loading, pagination, onPageChange, refresh, search } = useListPage<CommunityUserItem>({
+    fetchFn: fetchUsers,
+    formatResponse: formatUserResponse,
+  });
+
+  // 客户端过滤：显示状态
+  const data = useMemo(() => {
+    const ds = values.display_status;
+    if (!ds) return rawData;
+    return rawData.filter((item) => matchDisplayFilter(item.match_profile, ds));
+  }, [rawData, values.display_status]);
+
+  const handleViewDetail = (record: CommunityUserItem) => {
+    setDetailItem(record);
+    setDetailModalOpen(true);
+  };
+
+  const columns: ColumnsType<CommunityUserItem> = [
+    {
+      title: '用户',
+      key: 'nickname',
+      width: 160,
+      render: (_: any, record: CommunityUserItem) => (
+        <Button
+          type="link"
+          style={{ padding: 0, height: 'auto' }}
+          onClick={() => handleViewDetail(record)}
+        >
+          <Space size={4}>
+            <Avatar src={getAvatarUrl(record.profile.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <span style={{ fontSize: 14 }}>{record.profile.nickname || '-'}</span>
+          </Space>
+        </Button>
+      ),
+    },
+    {
+      title: '姓名',
+      key: 'real_name',
+      width: 100,
+      render: (_: any, record: CommunityUserItem) => record.match_profile?.real_name || '-',
+    },
+    {
+      title: '手机号',
+      key: 'phone',
+      width: 140,
+      render: (_: any, record: CommunityUserItem) => record.user.phone || '-',
+    },
+    {
+      title: '性别',
+      key: 'gender',
+      width: 60,
+      render: (_: any, record: CommunityUserItem) => GENDER_MAP[record.profile.gender] || '-',
+    },
+    {
+      title: '年龄',
+      key: 'age',
+      width: 60,
+      render: (_: any, record: CommunityUserItem) => record.profile.age ?? '-',
+    },
+    {
+      title: '婚姻状况',
+      key: 'marital',
+      width: 90,
+      render: (_: any, record: CommunityUserItem) =>
+        record.match_profile ? (MARITAL_MAP[record.match_profile.marital_status] || '-') : '-',
+    },
+    {
+      title: '人气值',
+      key: 'popularity',
+      width: 90,
+      align: 'center',
+      render: (_: any, record: CommunityUserItem) => record.match_profile?.popularity ?? '-',
+    },
+    {
+      title: '状态',
+      key: 'status',
+      width: 170,
+      render: (_: any, record: CommunityUserItem) => {
+        const ds = getDisplayStatus(record.match_profile);
+        const audit = record.match_profile?.audit_status;
+        const a = AUDIT_MAP[audit ?? -1] || { color: 'default', text: '-' };
+        return (
+          <Space size={4}>
+            <Tag color={a.color}>{a.text}</Tag>
+            <Tag color={ds.color}>{ds.text}</Tag>
+          </Space>
+        );
+      },
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 80,
+      render: (_: any, record: CommunityUserItem) => (
+        <Space className="action-buttons">
+          <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => handleViewDetail(record)}>查看</Button>
+        </Space>
+      ),
+    },
+  ];
+
+  const handleChange = (name: string, value: any) => {
+    setValues((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSearch = (vals: Record<string, any>) => {
+    search(vals);
+  };
+
+  const handleReset = () => {
+    setValues({});
+    search({});
+  };
+
+  return (
+    <>
+      <StandardPage
+        title="脱单资料管理"
+        description="管理已提交脱单档案的用户，支持按审核状态和显示状态筛选，查看用户完整资料和脱单档案详情。"
+        showRefreshButton
+        onRefresh={refresh}
+        searchArea={
+          <SearchPanel
+            filters={filters}
+            values={values}
+            onChange={handleChange}
+            onSearch={handleSearch}
+            onReset={handleReset}
+          />
+        }
+        table={
+          <StandardTable
+            columns={columns}
+            dataSource={data}
+            loading={loading}
+            pagination={pagination}
+            onPageChange={onPageChange}
+            scroll={{ x: 1100 }}
+            rowKey={(r) => r.user.user_id}
+          />
+        }
+      />
+
+      <DetailModal
+        title="用户详情"
+        open={detailModalOpen}
+        entity={detailItem}
+        width={720}
+        className="user-detail-modal"
+        onClose={() => { setDetailModalOpen(false); setDetailItem(null); }}
+        render={(item: CommunityUserItem) =>
+          buildUserDetailSections({
+            user: item.user,
+            profile: item.profile,
+            matchProfile: item.match_profile || null,
+            wallet: item.wallet,
+          })
+        }
+      />
+    </>
+  );
+};
+
+export default MatchProfileManagement;

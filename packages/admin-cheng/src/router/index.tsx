@@ -25,6 +25,7 @@ import PageConfigManagement from '@/pages/operation/PageConfigManagement';
 
 // 社区管理页面
 import UserList from '@/pages/community/UserList';
+import MatchProfileManagement from '@/pages/community/MatchProfileManagement';
 import AgreementManagement from '@/pages/community/AgreementManagement';
 
 // 占位页面（功能待开发）
@@ -77,7 +78,7 @@ const router = createHashRouter([
         children: [
           // 用户资料
           { path: 'users', element: <UserList /> },
-          { path: 'match-profiles', element: <PlaceholderPage title="脱单资料管理" /> },
+          { path: 'match-profiles', element: <MatchProfileManagement /> },
           { path: 'user-verify', element: <PlaceholderPage title="用户认证" /> },
           // 互动管理
           { path: 'gifts', element: <PlaceholderPage title="礼物管理" /> },

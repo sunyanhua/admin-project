@@ -73,7 +73,7 @@
         },
         "/admin/v1/bizops/user": {
             "get": {
-                "description": "分页查询 C 端用户列表，支持性别、年龄、审核状态等条件筛选，手机号脱敏返回。",
+                "description": "分页查询 C 端用户列表，支持性别、年龄、审核状态、迁移/激活/完善/状态等条件筛选，手机号脱敏返回。",
                 "produces": [
                     "application/json"
                 ],
@@ -128,6 +128,36 @@
                         "type": "string",
                         "description": "关键词搜索（昵称或手机号）",
                         "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否迁移用户",
+                        "name": "is_migrated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否已激活",
+                        "name": "is_activated",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否已完善基础资料（默认 true，传 false 查看未完善）",
+                        "name": "has_profile",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "是否已提交脱单档案（true 时按审核状态+更新时间排序）",
+                        "name": "has_match_profile",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "用户状态：0=正常 1=禁用",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -5712,10 +5742,7 @@
                     "type": "integer"
                 },
                 "hobby_tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "hometown": {
                     "type": "string"
@@ -5754,10 +5781,7 @@
                     "type": "string"
                 },
                 "specialties": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -5901,6 +5925,12 @@
                 },
                 "credits_weekly_rank": {
                     "type": "integer"
+                },
+                "has_match_profile": {
+                    "type": "boolean"
+                },
+                "has_profile": {
+                    "type": "boolean"
                 },
                 "is_activated": {
                     "type": "boolean"
@@ -6201,8 +6231,14 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.MatchProfileInfo": {
             "type": "object",
             "properties": {
+                "audit_reason": {
+                    "type": "string"
+                },
                 "audit_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
+                },
+                "blood_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
                 },
                 "can_modify_at": {
                     "type": "string"
@@ -6216,20 +6252,22 @@
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
+                "ethnicity": {
+                    "type": "string"
+                },
                 "extra": {
-                    "type": "object",
-                    "additionalProperties": {}
+                    "type": "string"
                 },
                 "height": {
                     "type": "integer"
                 },
                 "hobby_tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "hometown": {
+                    "type": "string"
+                },
+                "household_registration": {
                     "type": "string"
                 },
                 "id_card_tail": {
@@ -6257,6 +6295,9 @@
                     "type": "string"
                 },
                 "self_intro": {
+                    "type": "string"
+                },
+                "specialties": {
                     "type": "string"
                 },
                 "visibility": {
@@ -6319,10 +6360,7 @@
                     "type": "integer"
                 },
                 "hobby_tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "hometown": {
                     "type": "string"
@@ -6352,10 +6390,7 @@
                     "type": "string"
                 },
                 "specialties": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "updated_at": {
                     "description": "UpdatedAt 最后更新时间。",
@@ -6475,11 +6510,8 @@
                     "type": "integer"
                 },
                 "hobby_tags": {
-                    "description": "HobbyTags 爱好标签数组。",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "description": "HobbyTags 爱好标签原始字符串，服务端不解析。",
+                    "type": "string"
                 },
                 "hometown": {
                     "description": "Hometown 籍贯。",
@@ -6531,7 +6563,7 @@
                     "type": "string"
                 },
                 "specialties": {
-                    "description": "Specialties 特长（逗号分隔或前端数组序列化）。",
+                    "description": "Specialties 特长原始字符串，服务端不解析。",
                     "type": "string"
                 },
                 "wechat": {
@@ -6644,6 +6676,12 @@
                 "credits_weekly": {
                     "type": "integer"
                 },
+                "has_match_profile": {
+                    "type": "boolean"
+                },
+                "has_profile": {
+                    "type": "boolean"
+                },
                 "last_active_at": {
                     "type": "string"
                 },
@@ -6698,74 +6736,14 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.UserPublicProfileResponse": {
             "type": "object",
             "properties": {
-                "age": {
-                    "description": "由 birth_date 计算",
-                    "type": "integer"
+                "match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo"
                 },
-                "avatar_url": {
-                    "type": "string"
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
                 },
-                "cn_zodiac": {
-                    "type": "string"
-                },
-                "current_city": {
-                    "type": "string"
-                },
-                "education": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
-                },
-                "gender": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
-                },
-                "height": {
-                    "type": "integer"
-                },
-                "hobby_tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "hometown": {
-                    "type": "string"
-                },
-                "id_card_tail": {
-                    "type": "string"
-                },
-                "income_range": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
-                },
-                "marital_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
-                },
-                "match_code": {
-                    "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
-                    "type": "string"
-                },
-                "nickname": {
-                    "type": "string"
-                },
-                "partner_demand": {
-                    "type": "string"
-                },
-                "profession": {
-                    "type": "string"
-                },
-                "self_intro": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "── 基础信息（v6_user + v6_user_profile）─────────────────",
-                    "type": "string"
-                },
-                "weight": {
-                    "type": "integer"
-                },
-                "workplace": {
-                    "type": "string"
-                },
-                "zodiac": {
-                    "type": "string"
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
                 }
             }
         },
@@ -6880,16 +6858,9 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile": {
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo": {
             "type": "object",
             "properties": {
-                "age": {
-                    "description": "由 birth_date 计算",
-                    "type": "integer"
-                },
-                "avatar_url": {
-                    "type": "string"
-                },
                 "cn_zodiac": {
                     "type": "string"
                 },
@@ -6899,17 +6870,11 @@
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
-                "gender": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
-                },
                 "height": {
                     "type": "integer"
                 },
                 "hobby_tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "hometown": {
                     "type": "string"
@@ -6924,10 +6889,6 @@
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
                 "match_code": {
-                    "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
-                    "type": "string"
-                },
-                "nickname": {
                     "type": "string"
                 },
                 "partner_demand": {
@@ -6939,17 +6900,52 @@
                 "self_intro": {
                     "type": "string"
                 },
-                "user_id": {
-                    "description": "── 基础信息（v6_user + v6_user_profile）─────────────────",
-                    "type": "string"
-                },
                 "weight": {
                     "type": "integer"
                 },
                 "workplace": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile": {
+            "type": "object",
+            "properties": {
+                "match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo"
+                },
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "nickname": {
+                    "type": "string"
                 },
                 "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo": {
+            "type": "object",
+            "properties": {
+                "user_id": {
                     "type": "string"
                 }
             }
@@ -7394,78 +7390,18 @@
         "internal_module_recommend.RichCandidate": {
             "type": "object",
             "properties": {
-                "age": {
-                    "description": "由 birth_date 计算",
-                    "type": "integer"
-                },
-                "avatar_url": {
-                    "type": "string"
-                },
-                "cn_zodiac": {
-                    "type": "string"
-                },
-                "current_city": {
-                    "type": "string"
-                },
-                "education": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
-                },
-                "gender": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
-                },
-                "height": {
-                    "type": "integer"
-                },
-                "hobby_tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "hometown": {
-                    "type": "string"
-                },
-                "id_card_tail": {
-                    "type": "string"
-                },
-                "income_range": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
-                },
-                "marital_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
-                },
-                "match_code": {
-                    "description": "── 脱单档案（v6_user_match_profile，仅公开字段）─────────",
-                    "type": "string"
+                "match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo"
                 },
                 "matching_score": {
                     "description": "MatchingScore 匹配度分数（推荐引擎 Redis Sorted Set score）。",
                     "type": "number"
                 },
-                "nickname": {
-                    "type": "string"
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
                 },
-                "partner_demand": {
-                    "type": "string"
-                },
-                "profession": {
-                    "type": "string"
-                },
-                "self_intro": {
-                    "type": "string"
-                },
-                "user_id": {
-                    "description": "── 基础信息（v6_user + v6_user_profile）─────────────────",
-                    "type": "string"
-                },
-                "weight": {
-                    "type": "integer"
-                },
-                "workplace": {
-                    "type": "string"
-                },
-                "zodiac": {
-                    "type": "string"
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
                 }
             }
         },

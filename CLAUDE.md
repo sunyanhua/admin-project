@@ -41,6 +41,8 @@
 
 位置：`src/hooks/`、`src/components/templates/`。例外：模板无法满足时在同目录下新建。
 
+**弹窗行为规范（强制）**：所有弹窗组件必须设置 `maskClosable={false}`，禁止点击蒙层关闭弹窗，只允许通过弹窗内的关闭按钮关闭。`ScrollableModal` 已内置此属性；`DetailModal`、`ImagePreviewModal` 等直接使用 `Modal` 的组件必须在 JSX 显式声明。
+
 ### 4. 图片缩略图（必须使用）
 - **原则**：内联展示用缩略图，点击预览用原图。编辑/表单页面保持原图
 - **工具**：`src/utils/imageUtils.ts`，只对含 `vbegin` 的 CDN URL 生效
@@ -63,9 +65,10 @@
 - **Tag 列**：宽 90~100，**必须有 `title` 属性**（hover 看完整文字）
 - **Switch 列**：宽 100，仅 binary 状态
 - **日期/时间列**：宽 120，双行（日期 / 时间）
-- **头像+昵称列**：宽 140~160，`Button type="link"` + `Space size={4}` + `Avatar size={40}` + `getAvatarUrl()`
+- **头像+昵称列**：宽 140~160。**Button 包裹 Space（非 Space 包裹 Button！）**。`Button type="link" style={{ padding: 0, height: 'auto' }}` 包裹 `Space size={4}` 包裹 `Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }}` + `<span style={{ fontSize: 14 }}>昵称</span>`，头像用 `getAvatarUrl()`
 - **排序列**：宽 120，`InputNumber` 宽 70，不设 placeholder
 - **封面列**：宽 80，`getMediumUrl()` + `preview={{ src: 原图 }}`
+- **操作列**：宽 50~200。每个按钮必须有 icon，用 `Button type="link" size="small" icon={<XxxOutlined />}>文本</Button>`，常见：查看 `EyeOutlined`、编辑 `EditOutlined`、删除 `DeleteOutlined`
 
 | 内容类型 | 宽度 | | 内容类型 | 宽度 |
 |---------|------|-|---------|------|

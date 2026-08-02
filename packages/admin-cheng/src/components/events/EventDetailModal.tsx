@@ -179,6 +179,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
         footer={renderFooter()}
         width={700}
         confirmLoading={loading}
+        maskClosable={false}
       >
         {data && (
           <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }} styles={{ label: { whiteSpace: 'nowrap', minWidth: 100 } }}>
@@ -297,6 +298,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditSubmit}
         confirmLoading={editLoading}
+        maskClosable={false}
         okText="提交"
         cancelText="取消"
         width={600}

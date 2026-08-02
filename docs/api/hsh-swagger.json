@@ -9389,6 +9389,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "返回用户完整数据：id, nickname, avatar_url, phone_masked, name, gender, district, status, points, order_count, source_id, last_login_at, created_at",
                 "consumes": [
                     "application/json"
                 ],
@@ -9398,7 +9399,7 @@
                 "tags": [
                     "用户模块"
                 ],
-                "summary": "查询C端用户列表",
+                "summary": "查询C端用户列表（返回完整用户数据）",
                 "parameters": [
                     {
                         "type": "integer",
@@ -9414,7 +9415,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "关键词搜索（昵称）",
+                        "description": "关键词搜索（昵称或用户ID）",
                         "name": "keyword",
                         "in": "query"
                     },
@@ -9454,6 +9455,7 @@
                         "AdminAuth": []
                     }
                 ],
+                "description": "返回用户完整数据：id, openid, unionid, nickname, avatar_url, name, gender, birthday, district, phone_masked, status, points, order_count, source_id, last_login_at, created_at, updated_at",
                 "consumes": [
                     "application/json"
                 ],
@@ -9463,7 +9465,7 @@
                 "tags": [
                     "用户模块"
                 ],
-                "summary": "查询C端用户详情",
+                "summary": "查询C端用户详情（返回完整用户数据）",
                 "parameters": [
                     {
                         "type": "string",

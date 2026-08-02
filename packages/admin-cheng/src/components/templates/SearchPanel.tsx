@@ -65,7 +65,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               value={values[filter.name]}
               onChange={(value) => handleSelectChange(filter.name, value)}
               allowClear
-              style={{ width: 120 }}
+              style={{ minWidth: 120 }}
             >
               {filter.options?.map((opt) => (
                 <Select.Option key={opt.value} value={opt.value}>

@@ -219,6 +219,7 @@ const PaymentRecords = () => {
         footer={null}
         width={700}
         confirmLoading={detailLoading}
+        maskClosable={false}
       >
         {d && (
           <Descriptions column={2} bordered size="small">

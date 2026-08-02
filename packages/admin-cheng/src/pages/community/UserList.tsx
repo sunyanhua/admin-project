@@ -1,219 +1,214 @@
 import { useState, useCallback } from 'react';
 import { Tag, Avatar, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
+import { EyeOutlined } from '@ant-design/icons';
 import { userApi } from '../../api/services/user';
-import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
+import { StatusSwitch } from '@/components/templates/StatusSwitch';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { ProfileAuditStatus, MatchProfileAuditStatus } from '@/api/types/status';
+import { DetailModal } from '@/components/templates/DetailModal';
+import { buildUserDetailSections } from '@/components/user/UserDetailSections';
+import { AdminUserStatus } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { formatDateTime, formatDate } from '@/utils/format';
-import UserDetailModal from './UserDetailModal';
-import UserEditProfileModal from './UserEditProfileModal';
-import MatchProfileAuditModal from './MatchProfileAuditModal';
-import type { AdminUserDetailResponse } from '@/api/types/user';
+import type { CommunityUserItem } from '@/api/types/user';
+import '@/styles/user-detail-modal.css';
 
-const GENDER_OPTIONS = [
-  { label: '男', value: 1 },
-  { label: '女', value: 2 },
+// 用户类型选项 → API 参数映射
+const USER_TYPE_OPTIONS = [
+  { label: '新注册用户', value: 'new' },
+  { label: '全部老用户', value: 'old_all' },
+  { label: '老用户已激活', value: 'old_activated' },
+  { label: '老用户未激活', value: 'old_inactive' },
 ];
 
-const PROFILE_AUDIT_OPTIONS = [
-  { label: '待审核', value: ProfileAuditStatus.PENDING },
-  { label: '审核通过', value: ProfileAuditStatus.APPROVED },
-  { label: '审核拒绝', value: ProfileAuditStatus.REJECTED },
-];
-
-const MATCH_AUDIT_OPTIONS = [
-  { label: '待审核', value: MatchProfileAuditStatus.PENDING },
-  { label: '审核通过', value: MatchProfileAuditStatus.APPROVED },
-  { label: '审核拒绝', value: MatchProfileAuditStatus.REJECTED },
-  { label: '已撤销', value: MatchProfileAuditStatus.REVOKED },
+const STATUS_OPTIONS = [
+  { label: '正常', value: AdminUserStatus.ACTIVE },
+  { label: '屏蔽', value: AdminUserStatus.DISABLED },
 ];
 
 const filters: FilterConfig[] = [
-  { name: 'gender', placeholder: '全部性别', type: 'select', options: GENDER_OPTIONS },
-  { name: 'profile_audit_status', placeholder: '全部资料审核状态', type: 'select', options: PROFILE_AUDIT_OPTIONS },
-  { name: 'match_audit_status', placeholder: '全部档案审核状态', type: 'select', options: MATCH_AUDIT_OPTIONS },
+  { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
+  { name: 'user_type', placeholder: '全部用户类型', type: 'select', options: USER_TYPE_OPTIONS },
   { name: 'keyword', placeholder: '搜索昵称或手机号', type: 'input' },
 ];
 
-const PROFILE_AUDIT_MAP: Record<number, { color: string; text: string }> = {
-  [ProfileAuditStatus.PENDING]: { color: 'processing', text: '待审核' },
-  [ProfileAuditStatus.APPROVED]: { color: 'success', text: '已通过' },
-  [ProfileAuditStatus.REJECTED]: { color: 'error', text: '已拒绝' },
-};
-
-const MATCH_AUDIT_MAP: Record<number, { color: string; text: string }> = {
-  [MatchProfileAuditStatus.PENDING]: { color: 'processing', text: '待审核' },
-  [MatchProfileAuditStatus.APPROVED]: { color: 'success', text: '已通过' },
-  [MatchProfileAuditStatus.REJECTED]: { color: 'error', text: '已拒绝' },
-  [MatchProfileAuditStatus.REVOKED]: { color: 'default', text: '已撤销' },
-};
-
 const GENDER_LABEL: Record<number, string> = { 1: '男', 2: '女' };
+
+/** 从 birth_date 计算年龄 */
+function calcAge(birthDate: string): string {
+  if (!birthDate) return '-';
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return String(age);
+}
 
 const UserList = () => {
   const [values, setValues] = useState<Record<string, any>>({});
 
-  // Detail modal state
+  // Detail modal state — 直接用列表数据，无需额外接口
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [detailUser, setDetailUser] = useState<AdminUserDetailResponse | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-
-  // Edit profile modal state
-  const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [editProfileUser, setEditProfileUser] = useState<any>(null);
-
-  // Audit profile modal state
-  const [auditProfileOpen, setAuditProfileOpen] = useState(false);
-  const [auditProfileUser, setAuditProfileUser] = useState<any>(null);
-
-  const { success, error } = useAppNotification();
+  const [detailItem, setDetailItem] = useState<CommunityUserItem | null>(null);
 
   const fetchUsers = useCallback(async (params: any) => {
-    return userApi.getUsers({
+    const apiParams: any = {
       page: params.page,
       size: params.page_size || params.size,
-      keyword: params.keyword,
-      gender: params.gender,
-      profile_audit_status: params.profile_audit_status,
-      match_audit_status: params.match_audit_status,
-    });
+      keyword: params.keyword || undefined,
+      status: params.status != null ? params.status : undefined,
+    };
+    if (params.user_type === 'new') {
+      apiParams.is_migrated = false;
+    } else if (params.user_type === 'old_all') {
+      apiParams.is_migrated = true;
+    } else if (params.user_type === 'old_activated') {
+      apiParams.is_migrated = true;
+      apiParams.is_activated = true;
+    } else if (params.user_type === 'old_inactive') {
+      apiParams.is_migrated = true;
+      apiParams.is_activated = false;
+    }
+    return userApi.getUsers(apiParams);
   }, []);
 
-  const formatUserResponse = useCallback((res: any) => ({
-    list: res?.list || [],
-    count: res?.total ?? 0,
-  }), []);
+  const formatUserResponse = useCallback((res: any) => {
+    if (Array.isArray(res)) return { list: res, count: res.length };
+    return { list: res?.list || [], count: res?.total ?? 0 };
+  }, []);
 
-  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<any>({
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<CommunityUserItem>({
     fetchFn: fetchUsers,
     formatResponse: formatUserResponse,
   });
 
-  const handleViewDetail = async (record: any) => {
+  const handleViewDetail = (record: CommunityUserItem) => {
+    setDetailItem(record);
     setDetailModalOpen(true);
-    setDetailLoading(true);
-    try {
-      const res = await userApi.getUserDetail(record.user_id || record.id);
-      setDetailUser((res as any)?.data || res || null);
-    } catch {
-      error('加载用户详情失败');
-      setDetailUser(null);
-    } finally {
-      setDetailLoading(false);
-    }
   };
 
-  const handleEditProfile = (record: any) => {
-    setEditProfileUser({
-      id: record.user_id || record.id,
-      real_name: record.real_name,
-      gender: record.gender,
-      birth_date: record.birth_date,
-    });
-    setEditProfileOpen(true);
-  };
+  const handleStatusChange = useCallback(async (record: CommunityUserItem, checked: boolean) => {
+    const newStatus = checked ? AdminUserStatus.ACTIVE : AdminUserStatus.DISABLED;
+    await userApi.updateUserStatus(record.user.user_id, newStatus);
+    refresh();
+  }, [refresh]);
 
-  const handleAuditProfile = (record: any) => {
-    setAuditProfileUser({ id: record.user_id || record.id, nickname: record.nickname });
-    setAuditProfileOpen(true);
-  };
-
-  const columns: ColumnsType<any> = [
+  const columns: ColumnsType<CommunityUserItem> = [
     {
       title: '用户',
-      dataIndex: 'nickname',
-      key: 'user',
+      dataIndex: ['profile', 'nickname'],
+      key: 'nickname',
       width: 160,
-      render: (_: string, record: any) => (
-        <Space size={4}>
-          <Avatar size={40} src={getAvatarUrl(record.avatar)} />
-          <Button type="link" onClick={() => handleViewDetail(record)}>
-            {record.nickname || '-'}
-          </Button>
-        </Space>
+      render: (_: any, record: CommunityUserItem) => (
+        <Button
+          type="link"
+          style={{ padding: 0, height: 'auto' }}
+          onClick={() => handleViewDetail(record)}
+        >
+          <Space size={4}>
+            <Avatar
+              src={getAvatarUrl(record.profile.avatar)}
+              size={40}
+              style={{ borderRadius: '50%', flexShrink: 0 }}
+            />
+            <span style={{ fontSize: 14 }}>
+              {record.profile.nickname || '-'}
+            </span>
+          </Space>
+        </Button>
       ),
     },
     {
       title: '手机号',
-      dataIndex: 'phone',
+      dataIndex: ['user', 'phone'],
       key: 'phone',
       width: 140,
-      render: (v: string) => v || '-',
+      render: (_: any, record: CommunityUserItem) => record.user.phone || '-',
     },
     {
       title: '性别',
-      dataIndex: 'gender',
+      dataIndex: ['profile', 'gender'],
       key: 'gender',
       width: 60,
-      render: (g: number) => GENDER_LABEL[g] || '-',
+      render: (_: any, record: CommunityUserItem) => GENDER_LABEL[record.profile.gender] || '-',
     },
     {
       title: '年龄',
-      dataIndex: 'age',
+      dataIndex: ['profile', 'birth_date'],
       key: 'age',
       width: 60,
-    },
-    {
-      title: '资料审核',
-      dataIndex: 'profile_audit_status',
-      key: 'profile_audit_status',
-      width: 100,
-      render: (s: number) => {
-        const info = PROFILE_AUDIT_MAP[s] || { color: 'default', text: '-' };
-        return <Tag color={info.color}>{info.text}</Tag>;
-      },
-    },
-    {
-      title: '档案审核',
-      dataIndex: 'match_audit_status',
-      key: 'match_audit_status',
-      width: 100,
-      render: (s: number | null) => {
-        if (s == null) return <Tag>未提交</Tag>;
-        const info = MATCH_AUDIT_MAP[s] || { color: 'default', text: '-' };
-        return <Tag color={info.color}>{info.text}</Tag>;
-      },
-    },
-    {
-      title: '最近活跃',
-      dataIndex: 'last_active_at',
-      key: 'last_active_at',
-      width: 120,
-      render: (t: string) => (
-        <div style={{ lineHeight: 1.6 }}>
-          <div>{t ? formatDate(t) : '-'}</div>
-          <div style={{ color: '#666', fontSize: 12 }}>{t ? formatDateTime(t).split(' ')[1] : ''}</div>
-        </div>
-      ),
+      render: (_: any, record: CommunityUserItem) => calcAge(record.profile.birth_date),
     },
     {
       title: '注册时间',
-      dataIndex: 'created_at',
+      dataIndex: ['profile', 'created_at'],
       key: 'created_at',
       width: 120,
-      render: (t: string) => (
-        <div style={{ lineHeight: 1.6 }}>
-          <div>{formatDate(t)}</div>
-          <div style={{ color: '#666', fontSize: 12 }}>{formatDateTime(t).split(' ')[1]}</div>
-        </div>
+      render: (_: any, record: CommunityUserItem) => {
+        const t = record.profile.created_at;
+        return (
+          <div style={{ lineHeight: 1.6 }}>
+            <div>{t ? formatDate(t) : '-'}</div>
+            <div style={{ color: '#666', fontSize: 12 }}>{t ? formatDateTime(t).split(' ')[1] : ''}</div>
+          </div>
+        );
+      },
+    },
+    {
+      title: '脱单资料',
+      dataIndex: ['match_profile'],
+      key: 'match_profile',
+      width: 90,
+      align: 'center',
+      render: (_: any, record: CommunityUserItem) => (
+        <Tag color={record.match_profile ? 'success' : 'default'}>
+          {record.match_profile ? '已登记' : '未登记'}
+        </Tag>
       ),
+    },
+    {
+      title: '状态',
+      dataIndex: ['user', 'is_migrated'],
+      key: 'status',
+      width: 100,
+      render: (_: any, record: CommunityUserItem) => (
+        <StatusSwitch
+          checked={true}
+          checkedChildren="正常"
+          unCheckedChildren="屏蔽"
+          onChange={(checked) => handleStatusChange(record, checked)}
+        />
+      ),
+    },
+    {
+      title: '嗑学分',
+      dataIndex: ['user', 'credits'],
+      key: 'credits',
+      width: 90,
+      align: 'center',
+      render: (_: any, record: CommunityUserItem) => record.user.credits ?? '-',
+    },
+    {
+      title: '金币',
+      dataIndex: ['wallet', 'points'],
+      key: 'points',
+      width: 90,
+      align: 'center',
+      render: (_: any, record: CommunityUserItem) => record.wallet.coins ?? '-',
     },
     {
       title: '操作',
       key: 'actions',
-      width: 200,
-      render: (_: any, record: any) => (
+      width: 80,
+      render: (_: any, record: CommunityUserItem) => (
         <Space className="action-buttons">
-          <Button size="small" type="link" onClick={() => handleViewDetail(record)}>详情</Button>
-          <Button size="small" type="link" onClick={() => handleEditProfile(record)}>修改资料</Button>
-          {record.match_audit_status === MatchProfileAuditStatus.PENDING && (
-            <Button size="small" type="link" onClick={() => handleAuditProfile(record)}>审核档案</Button>
-          )}
+          <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => handleViewDetail(record)}>查看</Button>
         </Space>
       ),
     },
@@ -236,7 +231,7 @@ const UserList = () => {
     <>
       <StandardPage
         title="基础资料管理"
-        description="查看和管理平台注册用户的基础资料，支持按性别、审核状态筛选，可查看详情及修改用户资料。"
+        description="查看和管理平台注册用户的基础资料、脱单档案及账户信息，支持按用户类型和状态筛选。"
         showRefreshButton
         onRefresh={refresh}
         searchArea={
@@ -255,30 +250,27 @@ const UserList = () => {
             loading={loading}
             pagination={pagination}
             onPageChange={onPageChange}
-            scroll={{ x: 1000 }}
+            scroll={{ x: 1100 }}
+            rowKey={(r) => r.user.user_id}
           />
         }
       />
 
-      <UserDetailModal
+      <DetailModal
+        title="用户详情"
         open={detailModalOpen}
-        loading={detailLoading}
-        data={detailUser}
-        onClose={() => { setDetailModalOpen(false); setDetailUser(null); }}
-      />
-
-      <UserEditProfileModal
-        open={editProfileOpen}
-        user={editProfileUser}
-        onClose={() => setEditProfileOpen(false)}
-        onSuccess={refresh}
-      />
-
-      <MatchProfileAuditModal
-        open={auditProfileOpen}
-        user={auditProfileUser}
-        onClose={() => setAuditProfileOpen(false)}
-        onSuccess={refresh}
+        entity={detailItem}
+        width={720}
+        className="user-detail-modal"
+        onClose={() => { setDetailModalOpen(false); setDetailItem(null); }}
+        render={(item: CommunityUserItem) =>
+          buildUserDetailSections({
+            user: item.user,
+            profile: item.profile,
+            matchProfile: item.match_profile || null,
+            wallet: item.wallet,
+          })
+        }
       />
     </>
   );

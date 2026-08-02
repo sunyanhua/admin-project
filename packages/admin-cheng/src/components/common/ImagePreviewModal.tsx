@@ -29,6 +29,7 @@ const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({
       footer={null}
       width={800}
       centered
+      maskClosable={false}
       className="image-preview-modal"
     >
       <div className="image-preview-container">

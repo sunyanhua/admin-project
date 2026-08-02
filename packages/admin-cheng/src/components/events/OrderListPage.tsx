@@ -322,6 +322,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         footer={null}
         width={720}
         confirmLoading={detailLoading}
+        maskClosable={false}
       >
         {detailData && renderDetail(detailData)}
       </Modal>

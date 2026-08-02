@@ -193,6 +193,7 @@ const RefundRecords = () => {
         footer={null}
         width={640}
         confirmLoading={detailLoading}
+        maskClosable={false}
       >
         {detailData && (
           <Descriptions column={2} bordered size="small">

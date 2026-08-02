@@ -732,8 +732,19 @@ const passwordRules = [
 ## 17. 操作按钮规范
 
 ```typescript
-// 所有操作按钮添加 className
-<Button className="action-buttons" ...>编辑</Button>
+// 所有操作按钮必须带 icon，语义与文本一致
+// 常见匹配：
+//   查看 → <EyeOutlined />    编辑 → <EditOutlined />
+//   删除 → <DeleteOutlined />  权限 → <SafetyCertificateOutlined />
+<Button type="link" size="small" icon={<EyeOutlined />} onClick={handleView}>查看</Button>
+<Button type="link" size="small" icon={<EditOutlined />} onClick={handleEdit}>编辑</Button>
+<Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={handleDelete}>删除</Button>
+
+// 多个操作按钮用 Space 包裹，添加 className="action-buttons"
+<Space className="action-buttons">
+  <Button type="link" size="small" icon={<EyeOutlined />} onClick={handleView}>查看</Button>
+  <Button type="link" size="small" icon={<EditOutlined />} onClick={handleEdit}>编辑</Button>
+</Space>
 
 // 删除使用 confirmDelete
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
@@ -821,6 +832,8 @@ showError('保存失败');
 ## 21. 弹窗模板（ScrollableModal）
 
 所有带表单的弹窗必须使用 `ScrollableModal`，禁止直接用 `<Modal>`。
+
+**强制行为规范（2026-08-02）**：全站所有弹窗（无论是否使用模板）必须设置 `maskClosable={false}`，禁止点击蒙层关闭弹窗，只允许通过弹窗内的关闭按钮关闭。`ScrollableModal` 已内置此属性。`DetailModal`、`ImagePreviewModal` 等直接使用 `<Modal>` 的组件必须显式添加。
 
 ### Props
 
@@ -1153,6 +1166,7 @@ import { getMediumUrl } from '@/utils/imageUtils';
 | 2026-07-16 | v3.1 | 新增图片缩略图处理规范（§12），16个文件接入 imageUtils | Claude Code |
 | 2026-07-16 | v3.2 | 新增表格列排列标准（§13），9种列类型+列宽速查表 | Claude Code |
 | 2026-07-16 | v3.3 | 新增接口调用(§14)、搜索交互(§15)、表单验证(§16)、操作按钮(§17)、状态默认值(§18)、排序字段(§19)、区域卡片(§20)、弹窗模板(§21)；CLAUDE.md 328→130 行，项目 CLAUDE.md 232→86 行 | Claude Code |
+| 2026-08-02 | v3.4 | 弹窗强制 maskClosable=false（§21），全站14个弹窗组件统一修复；按钮必须带icon（§17） | Claude Code |
 
 ---
 
