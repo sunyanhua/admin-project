@@ -269,14 +269,16 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
   const renderDetail = (d: any) => {
     const master = d.master_order || d;
     const subOrders = d.sub_orders || [];
-    const items = d.items || [];
     const user = d.user;
     const shipping = d.shipping_address;
+    // 详情接口的 items 在 sub_orders[].items[] 中（列表接口在顶层 items）
+    const detailItems: any[] = subOrders.length > 0
+      ? subOrders.flatMap((so: any) => so.items || [])
+      : (d.items || []);
 
     return (
       <div>
         <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
-          <Descriptions.Item label="订单号" span={2}>{master.order_no || d.order_no || '-'}</Descriptions.Item>
           <Descriptions.Item label="订单状态">
             <Tag color={activeStatusMap[master.status]?.color}>{activeStatusMap[master.status]?.text || '其他'}</Tag>
           </Descriptions.Item>
@@ -285,23 +287,22 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
           <Descriptions.Item label="用户手机">{user?.phone_masked || d.user_data?.phone_masked || '-'}</Descriptions.Item>
           <Descriptions.Item label="应付金额">{formatAmount(master.total_amount || d.total_amount)}</Descriptions.Item>
           <Descriptions.Item label="实付金额">{formatAmount(master.pay_amount ?? master.payable_amount ?? d.pay_amount ?? d.payable_amount)}</Descriptions.Item>
-          <Descriptions.Item label="优惠金额">{formatAmount(master.discount_amount || d.discount_amount)}</Descriptions.Item>
-          <Descriptions.Item label="创建时间">{master.created_at ? formatDateTime(master.created_at) : '-'}</Descriptions.Item>
+          <Descriptions.Item label="下单时间">{master.created_at ? formatDateTime(master.created_at) : '-'}</Descriptions.Item>
           <Descriptions.Item label="支付时间">{master.paid_at ? formatDateTime(master.paid_at) : '-'}</Descriptions.Item>
-        </Descriptions>
-
-        {items.length > 0 && (
-          <>
-            <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>商品明细</div>
-            <Descriptions column={1} bordered size="small">
-              {items.map((item: any, i: number) => (
-                <Descriptions.Item key={i} label={item.product_title || `商品#${i + 1}`}>
-                  {item.sku_name ? `${item.sku_name} × ${item.quantity || 1}，单价 ¥${((item.unit_price || 0) / 100).toFixed(2)}` : `× ${item.quantity || 1}`}
-                </Descriptions.Item>
+          {detailItems.length > 0 && (
+            <Descriptions.Item label="报名项目" span={2}>
+              {detailItems.map((item: any, i: number) => (
+                <div key={i} style={{ lineHeight: 1.6, marginBottom: i < detailItems.length - 1 ? 6 : 0 }}>
+                  <div style={{ wordBreak: 'break-word' }}>{item.product_title || '-'}</div>
+                  <div style={{ color: '#999', fontSize: 12, wordBreak: 'break-word' }}>
+                    {item.sku_spec_text || item.sku_name || ''}
+                    {item.quantity != null ? ` × ${item.quantity}` : ''}
+                  </div>
+                </div>
               ))}
-            </Descriptions>
-          </>
-        )}
+            </Descriptions.Item>
+          )}
+        </Descriptions>
 
         {shipping && (
           <>
