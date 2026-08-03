@@ -1,7 +1,7 @@
 import OrderListPage from '@/components/events/OrderListPage';
 
 const PRODUCT_ORDER_CONFIG = {
-  title: '购买信息',
+  title: '订单管理',
   description: '管理商品购买订单，查看购买详情、支付状态、发货信息及用户信息。',
   defaultOrderType: 'physical' as const,
   defaultRootCategoryId: 3, // 商品
@@ -9,6 +9,7 @@ const PRODUCT_ORDER_CONFIG = {
   productColumnTitle: '购买商品',
   productLabel: '购买商品',
   showAllItems: true,
+  showOrderActions: true,
   statusMap: {
     0: { text: '待支付', color: 'orange' },
     1: { text: '已支付', color: 'blue' },

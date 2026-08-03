@@ -30,6 +30,11 @@ export const orderApi = {
   exportOrders: (params?: { start_date?: string; end_date?: string; status?: number; order_type?: string }) => {
     return request.get('/admin/v1/mall/orders/export', { params });
   },
+
+  // 手动发货 — POST /admin/v1/mall/orders/:id/ship
+  shipOrder: (id: number, data: { logistics_company: string; tracking_no: string; remark?: string }) => {
+    return request.post(`/admin/v1/mall/orders/${id}/ship`, data);
+  },
 };
 
 // 退款记录 API（v1 mall — AfterSale 模块）

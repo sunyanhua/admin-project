@@ -11,6 +11,7 @@ import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import UserDetailModal from '@/components/user/UserDetailModal';
 import OrderDetailModal from '@/components/events/OrderDetailModal';
+import ShipModal from '@/components/events/ShipModal';
 import { formatDateTime, formatDate } from '@/utils/format';
 import { getAvatarUrl } from '@/utils/imageUtils';
 
@@ -40,6 +41,7 @@ interface OrderConfig {
   productColumnTitle?: string; // 自定义产品列标题，如"活动项目"
   productLabel?: string; // 详情弹窗项目区域标题，如"报名项目"
   showAllItems?: boolean; // 自定义产品列是否遍历展示所有 items（默认只取第一项）
+  showOrderActions?: boolean; // 详情弹窗是否显示发货/退款按钮（仅实物订单）
   statusMap?: Record<number, { text: string; color: string }>; // 自定义状态映射
 }
 
@@ -93,6 +95,8 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | number>('');
+  const [shipModalVisible, setShipModalVisible] = useState(false);
+  const [shipOrderId, setShipOrderId] = useState<number>(0);
   const { success, error: showError } = useAppNotification();
 
   const activeStatusMap = config.statusMap || ORDER_STATUS_MAP;
@@ -141,6 +145,20 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
     if (!uid) return;
     setSelectedUserId(uid);
     setUserDetailVisible(true);
+  };
+
+  const handleShip = (orderId: number) => {
+    setShipOrderId(orderId);
+    setShipModalVisible(true);
+  };
+
+  const handleRefund = (orderId: number) => {
+    showError('退款功能待上线');
+  };
+
+  const handleShipSuccess = () => {
+    refresh();
+    setDetailData(null);
   };
 
   const filters: FilterConfig[] = [
@@ -305,13 +323,27 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         width={720}
         confirmLoading={detailLoading}
       >
-        <OrderDetailModal data={detailData} statusMap={activeStatusMap} productLabel={config.productLabel} />
+        <OrderDetailModal
+          data={detailData}
+          statusMap={activeStatusMap}
+          productLabel={config.productLabel}
+          showActions={config.showOrderActions}
+          onShip={handleShip}
+          onRefund={handleRefund}
+        />
       </Modal>
 
       <UserDetailModal
         userId={selectedUserId}
         open={userDetailVisible}
         onClose={() => setUserDetailVisible(false)}
+      />
+
+      <ShipModal
+        orderId={shipOrderId}
+        open={shipModalVisible}
+        onClose={() => setShipModalVisible(false)}
+        onSuccess={handleShipSuccess}
       />
     </>
   );

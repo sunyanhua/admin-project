@@ -1,4 +1,4 @@
-import { Tag, Descriptions } from 'antd';
+import { Tag, Descriptions, Button, Space, Modal } from 'antd';
 import { formatDateTime } from '@/utils/format';
 
 function formatAmount(amount?: number): string {
@@ -13,9 +13,22 @@ export interface OrderDetailModalProps {
   statusMap?: Record<number, { text: string; color: string }>;
   /** 项目区域标题 — "报名项目" / "购票项目" / "购买商品" */
   productLabel?: string;
+  /** 是否显示操作按钮（发货/退款） */
+  showActions?: boolean;
+  /** 发货回调 */
+  onShip?: (orderId: number) => void;
+  /** 退款回调 */
+  onRefund?: (orderId: number) => void;
 }
 
-const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ data: d, statusMap, productLabel }) => {
+const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
+  data: d,
+  statusMap,
+  productLabel,
+  showActions,
+  onShip,
+  onRefund,
+}) => {
   if (!d) return null;
 
   const master = d.master_order || d;
@@ -70,6 +83,19 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ data: d, statusMap,
             <Descriptions.Item label="地址" span={2}>{`${shipping.province || ''}${shipping.city || ''}${shipping.district || ''} ${shipping.detail || ''}`}</Descriptions.Item>
           </Descriptions>
         </>
+      )}
+
+      {showActions && (
+        <div style={{ textAlign: 'right', marginTop: 16 }}>
+          <Space>
+            {onShip && (
+              <Button type="primary" onClick={() => onShip(master.id)}>发货</Button>
+            )}
+            {onRefund && (
+              <Button danger onClick={() => onRefund(master.id)}>退款</Button>
+            )}
+          </Space>
+        </div>
       )}
     </div>
   );
