@@ -1,29 +1,102 @@
+import { useCallback } from 'react';
 import OrderListPage from '@/components/events/OrderListPage';
+import { orderApi } from '@/api/services/order';
+import { useAppNotification } from '@/hooks/useAppNotification';
 
-const PRODUCT_ORDER_CONFIG = {
-  title: '订单管理',
-  description: '管理商品购买订单，查看购买详情、支付状态、发货信息及用户信息。',
-  defaultOrderType: 'physical' as const,
-  defaultRootCategoryId: 3, // 商品
-  hideOrderNo: true,
-  productColumnTitle: '购买商品',
-  productLabel: '购买商品',
-  showAllItems: true,
-  showOrderActions: true,
-  statusMap: {
-    0: { text: '待支付', color: 'orange' },
-    1: { text: '已支付', color: 'blue' },
-    2: { text: '待发货', color: 'cyan' },
-    3: { text: '已发货', color: 'geekblue' },
-    4: { text: '已收货', color: 'lime' },
-    5: { text: '已完成', color: 'green' },
-    6: { text: '已取消', color: 'default' },
-    7: { text: '售后中', color: 'purple' },
-  } as const,
+const ORDER_TYPE = 'physical' as const;
+const ROOT_CATEGORY_ID = 3;
+
+const buildCSV = (data: any[]) => {
+  const BOM = '﻿';
+  const header = ['订单ID', '购买人', '购买人手机', '购买商品', '收货人', '联系电话', '地址', '物流公司', '物流单号'];
+  const rows = data.map((order) => {
+    const master = order.master_order || order;
+    const subOrders = order.sub_orders || [];
+    const items: any[] = subOrders.length > 0
+      ? subOrders.flatMap((so: any) => so.items || [])
+      : (order.items || []);
+    const productText = items.map((item: any) =>
+      `${item.product_title || ''} ${item.sku_spec_text || item.sku_name || ''} × ${item.quantity ?? 1}`
+    ).join('; ');
+
+    const ship = order.shipping_address || {};
+    const logistics = master.logistics || order.logistics || {};
+
+    return [
+      master.id ?? '',
+      order.user_data?.nickname || order.user?.nickname || '',
+      order.user_data?.phone_masked || order.user?.phone_masked || '',
+      productText,
+      ship.name || '',
+      ship.phone || '',
+      `${ship.province || ''}${ship.city || ''}${ship.district || ''} ${ship.detail || ''}`.trim(),
+      logistics.logistics_company || logistics.company || '',
+      logistics.tracking_no || logistics.tracking_number || '',
+    ];
+  });
+
+  const csvContent = BOM + [header, ...rows].map(row =>
+    row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+  ).join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `订单导出_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 };
 
 const ProductOrders = () => {
-  return <OrderListPage config={PRODUCT_ORDER_CONFIG} />;
+  const { success, error: showError } = useAppNotification();
+
+  const handleExport = useCallback(async (filters: Record<string, any>) => {
+    try {
+      const params = {
+        ...filters,
+        order_type: ORDER_TYPE,
+        root_category_id: ROOT_CATEGORY_ID,
+        page: 1,
+        page_size: 9999,
+      };
+      const res: any = await orderApi.getOrders(params);
+      const list = res?.list || [];
+      if (list.length === 0) {
+        showError('没有可导出的订单');
+        return;
+      }
+      buildCSV(list);
+      success(`已导出 ${list.length} 条订单`);
+    } catch (err: any) {
+      showError(err?.response?.data?.message || err?.message || '导出失败');
+    }
+  }, []);
+
+  return (
+    <OrderListPage config={{
+      title: '订单管理',
+      description: '管理商品购买订单，查看购买详情、支付状态、发货信息及用户信息。',
+      defaultOrderType: ORDER_TYPE,
+      defaultRootCategoryId: ROOT_CATEGORY_ID,
+      hideOrderNo: true,
+      productColumnTitle: '购买商品',
+      productLabel: '购买商品',
+      showAllItems: true,
+      showOrderActions: true,
+      onExport: handleExport,
+      statusMap: {
+        0: { text: '待支付', color: 'orange' },
+        1: { text: '已支付', color: 'blue' },
+        2: { text: '待发货', color: 'cyan' },
+        3: { text: '已发货', color: 'geekblue' },
+        4: { text: '已收货', color: 'lime' },
+        5: { text: '已完成', color: 'green' },
+        6: { text: '已取消', color: 'default' },
+        7: { text: '售后中', color: 'purple' },
+      } as const,
+    }} />
+  );
 };
 
 export default ProductOrders;

@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Button, Space, Modal, Avatar } from 'antd';
+import { DownloadOutlined } from '@ant-design/icons';
 import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { orderApi } from '@/api/services/order';
@@ -42,6 +43,7 @@ interface OrderConfig {
   productLabel?: string; // 详情弹窗项目区域标题，如"报名项目"
   showAllItems?: boolean; // 自定义产品列是否遍历展示所有 items（默认只取第一项）
   showOrderActions?: boolean; // 详情弹窗是否显示发货/退款按钮（仅实物订单）
+  onExport?: (filters: Record<string, any>) => void; // 导出回调
   statusMap?: Record<number, { text: string; color: string }>; // 自定义状态映射
 }
 
@@ -97,6 +99,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
   const [selectedUserId, setSelectedUserId] = useState<string | number>('');
   const [shipModalVisible, setShipModalVisible] = useState(false);
   const [shipOrderId, setShipOrderId] = useState<number>(0);
+  const activeFiltersRef = useRef<Record<string, any>>({});
   const { success, error: showError } = useAppNotification();
 
   const activeStatusMap = config.statusMap || ORDER_STATUS_MAP;
@@ -278,6 +281,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
       params.order_no = params.keyword;
       delete params.keyword;
     }
+    activeFiltersRef.current = params;
     search(params);
   };
 
@@ -293,6 +297,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         description={config.description}
         showRefreshButton
         onRefresh={refresh}
+        extraActions={config.onExport ? <Button icon={<DownloadOutlined />} onClick={() => config.onExport?.(activeFiltersRef.current)}>导出</Button> : undefined}
         searchArea={
           <SearchPanel
             filters={filters}
