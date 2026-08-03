@@ -35,6 +35,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const subOrders = d.sub_orders || [];
   const user = d.user;
   const shipping = d.shipping_address;
+  const logistics = (d.master_order && d.master_order.logistics) || d.logistics;
   const detailItems: any[] = subOrders.length > 0
     ? subOrders.flatMap((so: any) => so.items || [])
     : (d.items || []);
@@ -45,6 +46,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
   const statusColor = master.status !== undefined
     ? (statusMap?.[master.status]?.color || 'default')
     : 'default';
+  const isShipped = master.status === 3;
 
   return (
     <div>
@@ -74,6 +76,16 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         )}
       </Descriptions>
 
+      {logistics && (
+        <>
+          <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>快递信息</div>
+          <Descriptions column={2} bordered size="small">
+            <Descriptions.Item label="快递公司">{logistics.logistics_company || logistics.company || '-'}</Descriptions.Item>
+            <Descriptions.Item label="快递单号">{logistics.tracking_no || logistics.tracking_number || '-'}</Descriptions.Item>
+          </Descriptions>
+        </>
+      )}
+
       {shipping && (
         <>
           <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>收货地址</div>
@@ -89,7 +101,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         <div style={{ textAlign: 'right', marginTop: 16 }}>
           <Space>
             {onShip && (
-              <Button type="primary" onClick={() => onShip(master.id)}>发货</Button>
+              <Button type="primary" disabled={isShipped} onClick={() => onShip(master.id)}>发货</Button>
             )}
             {onRefund && (
               <Button danger onClick={() => onRefund(master.id)}>退款</Button>
