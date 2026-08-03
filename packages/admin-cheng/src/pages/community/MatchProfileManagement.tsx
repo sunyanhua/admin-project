@@ -37,7 +37,7 @@ const filters: FilterConfig[] = [
 ];
 
 const AUDIT_MAP: Record<number, { color: string; text: string }> = {
-  [MatchProfileAuditStatus.PENDING]: { color: 'processing', text: '审核中' },
+  [MatchProfileAuditStatus.PENDING]: { color: 'processing', text: '待审核' },
   [MatchProfileAuditStatus.APPROVED]: { color: 'success', text: '已通过' },
   [MatchProfileAuditStatus.REJECTED]: { color: 'error', text: '已拒绝' },
   [MatchProfileAuditStatus.REVOKED]: { color: 'default', text: '已撤销' },
@@ -90,10 +90,10 @@ const MatchProfileManagement = () => {
     });
   }, []);
 
-  const formatUserResponse = useCallback((res: any) => {
-    if (Array.isArray(res)) return { list: res, count: res.length };
-    return { list: res?.list || [], count: res?.total ?? 0 };
-  }, []);
+  const formatUserResponse = useCallback((res: any) => ({
+    list: res?.list || (Array.isArray(res) ? res : []),
+    count: res?.total ?? 0,
+  }), []);
 
   const { data: rawData, loading, pagination, onPageChange, refresh, search } = useListPage<CommunityUserItem>({
     fetchFn: fetchUsers,

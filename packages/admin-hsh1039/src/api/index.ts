@@ -112,7 +112,10 @@ instance.interceptors.response.use(
   (response) => {
     const { data } = response;
     if (data.code !== undefined) {
-      if (data.code === 0) return data.data;
+      if (data.code === 0) {
+          if (data.pagination) return { list: data.data, total: data.pagination.total, pagination: data.pagination };
+          return data.data;
+        }
       return Promise.reject({ response: { data: { message: data.message || '请求失败' } } });
     }
     if (data.data !== undefined) return data.data;

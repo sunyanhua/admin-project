@@ -82,10 +82,10 @@ const UserList = () => {
     return userApi.getUsers(apiParams);
   }, []);
 
-  const formatUserResponse = useCallback((res: any) => {
-    if (Array.isArray(res)) return { list: res, count: res.length };
-    return { list: res?.list || [], count: res?.total ?? 0 };
-  }, []);
+  const formatUserResponse = useCallback((res: any) => ({
+    list: res?.list || (Array.isArray(res) ? res : []),
+    count: res?.total ?? 0,
+  }), []);
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<CommunityUserItem>({
     fetchFn: fetchUsers,
@@ -204,7 +204,7 @@ const UserList = () => {
       key: 'points',
       width: 90,
       align: 'center',
-      render: (_: any, record: CommunityUserItem) => record.wallet.coins ?? '-',
+      render: (_: any, record: CommunityUserItem) => record.wallet?.coins ?? '-',
     },
     {
       title: '操作',

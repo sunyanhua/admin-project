@@ -39,11 +39,10 @@ const RoleManagement = () => {
     return adminApi.getRoles(params);
   }, []);
 
-  const formatResponse = useCallback((res: any) => {
-    // PagedResponse 被拦截器解包后可能是数组或 {list,total}
-    if (Array.isArray(res)) return { list: res, count: res.length };
-    return { list: res?.list || [], count: res?.total || res?.pagination?.total || 0 };
-  }, []);
+  const formatResponse = useCallback((res: any) => ({
+    list: res?.list || (Array.isArray(res) ? res : []),
+    count: res?.total ?? 0,
+  }), []);
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<RoleListItem>({
     fetchFn: fetchRoles,

@@ -68,3 +68,18 @@ export const UploadStatus = {
   COMPLETED: 1,
 } as const;
 export type UploadStatus = (typeof UploadStatus)[keyof typeof UploadStatus];
+
+/** 收入范围 */
+export const IncomeRange = {
+  /** 5000 以下 */
+  BELOW_5K: 1,
+  /** 5000–8000 */
+  FIVE_K_TO_8K: 2,
+  /** 8000–12000 */
+  EIGHT_K_TO_12K: 3,
+  /** 12000–18000 */
+  TWELVE_K_TO_18K: 4,
+  /** 18000 以上 */
+  ABOVE_18K: 5,
+} as const;
+export type IncomeRange = (typeof IncomeRange)[keyof typeof IncomeRange];

@@ -8,7 +8,7 @@ import {
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
 import { getAvatarUrl, getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { MatchProfileAuditStatus } from '@/api/types/status';
+import { MatchProfileAuditStatus, IncomeRange } from '@/api/types/status';
 import type {
   CommunityUserSummary,
   CommunityProfileSummary,
@@ -24,7 +24,7 @@ export interface CommunityUserDetailProps {
   user: CommunityUserSummary;
   profile: CommunityProfileSummary;
   matchProfile?: CommunityMatchProfileSummary | null;
-  wallet: CommunityWalletSummary;
+  wallet: CommunityWalletSummary | null;
   extraSections?: { title: ReactNode; items: { label: string; value: ReactNode; span?: number }[] }[];
   onEditProfile?: () => void;
   onAuditProfile?: () => void;
@@ -34,6 +34,13 @@ const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
 const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
 const EDUCATION_MAP: Record<number, string> = { 1: '高中及以下', 2: '大专', 3: '本科', 4: '硕士', 5: '博士', 6: '其他' };
 const BLOOD_MAP: Record<number, string> = { 1: 'A', 2: 'B', 3: 'AB', 4: 'O' };
+const INCOME_RANGE_MAP: Record<number, string> = {
+  [IncomeRange.BELOW_5K]: '5000 以下',
+  [IncomeRange.FIVE_K_TO_8K]: '5000–8000',
+  [IncomeRange.EIGHT_K_TO_12K]: '8000–12000',
+  [IncomeRange.TWELVE_K_TO_18K]: '12000–18000',
+  [IncomeRange.ABOVE_18K]: '18000 以上',
+};
 function getVisibilityLabel(mp: { is_active: boolean; visibility: number }): string {
   if (!mp.is_active) return '已退出';
   if (mp.visibility === 1) return '公开';
@@ -150,7 +157,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '户籍', value: matchProfile.household_registration || '-', span: 1 },
         { label: '家乡', value: matchProfile.hometown || '-', span: 1 },
         { label: '工作单位', value: matchProfile.workplace || '-', span: 1 },
-        { label: '收入范围', value: matchProfile.income_range != null ? matchProfile.income_range : '-', span: 1 },
+        { label: '收入范围', value: matchProfile.income_range != null ? INCOME_RANGE_MAP[matchProfile.income_range] : '-', span: 1 },
         { label: '照片', value: matchProfile.photos?.length ? (
           <Image.PreviewGroup>
             <Space wrap size={4}>
@@ -201,7 +208,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
     items: [
       { label: '注册时间', value: profile.created_at ? formatDateTime(profile.created_at) : '-', span: 1 },
       { label: '最近活跃', value: user.last_active_at ? formatDateTime(user.last_active_at) : '-', span: 1 },
-      { label: '金币', value: wallet.coins ?? 0, span: 1 },
+      { label: '金币', value: wallet?.coins ?? 0, span: 1 },
       { label: '钱包余额', value: user.wallet_balance != null ? `¥${(user.wallet_balance / 100).toFixed(2)}` : '¥0.00', span: 1 },
       { label: '嗑学分', value: user.credits ?? 0, span: 1 },
       { label: '本周嗑学分', value: user.credits_weekly ?? 0, span: 1 },

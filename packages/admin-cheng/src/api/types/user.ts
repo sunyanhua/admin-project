@@ -1,4 +1,4 @@
-import type { UserGender, ProfileAuditStatus, MatchProfileAuditStatus } from './status';
+import type { UserGender, ProfileAuditStatus, MatchProfileAuditStatus, IncomeRange } from './status';
 
 // ========== C 端用户列表（社区管理） ==========
 
@@ -51,7 +51,7 @@ export interface CommunityMatchProfileSummary {
   height: number;
   weight: number;
   hobby_tags: string;
-  income_range: number | null;
+  income_range: IncomeRange | null;
   self_intro: string;
   partner_demand: string;
   photos?: string[];
@@ -89,7 +89,7 @@ export interface CommunityUserItem {
   user: CommunityUserSummary;
   profile: CommunityProfileSummary;
   match_profile?: CommunityMatchProfileSummary;
-  wallet: CommunityWalletSummary;
+  wallet: CommunityWalletSummary | null;
 }
 
 /** 社区用户列表查询参数 */
@@ -146,7 +146,7 @@ export interface AdminUserMatchProfileView {
   marital_status: number;
   education: number;
   profession: string;
-  income_range: number;
+  income_range: IncomeRange;
   height: number;
   weight: number;
   hobby_tags: string[];
