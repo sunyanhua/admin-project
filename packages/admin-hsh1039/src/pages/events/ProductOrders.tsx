@@ -53,21 +53,28 @@ const ProductOrders = () => {
 
   const handleExport = useCallback(async (filters: Record<string, any>) => {
     try {
-      const params = {
-        ...filters,
-        order_type: ORDER_TYPE,
-        root_category_id: ROOT_CATEGORY_ID,
-        page: 1,
-        page_size: 9999,
-      };
-      const res: any = await orderApi.getOrders(params);
-      const list = res?.list || [];
-      if (list.length === 0) {
+      const all: any[] = [];
+      let page = 1;
+      const pageSize = 100;
+      while (true) {
+        const res: any = await orderApi.getOrders({
+          ...filters,
+          order_type: ORDER_TYPE,
+          root_category_id: ROOT_CATEGORY_ID,
+          page,
+          page_size: pageSize,
+        });
+        const list = res?.list || [];
+        all.push(...list);
+        if (list.length < pageSize) break;
+        page++;
+      }
+      if (all.length === 0) {
         showError('没有可导出的订单');
         return;
       }
-      buildCSV(list);
-      success(`已导出 ${list.length} 条订单`);
+      buildCSV(all);
+      success(`已导出 ${all.length} 条订单`);
     } catch (err: any) {
       showError(err?.response?.data?.message || err?.message || '导出失败');
     }
