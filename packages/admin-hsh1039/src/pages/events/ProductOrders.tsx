@@ -8,25 +8,34 @@ const ROOT_CATEGORY_ID = 3;
 
 const buildCSV = (data: any[]) => {
   const BOM = '﻿';
-  const header = ['订单ID', '购买人', '购买人手机', '购买商品', '收货人', '联系电话', '地址', '物流公司', '物流单号'];
+  const header = ['订单ID', '购买人', '购买人手机', '购买商品', '支付金额', '订单状态', '收货人', '联系电话', '地址', '物流公司', '物流单号'];
+
+  const STATUS_MAP: Record<number, string> = {
+    0: '待支付', 1: '已支付', 2: '待发货', 3: '已发货',
+    4: '已收货', 5: '已完成', 6: '已取消', 7: '售后中',
+  };
+
   const rows = data.map((order) => {
     const master = order.master_order || order;
-    const subOrders = order.sub_orders || [];
-    const items: any[] = subOrders.length > 0
-      ? subOrders.flatMap((so: any) => so.items || [])
-      : (order.items || []);
+    // 列表接口 items 在顶层，非 sub_orders
+    const items: any[] = order.items && order.items.length > 0
+      ? order.items
+      : (order.sub_orders || []).flatMap((so: any) => so.items || []);
     const productText = items.map((item: any) =>
       `${item.product_title || ''} ${item.sku_spec_text || item.sku_name || ''} × ${item.quantity ?? 1}`
     ).join('; ');
 
     const ship = order.shipping_address || {};
     const logistics = master.logistics || order.logistics || {};
+    const payAmount = master.pay_amount ?? order.pay_amount;
 
     return [
       master.id ?? '',
       order.user_data?.nickname || order.user?.nickname || '',
       order.user_data?.phone_masked || order.user?.phone_masked || '',
       productText,
+      payAmount != null ? `¥${(payAmount / 100).toFixed(2)}` : '',
+      STATUS_MAP[master.status ?? order.status] || '',
       ship.name || '',
       ship.phone || '',
       `${ship.province || ''}${ship.city || ''}${ship.district || ''} ${ship.detail || ''}`.trim(),
