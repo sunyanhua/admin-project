@@ -3,11 +3,12 @@ import { ReactNode } from 'react';
 import {
   UserOutlined, IdcardOutlined, WalletOutlined,
   SafetyCertificateOutlined, AccountBookOutlined, LockOutlined,
-  CopyOutlined,
+  CopyOutlined, EditOutlined, AuditOutlined,
 } from '@ant-design/icons';
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
 import { getAvatarUrl, getFullWidthUrl } from '@/utils/imageUtils';
 import { useAppNotification } from '@/hooks/useAppNotification';
+import { MatchProfileAuditStatus } from '@/api/types/status';
 import type {
   CommunityUserSummary,
   CommunityProfileSummary,
@@ -25,13 +26,31 @@ export interface CommunityUserDetailProps {
   matchProfile?: CommunityMatchProfileSummary | null;
   wallet: CommunityWalletSummary;
   extraSections?: { title: ReactNode; items: { label: string; value: ReactNode; span?: number }[] }[];
+  onEditProfile?: () => void;
+  onAuditProfile?: () => void;
 }
 
 const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
 const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
 const EDUCATION_MAP: Record<number, string> = { 1: '高中及以下', 2: '大专', 3: '本科', 4: '硕士', 5: '博士', 6: '其他' };
 const BLOOD_MAP: Record<number, string> = { 1: 'A', 2: 'B', 3: 'AB', 4: 'O' };
-const VISIBILITY_MAP: Record<number, string> = { 0: '全平台隐藏', 1: '仅专区可见', 2: '公开' };
+function getVisibilityLabel(mp: { is_active: boolean; visibility: number }): string {
+  if (!mp.is_active) return '已退出';
+  if (mp.visibility === 1) return '公开';
+  if (mp.visibility === 2) return '仅专区可见';
+  if (mp.visibility === 3) return '已隐藏';
+  return '-';
+}
+function getVisibilityTag(mp: { is_active: boolean; visibility: number }): ReactNode {
+  const label = getVisibilityLabel(mp);
+  let color: string;
+  if (!mp.is_active) color = 'default';
+  else if (mp.visibility === 1) color = 'success';
+  else if (mp.visibility === 2) color = 'warning';
+  else if (mp.visibility === 3) color = 'warning';
+  else color = 'default';
+  return <Tag color={color}>{label}</Tag>;
+}
 const MATCH_AUDIT_MAP: Record<number, { color: string; text: string }> = {
   0: { color: 'processing', text: '待审核' },
   1: { color: 'success', text: '已通过' },
@@ -72,12 +91,24 @@ function MatchCodeTitle({ code }: { code: string }) {
 }
 
 export function buildUserDetailSections(props: CommunityUserDetailProps) {
-  const { user, profile, matchProfile, wallet, extraSections } = props;
+  const { user, profile, matchProfile, wallet, extraSections, onEditProfile, onAuditProfile } = props;
 
   const sections: { title: ReactNode; items: { label: string; value: ReactNode; span?: number }[] }[] = [
     // ====== 基础资料 ======
     {
-      title: <><UserOutlined style={{ fontSize: 18, color: '#1890ff', marginRight: 6 }} />基础资料</>,
+      title: (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <span>
+            <UserOutlined style={{ fontSize: 18, color: '#1890ff', marginRight: 6 }} />
+            基础资料
+          </span>
+          {onEditProfile && (
+            <Button type="link" size="small" icon={<EditOutlined />} style={{ fontSize: 13, marginRight: 8, marginTop: 0 }} onClick={onEditProfile}>
+              编辑
+            </Button>
+          )}
+        </div>
+      ),
       items: [
         {
           label: '头像',
@@ -97,8 +128,6 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '年龄', value: profile.age ?? '-', span: 1 },
         { label: '生日', value: profile.birth_date ? formatDate(profile.birth_date) : '-', span: 1 },
         { label: '星座', value: profile.zodiac || '-', span: 1 },
-        { label: '注册时间', value: profile.created_at ? formatDateTime(profile.created_at) : '-', span: 1 },
-        { label: '最近活跃', value: user.last_active_at ? formatDateTime(user.last_active_at) : '-', span: 1 },
       ],
     },
   ];
@@ -127,13 +156,22 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '自我介绍', value: matchProfile.self_intro || '-', span: 2 },
         { label: '择偶要求', value: matchProfile.partner_demand || '-', span: 2 },
         { label: '人气', value: matchProfile.popularity ?? '-', span: 1 },
-        { label: '可见范围', value: VISIBILITY_MAP[matchProfile.visibility] || '-', span: 1 },
+        { label: '可见范围', value: getVisibilityTag(matchProfile), span: 1 },
         { label: '最后更新', value: matchProfile.updated_at ? formatDateTime(matchProfile.updated_at) : '-', span: 1 },
         {
           label: '审核状态',
           value: (() => {
             const i = MATCH_AUDIT_MAP[matchProfile.audit_status];
-            return <Tag color={i?.color || 'default'}>{i?.text || '-'}</Tag>;
+            return (
+              <Space size={4}>
+                <Tag color={i?.color || 'default'}>{i?.text || '-'}</Tag>
+                {matchProfile.audit_status === MatchProfileAuditStatus.PENDING && onAuditProfile && (
+                  <Button type="link" size="small" icon={<AuditOutlined />} style={{ fontSize: 12, padding: 0 }} onClick={onAuditProfile}>
+                    审核
+                  </Button>
+                )}
+              </Space>
+            );
           })(),
           span: 1,
         },
@@ -145,6 +183,8 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
   sections.push({
     title: <><WalletOutlined style={{ fontSize: 18, color: '#1890ff', marginRight: 6 }} />平台数据</>,
     items: [
+      { label: '注册时间', value: profile.created_at ? formatDateTime(profile.created_at) : '-', span: 1 },
+      { label: '最近活跃', value: user.last_active_at ? formatDateTime(user.last_active_at) : '-', span: 1 },
       { label: '金币', value: wallet.coins ?? 0, span: 1 },
       { label: '钱包余额', value: user.wallet_balance != null ? `¥${(user.wallet_balance / 100).toFixed(2)}` : '¥0.00', span: 1 },
       { label: '嗑学分', value: user.credits ?? 0, span: 1 },

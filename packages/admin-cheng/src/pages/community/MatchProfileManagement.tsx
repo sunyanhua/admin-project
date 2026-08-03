@@ -9,6 +9,8 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { DetailModal } from '@/components/templates/DetailModal';
 import { buildUserDetailSections } from '@/components/user/UserDetailSections';
+import ProfileEditModal from '@/components/user/ProfileEditModal';
+import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
 import { MatchProfileAuditStatus } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import type { CommunityUserItem } from '@/api/types/user';
@@ -22,7 +24,8 @@ const AUDIT_STATUS_OPTIONS = [
 ];
 
 const DISPLAY_STATUS_OPTIONS = [
-  { label: '公开', value: 'normal' },
+  { label: '公开', value: 'public' },
+  { label: '仅专区可见', value: 'zone_only' },
   { label: '已隐藏', value: 'hidden' },
   { label: '已退出', value: 'quit' },
 ];
@@ -43,19 +46,28 @@ const AUDIT_MAP: Record<number, { color: string; text: string }> = {
 const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
 const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
 
-/** 显示状态: 正常 / 已隐藏(visibility=3) / 已退出(is_active=false) */
+/** 显示状态 */
 function getDisplayStatus(mp: CommunityUserItem['match_profile']): { text: string; color: string } {
   if (!mp) return { text: '-', color: 'default' };
   if (!mp.is_active) return { text: '已退出', color: 'default' };
+  if (mp.visibility === 1) return { text: '公开', color: 'success' };
+  if (mp.visibility === 2) return { text: '仅专区可见', color: 'warning' };
   if (mp.visibility === 3) return { text: '已隐藏', color: 'warning' };
-  return { text: '公开', color: 'success' };
+  return { text: '-', color: 'default' };
 }
 
-/** 匹配显示状态筛选 */
+/**
+ * 匹配显示状态筛选
+ * - public: is_active=true && visibility=1
+ * - zone_only: is_active=true && visibility=2
+ * - hidden: is_active=true && visibility=3
+ * - quit: is_active=false
+ */
 function matchDisplayFilter(mp: CommunityUserItem['match_profile'], filter: string): boolean {
   if (!mp) return false;
-  if (filter === 'normal') return mp.is_active && mp.visibility !== 3;
-  if (filter === 'hidden') return mp.visibility === 3;
+  if (filter === 'public') return mp.is_active && mp.visibility === 1;
+  if (filter === 'zone_only') return mp.is_active && mp.visibility === 2;
+  if (filter === 'hidden') return mp.is_active && mp.visibility === 3;
   if (filter === 'quit') return !mp.is_active;
   return true;
 }
@@ -65,6 +77,8 @@ const MatchProfileManagement = () => {
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<CommunityUserItem | null>(null);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [auditProfileOpen, setAuditProfileOpen] = useState(false);
 
   const fetchUsers = useCallback(async (params: any) => {
     return userApi.getUsers({
@@ -237,8 +251,55 @@ const MatchProfileManagement = () => {
             profile: item.profile,
             matchProfile: item.match_profile || null,
             wallet: item.wallet,
+            onEditProfile: () => setEditProfileOpen(true),
+            onAuditProfile: () => setAuditProfileOpen(true),
           })
         }
+      />
+
+      <ProfileEditModal
+        open={editProfileOpen}
+        userId={detailItem?.user.user_id || ''}
+        nickname={detailItem?.profile.nickname}
+        gender={detailItem?.profile.gender}
+        birthDate={detailItem?.profile.birth_date}
+        zodiac={detailItem?.profile.zodiac}
+        onClose={() => setEditProfileOpen(false)}
+        onSuccess={(updated) => {
+          setDetailItem((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              profile: {
+                ...prev.profile,
+                nickname: updated.nickname ?? prev.profile.nickname,
+                gender: updated.gender ?? prev.profile.gender,
+                birth_date: updated.birthDate ?? prev.profile.birth_date,
+                zodiac: updated.zodiac ?? prev.profile.zodiac,
+              },
+            } as CommunityUserItem;
+          });
+          refresh();
+        }}
+      />
+
+      <AuditMatchProfileModal
+        open={auditProfileOpen}
+        userId={detailItem?.user.user_id || ''}
+        onClose={() => setAuditProfileOpen(false)}
+        onSuccess={(action) => {
+          setDetailItem((prev) => {
+            if (!prev || !prev.match_profile) return prev;
+            return {
+              ...prev,
+              match_profile: {
+                ...prev.match_profile,
+                audit_status: action === 1 ? MatchProfileAuditStatus.APPROVED : MatchProfileAuditStatus.REJECTED,
+              },
+            } as CommunityUserItem;
+          });
+          refresh();
+        }}
       />
     </>
   );

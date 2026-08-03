@@ -42,6 +42,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
 }) => {
   const sections = (render && entity) ? render(entity)?.sections :
     (typeof children === 'function' && entity) ? children(entity)?.sections : sectionsProp;
+  const finalFooter = footer !== undefined ? footer : null;
 
   if (!sections || sections.length === 0) {
     return (
@@ -49,7 +50,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
         title={title}
         open={open}
         onCancel={onClose}
-        footer={footer}
+        footer={finalFooter}
         width={width}
         className={className}
         destroyOnHidden
@@ -66,7 +67,7 @@ export const DetailModal: React.FC<DetailModalProps> = ({
       title={title}
       open={open}
       onCancel={onClose}
-      footer={footer}
+      footer={finalFooter}
       width={width}
       className={className}
       destroyOnHidden

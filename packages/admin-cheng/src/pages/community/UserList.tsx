@@ -10,7 +10,9 @@ import { StatusSwitch } from '@/components/templates/StatusSwitch';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { DetailModal } from '@/components/templates/DetailModal';
 import { buildUserDetailSections } from '@/components/user/UserDetailSections';
-import { AdminUserStatus } from '@/api/types/status';
+import ProfileEditModal from '@/components/user/ProfileEditModal';
+import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
+import { AdminUserStatus, MatchProfileAuditStatus } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { formatDateTime, formatDate } from '@/utils/format';
 import type { CommunityUserItem } from '@/api/types/user';
@@ -56,6 +58,8 @@ const UserList = () => {
   // Detail modal state — 直接用列表数据，无需额外接口
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<CommunityUserItem | null>(null);
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
+  const [auditProfileOpen, setAuditProfileOpen] = useState(false);
 
   const fetchUsers = useCallback(async (params: any) => {
     const apiParams: any = {
@@ -269,8 +273,55 @@ const UserList = () => {
             profile: item.profile,
             matchProfile: item.match_profile || null,
             wallet: item.wallet,
+            onEditProfile: () => setEditProfileOpen(true),
+            onAuditProfile: () => setAuditProfileOpen(true),
           })
         }
+      />
+
+      <ProfileEditModal
+        open={editProfileOpen}
+        userId={detailItem?.user.user_id || ''}
+        nickname={detailItem?.profile.nickname}
+        gender={detailItem?.profile.gender}
+        birthDate={detailItem?.profile.birth_date}
+        zodiac={detailItem?.profile.zodiac}
+        onClose={() => setEditProfileOpen(false)}
+        onSuccess={(updated) => {
+          setDetailItem((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              profile: {
+                ...prev.profile,
+                nickname: updated.nickname ?? prev.profile.nickname,
+                gender: updated.gender ?? prev.profile.gender,
+                birth_date: updated.birthDate ?? prev.profile.birth_date,
+                zodiac: updated.zodiac ?? prev.profile.zodiac,
+              },
+            } as CommunityUserItem;
+          });
+          refresh();
+        }}
+      />
+
+      <AuditMatchProfileModal
+        open={auditProfileOpen}
+        userId={detailItem?.user.user_id || ''}
+        onClose={() => setAuditProfileOpen(false)}
+        onSuccess={(action) => {
+          setDetailItem((prev) => {
+            if (!prev || !prev.match_profile) return prev;
+            return {
+              ...prev,
+              match_profile: {
+                ...prev.match_profile,
+                audit_status: action === 1 ? MatchProfileAuditStatus.APPROVED : MatchProfileAuditStatus.REJECTED,
+              },
+            } as CommunityUserItem;
+          });
+          refresh();
+        }}
       />
     </>
   );

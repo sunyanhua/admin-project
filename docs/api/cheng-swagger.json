@@ -423,6 +423,77 @@
                 }
             }
         },
+        "/admin/v1/bizops/user/{id}/status": {
+            "patch": {
+                "description": "管理后台设置 C 端用户状态：0=正常 1=禁用。禁用后用户仅允许 GET 请求。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-用户模块"
+                ],
+                "summary": "设置用户状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态设置请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.UpdateUserStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/login": {
             "post": {
                 "description": "使用用户名和密码登录管理后台，成功返回 Admin JWT Token。免鉴权接口（AdminAuthMiddleware 白名单放行）。",
@@ -5768,6 +5839,9 @@
                 "partner_demand": {
                     "type": "string"
                 },
+                "photos": {
+                    "type": "string"
+                },
                 "popularity": {
                     "type": "integer"
                 },
@@ -6270,9 +6344,6 @@
                 "household_registration": {
                     "type": "string"
                 },
-                "id_card_tail": {
-                    "type": "string"
-                },
                 "income_range": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
@@ -6288,10 +6359,16 @@
                 "partner_demand": {
                     "type": "string"
                 },
+                "photos": {
+                    "type": "string"
+                },
                 "popularity": {
                     "type": "integer"
                 },
                 "profession": {
+                    "type": "string"
+                },
+                "real_name": {
                     "type": "string"
                 },
                 "self_intro": {
@@ -6381,6 +6458,9 @@
                     "type": "string"
                 },
                 "partner_demand": {
+                    "type": "string"
+                },
+                "photos": {
                     "type": "string"
                 },
                 "profession": {
@@ -6550,6 +6630,10 @@
                     "description": "PartnerDemand 择偶要求，上限 3000 字符。",
                     "type": "string"
                 },
+                "photos": {
+                    "description": "Photos 个人照片，公开信息，服务端不解析。",
+                    "type": "string"
+                },
                 "profession": {
                     "description": "Profession 职业。",
                     "type": "string"
@@ -6565,6 +6649,15 @@
                 "specialties": {
                     "description": "Specialties 特长原始字符串，服务端不解析。",
                     "type": "string"
+                },
+                "visibility": {
+                    "description": "Visibility 可见范围：1=全开放 2=仅专区 3=全隐藏。仅 ZoneID 非空时可设为 2（仅专区）。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2,
+                        3
+                    ]
                 },
                 "wechat": {
                     "description": "Wechat 微信号（明文，后端 AES-256-GCM 加密存储）。",
@@ -6647,6 +6740,22 @@
                 "zodiac": {
                     "description": "Zodiac 星座（后端根据 birth_date 自动计算）。",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.UpdateUserStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "见 status.UserStatus",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
                 }
             }
         },
@@ -6892,6 +7001,9 @@
                     "type": "string"
                 },
                 "partner_demand": {
+                    "type": "string"
+                },
+                "photos": {
                     "type": "string"
                 },
                 "profession": {

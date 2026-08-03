@@ -167,9 +167,11 @@ export interface AuditMatchProfileRequest {
 
 /** 管理员修改 C 端用户基础资料请求 */
 export interface AdminUpdateBasicProfileRequest {
-  real_name: string;
-  gender: 1 | 2;
-  birth_date: string;
+  nickname?: string;
+  gender?: 1 | 2;
+  birth_date?: string;
+  zodiac?: string;
   /** 变更原因（必填） */
   reason: string;
+  real_name?: string; // 保留兼容
 }
