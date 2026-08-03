@@ -17,6 +17,7 @@ export interface CommunityUserSummary {
   created_at: string;
   has_profile: boolean;
   has_match_profile: boolean;
+  status?: number;
 }
 
 /** 用户资料摘要 */
@@ -53,6 +54,7 @@ export interface CommunityMatchProfileSummary {
   income_range: number | null;
   self_intro: string;
   partner_demand: string;
+  photos?: string[];
   id_card_tail: string | null;
   blood_type: number;
   ethnicity: string;
@@ -171,6 +173,8 @@ export interface AdminUpdateBasicProfileRequest {
   gender?: 1 | 2;
   birth_date?: string;
   zodiac?: string;
+  /** 审核状态：1=通过 2=拒绝 */
+  audit_status?: 1 | 2;
   /** 变更原因（必填） */
   reason: string;
   real_name?: string; // 保留兼容

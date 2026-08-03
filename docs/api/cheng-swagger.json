@@ -352,7 +352,78 @@
                 }
             }
         },
-        "/admin/v1/bizops/user/{id}/basic-profile": {
+        "/admin/v1/bizops/user/{id}/match-profile": {
+            "put": {
+                "description": "管理后台编辑 C 端用户脱单档案的非系统字段，变更原因必填。仅更新用户自主填写的字段，不含系统管理的 AuditStatus/Timestamps/MatchCode 等。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-用户模块"
+                ],
+                "summary": "编辑脱单档案基本数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "脱单档案变更请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUpdateMatchProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "修改成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "脱单档案不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/{id}/profile": {
             "put": {
                 "description": "管理后台修改 C 端用户的基础资料（昵称、头像、性别、出生日期、星座），变更原因必填。Zodiac 可提交指定值，为 nil 时自动计算。变更同时写入管理员操作日志和数据变更日志。",
                 "consumes": [
@@ -386,6 +457,77 @@
                 "responses": {
                     "200": {
                         "description": "修改成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/{id}/profile/auditstatus": {
+            "patch": {
+                "description": "管理后台单独设置 C 端用户基础资料的审核状态：0=待审核 1=审核通过 2=审核拒绝。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-用户模块"
+                ],
+                "summary": "更新基础资料审核状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核状态设置请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUpdateProfileAuditStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -1147,7 +1289,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足(42201)（如修改超级管理员角色）",
+                        "description": "超级管理员角色受保护(42216)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -1213,7 +1355,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足(42201)（如角色有关联管理员）",
+                        "description": "超级管理员角色受保护(42216)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -1290,7 +1432,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足(42201)（如不可停用超级管理员角色）",
+                        "description": "超级管理员角色受保护(42216)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -2423,7 +2565,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足(42201)（如根管理员不可变更角色）",
+                        "description": "根管理员受保护(42216)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -2498,7 +2640,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足(42201)（如最后一个角色不可移除）",
+                        "description": "至少保留一个角色(42218)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -2582,7 +2724,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足(42201)（如根管理员不可变更）",
+                        "description": "根管理员受保护(42216)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -2659,7 +2801,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足(42201)（如不可禁用自己或根管理员）",
+                        "description": "禁止自操作(42217)或根管理员受保护(42216)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -3068,7 +3210,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足（code=42201：审核未通过/性别未设置/同性/账户已停用；code=40302：重复操作）",
+                        "description": "配对资格不满足（code=40310：审核未通过/性别未设置/同性/账户已停用；code=40302：重复操作）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -3182,7 +3324,7 @@
                         }
                     },
                     "422": {
-                        "description": "仅无感可撤销（code=42201）",
+                        "description": "仅无感可撤销（code=40309）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -3237,7 +3379,7 @@
                         }
                     },
                     "422": {
-                        "description": "仅关注可隐藏（code=42201）",
+                        "description": "仅关注可隐藏（code=40309）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -3361,7 +3503,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足（code=42201：审核未通过/性别未设置/同性/账户已停用；code=42205：每日限额已用完/计数服务暂不可用）",
+                        "description": "配对资格不满足（code=40310：审核未通过/性别未设置/同性/账户已停用；code=42205：每日限额已用完/计数服务暂不可用）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -3509,7 +3651,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足（code=42201：审核未通过/性别未设置/账户已停用）",
+                        "description": "配对资格不满足（code=40310：审核未通过/性别未设置/账户已停用；code=42217：不能对自己操作）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -3641,7 +3783,7 @@
                         }
                     },
                     "422": {
-                        "description": "业务规则不满足（code=42201：审核未通过/已退出；code=40303：上限）",
+                        "description": "配对资格不满足（code=40310：审核未通过/已退出；code=40303：上限）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -3853,7 +3995,7 @@
                         }
                     },
                     "422": {
-                        "description": "脱单用户状态不满足条件（code=42201）",
+                        "description": "配对资格不满足（code=40310：审核未通过/已退出/性别未设置）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -4343,7 +4485,7 @@
         },
         "/api/v1/wxa/user/match-profile": {
             "post": {
-                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入、身高、兴趣标签、自我介绍、真实姓名、生肖、微信号、身份证号等）。前置条件：基础资料 UGC 审核通过（42209）。POST 首次提交生成 8 位脱单号，PATCH 修改保持脱单号不变，修改频次限制默认 7 天（42204）。提交后进入审核流程，审核期间暂停档案公开。",
+                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入、身高、兴趣标签、自我介绍、真实姓名、生肖、微信号、身份证号等）。前置条件：基础资料 UGC 审核通过（42209）。POST 首次提交生成 8 位脱单号，PATCH 修改保持脱单号不变。全部字段随时可修改无频次限制。提交后进入审核流程，审核期间暂停档案公开。专区 ID（zone_id）仅通过管理后台分配，不可用户自行设置。",
                 "consumes": [
                     "application/json"
                 ],
@@ -4403,7 +4545,7 @@
                         }
                     },
                     "422": {
-                        "description": "基础资料审核未通过(42209)或修改频次限制(42204)",
+                        "description": "基础资料审核未通过(42209)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -4417,7 +4559,7 @@
                 }
             },
             "patch": {
-                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入、身高、兴趣标签、自我介绍、真实姓名、生肖、微信号、身份证号等）。前置条件：基础资料 UGC 审核通过（42209）。POST 首次提交生成 8 位脱单号，PATCH 修改保持脱单号不变，修改频次限制默认 7 天（42204）。提交后进入审核流程，审核期间暂停档案公开。",
+                "description": "提交或修改用户的脱单相亲档案（婚况、学历、职业、收入、身高、兴趣标签、自我介绍、真实姓名、生肖、微信号、身份证号等）。前置条件：基础资料 UGC 审核通过（42209）。POST 首次提交生成 8 位脱单号，PATCH 修改保持脱单号不变。全部字段随时可修改无频次限制。提交后进入审核流程，审核期间暂停档案公开。专区 ID（zone_id）仅通过管理后台分配，不可用户自行设置。",
                 "consumes": [
                     "application/json"
                 ],
@@ -4477,7 +4619,7 @@
                         }
                     },
                     "422": {
-                        "description": "基础资料审核未通过(42209)或修改频次限制(42204)",
+                        "description": "基础资料审核未通过(42209)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -5809,6 +5951,12 @@
                 "extra": {
                     "type": "string"
                 },
+                "gifts_received": {
+                    "type": "integer"
+                },
+                "graduate": {
+                    "type": "string"
+                },
                 "height": {
                     "type": "integer"
                 },
@@ -5819,9 +5967,6 @@
                     "type": "string"
                 },
                 "household_registration": {
-                    "type": "string"
-                },
-                "id_card_tail": {
                     "type": "string"
                 },
                 "income_range": {
@@ -5840,7 +5985,10 @@
                     "type": "string"
                 },
                 "photos": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "popularity": {
                     "type": "integer"
@@ -5915,32 +6063,181 @@
                 "reason"
             ],
             "properties": {
+                "audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
+                },
                 "avatar": {
-                    "description": "Avatar 头像 URL，不为 nil 时更新（需通过 URL 白名单校验）。",
                     "type": "string"
                 },
                 "birth_date": {
-                    "description": "BirthDate 出生日期，格式 YYYY-MM-DD，不为 nil 时更新。",
                     "type": "string"
                 },
                 "gender": {
-                    "description": "Gender 性别：1=男 2=女，不为 nil 时更新。",
+                    "enum": [
+                        1,
+                        2
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                        }
+                    ]
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUpdateMatchProfileRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "blood_type": {
+                    "enum": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
+                        }
+                    ]
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "current_city": {
+                    "type": "string"
+                },
+                "education": {
+                    "enum": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
+                        }
+                    ]
+                },
+                "ethnicity": {
+                    "type": "string"
+                },
+                "extra": {
+                    "type": "string"
+                },
+                "graduate": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer",
+                    "maximum": 300,
+                    "minimum": 50
+                },
+                "hobby_tags": {
+                    "type": "string"
+                },
+                "hometown": {
+                    "type": "string"
+                },
+                "household_registration": {
+                    "type": "string"
+                },
+                "income_range": {
+                    "enum": [
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                        }
+                    ]
+                },
+                "marital_status": {
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
+                        }
+                    ]
+                },
+                "partner_demand": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "profession": {
+                    "type": "string"
+                },
+                "real_name": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "self_intro": {
+                    "type": "string"
+                },
+                "specialties": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer",
+                    "maximum": 500,
+                    "minimum": 20
+                },
+                "workplace": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUpdateProfileAuditStatusRequest": {
+            "type": "object",
+            "required": [
+                "audit_status",
+                "reason"
+            ],
+            "properties": {
+                "audit_status": {
+                    "description": "AuditStatus 审核状态：0=待审核 1=通过 2=拒绝。*int 指针而非 int 或 status.ProfileAuditStatus，\n因为 binding:\"required\" 对数值类型的零值 0 判为\"未提供\"；指针的 required 只检查 non-nil，\n允许 JSON 显式传入 0（ProfileAuditPending）。",
                     "type": "integer",
                     "enum": [
+                        0,
                         1,
                         2
                     ]
                 },
-                "nickname": {
-                    "description": "Nickname 昵称，不为 nil 时更新。",
-                    "type": "string"
-                },
                 "reason": {
-                    "description": "Reason 变更原因，必填。",
-                    "type": "string"
-                },
-                "zodiac": {
-                    "description": "Zodiac 星座，不为 nil 时直接使用提交值；为 nil 且 BirthDate 变更时自动计算。",
                     "type": "string"
                 }
             }
@@ -5949,36 +6246,16 @@
             "type": "object",
             "properties": {
                 "match_profile": {
-                    "description": "MatchProfile v6_user_match_profile 表非系统字段（LEFT JOIN，未提交时为 null）。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminMatchProfileInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminMatchProfileInfo"
                 },
                 "profile": {
-                    "description": "Profile v6_user_profile 表非系统字段（INNER JOIN，始终存在）。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo"
                 },
                 "user": {
-                    "description": "User v6_user 表非系统字段。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo"
                 },
                 "wallet": {
-                    "description": "Wallet v6_user_wallet 表字段（LEFT JOIN，钱包不存在时为 null）。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo"
                 }
             }
         },
@@ -6018,6 +6295,9 @@
                 "phone": {
                     "type": "string"
                 },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserStatus"
+                },
                 "user_id": {
                     "type": "string"
                 },
@@ -6030,36 +6310,16 @@
             "type": "object",
             "properties": {
                 "match_profile": {
-                    "description": "MatchProfile v6_user_match_profile 表非系统字段（LEFT JOIN，未提交时为 null）。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminMatchProfileInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminMatchProfileInfo"
                 },
                 "profile": {
-                    "description": "Profile v6_user_profile 表非系统字段（INNER JOIN，始终存在）。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo"
                 },
                 "user": {
-                    "description": "User v6_user 表非系统字段。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo"
                 },
                 "wallet": {
-                    "description": "Wallet v6_user_wallet 表字段（LEFT JOIN，钱包不存在时为 null）。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo"
-                        }
-                    ]
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo"
                 }
             }
         },
@@ -6332,6 +6592,12 @@
                 "extra": {
                     "type": "string"
                 },
+                "gifts_received": {
+                    "type": "integer"
+                },
+                "graduate": {
+                    "type": "string"
+                },
                 "height": {
                     "type": "integer"
                 },
@@ -6360,7 +6626,10 @@
                     "type": "string"
                 },
                 "photos": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "popularity": {
                     "type": "integer"
@@ -6410,7 +6679,7 @@
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
                 },
                 "can_modify_at": {
-                    "description": "CanModifyAt 下次可修改时间（审核通过后每周一次）。",
+                    "description": "CanModifyAt 审核通过时间记录（历史字段，不再作为修改频次限制）。",
                     "type": "string"
                 },
                 "cn_zodiac": {
@@ -6431,6 +6700,12 @@
                 },
                 "extra": {
                     "description": "Extra 扩展字段，服务端不解析不校验，完全由前端自主控制内容。",
+                    "type": "string"
+                },
+                "gifts_received": {
+                    "type": "integer"
+                },
+                "graduate": {
                     "type": "string"
                 },
                 "height": {
@@ -6461,7 +6736,10 @@
                     "type": "string"
                 },
                 "photos": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "profession": {
                     "type": "string"
@@ -6585,6 +6863,10 @@
                     "description": "Extra 扩展字段，服务端不解析不校验，完全由前端自主控制内容。",
                     "type": "string"
                 },
+                "graduate": {
+                    "description": "Graduate 毕业院校（选填，旧系统迁移字段）。",
+                    "type": "string"
+                },
                 "height": {
                     "description": "Height 身高（厘米）。",
                     "type": "integer"
@@ -6613,8 +6895,7 @@
                         2,
                         3,
                         4,
-                        5,
-                        6
+                        5
                     ]
                 },
                 "marital_status": {
@@ -6631,8 +6912,11 @@
                     "type": "string"
                 },
                 "photos": {
-                    "description": "Photos 个人照片，公开信息，服务端不解析。",
-                    "type": "string"
+                    "description": "Photos 个人照片 URL 列表，每个元素须通过 URL 白名单校验（HTTPS + 白名单域名），\n支持 media_id 格式的临时文件 ID，后端自动转存为正式 CDN URL。",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "profession": {
                     "description": "Profession 职业。",
@@ -6669,10 +6953,6 @@
                 },
                 "workplace": {
                     "description": "Workplace 工作单位。",
-                    "type": "string"
-                },
-                "zone_id": {
-                    "description": "ZoneID 专区 ID（可选，UUID v7 格式，仅首次提交脱单档案时写入）。",
                     "type": "string"
                 }
             }
@@ -6750,7 +7030,7 @@
             ],
             "properties": {
                 "status": {
-                    "description": "见 status.UserStatus",
+                    "description": "Status 用户状态：0=正常(解禁) 1=禁用。*int 指针而非 int 或 status.UserStatus，\n因为 binding:\"required\" 对数值类型的零值 0 判为\"未提供\"；指针的 required 只检查 non-nil，\n允许 JSON 显式传入 0（UserStatusNormal）。",
                     "type": "integer",
                     "enum": [
                         0,
@@ -6796,6 +7076,9 @@
                 },
                 "phone": {
                     "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserStatus"
                 },
                 "user_id": {
                     "type": "string"
@@ -6979,6 +7262,12 @@
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
+                "gifts_received": {
+                    "type": "integer"
+                },
+                "graduate": {
+                    "type": "string"
+                },
                 "height": {
                     "type": "integer"
                 },
@@ -7004,7 +7293,10 @@
                     "type": "string"
                 },
                 "photos": {
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "profession": {
                     "type": "string"
@@ -7211,32 +7503,28 @@
                 2,
                 3,
                 4,
-                5,
-                6
+                5
             ],
             "x-enum-comments": {
-                "IncomeRange10KTo20K": "10K–20K",
-                "IncomeRange20KTo50K": "20K–50K",
-                "IncomeRange3KTo5K": "3K–5K",
-                "IncomeRange5KTo10K": "5K–10K",
-                "IncomeRangeAbove50K": "50K 以上",
-                "IncomeRangeBelow3K": "3K 以下"
+                "IncomeRange12KTo18K": "12000–18000",
+                "IncomeRange5KTo8K": "5000–8000",
+                "IncomeRange8KTo12K": "8000–12000",
+                "IncomeRangeAbove18K": "18000 以上",
+                "IncomeRangeBelow5K": "5000 以下"
             },
             "x-enum-descriptions": [
-                "3K 以下",
-                "3K–5K",
-                "5K–10K",
-                "10K–20K",
-                "20K–50K",
-                "50K 以上"
+                "5000 以下",
+                "5000–8000",
+                "8000–12000",
+                "12000–18000",
+                "18000 以上"
             ],
             "x-enum-varnames": [
-                "IncomeRangeBelow3K",
-                "IncomeRange3KTo5K",
-                "IncomeRange5KTo10K",
-                "IncomeRange10KTo20K",
-                "IncomeRange20KTo50K",
-                "IncomeRangeAbove50K"
+                "IncomeRangeBelow5K",
+                "IncomeRange5KTo8K",
+                "IncomeRange8KTo12K",
+                "IncomeRange12KTo18K",
+                "IncomeRangeAbove18K"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus": {
@@ -7417,6 +7705,26 @@
                 "UserGenderUnset",
                 "UserGenderMale",
                 "UserGenderFemale"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.UserStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-comments": {
+                "UserStatusDisabled": "禁用",
+                "UserStatusNormal": "正常"
+            },
+            "x-enum-descriptions": [
+                "正常",
+                "禁用"
+            ],
+            "x-enum-varnames": [
+                "UserStatusNormal",
+                "UserStatusDisabled"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility": {

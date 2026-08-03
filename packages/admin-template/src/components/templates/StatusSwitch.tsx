@@ -16,11 +16,13 @@ export const StatusSwitch: React.FC<StatusSwitchProps> = ({
   unCheckedChildren = '禁用',
   disabled = false,
 }) => {
+  const { error: showError } = useAppNotification();
+
   const handleChange = async (newChecked: boolean) => {
     try {
       await onChange(newChecked);
-    } catch (error: any) {
-      error(error?.response?.data?.msg || error?.message || '状态更新失败');
+    } catch (err: any) {
+      showError(err?.response?.data?.msg || err?.message || '状态更新失败');
     }
   };
 

@@ -13,6 +13,14 @@ const ZODIAC_OPTIONS = [
   '天秤座', '天蝎座', '射手座', '摩羯座', '水瓶座', '双鱼座',
 ];
 
+interface UpdatedProfile {
+  nickname?: string;
+  gender?: number;
+  birthDate?: string;
+  zodiac?: string;
+  auditStatus?: 1 | 2;
+}
+
 interface Props {
   open: boolean;
   userId: string;
@@ -20,11 +28,12 @@ interface Props {
   gender?: number;
   birthDate?: string;
   zodiac?: string;
+  auditStatus?: number;
   onClose: () => void;
-  onSuccess: (updated: { nickname?: string; gender?: number; birthDate?: string; zodiac?: string }) => void;
+  onSuccess: (updated: UpdatedProfile) => void;
 }
 
-const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, birthDate, zodiac, onClose, onSuccess }) => {
+const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, birthDate, zodiac, auditStatus, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const { success, error } = useAppNotification();
@@ -38,6 +47,7 @@ const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, bir
         gender: values.gender,
         birth_date: values.birth_date ? dayjs(values.birth_date).format('YYYY-MM-DD') : undefined,
         zodiac: values.zodiac || undefined,
+        audit_status: values.audit_status,
         reason: values.reason,
       };
       await userApi.updateBasicProfile(userId, data);
@@ -48,6 +58,7 @@ const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, bir
         gender: values.gender,
         birthDate: values.birth_date ? dayjs(values.birth_date).format('YYYY-MM-DD') : undefined,
         zodiac: values.zodiac || undefined,
+        auditStatus: values.audit_status,
       });
       onClose();
     } catch (err: any) {
@@ -85,6 +96,7 @@ const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, bir
           gender,
           birth_date: birthDate ? dayjs(birthDate) : undefined,
           zodiac: zodiac || undefined,
+          audit_status: auditStatus,
         }}
       >
         <Form.Item name="nickname" label="昵称">
@@ -105,6 +117,12 @@ const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, bir
               <Select.Option key={z} value={z}>{z}</Select.Option>
             ))}
           </Select>
+        </Form.Item>
+        <Form.Item name="audit_status" label="审核状态">
+          <Radio.Group>
+            <Radio value={1}>通过</Radio>
+            <Radio value={2}>不通过</Radio>
+          </Radio.Group>
         </Form.Item>
         <Form.Item
           name="reason"

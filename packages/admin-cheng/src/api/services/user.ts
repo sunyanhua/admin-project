@@ -18,9 +18,9 @@ export const userApi = {
     return request.get(`/admin/v1/bizops/user/${id}`);
   },
 
-  /** 修改用户基础资料 — PUT /admin/v1/bizops/user/:id/basic-profile */
+  /** 修改用户基础资料 — PUT /admin/v1/bizops/user/:id/profile */
   updateBasicProfile: (id: string | number, data: AdminUpdateBasicProfileRequest) => {
-    return request.put(`/admin/v1/bizops/user/${id}/basic-profile`, data);
+    return request.put(`/admin/v1/bizops/user/${id}/profile`, data);
   },
 
   /** 审核脱单档案 — PUT /admin/v1/bizops/user/match-profile/:id/audit */

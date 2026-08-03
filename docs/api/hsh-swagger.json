@@ -10580,6 +10580,11 @@
         },
         "/admin/v1/settings": {
             "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -10641,6 +10646,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -10680,6 +10690,11 @@
         },
         "/admin/v1/settings/:id": {
             "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -10715,6 +10730,11 @@
                 }
             },
             "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -10765,6 +10785,11 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],
@@ -10802,6 +10827,11 @@
         },
         "/admin/v1/settings/:id/enabled": {
             "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
                 "consumes": [
                     "application/json"
                 ],

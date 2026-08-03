@@ -6,7 +6,7 @@ import {
   CopyOutlined, EditOutlined, AuditOutlined,
 } from '@ant-design/icons';
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
-import { getAvatarUrl, getFullWidthUrl } from '@/utils/imageUtils';
+import { getAvatarUrl, getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { MatchProfileAuditStatus } from '@/api/types/status';
 import type {
@@ -151,6 +151,22 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '家乡', value: matchProfile.hometown || '-', span: 1 },
         { label: '工作单位', value: matchProfile.workplace || '-', span: 1 },
         { label: '收入范围', value: matchProfile.income_range != null ? matchProfile.income_range : '-', span: 1 },
+        { label: '照片', value: matchProfile.photos?.length ? (
+          <Image.PreviewGroup>
+            <Space wrap size={4}>
+              {matchProfile.photos.map((url, i) => (
+                <Image
+                  key={i}
+                  width={80}
+                  height={80}
+                  src={getMediumUrl(url)}
+                  preview={{ src: url }}
+                  style={{ borderRadius: 4, objectFit: 'cover' }}
+                />
+              ))}
+            </Space>
+          </Image.PreviewGroup>
+        ) : '-', span: 2 },
         { label: '兴趣爱好', value: matchProfile.hobby_tags || '-', span: 2 },
         { label: '才艺特长', value: matchProfile.specialties || '-', span: 2 },
         { label: '自我介绍', value: matchProfile.self_intro || '-', span: 2 },
