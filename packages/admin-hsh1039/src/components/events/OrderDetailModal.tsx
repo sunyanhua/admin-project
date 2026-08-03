@@ -50,7 +50,7 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
 
   return (
     <div>
-      <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
+      <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }} labelStyle={{ width: 100 }}>
         <Descriptions.Item label="订单状态">
           <Tag color={statusColor}>{statusText}</Tag>
         </Descriptions.Item>
@@ -76,23 +76,23 @@ const OrderDetailModal: React.FC<OrderDetailModalProps> = ({
         )}
       </Descriptions>
 
-      {logistics && (
+      {shipping && (
         <>
-          <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>快递信息</div>
-          <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="快递公司">{logistics.logistics_company || logistics.company || '-'}</Descriptions.Item>
-            <Descriptions.Item label="快递单号">{logistics.tracking_no || logistics.tracking_number || '-'}</Descriptions.Item>
+          <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>收货地址</div>
+          <Descriptions column={2} bordered size="small" labelStyle={{ width: 100 }}>
+            <Descriptions.Item label="收货人">{shipping.name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="联系电话">{shipping.phone || '-'}</Descriptions.Item>
+            <Descriptions.Item label="地址" span={2}>{`${shipping.province || ''}${shipping.city || ''}${shipping.district || ''} ${shipping.detail || ''}`}</Descriptions.Item>
           </Descriptions>
         </>
       )}
 
-      {shipping && (
+      {logistics && (
         <>
-          <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>收货地址</div>
-          <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="收货人">{shipping.name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="联系电话">{shipping.phone || '-'}</Descriptions.Item>
-            <Descriptions.Item label="地址" span={2}>{`${shipping.province || ''}${shipping.city || ''}${shipping.district || ''} ${shipping.detail || ''}`}</Descriptions.Item>
+          <div style={{ fontWeight: 600, margin: '16px 0 8px', fontSize: 14 }}>快递信息</div>
+          <Descriptions column={2} bordered size="small" labelStyle={{ width: 100 }}>
+            <Descriptions.Item label="快递公司">{logistics.logistics_company || logistics.company || '-'}</Descriptions.Item>
+            <Descriptions.Item label="快递单号">{logistics.tracking_no || logistics.tracking_number || '-'}</Descriptions.Item>
           </Descriptions>
         </>
       )}
