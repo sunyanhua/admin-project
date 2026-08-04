@@ -3024,6 +3024,236 @@
                 }
             }
         },
+        "/api/v1/user/match-profile": {
+            "get": {
+                "description": "无需认证，浏览审核通过且全开放可见的脱单用户列表。支持性别、年龄、婚姻状态、身高、城市、学历、属相、星座、关键字（昵称/脱单号）筛选。所有筛选条件选填。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口"
+                ],
+                "summary": "公开脱单用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "性别：1=男 2=女",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最小年龄（含）",
+                        "name": "min_age",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最大年龄（含）",
+                        "name": "max_age",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "婚姻状况：1=未婚 2=离异 3=丧偶",
+                        "name": "marital_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最低身高 cm（含）",
+                        "name": "min_height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最高身高 cm（含）",
+                        "name": "max_height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "现居城市（精确匹配）",
+                        "name": "current_city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "学历：1=高中及以下 2=大专 3=本科 4=硕士 5=博士及以上",
+                        "name": "education",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "属相（如",
+                        "name": "cn_zodiac",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "星座（如",
+                        "name": "zodiac",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索关键字——匹配昵称（模糊）和脱单号（精确）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 50",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回公开用户列表",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.PublicMatchProfileListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/match-profile/{userID}": {
+            "get": {
+                "description": "无需认证，查看指定用户的公开脱单画像。仅返回审核通过且全开放可见的用户。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口"
+                ],
+                "summary": "公开脱单用户详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID（UUID）",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回公开画像",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.UserPublicProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在或不可见",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/auth/refresh": {
+            "post": {
+                "description": "在令牌过期前 30 分钟窗口内刷新，返回全新 JWT。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户模块"
+                ],
+                "summary": "刷新 C 端访问令牌",
+                "responses": {
+                    "200": {
+                        "description": "刷新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.RefreshTokenResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "刷新窗口未到或令牌已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/login": {
             "post": {
                 "description": "通过 wx.login 返回的临时 code 换取 openid + session_key，签发 C 端 Wxa JWT。首次登录返回 is_new_user=true。",
@@ -6789,6 +7019,34 @@
                     "type": "string"
                 },
                 "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.PublicMatchProfileListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.RefreshTokenResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "description": "ExpiresAt Token 过期时间（Unix 时间戳）。",
+                    "type": "string"
+                },
+                "issued_at": {
+                    "description": "IssuedAt Token 签发时间（Unix 时间戳）。",
+                    "type": "string"
+                },
+                "token": {
+                    "description": "Token 新签发的 C 端 JWT 访问令牌。",
                     "type": "string"
                 }
             }

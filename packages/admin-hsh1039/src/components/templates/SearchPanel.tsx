@@ -24,6 +24,7 @@ export interface SearchPanelProps {
   resetButtonText?: string;
   showSearchButton?: boolean;
   showResetButton?: boolean;
+  inputWidth?: number;
 }
 
 export const SearchPanel: React.FC<SearchPanelProps> = ({
@@ -34,6 +35,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
   onReset,
   searchButtonText = '搜索',
   resetButtonText = '重置',
+  inputWidth = 200,
   showSearchButton = true,
   showResetButton = true,
 }) => {
@@ -81,7 +83,7 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               onChange={(e) => onChange(filter.name, e.target.value)}
               onKeyPress={handleKeyPress}
               allowClear
-              style={{ width: 180 }}
+              style={{ width: inputWidth }}
             />
           )}
         </React.Fragment>

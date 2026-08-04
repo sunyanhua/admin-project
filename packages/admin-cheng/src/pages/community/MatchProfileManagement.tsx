@@ -12,7 +12,7 @@ import { buildUserDetailSections } from '@/components/user/UserDetailSections';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
 import { MatchProfileAuditStatus } from '@/api/types/status';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
 import type { CommunityUserItem } from '@/api/types/user';
 import '@/styles/user-detail-modal.css';
 
@@ -124,7 +124,7 @@ const MatchProfileManagement = () => {
           onClick={() => handleViewDetail(record)}
         >
           <Space size={4}>
-            <Avatar src={getAvatarUrl(record.profile.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <Avatar src={getMediumUrl(record.match_profile?.photos?.[0] || record.profile.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
             <span style={{ fontSize: 14 }}>{record.profile.nickname || '-'}</span>
           </Space>
         </Button>
@@ -223,6 +223,7 @@ const MatchProfileManagement = () => {
             onChange={handleChange}
             onSearch={handleSearch}
             onReset={handleReset}
+            inputWidth={240}
           />
         }
         table={
