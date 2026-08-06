@@ -71,6 +71,3287 @@
                 }
             }
         },
+        "/admin/v1/bizops/cms/article-categories": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询文章类别列表，支持按父级/根级/层级/状态筛选。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "文章类别列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "父级类别 ID",
+                        "name": "parent_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "根类别 ID",
+                        "name": "root_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "层级：1=根 2=二级 3=三级",
+                        "name": "level",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=停用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建文章类别，支持多层级（最多 3 级）。传入 parent_id 创建子类别，不传则创建根类别。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "创建文章类别",
+                "parameters": [
+                    {
+                        "description": "创建请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateArticleCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "父级类别不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "层级超过 3 级（code=41101）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/article-categories/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "文章类别详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "类别 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "类别不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除文章类别。删除前校验无子类别（code=41102）且无归属文章（code=41103）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "删除文章类别",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "类别 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "类别不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "存在子类别（code=41102）或存在归属文章（code=41103）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "部分更新文章类别信息（不支持改挂父级）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "编辑文章类别",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "类别 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateArticleCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "类别不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/article-categories/{id}/sort-order": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "独立设置文章类别的排序值（sort_order）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "调整文章类别排序",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "类别 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "排序请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategorySortOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "类别不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/article-categories/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "切换文章类别的启用/停用状态。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "启用/停用文章类别",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "类别 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态请求：0=启用 1=停用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "类别不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/articles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询文章列表，支持按类别/根类别/状态筛选。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "文章列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "所属类别 ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "根类别 ID（跨层聚合）",
+                        "name": "category_root_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=上架 1=下架",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建新的文章，支持设置上架/下架状态。创建时如状态为上架，自动写入发布时间。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "创建文章",
+                "parameters": [
+                    {
+                        "description": "创建请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateArticleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "类别不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/articles/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 查询单个文章（含所有状态：上架/下架）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "文章详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文章 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除文章。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "删除文章",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文章 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "部分更新文章信息（PATCH 指针语义）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "编辑文章",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文章 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateArticleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/articles/{id}/sort-order": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "独立设置文章的排序值（sort_order）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "调整文章排序",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文章 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "排序请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleSortOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/articles/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "切换文章状态（0=上架 1=下架）。切换为上架时更新发布时间。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "文章状态切换",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文章 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态请求：0=上架 1=下架",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/banner-slots": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询广告展示位列表，支持状态筛选。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "广告展示位列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=停用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSlotResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建新的广告展示位，code 全局唯一。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "创建广告展示位",
+                "parameters": [
+                    {
+                        "description": "创建请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateBannerSlotRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSlotResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "code 已存在（code=41106）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/banner-slots/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 查询单个广告展示位。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "广告展示位详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "展示位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSlotResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "展示位不存在（code=41105）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除广告展示位。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "删除广告展示位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "展示位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "展示位不存在（code=41105）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "部分更新广告展示位信息（PATCH 指针语义）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "编辑广告展示位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "展示位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateBannerSlotRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSlotResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "展示位不存在（code=41105）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/banners": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询广告位列表，支持状态筛选。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "广告位列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=上架 1=下架",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建新的广告位，支持多展示位、时间范围、跳转链接。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "创建广告位",
+                "parameters": [
+                    {
+                        "description": "创建请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateBannerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "展示位不存在（code=41105）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/banners/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 查询单个广告位。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "广告位详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "广告位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "广告位不存在（code=41108）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除广告位。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "删除广告位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "广告位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "广告位不存在（code=41108）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "部分更新广告位信息（PATCH 指针语义）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "编辑广告位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "广告位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateBannerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "广告位不存在（code=41108）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/banners/{id}/sort-order": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "独立设置广告位的排序值（sort_order）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "调整广告位排序",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "广告位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "排序请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSortOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "广告位不存在（code=41108）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/banners/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "切换广告位的上架/下架状态。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "上架/下架广告位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "广告位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态请求：0=上架 1=下架",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "广告位不存在（code=41108）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/help-categories": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询帮助分类列表，支持按父级/根级/层级/状态筛选。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "帮助分类列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "父级分类 ID",
+                        "name": "parent_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "根分类 ID",
+                        "name": "root_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "层级：1=根 2=二级 3=三级",
+                        "name": "level",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=停用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建帮助分类，支持多层级（最多 3 级）。传入 parent_id 创建子分类，不传则创建根分类。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "创建帮助分类",
+                "parameters": [
+                    {
+                        "description": "创建请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateHelpCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "父级分类不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "层级超过 3 级（code=41101）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/help-categories/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 查询单个帮助分类。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "帮助分类详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "分类 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除帮助分类。删除前校验无子分类（code=41102）且无归属条目（code=41103）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "删除帮助分类",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "分类 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "存在子分类（code=41102）或存在归属条目（code=41103）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "部分更新帮助分类信息（不支持改挂父级）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "编辑帮助分类",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "分类 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateHelpCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/help-categories/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "切换帮助分类的启用/停用状态。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "启用/停用帮助分类",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "分类 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态请求：0=启用 1=停用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/helps": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询帮助条目列表，支持按分类/根分类/状态筛选。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "帮助条目列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "所属分类 ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "根分类 ID（跨层聚合）",
+                        "name": "category_root_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=停用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建新的帮助条目（FAQ），可挂载到帮助分类。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "创建帮助条目",
+                "parameters": [
+                    {
+                        "description": "创建请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateHelpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "分类不存在（code=41104）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/helps/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 查询单个帮助条目。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "帮助条目详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "条目 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "条目不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除帮助条目。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "删除帮助条目",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "条目 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "条目不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "部分更新帮助条目信息（PATCH 指针语义）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "编辑帮助条目",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "条目 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateHelpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "条目不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/cms/helps/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "切换帮助条目的启用/停用状态。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-CMS"
+                ],
+                "summary": "启用/停用帮助条目",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "条目 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态请求：0=启用 1=停用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "条目不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/settings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询设置项列表，支持 keyword/group_name/status 筛选。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-系统设置"
+                ],
+                "summary": "设置项列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "搜索关键字（匹配 key 和 label）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "分组名称",
+                        "name": "group_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=停用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建新的前端配置项。key 须匹配 ^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$ 正则且全局唯一。value 按 type 校验格式。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-系统设置"
+                ],
+                "summary": "创建设置项",
+                "parameters": [
+                    {
+                        "description": "创建请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.CreateSettingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "key 已存在或已被软删除（code=41203）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "key 格式非法（code=41201）或 value 与 type 不匹配（code=41202）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/settings/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 查询单个设置项。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-系统设置"
+                ],
+                "summary": "设置项详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "设置项 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在（code=41204）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除设置项。软删除后 key 不可复用（唯一索引覆盖未删除记录）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-系统设置"
+                ],
+                "summary": "删除设置项",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "设置项 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在（code=41204）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "部分更新设置项信息（PATCH 指针语义）。key 不可修改，value 按当前或新 type 校验。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-系统设置"
+                ],
+                "summary": "编辑设置项",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "设置项 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.UpdateSettingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在（code=41204）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "value 与 type 不匹配（code=41202）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/settings/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "切换设置项的启用/停用状态。停用后公开接口将不再返回该设置项。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-系统设置"
+                ],
+                "summary": "启用/停用设置项",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "设置项 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态请求：0=启用 1=停用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在（code=41204）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/user": {
             "get": {
                 "description": "分页查询 C 端用户列表，支持性别、年龄、审核状态、迁移/激活/完善/状态等条件筛选，手机号脱敏返回。",
@@ -3024,6 +6305,378 @@
                 }
             }
         },
+        "/api/v1/cms/article-categories": {
+            "get": {
+                "description": "无需认证。返回所有启用状态的文章类别（树形结构，含子类别）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-CMS"
+                ],
+                "summary": "公开文章类别",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryPublicResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cms/articles": {
+            "get": {
+                "description": "无需认证。分页查询上架状态的文章列表（不含正文），按 sort_order 升序 + published_at 降序。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-CMS"
+                ],
+                "summary": "公开文章列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "所属类别 ID",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "根类别 ID（跨层聚合）",
+                        "name": "category_root_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleListPublicResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cms/articles/{id}": {
+            "get": {
+                "description": "无需认证。按 ID 查询上架状态的文章（含正文全文）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-CMS"
+                ],
+                "summary": "公开文章详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "文章 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticlePublicResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "文章不存在或未发布（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cms/banner-slots": {
+            "get": {
+                "description": "无需认证。返回所有启用状态的广告展示位（code + name），供 C 端解析展示位信息。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-CMS"
+                ],
+                "summary": "公开展示位列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSlotPublicResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cms/banners": {
+            "get": {
+                "description": "无需认证。按展示位 code 查询上架且当前时间在有效期内的广告位，按 sort_order 升序返回。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-CMS"
+                ],
+                "summary": "公开广告位列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "展示位 code（如 home_top / activity_pop）",
+                        "name": "slot",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerPublicResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "缺少 slot 参数",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "展示位不存在（code=41105）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cms/help-categories": {
+            "get": {
+                "description": "无需认证。返回所有启用状态的帮助分类（树形结构，含子分类）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-CMS"
+                ],
+                "summary": "公开帮助分类",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryPublicResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/cms/helps": {
+            "get": {
+                "description": "无需认证。按分类 ID 查询该分类下所有启用状态的帮助条目。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-CMS"
+                ],
+                "summary": "公开帮助条目",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "帮助分类 ID（UUID）",
+                        "name": "category_id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpPublicResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "缺少 category_id 参数",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/settings/{key}": {
+            "get": {
+                "description": "无需认证。按 key 读取已启用的设置项（status=0 且未软删除）。停用或不存在返回 404。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-系统设置"
+                ],
+                "summary": "公开读取设置项",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "设置项 key（如 app_name / debug.enabled）",
+                        "name": "key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingPublicResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "缺少 key 参数",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "设置项不存在或未启用（code=41204）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/match-profile": {
             "get": {
                 "description": "无需认证，浏览审核通过且全开放可见的脱单用户列表。支持性别、年龄、婚姻状态、身高、城市、学历、属相、星座、关键字（昵称/脱单号）筛选。所有筛选条件选填。",
@@ -3325,7 +6978,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "按男女双方用户 ID 查询 couple 配对信息（含男女双方完整公开画像）。若双方之间无配对记录，data 返回 null。",
+                "description": "按男女双方用户 ID 查询 couple 配对信息（含 couple 统计 + 男女双方完整公开画像 + 牵线人资料）。若双方之间无配对记录，data 返回 null。",
                 "consumes": [
                     "application/json"
                 ],
@@ -3364,7 +7017,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleUserResponse"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleResponse"
                                         }
                                     }
                                 }
@@ -3387,7 +7040,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "按 couple ID 查询男女双方的完整公开画像。任意已认证用户均可访问。不含匹配度等 couple 统计数据。",
+                "description": "按 couple ID 查询配对详情（含 couple 统计 + 男女双方完整公开画像 + 牵线人资料）。任意已认证用户均可访问。",
                 "consumes": [
                     "application/json"
                 ],
@@ -3397,7 +7050,7 @@
                 "tags": [
                     "C端-配对"
                 ],
-                "summary": "配对双方公开画像",
+                "summary": "配对详情",
                 "parameters": [
                     {
                         "type": "string",
@@ -3419,7 +7072,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleUserResponse"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleResponse"
                                         }
                                     }
                                 }
@@ -3751,61 +7404,6 @@
                     },
                     "422": {
                         "description": "仅无感可撤销（code=40309）",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/wxa/pair/feeling/{id}/couple": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "根据目标用户 ID 查询当前用户与目标用户之间的 couple 配对信息（含匹配度等统计 + 目标用户完整公开画像）。:id 为目标用户 UUID。若双方之间无配对记录，data 返回 null。",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "C端-配对"
-                ],
-                "summary": "与目标用户的配对详情",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "目标用户 ID（UUID）",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingCoupleResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "未登录或 Token 已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -4193,67 +7791,6 @@
                     },
                     "422": {
                         "description": "配对资格不满足（code=40310：审核未通过/性别未设置/账户已停用；code=42217：不能对自己操作）",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/wxa/pair/opinion/couple/{id}": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "查询曾操作过的 couple 配对详情（含男女双方完整公开画像 + 匹配度/feeling/loves/opinion 全部统计）。仅对此 couple 有过 opinion 操作的用户可查。",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "C端-配对"
-                ],
-                "summary": "opinion 视角的配对详情",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "couple ID（VARCHAR(32) HashID）",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "allOf": [
-                                {
-                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                                },
-                                {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionCoupleResponse"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "401": {
-                        "description": "未登录或 Token 已过期",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                        }
-                    },
-                    "404": {
-                        "description": "记录不存在或无操作权限（code=40003）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -6173,99 +9710,824 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleUserResponse": {
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryPublicResponse": {
             "type": "object",
             "properties": {
-                "female_user_data": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryPublicResponse"
+                    }
                 },
-                "male_user_data": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                "id": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "root_id": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingCoupleResponse": {
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryResponse": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string"
                 },
-                "created_by": {
-                    "description": "溯源字段（SET-ONCE，nil 表示尚未发生）",
+                "id": {
                     "type": "string"
                 },
-                "created_source": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
-                },
-                "feeling_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
-                },
-                "female_feeling_at": {
-                    "type": "string"
-                },
-                "female_feeling_type": {
+                "level": {
                     "type": "integer"
                 },
-                "female_id": {
+                "name": {
                     "type": "string"
                 },
-                "female_love_at": {
+                "parent_id": {
                     "type": "string"
                 },
-                "female_loves_count": {
+                "root_id": {
+                    "type": "string"
+                },
+                "sort_order": {
                     "type": "integer"
                 },
-                "first_match_at": {
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategorySortOrderRequest": {
+            "type": "object",
+            "required": [
+                "sort_order"
+            ],
+            "properties": {
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleCategoryStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleListPublicResponse": {
+            "type": "object",
+            "properties": {
+                "author": {
                     "type": "string"
                 },
-                "first_matchmaker_id": {
+                "category_id": {
                     "type": "string"
                 },
-                "first_split_at": {
+                "cover": {
                     "type": "string"
                 },
-                "first_splitter_id": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "loves_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
-                },
-                "male_feeling_at": {
+                "published_at": {
                     "type": "string"
                 },
-                "male_feeling_type": {
+                "sort_order": {
                     "type": "integer"
                 },
-                "male_id": {
+                "summary": {
                     "type": "string"
                 },
-                "male_love_at": {
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticlePublicResponse": {
+            "type": "object",
+            "properties": {
+                "author": {
                     "type": "string"
                 },
-                "male_loves_count": {
-                    "description": "COUNT 字段",
+                "category_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "cover": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "sort_order": {
                     "type": "integer"
                 },
-                "matching": {
+                "summary": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleResponse": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "category_parent_id": {
+                    "type": "string"
+                },
+                "category_root_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "cover": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "published_at": {
+                    "type": "string"
+                },
+                "sort_order": {
                     "type": "integer"
                 },
-                "matching_weekly": {
+                "status": {
+                    "description": "0=上架 1=下架",
                     "type": "integer"
                 },
-                "opinion_match_count": {
-                    "type": "integer"
+                "summary": {
+                    "type": "string"
                 },
-                "opinion_split_count": {
-                    "type": "integer"
-                },
-                "target_user_data": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                "title": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleSortOrderRequest": {
+            "type": "object",
+            "required": [
+                "sort_order"
+            ],
+            "properties": {
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.ArticleStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=上架 1=下架",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerPublicResponse": {
+            "type": "object",
+            "properties": {
+                "cover": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "link_data": {
+                    "type": "string"
+                },
+                "link_type": {
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerResponse": {
+            "type": "object",
+            "properties": {
+                "cover": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "link_data": {
+                    "type": "string"
+                },
+                "link_type": {
+                    "type": "integer"
+                },
+                "slot_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "0=上架 1=下架",
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSlotPublicResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSlotResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerSortOrderRequest": {
+            "type": "object",
+            "required": [
+                "sort_order"
+            ],
+            "properties": {
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.BannerStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=上架 1=下架",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateArticleCategoryRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "parent_id": {
+                    "description": "父级 ID：为空则创建根类别",
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateArticleRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "title"
+            ],
+            "properties": {
+                "author": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "cover": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "0=上架 1=下架",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                },
+                "summary": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 256
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateBannerRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "cover": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "end_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "link_data": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "link_type": {
+                    "description": "0=无 1=外链 2=内部页",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
+                },
+                "slot_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "start_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateBannerSlotRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "name"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "description": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateHelpCategoryRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "parent_id": {
+                    "description": "父级 ID：为空则创建根分类",
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.CreateHelpRequest": {
+            "type": "object",
+            "required": [
+                "answer",
+                "question"
+            ],
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryPublicResponse": {
+            "type": "object",
+            "properties": {
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryPublicResponse"
+                    }
+                },
+                "helps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpPublicResponse"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "root_id": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "level": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "parent_id": {
+                    "type": "string"
+                },
+                "root_id": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpCategoryStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpPublicResponse": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpResponse": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string"
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "category_parent_id": {
+                    "type": "string"
+                },
+                "category_root_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.HelpStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateArticleCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateArticleRequest": {
+            "type": "object",
+            "properties": {
+                "author": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "cover": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "summary": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 256
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateBannerRequest": {
+            "type": "object",
+            "properties": {
+                "cover": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "link_data": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "link_type": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
+                },
+                "slot_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateBannerSlotRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateHelpCategoryRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_cms_model.UpdateHelpRequest": {
+            "type": "object",
+            "properties": {
+                "answer": {
+                    "type": "string",
+                    "maxLength": 20000
+                },
+                "category_id": {
+                    "type": "string"
+                },
+                "question": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "sort_order": {
+                    "type": "integer"
                 }
             }
         },
@@ -6473,41 +10735,11 @@
         "github_com_vbegin_tlnc_v6_internal_module_pair_model.MyCoupleListItem": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "feeling_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
-                },
-                "female_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "loves_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
-                },
-                "male_id": {
-                    "type": "string"
-                },
-                "matching": {
-                    "type": "integer"
-                },
-                "matching_weekly": {
-                    "type": "integer"
-                },
-                "opinion_match_count": {
-                    "type": "integer"
-                },
-                "opinion_split_count": {
-                    "type": "integer"
+                "couple": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleInfo"
                 },
                 "target_user_data": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },
@@ -6528,94 +10760,6 @@
                 },
                 "total": {
                     "type": "integer"
-                }
-            }
-        },
-        "github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionCoupleResponse": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "created_by": {
-                    "description": "溯源字段（SET-ONCE，nil 表示尚未发生）",
-                    "type": "string"
-                },
-                "created_source": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
-                },
-                "feeling_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
-                },
-                "female_feeling_at": {
-                    "type": "string"
-                },
-                "female_feeling_type": {
-                    "type": "integer"
-                },
-                "female_id": {
-                    "type": "string"
-                },
-                "female_love_at": {
-                    "type": "string"
-                },
-                "female_loves_count": {
-                    "type": "integer"
-                },
-                "female_user_data": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
-                },
-                "first_match_at": {
-                    "type": "string"
-                },
-                "first_matchmaker_id": {
-                    "type": "string"
-                },
-                "first_split_at": {
-                    "type": "string"
-                },
-                "first_splitter_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "loves_status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
-                },
-                "male_feeling_at": {
-                    "type": "string"
-                },
-                "male_feeling_type": {
-                    "type": "integer"
-                },
-                "male_id": {
-                    "type": "string"
-                },
-                "male_love_at": {
-                    "type": "string"
-                },
-                "male_loves_count": {
-                    "description": "COUNT 字段",
-                    "type": "integer"
-                },
-                "male_user_data": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
-                },
-                "matching": {
-                    "type": "integer"
-                },
-                "matching_weekly": {
-                    "type": "integer"
-                },
-                "opinion_match_count": {
-                    "type": "integer"
-                },
-                "opinion_split_count": {
-                    "type": "integer"
-                },
-                "updated_at": {
-                    "type": "string"
                 }
             }
         },
@@ -6804,6 +10948,146 @@
                 "user_id": {
                     "description": "牵线用户 ID（matchmaker）",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_settings_model.CreateSettingRequest": {
+            "type": "object",
+            "required": [
+                "key",
+                "type"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "group_name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "key": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "type": {
+                    "description": "0=string 1=number 2=bool 3=json 4=text 5=image",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ]
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 10000
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingPublicResponse": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer"
+                },
+                "type": {
+                    "description": "0=string 1=number 2=bool 3=json 4=text 5=image",
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_settings_model.SettingStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_settings_model.UpdateSettingRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "group_name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "label": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "type": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5
+                    ]
+                },
+                "value": {
+                    "type": "string",
+                    "maxLength": 10000
                 }
             }
         },
@@ -8203,6 +12487,109 @@
                 },
                 "status": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleInfo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "── 时间戳 ──",
+                    "type": "string"
+                },
+                "created_by": {
+                    "description": "── 溯源（创建者 + 来源） ──",
+                    "type": "string"
+                },
+                "created_source": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
+                },
+                "feeling_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
+                },
+                "female_feeling_at": {
+                    "type": "string"
+                },
+                "female_feeling_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType"
+                },
+                "female_id": {
+                    "type": "string"
+                },
+                "female_love_at": {
+                    "type": "string"
+                },
+                "female_loves_count": {
+                    "type": "integer"
+                },
+                "first_match_at": {
+                    "type": "string"
+                },
+                "first_matchmaker_id": {
+                    "type": "string"
+                },
+                "first_split_at": {
+                    "type": "string"
+                },
+                "first_splitter_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "description": "── 身份 ──",
+                    "type": "string"
+                },
+                "loves_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
+                },
+                "male_feeling_at": {
+                    "description": "── SET-ONCE 时间戳（nil 表示尚未发生，JSON 输出 null） ──",
+                    "type": "string"
+                },
+                "male_feeling_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType"
+                },
+                "male_id": {
+                    "type": "string"
+                },
+                "male_love_at": {
+                    "type": "string"
+                },
+                "male_loves_count": {
+                    "description": "── COUNT 字段 ──",
+                    "type": "integer"
+                },
+                "matching": {
+                    "description": "── 匹配统计 ──",
+                    "type": "integer"
+                },
+                "matching_weekly": {
+                    "type": "integer"
+                },
+                "opinion_match_count": {
+                    "type": "integer"
+                },
+                "opinion_split_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleResponse": {
+            "type": "object",
+            "properties": {
+                "couple": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleInfo"
+                },
+                "created_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "female_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                },
+                "male_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
                 }
             }
         },

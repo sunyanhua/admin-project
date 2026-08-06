@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Card, Tabs, Form, Button, Input, Typography, Space, Spin } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
-import { settingsApi } from '@/api/services/settings';
+import { settingsApi, SettingType } from '@/api/services/settings';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
 
 interface AgreementTab {
@@ -24,14 +24,15 @@ const AgreementManagement = () => {
   const [styles, setStyles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [settingIds, setSettingIds] = useState<Record<string, number>>({});
+  const [settingIds, setSettingIds] = useState<Record<string, string>>({});
 
   const currentTab = AGREEMENT_TABS.find((t) => t.key === activeTab)!;
 
   const fetchContent = useCallback(async (tab: AgreementTab) => {
     setLoading(true);
     try {
-      const res: any = await settingsApi.getSettings({ keyword: tab.configKey, page_size: 100 });
+      // 拦截器已解包 PagedResponse → { list, total, pagination }
+      const res: any = await settingsApi.getSettings({ keyword: tab.configKey, size: 100 });
       const list = res?.list || [];
       const item = list.find((s: any) => s.key === tab.configKey);
       if (item) {
@@ -45,7 +46,7 @@ const AgreementManagement = () => {
           setStyles((prev) => ({ ...prev, [tab.key]: 'padding:15px;' }));
         }
       } else {
-        setSettingIds((prev) => ({ ...prev, [tab.key]: 0 }));
+        setSettingIds((prev) => ({ ...prev, [tab.key]: '' }));
         setContents((prev) => ({ ...prev, [tab.key]: '' }));
         setStyles((prev) => ({ ...prev, [tab.key]: 'padding:15px;' }));
       }
@@ -86,13 +87,15 @@ const AgreementManagement = () => {
     try {
       const id = settingIds[activeTab];
       if (id) {
+        // 已有记录 → PATCH 更新
         await settingsApi.updateSetting(id, { value });
       } else {
-        // 不存在则先创建
+        // 不存在 → 先创建
         const createRes: any = await settingsApi.createSetting({
           key: tab.configKey,
-          type: 'json',
+          type: SettingType.JSON,
           value,
+          group_name: 'agreement',
         });
         if (createRes?.id) {
           setSettingIds((prev) => ({ ...prev, [activeTab]: createRes.id }));

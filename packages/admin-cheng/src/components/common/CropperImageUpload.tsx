@@ -37,7 +37,7 @@ const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
     setUploading(true);
     try {
       const res: any = await uploadApi.uploadImage(file);
-      const uploadedUrl = res?.url || res || '';
+      const uploadedUrl = res?.file_url || res?.url || '';
       setUrl(uploadedUrl);
       onChange?.(uploadedUrl);
       success('图片上传成功');

@@ -1,68 +1,150 @@
 import request from '..';
-import { BannerStatus } from '@shared/constants';
+import { BannerStatus, BannerSlotStatus, BannerLinkType } from '@shared/constants';
 
-// Banner 实体（v1 CMS）
-export interface Banner {
-  id: number;
-  title: string;
-  image_url: string;
-  link_url?: string;
-  position: string;
-  sort_order?: number;
-  status: number;
-  start_time?: string;
-  end_time?: string;
+// ========================
+// 广告展示位（Banner Slot）
+// ========================
+
+export interface BannerSlot {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  status: number; // 0=启用 1=停用
   created_at?: string;
   updated_at?: string;
 }
 
-// 创建 Banner 请求参数
-export interface CreateBannerRequest {
-  title: string;
-  image_url: string;
-  link_url?: string;
-  position?: string;
+export interface CreateBannerSlotRequest {
+  code: string;
+  name: string;
+  description?: string;
   sort_order?: number;
-  status?: number;
-  start_time?: string;
-  end_time?: string;
 }
 
-// 更新 Banner 请求参数（全可选）
-export type UpdateBannerRequest = Partial<CreateBannerRequest>;
+export interface UpdateBannerSlotRequest {
+  name?: string;
+  description?: string;
+  sort_order?: number;
+}
 
-// Banner 分页查询参数
+export interface BannerSlotStatusRequest {
+  status: BannerSlotStatus;
+}
+
+export const bannerSlotApi = {
+  /** 分页查询展示位列表 */
+  getSlots: (params?: { status?: number; page?: number; size?: number }) => {
+    return request.get('/admin/v1/bizops/cms/banner-slots', { params });
+  },
+
+  /** 展示位详情 */
+  getSlotDetail: (id: string) => {
+    return request.get(`/admin/v1/bizops/cms/banner-slots/${id}`);
+  },
+
+  /** 创建展示位 */
+  createSlot: (data: CreateBannerSlotRequest) => {
+    return request.post('/admin/v1/bizops/cms/banner-slots', data);
+  },
+
+  /** 编辑展示位（PATCH 部分更新） */
+  updateSlot: (id: string, data: UpdateBannerSlotRequest) => {
+    return request.patch(`/admin/v1/bizops/cms/banner-slots/${id}`, data);
+  },
+
+  /** 删除展示位（软删除） */
+  deleteSlot: (id: string) => {
+    return request.delete(`/admin/v1/bizops/cms/banner-slots/${id}`);
+  },
+
+  /** 切换展示位启用/停用 */
+  toggleSlotStatus: (id: string, status: BannerSlotStatus) => {
+    return request.patch(`/admin/v1/bizops/cms/banner-slots/${id}/status`, { status });
+  },
+};
+
+// ========================
+// 广告位（Banner）
+// ========================
+
+export interface Banner {
+  id: string;
+  title: string;
+  cover: string;
+  link_type: number; // 0=无 1=外链 2=内部页
+  link_data: string;
+  slot_ids: string[];
+  sort_order: number;
+  status: number; // 0=上线 1=下线
+  start_at?: string;
+  end_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CreateBannerRequest {
+  title: string;
+  cover?: string;
+  link_type?: number;
+  link_data?: string;
+  slot_ids?: string[];
+  sort_order?: number;
+  status?: number;
+  start_at?: string;
+  end_at?: string;
+}
+
+export interface UpdateBannerRequest {
+  title?: string;
+  cover?: string;
+  link_type?: number;
+  link_data?: string;
+  slot_ids?: string[];
+  sort_order?: number;
+  start_at?: string;
+  end_at?: string;
+}
+
+export interface BannerStatusRequest {
+  status: BannerStatus;
+}
+
 export interface BannerListParams {
   page?: number;
-  page_size?: number;
-  status?: BannerStatus;
-  position?: string;
-  keyword?: string;
+  size?: number;
+  status?: number;
 }
 
 export const bannerApi = {
-  // 分页查询 — GET /admin/v1/cms/banners
+  /** 分页查询广告位列表 */
   getBanners: (params?: BannerListParams) => {
-    return request.get('/admin/v1/cms/banners', { params });
+    return request.get('/admin/v1/bizops/cms/banners', { params });
   },
 
-  // 详情 — GET /admin/v1/cms/banners/{id}
-  getBannerDetail: (id: number) => {
-    return request.get(`/admin/v1/cms/banners/${id}`);
+  /** 广告位详情 */
+  getBannerDetail: (id: string) => {
+    return request.get(`/admin/v1/bizops/cms/banners/${id}`);
   },
 
-  // 创建 — POST /admin/v1/cms/banners
+  /** 创建广告位 */
   createBanner: (data: CreateBannerRequest) => {
-    return request.post('/admin/v1/cms/banners', data);
+    return request.post('/admin/v1/bizops/cms/banners', data);
   },
 
-  // 编辑 — PUT /admin/v1/cms/banners/{id}
-  updateBanner: (id: number, data: UpdateBannerRequest) => {
-    return request.put(`/admin/v1/cms/banners/${id}`, data);
+  /** 编辑广告位（PATCH 部分更新） */
+  updateBanner: (id: string, data: UpdateBannerRequest) => {
+    return request.patch(`/admin/v1/bizops/cms/banners/${id}`, data);
   },
 
-  // 删除（硬删除） — DELETE /admin/v1/cms/banners/{id}
-  deleteBanner: (id: number) => {
-    return request.delete(`/admin/v1/cms/banners/${id}`);
+  /** 删除广告位（软删除） */
+  deleteBanner: (id: string) => {
+    return request.delete(`/admin/v1/bizops/cms/banners/${id}`);
+  },
+
+  /** 上线/下线广告位 */
+  toggleBannerStatus: (id: string, status: BannerStatus) => {
+    return request.patch(`/admin/v1/bizops/cms/banners/${id}/status`, { status });
   },
 };

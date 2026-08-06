@@ -131,7 +131,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   const handleMultiImageUpload = async (file: File) => {
     try {
       const res = await uploadApi.uploadImage(file) as any;
-      const url = res?.url || res?.data?.url || res;
+      const url = res?.file_url || res?.url || res?.data?.url || res;
       if (url) {
         setMultiImages((prev) => [...prev, url]);
       }

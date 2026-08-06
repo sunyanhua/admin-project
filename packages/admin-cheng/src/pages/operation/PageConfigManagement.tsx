@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Input, Button } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { settingsApi, SettingItem } from '@/api/services/settings';
+import { settingsApi, SettingItem, SettingType } from '@/api/services/settings';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { StandardPage } from '@/components/templates/StandardPage';
 
@@ -12,14 +12,14 @@ const PageConfigManagement = () => {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [currentId, setCurrentId] = useState<number | null>(null);
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const { success, error: showError, warning } = useAppNotification();
 
   const handleQuery = async () => {
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const res: any = await settingsApi.getSettings({ keyword: name.trim(), page_size: 100 });
+      const res: any = await settingsApi.getSettings({ keyword: name.trim(), size: 100 });
       const list: SettingItem[] = Array.isArray(res?.list) ? res.list : (Array.isArray(res) ? res : []);
       const found = list.find((item: SettingItem) => item.key === name.trim());
       if (found) {
@@ -47,7 +47,7 @@ const PageConfigManagement = () => {
       } else {
         await settingsApi.createSetting({
           key: name.trim(),
-          type: 'text',
+          type: SettingType.TEXT,
           value: content,
           label: name.trim(),
         });

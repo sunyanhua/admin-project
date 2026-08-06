@@ -47,7 +47,7 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
     setUploading(true);
     try {
       const res: any = await uploadApi.uploadImage(file);
-      const uploadedUrl = res?.url || res || '';
+      const uploadedUrl = res?.file_url || res?.url || res || '';
       setUrls((prev) => {
         if (prev.length >= maxCount) return prev;
         const next = [...prev, uploadedUrl];

@@ -1,11 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Switch, InputNumber, Space, Form, Input, DatePicker, Radio, Image } from 'antd';
-import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
+import { Button, Switch, InputNumber, Space, Form, Input, DatePicker, Radio, Tag, Image } from 'antd';
+import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
-import { BannerStatus } from '@shared/constants';
+import { BannerStatus, BannerLinkType, BannerLinkTypeLabels } from '@shared/constants';
 import { getFullWidthUrl } from '@/utils/imageUtils';
-import { bannerApi, Banner, CreateBannerRequest, UpdateBannerRequest } from '@/api/services/banner';
+import { bannerApi, Banner, CreateBannerRequest } from '@/api/services/banner';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
@@ -17,20 +17,13 @@ import ScrollableModal from '@/components/templates/ScrollableModal';
 import dayjs, { Dayjs } from 'dayjs';
 
 const STATUS_OPTIONS = [
-  { label: '启用', value: 0 },
-  { label: '禁用', value: 1 },
+  { label: '上线', value: BannerStatus.ONLINE },
+  { label: '下线', value: BannerStatus.OFFLINE },
 ];
 
 const filters: FilterConfig[] = [
   { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
-  { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
 ];
-
-// 链接类型（仅前端控制，不存到接口）
-const LINK_TYPE = {
-  MINIAPP: 1,
-  NO_LINK: 100,
-} as const;
 
 const BannerManagement = () => {
   const { success, error: showError } = useAppNotification();
@@ -38,27 +31,23 @@ const BannerManagement = () => {
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [linkType, setLinkType] = useState<number>(LINK_TYPE.NO_LINK);
+  const [linkType, setLinkType] = useState<number>(BannerLinkType.NONE);
   const [statusEnabled, setStatusEnabled] = useState(true);
   const [form] = Form.useForm();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchBanners = useCallback(async (params: any) => {
-    return bannerApi.getBanners(params);
+    return bannerApi.getBanners({
+      page: params.page,
+      size: params.page_size,
+      status: params.status,
+    });
   }, []);
 
   const formatBannerResponse = useCallback((res: any) => {
-    const list = res?.list || res?.data?.list || [];
-    const total = res?.total ?? res?.data?.total ?? 0;
-    return {
-      list: list.map((item: any) => ({
-        ...item,
-        link_url: item.link_url || '',
-        sort_order: item.sort_order,
-        position: item.position || '',
-      })),
-      count: total,
-    };
+    const list = res?.list || [];
+    const total = res?.total ?? 0;
+    return { list, count: total };
   }, []);
 
   const {
@@ -89,7 +78,7 @@ const BannerManagement = () => {
   // 状态切换
   const handleStatusToggle = async (record: Banner, checked: boolean) => {
     try {
-      await bannerApi.updateBanner(record.id, { status: checked ? BannerStatus.ENABLED : BannerStatus.DISABLED });
+      await bannerApi.toggleBannerStatus(record.id, checked ? BannerStatus.ONLINE : BannerStatus.OFFLINE);
       success('状态更新成功');
       refresh();
     } catch (err: any) {
@@ -97,20 +86,20 @@ const BannerManagement = () => {
     }
   };
 
-  // 排序修改
-  const handleOrderChange = async (record: Banner, value: number | null) => {
+  // 权重修改
+  const handleSortChange = async (record: Banner, value: number | null) => {
     try {
       await bannerApi.updateBanner(record.id, { sort_order: value ?? undefined });
-      success('排序更新成功');
+      success('权重更新成功');
       refresh();
     } catch (err: any) {
-      showError(err?.response?.data?.message || '排序更新失败');
+      showError(err?.response?.data?.message || '权重更新失败');
     }
   };
 
   const handleAdd = () => {
     setEditingBanner(null);
-    setLinkType(LINK_TYPE.NO_LINK);
+    setLinkType(BannerLinkType.NONE);
     setStatusEnabled(true);
     setModalVisible(true);
     setTimeout(() => form.resetFields(), 0);
@@ -120,37 +109,32 @@ const BannerManagement = () => {
     setEditingBanner(record);
     setLoadingDetail(true);
     try {
-      const res: any = await bannerApi.getBannerDetail(record.id);
-      const detail = res?.data || res || {};
-      const bannerData = { ...record, ...detail };
+      const detail: any = await bannerApi.getBannerDetail(record.id);
+      const bannerData = detail || record;
       setEditingBanner(bannerData);
-      setStatusEnabled(bannerData.status !== BannerStatus.DISABLED);
-      const hasLink = !!bannerData.link_url;
-      setLinkType(hasLink ? LINK_TYPE.MINIAPP : LINK_TYPE.NO_LINK);
+      setStatusEnabled(bannerData.status === BannerStatus.ONLINE);
+      setLinkType(bannerData.link_type ?? BannerLinkType.NONE);
       setModalVisible(true);
       setTimeout(() => {
         form.setFieldsValue({
           title: bannerData.title || '',
-          image_url: bannerData.image_url || '',
-          link_url: bannerData.link_url || '',
-          start_time: bannerData.start_time ? dayjs(bannerData.start_time) : null,
-          end_time: bannerData.end_time ? dayjs(bannerData.end_time) : null,
+          cover: bannerData.cover || '',
+          link_data: bannerData.link_data || '',
+          start_at: bannerData.start_at ? dayjs(bannerData.start_at) : null,
+          end_at: bannerData.end_at ? dayjs(bannerData.end_at) : null,
           sort_order: bannerData.sort_order,
-          status: bannerData.status ?? BannerStatus.ENABLED,
         });
       }, 0);
     } catch {
-      const hasLink = !!record.link_url;
-      setLinkType(hasLink ? LINK_TYPE.MINIAPP : LINK_TYPE.NO_LINK);
-      setStatusEnabled(record.status !== BannerStatus.DISABLED);
+      setStatusEnabled(record.status === BannerStatus.ONLINE);
+      setLinkType(record.link_type ?? BannerLinkType.NONE);
       setModalVisible(true);
       setTimeout(() => {
         form.setFieldsValue({
           title: record.title || '',
-          image_url: record.image_url || '',
-          link_url: record.link_url || '',
+          cover: record.cover || '',
+          link_data: record.link_data || '',
           sort_order: record.sort_order,
-          status: record.status ?? BannerStatus.ENABLED,
         });
       }, 0);
     } finally {
@@ -165,21 +149,22 @@ const BannerManagement = () => {
 
       const payload: CreateBannerRequest = {
         title: values.title,
-        image_url: values.image_url,
-        position: 'home',
+        cover: values.cover || '',
+        link_type: linkType,
+        link_data: linkType !== BannerLinkType.NONE ? (values.link_data || '') : '',
+        status: statusEnabled ? BannerStatus.ONLINE : BannerStatus.OFFLINE,
         sort_order: values.sort_order ?? undefined,
-        status: statusEnabled ? BannerStatus.ENABLED : BannerStatus.DISABLED,
-        start_time: values.start_time ? (values.start_time as Dayjs).format('YYYY/MM/DD HH:mm:ss') : undefined,
-        end_time: values.end_time ? (values.end_time as Dayjs).format('YYYY/MM/DD HH:mm:ss') : undefined,
+        start_at: values.start_at ? (values.start_at as Dayjs).toISOString() : undefined,
+        end_at: values.end_at ? (values.end_at as Dayjs).toISOString() : undefined,
       };
 
-      // 仅小程序链接时传 link_url
-      if (linkType === LINK_TYPE.MINIAPP && values.link_url) {
-        payload.link_url = values.link_url;
-      }
-
       if (editingBanner) {
-        await bannerApi.updateBanner(editingBanner.id, payload as UpdateBannerRequest);
+        await bannerApi.updateBanner(editingBanner.id, payload);
+        // 状态单独更新
+        const newStatus = statusEnabled ? BannerStatus.ONLINE : BannerStatus.OFFLINE;
+        if (newStatus !== editingBanner.status) {
+          await bannerApi.toggleBannerStatus(editingBanner.id, newStatus);
+        }
         success('更新成功');
       } else {
         await bannerApi.createBanner(payload);
@@ -197,8 +182,8 @@ const BannerManagement = () => {
 
   const handleLinkTypeChange = (value: number) => {
     setLinkType(value);
-    if (value === LINK_TYPE.NO_LINK) {
-      form.setFieldsValue({ link_url: '' });
+    if (value === BannerLinkType.NONE) {
+      form.setFieldsValue({ link_data: '' });
     }
   };
 
@@ -210,24 +195,22 @@ const BannerManagement = () => {
       render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
     },
     {
-      title: '图片',
-      dataIndex: 'image_url',
-      key: 'image_url',
-      width: 120,
+      title: '封面',
+      dataIndex: 'cover',
+      key: 'cover',
+      width: 160,
       render: (url: string) => (
-        <div style={{ width: 100, height: 44, borderRadius: 2, overflow: 'hidden' }}>
-          {url ? (
-            <Image
-              src={getFullWidthUrl(url)}
-              alt="banner"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }}
-              preview={{ src: url }}
-            />
-          ) : (
-            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 10, background: '#f0f0f0' }}>—</div>
-          )}
-        </div>
+        url
+          ? <Image src={getFullWidthUrl(url)} alt="banner" preview={{ src: url }} style={{ height: 50, objectFit: 'contain', borderRadius: 4 }} />
+          : <span style={{ color: '#999' }}>-</span>
       ),
+    },
+    {
+      title: '链接类型',
+      dataIndex: 'link_type',
+      key: 'link_type',
+      width: 100,
+      render: (v: number) => <Tag title={BannerLinkTypeLabels[v]}>{BannerLinkTypeLabels[v] ?? v}</Tag>,
     },
     {
       title: '权重',
@@ -243,13 +226,14 @@ const BannerManagement = () => {
             const val = e.target.value;
             const num = val === '' ? null : parseInt(val);
             if (num !== (record.sort_order ?? null)) {
-              handleOrderChange(record, num);
+              handleSortChange(record, num);
             }
           }}
         />
       ),
     },
-    statusSwitchColumn<Banner>('status', BannerStatus.ENABLED, BannerStatus.DISABLED, handleStatusToggle, '启用', '禁用', 100),
+    statusSwitchColumn<Banner>('status', BannerStatus.ONLINE, BannerStatus.OFFLINE, handleStatusToggle, '上线', '下线', 100),
+    dateTimeColumn<Banner>('created_at', '创建时间'),
     ActionColumn({
       onEdit: (record) => handleEdit(record),
       onDelete: (record) => confirmDelete({
@@ -265,7 +249,7 @@ const BannerManagement = () => {
     <>
       <StandardPage
         title="轮播图管理"
-        description="管理首页轮播图，设置图片、跳转链接和展示时间。"
+        description="管理首页轮播广告位，设置图片、跳转链接和展示时间。"
         showRefreshButton
         onRefresh={refresh}
         showAddButton
@@ -315,42 +299,43 @@ const BannerManagement = () => {
           <Form.Item
             label="标题"
             name="title"
-            rules={[{ required: true, message: '请输入标题' }]}
+            rules={[{ required: true, message: '请输入标题' }, { max: 128, message: '最多128个字符' }]}
           >
-            <Input placeholder="请输入轮播图标题" maxLength={64} showCount />
+            <Input placeholder="请输入轮播图标题" maxLength={128} showCount />
           </Form.Item>
 
           <Form.Item
             label="封面图"
-            name="image_url"
+            name="cover"
             rules={[{ required: true, message: '请上传封面图' }]}
           >
-            <CropperImageUpload aspect={400 / 175} sizeHint="建议尺寸：400 × 175 像素" />
+            <CropperImageUpload aspect={600 / 200} sizeHint="建议尺寸：600 × 200 像素" />
           </Form.Item>
 
           <Form.Item label="链接类型" required>
             <Radio.Group value={linkType} onChange={(e) => handleLinkTypeChange(e.target.value)}>
-              <Radio.Button value={LINK_TYPE.MINIAPP}>小程序链接</Radio.Button>
-              <Radio.Button value={LINK_TYPE.NO_LINK}>无链接</Radio.Button>
+              <Radio.Button value={BannerLinkType.NONE}>{BannerLinkTypeLabels[BannerLinkType.NONE]}</Radio.Button>
+              <Radio.Button value={BannerLinkType.EXTERNAL}>{BannerLinkTypeLabels[BannerLinkType.EXTERNAL]}</Radio.Button>
+              <Radio.Button value={BannerLinkType.INTERNAL}>{BannerLinkTypeLabels[BannerLinkType.INTERNAL]}</Radio.Button>
             </Radio.Group>
           </Form.Item>
 
-          {linkType === LINK_TYPE.MINIAPP && (
+          {linkType !== BannerLinkType.NONE && (
             <Form.Item
-              label="跳转链接"
-              name="link_url"
-              rules={[{ required: true, message: '请输入跳转链接' }, { max: 512, message: '最多512个字符' }]}
-              extra="请输入小程序页面路径，如: /pages/activity/detail?id=123"
+              label={linkType === BannerLinkType.EXTERNAL ? '外链地址' : '内部页面路径'}
+              name="link_data"
+              rules={[{ required: true, message: '请输入链接地址' }, { max: 2048, message: '最多2048个字符' }]}
+              extra={linkType === BannerLinkType.INTERNAL ? '如: /pages/activity/detail?id=123' : '如: https://example.com'}
             >
-              <Input placeholder="请输入小程序页面路径" />
+              <Input placeholder={linkType === BannerLinkType.EXTERNAL ? '请输入完整 URL' : '请输入小程序页面路径'} />
             </Form.Item>
           )}
 
-          <Form.Item label="展示开始时间" name="start_time" extra="不填写则不限">
+          <Form.Item label="展示开始时间" name="start_at" extra="不填写则不限">
             <DatePicker showTime format="YYYY/MM/DD HH:mm:ss" placeholder="选择开始时间" style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item label="展示结束时间" name="end_time" extra="不填写则不限">
+          <Form.Item label="展示结束时间" name="end_at" extra="不填写则不限">
             <DatePicker showTime format="YYYY/MM/DD HH:mm:ss" placeholder="选择结束时间" style={{ width: '100%' }} />
           </Form.Item>
 
@@ -362,8 +347,8 @@ const BannerManagement = () => {
             <Switch
               checked={statusEnabled}
               onChange={setStatusEnabled}
-              checkedChildren="启用"
-              unCheckedChildren="禁用"
+              checkedChildren="上线"
+              unCheckedChildren="下线"
             />
           </Form.Item>
         </Form>
