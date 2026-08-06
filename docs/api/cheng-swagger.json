@@ -3441,6 +3441,79 @@
                 }
             }
         },
+        "/api/v1/wxa/pair/couple/{id}/matching-logs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询指定 couple 的匹配度变更日志（按 created_at DESC 倒序）。仅配对的男女双方可查。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "配对匹配度变化记录",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "couple ID（VARCHAR(32) HashID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.MatchingLogListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "记录不存在或无权限（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/pair/feeling": {
             "get": {
                 "security": [
@@ -3578,7 +3651,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "查询单条 feeling 记录完整信息，含目标用户的完整公开画像（21 字段 PublicProfile，与推荐一致）。仅记录所有者可查——非本人记录返回 404（不暴露越权信息）。",
+                "description": "查询单条 feeling 记录完整信息，含目标用户的完整公开画像（PublicProfile，与推荐一致）。仅记录所有者可查——非本人记录返回 404（不暴露越权信息）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -3912,6 +3985,66 @@
                     },
                     "422": {
                         "description": "配对资格不满足（code=40310：审核未通过/性别未设置/同性/账户已停用；code=42205：每日限额已用完/计数服务暂不可用）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/my-couples": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户参与的所有配对关系，含匹配度统计 + 对方完整公开画像。按 updated_at DESC 倒序。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "我的配对列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.MyCoupleListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -4545,7 +4678,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "从 Redis 推荐缓存中分页获取当前用户的脱单候选用户列表。Cursor 由服务端 Redis 内部维护，前端无需传递分页游标。每次请求返回一页 RichCandidate（含完整公开画像 + 匹配度分数）。缓存未就绪时返回 40401（503 Service Unavailable），请稍后重试。",
+                "description": "从 Redis 推荐缓存中分页获取当前用户的脱单候选用户列表。Cursor 由服务端 Redis 内部维护，前端无需传递分页游标。每次请求返回一页 RichCandidate（含完整公开画像 + 匹配度分数）。活跃用户缓存由定时调度器维护；非活跃用户首次访问时缓存可能不存在——此时自动触发按需异步构建，返回 40401 \"准备中，请稍后刷新\"。",
                 "consumes": [
                     "application/json"
                 ],
@@ -6057,10 +6190,38 @@
                 "created_at": {
                     "type": "string"
                 },
+                "created_by": {
+                    "description": "溯源字段（SET-ONCE，nil 表示尚未发生）",
+                    "type": "string"
+                },
+                "created_source": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
+                },
                 "feeling_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
                 },
                 "female_id": {
+                    "type": "string"
+                },
+                "female_like_male_at": {
+                    "type": "string"
+                },
+                "female_love_male_at": {
+                    "type": "string"
+                },
+                "female_loves_count": {
+                    "type": "integer"
+                },
+                "first_match_at": {
+                    "type": "string"
+                },
+                "first_matchmaker_id": {
+                    "type": "string"
+                },
+                "first_split_at": {
+                    "type": "string"
+                },
+                "first_splitter_id": {
                     "type": "string"
                 },
                 "id": {
@@ -6071,6 +6232,16 @@
                 },
                 "male_id": {
                     "type": "string"
+                },
+                "male_like_female_at": {
+                    "type": "string"
+                },
+                "male_love_female_at": {
+                    "type": "string"
+                },
+                "male_loves_count": {
+                    "description": "COUNT 字段",
+                    "type": "integer"
                 },
                 "matching": {
                     "type": "integer"
@@ -6247,7 +6418,53 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionCoupleResponse": {
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.MatchingLogItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "matching_after": {
+                    "type": "integer"
+                },
+                "matching_delta": {
+                    "type": "integer"
+                },
+                "operator_id": {
+                    "type": "string"
+                },
+                "source": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
+                },
+                "source_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.MatchingLogListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.MatchingLogItem"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.MyCoupleListItem": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -6259,8 +6476,97 @@
                 "female_id": {
                     "type": "string"
                 },
+                "id": {
+                    "type": "string"
+                },
+                "loves_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
+                },
+                "male_id": {
+                    "type": "string"
+                },
+                "matching": {
+                    "type": "integer"
+                },
+                "matching_weekly": {
+                    "type": "integer"
+                },
+                "opinion_match_count": {
+                    "type": "integer"
+                },
+                "opinion_split_count": {
+                    "type": "integer"
+                },
+                "target_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.MyCoupleListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.MyCoupleListItem"
+                    }
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.OpinionCoupleResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "description": "溯源字段（SET-ONCE，nil 表示尚未发生）",
+                    "type": "string"
+                },
+                "created_source": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
+                },
+                "feeling_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
+                },
+                "female_id": {
+                    "type": "string"
+                },
+                "female_like_male_at": {
+                    "type": "string"
+                },
+                "female_love_male_at": {
+                    "type": "string"
+                },
+                "female_loves_count": {
+                    "type": "integer"
+                },
                 "female_user_data": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "first_match_at": {
+                    "type": "string"
+                },
+                "first_matchmaker_id": {
+                    "type": "string"
+                },
+                "first_split_at": {
+                    "type": "string"
+                },
+                "first_splitter_id": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -6270,6 +6576,16 @@
                 },
                 "male_id": {
                     "type": "string"
+                },
+                "male_like_female_at": {
+                    "type": "string"
+                },
+                "male_love_female_at": {
+                    "type": "string"
+                },
+                "male_loves_count": {
+                    "description": "COUNT 字段",
+                    "type": "integer"
                 },
                 "male_user_data": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
@@ -7222,6 +7538,9 @@
                 "specialties": {
                     "type": "string"
                 },
+                "stats": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.MatchStatsInfo"
+                },
                 "visibility": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility"
                 },
@@ -7316,6 +7635,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "popularity": {
+                    "type": "integer"
                 },
                 "profession": {
                     "type": "string"
@@ -7862,6 +8184,32 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.MatchStatsInfo": {
+            "type": "object",
+            "properties": {
+                "dislike_count": {
+                    "type": "integer"
+                },
+                "like_count": {
+                    "type": "integer"
+                },
+                "loves_count": {
+                    "type": "integer"
+                },
+                "loves_people_count": {
+                    "type": "integer"
+                },
+                "opinion_match_count": {
+                    "type": "integer"
+                },
+                "opinion_split_count": {
+                    "type": "integer"
+                },
+                "relatives_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo": {
             "type": "object",
             "properties": {
@@ -7909,6 +8257,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "popularity": {
+                    "type": "integer"
                 },
                 "profession": {
                     "type": "string"
@@ -8269,6 +8620,42 @@
                 "MatchProfileAuditApproved",
                 "MatchProfileAuditRejected",
                 "MatchProfileAuditRevoked"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ],
+            "x-enum-comments": {
+                "MatchingChangeSourceFeelingDislike": "无感",
+                "MatchingChangeSourceFeelingLike": "关注",
+                "MatchingChangeSourceFeelingUndo": "撤销无感",
+                "MatchingChangeSourceLoves": "心动",
+                "MatchingChangeSourceOpinionHelpSelect": "帮TA选撮合/拆散",
+                "MatchingChangeSourceOpinionRecommend": "牵线推荐撮合/拆散"
+            },
+            "x-enum-descriptions": [
+                "关注",
+                "无感",
+                "撤销无感",
+                "心动",
+                "牵线推荐撮合/拆散",
+                "帮TA选撮合/拆散"
+            ],
+            "x-enum-varnames": [
+                "MatchingChangeSourceFeelingLike",
+                "MatchingChangeSourceFeelingDislike",
+                "MatchingChangeSourceFeelingUndo",
+                "MatchingChangeSourceLoves",
+                "MatchingChangeSourceOpinionRecommend",
+                "MatchingChangeSourceOpinionHelpSelect"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource": {
