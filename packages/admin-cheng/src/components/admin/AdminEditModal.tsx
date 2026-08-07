@@ -132,6 +132,7 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
         layout="vertical"
         onFinish={handleSubmit}
         autoComplete="off"
+        scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
       >
         <Form.Item
           label="用户名"

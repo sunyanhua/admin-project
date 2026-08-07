@@ -13,6 +13,8 @@ export interface RichTextEditorProps {
   placeholder?: string;
   readOnly?: boolean;
   disabled?: boolean;
+  /** 是否显示图片上传按钮，默认 true */
+  showImageUpload?: boolean;
 }
 
 const modules = {
@@ -39,6 +41,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   placeholder,
   readOnly = false,
   disabled = false,
+  showImageUpload = true,
 }) => {
   const editorRef = useRef<any>(null);
   const [uploading, setUploading] = useState(false);
@@ -169,21 +172,23 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         placeholder={placeholder}
         readOnly={readOnly || disabled}
       />
-      <div style={{ marginTop: 8 }}>
-        <Button
-          size="small"
-          icon={<UploadOutlined />}
-          onClick={triggerImageUpload}
-          disabled={disabled}
-        >
-          上传图片
-        </Button>
-        {uploading && (
-          <span style={{ color: '#1890ff', fontSize: 13, marginLeft: 8 }}>
-            正在上传 {uploadCount} 张图片...
-          </span>
-        )}
-      </div>
+      {showImageUpload && (
+        <div style={{ marginTop: 8 }}>
+          <Button
+            size="small"
+            icon={<UploadOutlined />}
+            onClick={triggerImageUpload}
+            disabled={disabled}
+          >
+            上传图片
+          </Button>
+          {uploading && (
+            <span style={{ color: '#1890ff', fontSize: 13, marginLeft: 8 }}>
+              正在上传 {uploadCount} 张图片...
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };

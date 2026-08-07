@@ -295,6 +295,7 @@ const BannerManagement = () => {
           layout="vertical"
           onFinish={handleSubmit}
           autoComplete="off"
+          scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
         >
           <Form.Item
             label="标题"

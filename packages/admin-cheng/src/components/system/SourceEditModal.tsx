@@ -69,7 +69,7 @@ const SourceEditModal: React.FC<SourceEditModalProps> = ({ visible, onClose, sou
         </Space>
       }
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" initialValues={initialValues} key={source?.id}>
+      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" scrollToFirstError={{ behavior: 'smooth', block: 'center' }} initialValues={initialValues} key={source?.id}>
         <Form.Item label="来源名称" name="name" rules={[{ required: true, message: '请输入来源名称' }]}>
           <Input placeholder="请输入来源名称" maxLength={64} />
         </Form.Item>

@@ -1,6 +1,7 @@
 // 导出所有业务枚举 (v1 版本)
 export * from './user.enums';
 export * from './activity.enums';
+export * from './activity-v1.enums';
 export * from './moment.enums';
 export * from './order.enums';
 export * from './message.enums';
@@ -24,4 +25,5 @@ export * from './real.enums';
 export * from './tags.enums';
 export { UserStatus as UserStatusV6 } from './user-v6.enums';
 export * from './v6.wallet.enums';
+export * from './zone.enums';
 export * from './wxa.enums';

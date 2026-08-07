@@ -159,7 +159,7 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
       }
     >
       <Spin spinning={loadingDetail} tip="加载中...">
-      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
+      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" scrollToFirstError={{ behavior: 'smooth', block: 'center' }}>
         <Form.Item label="商品名称" name="title"
           rules={[{ required: true, message: '请输入商品名称' }, { max: 128, message: '最多128个字符' }]}>
           <Input placeholder="请输入商品名称" />

@@ -95,6 +95,7 @@ const AddAdminModal: React.FC<AddAdminModalProps> = ({ visible, roles = [], onCl
         layout="vertical"
         onFinish={handleSubmit}
         autoComplete="off"
+        scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
       >
         <Form.Item
           label="用户名"

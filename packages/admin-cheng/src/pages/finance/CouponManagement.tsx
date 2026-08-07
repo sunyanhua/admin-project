@@ -342,7 +342,7 @@ const CouponManagement = () => {
           </Space>
         }
       >
-        <Form form={editForm} layout="vertical" onFinish={handleEditSubmit} autoComplete="off">
+        <Form form={editForm} layout="vertical" onFinish={handleEditSubmit} autoComplete="off" scrollToFirstError={{ behavior: 'smooth', block: 'center' }}>
           {renderFormFields(editForm, [], () => {}, true)}
         </Form>
       </ScrollableModal>

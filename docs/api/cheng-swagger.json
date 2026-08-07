@@ -138,6 +138,62 @@
             }
         },
         "/admin/v1/activity/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "按 ID 查询活动详情",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "活动详情（管理后台）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityAdminResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -363,6 +419,82 @@
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivitySortOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityAdminResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/activity/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "启用或禁用指定活动",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "更新活动状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态变更请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityStatusRequest"
                         }
                     }
                 ],
@@ -6702,6 +6834,70 @@
             }
         },
         "/admin/v1/zone": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询专区列表",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Zone"
+                ],
+                "summary": "专区列表（管理后台）",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "状态筛选（0=启用 1=禁用）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_zone_model.ZoneAdminResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -6765,6 +6961,62 @@
             }
         },
         "/admin/v1/zone/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "按 ID 查询专区详情",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Zone"
+                ],
+                "summary": "专区详情（管理后台）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "专区 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_zone_model.ZoneAdminResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
             "put": {
                 "security": [
                     {
@@ -7081,6 +7333,82 @@
                 }
             }
         },
+        "/admin/v1/zone/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "启用或禁用指定专区",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Zone"
+                ],
+                "summary": "更新专区状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "专区 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态变更请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_zone_model.ZoneStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_zone_model.ZoneAdminResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/activity": {
             "get": {
                 "description": "分页查询启用状态的活动列表（无需鉴权）",
@@ -7363,7 +7691,7 @@
         },
         "/api/v1/cms/banners": {
             "get": {
-                "description": "无需认证。按展示位 code 查询上架且当前时间在有效期内的广告位，按 sort_order 降序返回。",
+                "description": "无需认证。slot 为空时返回全部上架且有效的 banner；指定 slot 时按展示位 code 筛选。按 sort_order 降序返回。",
                 "produces": [
                     "application/json"
                 ],
@@ -7374,10 +7702,9 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "展示位 code（如 home_top / activity_pop）",
+                        "description": "展示位 code（如 home_top / activity_pop），不传返回全部",
                         "name": "slot",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -7400,12 +7727,6 @@
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "400": {
-                        "description": "缺少 slot 参数",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     },
                     "404": {
@@ -7454,7 +7775,7 @@
         },
         "/api/v1/cms/helps": {
             "get": {
-                "description": "无需认证。按分类 ID 查询该分类下所有启用状态的帮助条目。",
+                "description": "无需认证。category_id 为空时返回全部启用条目；指定时按分类筛选。",
                 "produces": [
                     "application/json"
                 ],
@@ -7465,10 +7786,9 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "帮助分类 ID（UUID）",
+                        "description": "帮助分类 ID（UUID），不传返回全部",
                         "name": "category_id",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -7491,12 +7811,6 @@
                                     }
                                 }
                             ]
-                        }
-                    },
-                    "400": {
-                        "description": "缺少 category_id 参数",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     }
                 }
@@ -8836,7 +9150,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "牵线用户（红娘）对配对组合（男方+女方）执行撮合或拆散操作。配对 ID 由服务端根据男女双方 ID 独立计算。不允许多次对同一配对操作同一类型。撮合+1 匹配度（帮TA选来源 +20），拆散-1 匹配度（帮TA选来源 -20）。帮TA选来源需校验亲友团关系。撮合操作若使匹配度达到 1314 阈值则触发 IM 开通。操作后加入已操作集合。",
+                "description": "牵线用户（红娘）对配对组合（男方+女方）执行撮合或拆散操作。配对 ID 由服务端根据男女双方 ID 独立计算。不允许多次对同一配对操作同一类型。撮合+1 匹配度（帮TA选来源 +20），拆散-1 匹配度（帮TA选来源 -20）。帮TA选来源需校验亲友团关系。撮合操作若使匹配度达到 1314 阈值则触发 IM 开通。操作后加入已操作集合。注意：匹配者仅需基础资料审核通过即可发起操作，不要求脱单档案——与自身脱单资料状态无关。",
                 "consumes": [
                     "application/json"
                 ],
@@ -8902,7 +9216,7 @@
                         }
                     },
                     "422": {
-                        "description": "配对资格不满足（code=40310：审核未通过/性别未设置/账户已停用；code=42217：不能对自己操作）",
+                        "description": "配对资格不满足（code=40310：匹配者基础资料未通过/男女方基础或脱单档案未通过/性别未设置/账户已停用；code=42217：男女不能为同一用户）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -10634,6 +10948,22 @@
             "properties": {
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=禁用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
                 }
             }
         },
@@ -12889,6 +13219,12 @@
                 "is_active": {
                     "type": "boolean"
                 },
+                "is_org_certified": {
+                    "type": "boolean"
+                },
+                "is_real_verified": {
+                    "type": "boolean"
+                },
                 "marital_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
@@ -13541,6 +13877,12 @@
                 "is_active": {
                     "type": "boolean"
                 },
+                "is_org_certified": {
+                    "type": "boolean"
+                },
+                "is_real_verified": {
+                    "type": "boolean"
+                },
                 "marital_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
                 },
@@ -13650,6 +13992,12 @@
                 },
                 "income_range": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                },
+                "is_org_certified": {
+                    "type": "boolean"
+                },
+                "is_real_verified": {
+                    "type": "boolean"
                 },
                 "marital_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
@@ -14063,19 +14411,27 @@
                         }
                     ]
                 },
+                "match_stats": {
+                    "description": "MatchStats 被操作统计（v6_user_match_stats LEFT JOIN，行不存在时返回全零默认值）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.MatchStatsInfo"
+                        }
+                    ]
+                },
+                "opinion_stats": {
+                    "description": "OpinionStats 嗑学成绩单（v6_user_opinion_stats LEFT JOIN，行不存在时返回全零默认值）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.OpinionStatsInfo"
+                        }
+                    ]
+                },
                 "profile": {
                     "description": "Profile 基础资料（v6_user_profile 非管理字段，未填写时为 null）。",
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.ProfileInfo"
-                        }
-                    ]
-                },
-                "stats": {
-                    "description": "Stats 被操作统计（v6_user_match_stats LEFT JOIN，行不存在时返回全零默认值）。",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.MatchStatsInfo"
                         }
                     ]
                 },
@@ -14457,6 +14813,22 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_zone_model.ZoneStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=禁用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleInfo": {
             "type": "object",
             "properties": {
@@ -14586,6 +14958,29 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.OpinionStatsInfo": {
+            "type": "object",
+            "properties": {
+                "almost_broke_count": {
+                    "type": "integer"
+                },
+                "beat_lovebirds_count": {
+                    "type": "integer"
+                },
+                "helped_succeed_count": {
+                    "type": "integer"
+                },
+                "icing_on_cake_count": {
+                    "type": "integer"
+                },
+                "mismatched_count": {
+                    "type": "integer"
+                },
+                "started_fate_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile": {
             "type": "object",
             "properties": {
@@ -14635,6 +15030,12 @@
                 },
                 "income_range": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                },
+                "is_org_certified": {
+                    "type": "boolean"
+                },
+                "is_real_verified": {
+                    "type": "boolean"
                 },
                 "marital_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"

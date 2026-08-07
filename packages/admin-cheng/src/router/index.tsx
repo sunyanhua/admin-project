@@ -28,6 +28,14 @@ import UserList from '@/pages/community/UserList';
 import MatchProfileManagement from '@/pages/community/MatchProfileManagement';
 import AgreementManagement from '@/pages/community/AgreementManagement';
 
+// 合作管理页面
+import ZoneManagement from '@/pages/operation/ZoneManagement';
+import ZoneApplicationList from '@/pages/operation/ZoneApplicationList';
+
+// 活动管理页面（v1）
+import ActivityManagement from '@/pages/operation/ActivityManagement';
+import ActivityRegisterList from '@/pages/operation/ActivityRegisterList';
+
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
 
@@ -99,9 +107,11 @@ const router = createHashRouter([
           // 活动管理
           { path: 'events', element: <EventList /> },
           { path: 'event-orders', element: <EventOrders /> },
+          { path: 'activity', element: <ActivityManagement /> },
+          { path: 'activity/:id/registers', element: <ActivityRegisterList /> },
           // 合作管理
-          { path: 'cooperation', element: <PlaceholderPage title="合作专区管理" /> },
-          { path: 'cooperation-verify', element: <PlaceholderPage title="专区用户认证" /> },
+          { path: 'cooperation', element: <ZoneManagement /> },
+          { path: 'cooperation-verify', element: <ZoneApplicationList /> },
           // 财务管理
           { path: 'orders', element: <PlaceholderPage title="订单管理" /> },
           { path: 'finance-stats', element: <PlaceholderPage title="财务统计" /> },

@@ -92,7 +92,7 @@ const EventCategoryEditModal: React.FC<EventCategoryEditModalProps> = ({
           </Button>
         </Space>
       }>
-      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off">
+      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" scrollToFirstError={{ behavior: 'smooth', block: 'center' }}>
         <Form.Item label="分类名称" name="name" rules={[{ required: true, message: '请输入分类名称' }, { max: 64, message: '最多64个字符' }]}>
           <Input placeholder="请输入分类名称" />
         </Form.Item>

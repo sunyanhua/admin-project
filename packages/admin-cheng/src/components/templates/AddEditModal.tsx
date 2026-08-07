@@ -81,6 +81,7 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
         layout="vertical"
         onFinish={onSubmit}
         autoComplete="off"
+        scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
       >
         {children}
       </Form>
