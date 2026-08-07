@@ -15,6 +15,8 @@ export interface RichTextEditorProps {
   disabled?: boolean;
   /** 是否显示图片上传按钮，默认 true */
   showImageUpload?: boolean;
+  /** 外层容器 className，用于自定义高度等样式 */
+  className?: string;
 }
 
 const modules = {
@@ -42,6 +44,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   readOnly = false,
   disabled = false,
   showImageUpload = true,
+  className,
 }) => {
   const editorRef = useRef<any>(null);
   const [uploading, setUploading] = useState(false);
@@ -161,7 +164,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [handleImageUpload]);
 
   return (
-    <div className="rich-text-editor">
+    <div className={`rich-text-editor${className ? ` ${className}` : ''}`}>
       <ReactQuill
         ref={editorRef}
         theme="snow"

@@ -19,8 +19,6 @@ import BannerManagement from '@/pages/system/BannerManagement';
 import FaqManagement from '@/pages/system/FaqManagement';
 
 // 运营管理页面
-import EventList from '@/pages/operation/EventManagement';
-import EventOrders from '@/pages/events/EventOrders';
 import PageConfigManagement from '@/pages/operation/PageConfigManagement';
 
 // 社区管理页面
@@ -34,7 +32,7 @@ import ZoneApplicationList from '@/pages/operation/ZoneApplicationList';
 
 // 活动管理页面（v1）
 import ActivityManagement from '@/pages/operation/ActivityManagement';
-import ActivityRegisterList from '@/pages/operation/ActivityRegisterList';
+import EventRegisterList from '@/pages/events/EventRegisterList';
 
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
@@ -105,10 +103,8 @@ const router = createHashRouter([
           { path: 'programs', element: <PlaceholderPage title="广播节目管理" /> },
           { path: 'program-submissions', element: <PlaceholderPage title="广播投稿管理" /> },
           // 活动管理
-          { path: 'events', element: <EventList /> },
-          { path: 'event-orders', element: <EventOrders /> },
           { path: 'activity', element: <ActivityManagement /> },
-          { path: 'activity/:id/registers', element: <ActivityRegisterList /> },
+          { path: 'event-orders', element: <EventRegisterList /> },
           // 合作管理
           { path: 'cooperation', element: <ZoneManagement /> },
           { path: 'cooperation-verify', element: <ZoneApplicationList /> },

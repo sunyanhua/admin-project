@@ -37,7 +37,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   value,
   onChange,
   disabled = false,
-  accept = 'image/*',
+  accept = '.jpg,.jpeg,.png,.gif,.webp,.bmp',
   maxSize = 5,
   uploadText = '上传图片',
   reuploadText = '重新上传',

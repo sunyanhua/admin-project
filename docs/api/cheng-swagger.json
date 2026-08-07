@@ -17,7 +17,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询活动列表",
+                "description": "分页查询活动列表，支持按状态和专区筛选",
                 "produces": [
                     "application/json"
                 ],
@@ -30,6 +30,12 @@
                         "type": "integer",
                         "description": "状态筛选（0=启用 1=禁用）",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "专区 ID（可选，筛选指定专区下的活动）",
+                        "name": "zone_id",
                         "in": "query"
                     },
                     {
@@ -81,7 +87,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "创建新的免费活动",
+                "description": "创建新的活动。支持免费/收费/需审核三种类型，可选关联专区、区分性别报名。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动计算），false=不区分（仅传 slots）",
                 "consumes": [
                     "application/json"
                 ],
@@ -144,7 +150,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "按 ID 查询活动详情",
+                "description": "按 ID 查询活动详情。响应字段说明：activity_type（0=免费 1=收费 2=需审核）、\nstatus（0=启用 1=禁用）、gender_enabled（是否区分性别报名）、\nmale_slots/female_slots（gender_enabled=true 时分别为男女名额上限，null 表示不区分）、\nmale_registered_count/female_registered_count（gender_enabled=true 时分别为已报名男女计数）",
                 "produces": [
                     "application/json"
                 ],
@@ -200,7 +206,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "编辑活动信息（PATCH 指针语义）",
+                "description": "编辑活动信息（PATCH 指针语义——仅传需要修改的字段）。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动重算），false=不区分（直接传 slots）",
                 "consumes": [
                     "application/json"
                 ],
@@ -320,7 +326,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询指定活动的报名记录",
+                "description": "分页查询指定活动的报名记录。响应字段：pay_status（0=待支付 1=已支付 2=已退款）、\naudit_status（0=待审核 1=通过 2=拒绝）、gender（0=未设置 1=男 2=女）",
                 "produces": [
                     "application/json"
                 ],
@@ -469,7 +475,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "启用或禁用指定活动",
+                "description": "启用或禁用指定活动。status: 0=启用 1=禁用",
                 "consumes": [
                     "application/json"
                 ],
@@ -489,7 +495,7 @@
                         "required": true
                     },
                     {
-                        "description": "状态变更请求",
+                        "description": "状态变更请求（status: 0=启用 1=禁用）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -1232,7 +1238,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建新的文章，支持设置上架/下架状态。创建时如状态为上架，自动写入发布时间。",
+                "description": "创建新的文章。status: 0=上架 1=下架。创建时如状态为上架（0），自动写入发布时间。",
                 "consumes": [
                     "application/json"
                 ],
@@ -1744,7 +1750,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建新的广告展示位，code 全局唯一。",
+                "description": "创建新的广告展示位，code 全局唯一。status: 0=启用 1=禁用",
                 "consumes": [
                     "application/json"
                 ],
@@ -1937,7 +1943,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "部分更新广告展示位信息（PATCH 指针语义）。",
+                "description": "部分更新广告展示位信息（PATCH 指针语义）。status: 0=启用 1=禁用",
                 "consumes": [
                     "application/json"
                 ],
@@ -2092,7 +2098,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建新的广告位，支持多展示位、时间范围、跳转链接。",
+                "description": "创建新的广告位，支持多展示位、时间范围、跳转链接。\nlink_type: 0=无跳转 1=外部URL 2=内部路径；status: 0=上架 1=下架（响应中）",
                 "consumes": [
                     "application/json"
                 ],
@@ -2167,7 +2173,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "按 ID 查询单个广告位。",
+                "description": "按 ID 查询单个广告位。响应字段：status（0=上架 1=下架）、link_type（0=无跳转 1=外部URL 2=内部路径）",
                 "consumes": [
                     "application/json"
                 ],
@@ -2285,7 +2291,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "部分更新广告位信息（PATCH 指针语义）。",
+                "description": "部分更新广告位信息（PATCH 指针语义）。link_type: 0=无跳转 1=外部URL 2=内部路径",
                 "consumes": [
                     "application/json"
                 ],
@@ -2449,7 +2455,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "切换广告位的上架/下架状态。",
+                "description": "切换广告位的上架/下架状态。status: 0=上架 1=下架",
                 "consumes": [
                     "application/json"
                 ],
@@ -3076,7 +3082,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建新的帮助条目（FAQ），可挂载到帮助分类。",
+                "description": "创建新的帮助条目（FAQ），可挂载到帮助分类。status: 0=启用 1=停用",
                 "consumes": [
                     "application/json"
                 ],
@@ -3518,7 +3524,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建新的前端配置项。key 须匹配 ^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$ 正则且全局唯一。value 按 type 校验格式。",
+                "description": "创建新的前端配置项。key 须匹配 ^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$ 正则且全局唯一。\nvalue 按 type 校验格式。type: 0=string 1=number 2=bool 3=json 4=text 5=image",
                 "consumes": [
                     "application/json"
                 ],
@@ -3599,7 +3605,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "按 ID 查询单个设置项。",
+                "description": "按 ID 查询单个设置项。响应字段：type（0=string 1=number 2=bool 3=json 4=text 5=image）、\nstatus（0=启用 1=停用）",
                 "consumes": [
                     "application/json"
                 ],
@@ -3717,7 +3723,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "部分更新设置项信息（PATCH 指针语义）。key 不可修改，value 按当前或新 type 校验。",
+                "description": "部分更新设置项信息（PATCH 指针语义）。key 不可修改，value 按当前或新 type 校验。\ntype: 0=string 1=number 2=bool 3=json 4=text 5=image",
                 "consumes": [
                     "application/json"
                 ],
@@ -6904,7 +6910,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "创建新的专区",
+                "description": "创建新的专区。status: 0=启用 1=禁用；agreement: 用户协议（前端控制内容，服务端透明存储）",
                 "consumes": [
                     "application/json"
                 ],
@@ -6967,7 +6973,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "按 ID 查询专区详情",
+                "description": "按 ID 查询专区详情。响应字段：status（0=启用 1=禁用）",
                 "produces": [
                     "application/json"
                 ],
@@ -7023,7 +7029,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "编辑专区信息（PATCH 指针语义）",
+                "description": "编辑专区信息（PATCH 指针语义）。status: 0=启用 1=禁用",
                 "consumes": [
                     "application/json"
                 ],
@@ -7143,7 +7149,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询指定专区的申请记录",
+                "description": "分页查询指定专区的申请记录。响应字段 status: 0=待审核 1=已通过 2=已拒绝 3=已撤销",
                 "produces": [
                     "application/json"
                 ],
@@ -7340,7 +7346,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "启用或禁用指定专区",
+                "description": "启用或禁用指定专区。status: 0=启用 1=禁用",
                 "consumes": [
                     "application/json"
                 ],
@@ -7360,7 +7366,7 @@
                         "required": true
                     },
                     {
-                        "description": "状态变更请求",
+                        "description": "状态变更请求（status: 0=启用 1=禁用）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -7411,7 +7417,7 @@
         },
         "/api/v1/activity": {
             "get": {
-                "description": "分页查询启用状态的活动列表（无需鉴权）",
+                "description": "分页查询启用状态的活动列表（无需鉴权），支持按专区筛选",
                 "produces": [
                     "application/json"
                 ],
@@ -7420,6 +7426,12 @@
                 ],
                 "summary": "公开活动列表",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "专区 ID（可选，筛选指定专区下的活动）",
+                        "name": "zone_id",
+                        "in": "query"
+                    },
                     {
                         "type": "integer",
                         "description": "页码（默认 1）",
@@ -10816,6 +10828,10 @@
                 "activity_type": {
                     "type": "integer"
                 },
+                "agreement": {
+                    "description": "用户协议",
+                    "type": "string"
+                },
                 "cover": {
                     "type": "string"
                 },
@@ -10837,14 +10853,41 @@
                 "fee": {
                     "type": "integer"
                 },
+                "female_registered_count": {
+                    "description": "已报名女性人数",
+                    "type": "integer"
+                },
+                "female_slots": {
+                    "description": "女性名额（gender_enabled=true 时有值）",
+                    "type": "integer"
+                },
                 "form_config": {
                     "type": "string"
+                },
+                "gender_enabled": {
+                    "description": "是否区分性别报名",
+                    "type": "boolean"
+                },
+                "hidden": {
+                    "description": "是否隐藏",
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
                 },
+                "image": {
+                    "type": "string"
+                },
                 "location": {
                     "type": "string"
+                },
+                "male_registered_count": {
+                    "description": "已报名男性人数",
+                    "type": "integer"
+                },
+                "male_slots": {
+                    "description": "男性名额（gender_enabled=true 时有值）",
+                    "type": "integer"
                 },
                 "register_end": {
                     "type": "string"
@@ -10878,6 +10921,10 @@
                 },
                 "updated_by": {
                     "type": "string"
+                },
+                "zone_id": {
+                    "description": "关联专区 ID",
+                    "type": "string"
                 }
             }
         },
@@ -10886,6 +10933,10 @@
             "properties": {
                 "activity_type": {
                     "type": "integer"
+                },
+                "agreement": {
+                    "description": "用户协议",
+                    "type": "string"
                 },
                 "cover": {
                     "type": "string"
@@ -10902,14 +10953,41 @@
                 "fee": {
                     "type": "integer"
                 },
+                "female_registered_count": {
+                    "description": "已报名女性人数",
+                    "type": "integer"
+                },
+                "female_slots": {
+                    "description": "女性名额（gender_enabled=true 时有值）",
+                    "type": "integer"
+                },
                 "form_config": {
                     "type": "string"
+                },
+                "gender_enabled": {
+                    "description": "是否区分性别报名",
+                    "type": "boolean"
+                },
+                "hidden": {
+                    "description": "是否隐藏（列表不显示，详情不受限）",
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
                 },
+                "image": {
+                    "type": "string"
+                },
                 "location": {
                     "type": "string"
+                },
+                "male_registered_count": {
+                    "description": "已报名男性人数",
+                    "type": "integer"
+                },
+                "male_slots": {
+                    "description": "男性名额（gender_enabled=true 时有值）",
+                    "type": "integer"
                 },
                 "register_end": {
                     "type": "string"
@@ -10936,6 +11014,10 @@
                     "type": "integer"
                 },
                 "title": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "description": "关联专区 ID",
                     "type": "string"
                 }
             }
@@ -10970,11 +11052,6 @@
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.CreateActivityRequest": {
             "type": "object",
             "required": [
-                "end_time",
-                "register_end",
-                "register_start",
-                "slots",
-                "start_time",
                 "title"
             ],
             "properties": {
@@ -10986,6 +11063,10 @@
                         2
                     ]
                 },
+                "agreement": {
+                    "description": "用户协议（前端自主控制内容，服务端透明存储）",
+                    "type": "string"
+                },
                 "cover": {
                     "type": "string",
                     "maxLength": 512
@@ -10994,7 +11075,7 @@
                     "type": "string"
                 },
                 "end_time": {
-                    "description": "RFC3339",
+                    "description": "RFC3339（可选）",
                     "type": "string"
                 },
                 "extra_params": {
@@ -11003,32 +11084,53 @@
                 "fee": {
                     "type": "integer"
                 },
+                "female_slots": {
+                    "description": "女性名额（gender_enabled=true 时必填）",
+                    "type": "integer"
+                },
                 "form_config": {
+                    "type": "string"
+                },
+                "gender_enabled": {
+                    "description": "性别区分报名限额（gender_enabled=true 时使用 male_slots + female_slots，自动计算总 slots）",
+                    "type": "boolean"
+                },
+                "hidden": {
+                    "description": "是否隐藏（默认 false）",
+                    "type": "boolean"
+                },
+                "image": {
+                    "description": "活动展示图片",
                     "type": "string"
                 },
                 "location": {
                     "type": "string",
                     "maxLength": 512
                 },
+                "male_slots": {
+                    "description": "男性名额（gender_enabled=true 时必填）",
+                    "type": "integer"
+                },
                 "register_end": {
-                    "description": "RFC3339",
+                    "description": "RFC3339（可选）",
                     "type": "string"
                 },
                 "register_start": {
-                    "description": "RFC3339",
+                    "description": "RFC3339（可选）",
                     "type": "string"
                 },
                 "require_match_profile": {
                     "type": "boolean"
                 },
                 "slots": {
+                    "description": "总名额（gender_enabled=false 时必填，gender_enabled=true 时由 male_slots+female_slots 自动计算）",
                     "type": "integer"
                 },
                 "sort_order": {
                     "type": "integer"
                 },
                 "start_time": {
-                    "description": "RFC3339",
+                    "description": "RFC3339（可选）",
                     "type": "string"
                 },
                 "status": {
@@ -11042,6 +11144,10 @@
                 "title": {
                     "type": "string",
                     "maxLength": 256
+                },
+                "zone_id": {
+                    "description": "可选，关联专区",
+                    "type": "string"
                 }
             }
         },
@@ -11071,6 +11177,10 @@
                 },
                 "form_data": {
                     "type": "string"
+                },
+                "gender": {
+                    "description": "报名时用户性别（0=未设置 1=男 2=女）",
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
@@ -11130,6 +11240,10 @@
                 "form_data": {
                     "type": "string"
                 },
+                "gender": {
+                    "description": "报名时用户性别（0=未设置 1=男 2=女）",
+                    "type": "integer"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -11155,6 +11269,10 @@
                         2
                     ]
                 },
+                "agreement": {
+                    "description": "用户协议（前端自主控制内容，服务端透明存储）",
+                    "type": "string"
+                },
                 "cover": {
                     "type": "string",
                     "maxLength": 512
@@ -11171,12 +11289,31 @@
                 "fee": {
                     "type": "integer"
                 },
+                "female_slots": {
+                    "description": "女性名额",
+                    "type": "integer"
+                },
                 "form_config": {
+                    "type": "string"
+                },
+                "gender_enabled": {
+                    "type": "boolean"
+                },
+                "hidden": {
+                    "description": "是否隐藏",
+                    "type": "boolean"
+                },
+                "image": {
+                    "description": "活动展示图片",
                     "type": "string"
                 },
                 "location": {
                     "type": "string",
                     "maxLength": 512
+                },
+                "male_slots": {
+                    "description": "男性名额",
+                    "type": "integer"
                 },
                 "register_end": {
                     "type": "string"
@@ -11206,6 +11343,10 @@
                 "title": {
                     "type": "string",
                     "maxLength": 256
+                },
+                "zone_id": {
+                    "description": "可选，关联专区",
+                    "type": "string"
                 }
             }
         },
@@ -14677,6 +14818,10 @@
                 "name"
             ],
             "properties": {
+                "agreement": {
+                    "description": "用户协议（前端自主控制内容，服务端透明存储）",
+                    "type": "string"
+                },
                 "banner": {
                     "type": "string",
                     "maxLength": 512
@@ -14728,6 +14873,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_zone_model.UpdateZoneRequest": {
             "type": "object",
             "properties": {
+                "agreement": {
+                    "description": "用户协议（前端自主控制内容，服务端透明存储）",
+                    "type": "string"
+                },
                 "banner": {
                     "type": "string",
                     "maxLength": 512
@@ -14758,6 +14907,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_zone_model.ZoneAdminResponse": {
             "type": "object",
             "properties": {
+                "agreement": {
+                    "description": "用户协议",
+                    "type": "string"
+                },
                 "banner": {
                     "type": "string"
                 },
@@ -14793,6 +14946,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_zone_model.ZonePublicResponse": {
             "type": "object",
             "properties": {
+                "agreement": {
+                    "description": "用户协议",
+                    "type": "string"
+                },
                 "banner": {
                     "type": "string"
                 },

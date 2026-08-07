@@ -84,7 +84,7 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   );
 
   const uploadArea = (
-    <Upload showUploadList={false} beforeUpload={handleUpload} accept="image/*" multiple={!cropAspect}>
+    <Upload showUploadList={false} beforeUpload={handleUpload} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" multiple={!cropAspect}>
       {uploadButton}
     </Upload>
   );
@@ -115,7 +115,9 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
         {canUpload && cropAspect ? (
           <ImgCrop aspect={cropAspect} quality={0.9} zoomSlider rotationSlider showReset
             modalTitle="裁剪图片" modalOk="确定" modalCancel="取消">
-            {uploadArea}
+            <Upload showUploadList={false} beforeUpload={handleUpload} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" multiple={false}>
+              {uploadButton}
+            </Upload>
           </ImgCrop>
         ) : (canUpload && uploadArea)}
       </div>

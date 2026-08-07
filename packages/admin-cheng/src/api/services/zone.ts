@@ -12,6 +12,7 @@ export interface Zone {
   banner: string;
   description: string;
   form_config: string;
+  agreement: string;
   member_count: number;
   status: number; // 0=启用 1=禁用
   created_at?: string;
@@ -24,6 +25,7 @@ export interface CreateZoneRequest {
   banner?: string;
   description?: string;
   form_config?: string;
+  agreement?: string;
   status?: number;
 }
 
@@ -33,6 +35,7 @@ export interface UpdateZoneRequest {
   banner?: string;
   description?: string;
   form_config?: string;
+  agreement?: string;
   status?: number;
 }
 

@@ -41,8 +41,8 @@ const ZoneManagement = () => {
   }, []);
 
   const formatZoneResponse = useCallback((res: any) => {
-    const list = res?.list || [];
-    const total = res?.total ?? 0;
+    const list = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
     return { list, count: total };
   }, []);
 

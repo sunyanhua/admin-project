@@ -40,7 +40,7 @@ const ZoneApplicationList = () => {
   // 加载专区列表供下拉选择
   useEffect(() => {
     zoneApi.getList({ page: 1, size: 100 }).then((res: any) => {
-      const list = res?.list || [];
+      const list = Array.isArray(res) ? res : (res?.list || []);
       setZones(list);
       if (list.length > 0 && !selectedZoneId) {
         setSelectedZoneId(list[0].id);
@@ -57,8 +57,8 @@ const ZoneApplicationList = () => {
   }, [selectedZoneId]);
 
   const formatAppResponse = useCallback((res: any) => {
-    const list = res?.list || [];
-    const total = res?.total ?? 0;
+    const list = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
     // 前端按 status 筛选（接口不支持 status 参数）
     let filtered = list;
     if (searchValues.status !== '' && searchValues.status != null) {

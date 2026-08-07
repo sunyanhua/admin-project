@@ -1,5 +1,4 @@
 import request from '..';
-import { ActivityV1Status } from '@shared/constants';
 
 // ========================
 // 活动（Activity v1）
@@ -9,20 +8,29 @@ export interface Activity {
   id: string;
   title: string;
   cover: string;
+  image: string; // 活动图片（多图，JSON数组字符串）
   description: string;
-  activity_type: number; // 0/1/2
+  activity_type: number; // 0=免费先到先得 1=收费先交费先得 2=免费审核筛选
   start_time: string;
   end_time: string;
   register_start: string;
   register_end: string;
-  location: string;
-  fee: number;
+  location: string; // JSON: {name, coordinate?}
+  fee: number; // 分
   slots: number;
   form_config: string;
   extra_params: string;
+  agreement: string;
   require_match_profile: boolean;
+  zone_id?: string;
+  gender_enabled?: boolean;
+  male_slots?: number;
+  female_slots?: number;
+  male_registered_count?: number;
+  female_registered_count?: number;
   sort_order: number;
-  status: number; // 0=启用 1=禁用
+  status: number; // 0=上线 1=下线
+  hidden: boolean;
   registered_count: number;
   created_by?: string;
   updated_by?: string;
@@ -32,26 +40,34 @@ export interface Activity {
 
 export interface CreateActivityRequest {
   title: string;
-  cover?: string;
-  activity_type?: number;
+  cover: string;
+  image: string;
+  activity_type: number;
   description?: string;
   start_time: string;
   end_time: string;
   register_start: string;
   register_end: string;
-  location?: string;
+  location: string;
   fee?: number;
-  slots: number;
+  slots?: number;
+  male_slots?: number;
+  female_slots?: number;
   form_config?: string;
   extra_params?: string;
+  agreement?: string;
   require_match_profile?: boolean;
+  zone_id?: string;
+  gender_enabled?: boolean;
   sort_order?: number;
   status?: number;
+  hidden?: boolean;
 }
 
 export interface UpdateActivityRequest {
   title?: string;
   cover?: string;
+  image?: string;
   activity_type?: number;
   description?: string;
   start_time?: string;
@@ -61,15 +77,17 @@ export interface UpdateActivityRequest {
   location?: string;
   fee?: number;
   slots?: number;
+  male_slots?: number;
+  female_slots?: number;
   form_config?: string;
   extra_params?: string;
+  agreement?: string;
   require_match_profile?: boolean;
+  zone_id?: string;
+  gender_enabled?: boolean;
   sort_order?: number;
   status?: number;
-}
-
-export interface ActivitySortOrderRequest {
-  sort_order: number;
+  hidden?: boolean;
 }
 
 // ========================
@@ -83,8 +101,8 @@ export interface RegisterRecord {
   form_data: string;
   extra_data: string;
   attachments: string[];
-  audit_status: number; // 0=待审核 1=通过 2=拒绝
-  pay_status: number; // 0=未支付 1=已支付 2=已退款
+  audit_status: number;
+  pay_status: number;
   checkin_at?: string;
   created_at?: string;
   updated_at?: string;
@@ -101,7 +119,7 @@ export const activityApi = {
     return request.post('/admin/v1/activity', data);
   },
 
-  /** 编辑活动（PATCH 指针语义，部分更新） */
+  /** 编辑活动 */
   update: (id: string, data: UpdateActivityRequest) => {
     return request.put(`/admin/v1/activity/${id}`, data);
   },

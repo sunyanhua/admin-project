@@ -1,10 +1,9 @@
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
 import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { ActivityV1Status, ActivityTypeLabels } from '@shared/constants';
+import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
 import { getMediumUrl } from '@/utils/imageUtils';
 import { activityApi, Activity } from '@/api/services/activity-v1';
 import { useListPage } from '@/hooks/useListPage';
@@ -14,10 +13,11 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ActivityEditModal from '@/components/operation/ActivityEditModal';
+import ActivityRegisterModal from '@/components/operation/ActivityRegisterModal';
 
 const STATUS_OPTIONS = [
-  { label: '启用', value: ActivityV1Status.ENABLED },
-  { label: '禁用', value: ActivityV1Status.DISABLED },
+  { label: '上线', value: ActivityV1Status.ENABLED },
+  { label: '下线', value: ActivityV1Status.DISABLED },
 ];
 
 const filters: FilterConfig[] = [
@@ -26,11 +26,13 @@ const filters: FilterConfig[] = [
 ];
 
 const ActivityManagement = () => {
-  const navigate = useNavigate();
   const { success, error: showError } = useAppNotification();
   const [modalVisible, setModalVisible] = useState(false);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [registerModalVisible, setRegisterModalVisible] = useState(false);
+  const [registerActivityId, setRegisterActivityId] = useState('');
+  const [registerActivityTitle, setRegisterActivityTitle] = useState('');
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchActivities = useCallback(async (params: any) => {
@@ -42,8 +44,8 @@ const ActivityManagement = () => {
   }, []);
 
   const formatResponse = useCallback((res: any) => {
-    const list = res?.list || [];
-    const total = res?.total ?? 0;
+    const list = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
     return { list, count: total };
   }, []);
 
@@ -106,6 +108,12 @@ const ActivityManagement = () => {
     setEditingActivity(null);
   };
 
+  const handleShowRegisters = (record: Activity) => {
+    setRegisterActivityId(record.id);
+    setRegisterActivityTitle(record.title);
+    setRegisterModalVisible(true);
+  };
+
   const columns: ColumnsType<Activity> = [
     {
       title: '封面',
@@ -129,19 +137,38 @@ const ActivityManagement = () => {
       ),
     },
     {
-      title: '类型',
+      title: '方式',
       dataIndex: 'activity_type',
       key: 'activity_type',
       width: 100,
-      render: (v: number) => <Tag title={ActivityTypeLabels[v] ?? v}>{ActivityTypeLabels[v] ?? v}</Tag>,
+      render: (v: number) => {
+        const shortLabel: Record<number, string> = {
+          [ActivityType.FREE_FCFS]: '免费',
+          [ActivityType.PAID_FCFS]: '收费',
+          [ActivityType.FREE_REVIEW]: '审核',
+        };
+        return <Tag title={ActivityTypeLabels[v] ?? v}>{shortLabel[v] ?? v}</Tag>;
+      },
     },
     {
       title: '报名',
       key: 'register',
-      width: 90,
-      render: (_: any, r: Activity) => `${r.registered_count ?? 0}/${r.slots ?? 0}`,
+      width: 120,
+      render: (_: any, r: Activity) => {
+        if (r.gender_enabled) {
+          return `${r.male_registered_count ?? 0}/${r.male_slots ?? '-'}  ${r.female_registered_count ?? 0}/${r.female_slots ?? '-'}`;
+        }
+        return `${r.registered_count ?? 0}/${r.slots ?? '-'}`;
+      },
     },
-    statusSwitchColumn<Activity>('status', ActivityV1Status.ENABLED, ActivityV1Status.DISABLED, handleStatusToggle, '启用', '停用', 100),
+    statusSwitchColumn<Activity>('status', ActivityV1Status.ENABLED, ActivityV1Status.DISABLED, handleStatusToggle, '上线', '下线', 100),
+    {
+      title: '显示',
+      dataIndex: 'hidden',
+      key: 'hidden',
+      width: 80,
+      render: (v: boolean) => <Tag color={v ? 'default' : 'success'}>{v ? '隐藏' : '显示'}</Tag>,
+    },
     {
       title: '排序',
       dataIndex: 'sort_order',
@@ -171,7 +198,7 @@ const ActivityManagement = () => {
       render: (_: any, r: Activity) => (
         <Space size="small" className="action-buttons">
           <Button type="link" size="small" icon={<EyeOutlined />}
-            onClick={() => navigate(`/operation/activity/${r.id}/registers`, { state: { title: r.title } })}>
+            onClick={() => handleShowRegisters(r)}>
             报名
           </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>
@@ -226,6 +253,13 @@ const ActivityManagement = () => {
         activity={editingActivity}
         onClose={handleCloseModal}
         onSuccess={refresh}
+      />
+
+      <ActivityRegisterModal
+        visible={registerModalVisible}
+        activityId={registerActivityId}
+        activityTitle={registerActivityTitle}
+        onClose={() => setRegisterModalVisible(false)}
       />
     </>
   );

@@ -158,8 +158,6 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       label: '活动管理',
       children: [
         { key: '/operation/activity', icon: <CalendarOutlined />, label: '活动管理' },
-        { key: '/operation/events', icon: <FileTextOutlined />, label: '活动发布' },
-        { key: '/operation/event-orders', icon: <FormOutlined />, label: '活动报名' },
       ],
     },
 

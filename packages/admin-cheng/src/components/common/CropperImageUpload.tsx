@@ -87,7 +87,7 @@ const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
               <>
                 <ImgCrop aspect={aspect} quality={0.9} zoomSlider rotationSlider showReset
                   modalTitle="裁剪图片" modalOk="确定" modalCancel="取消">
-                  <Upload showUploadList={false} beforeUpload={handleUpload}>
+                  <Upload showUploadList={false} beforeUpload={handleUpload} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp">
                     <Button size="small" icon={<ScissorOutlined />} loading={uploading}>重新裁剪上传</Button>
                   </Upload>
                 </ImgCrop>
@@ -100,7 +100,7 @@ const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
         !disabled && (
           <ImgCrop aspect={aspect} quality={0.9} zoomSlider rotationSlider showReset
             modalTitle="裁剪图片" modalOk="确定" modalCancel="取消">
-            <Upload showUploadList={false} beforeUpload={handleUpload}>
+            <Upload showUploadList={false} beforeUpload={handleUpload} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp">
               {uploadButton}
             </Upload>
           </ImgCrop>

@@ -11,17 +11,17 @@ export const ActivityV1StatusLabels: Record<number, string> = {
   [ActivityV1Status.DISABLED]: '禁用',
 };
 
-// 活动类型（待确认：0/1/2 具体含义）
+// 活动类型（报名方式）
 export enum ActivityType {
-  TYPE_0 = 0,
-  TYPE_1 = 1,
-  TYPE_2 = 2,
+  FREE_FCFS = 0,   // 免费，先到先得
+  PAID_FCFS = 1,   // 收费，先交费先得
+  FREE_REVIEW = 2, // 免费，审核筛选
 }
 
 export const ActivityTypeLabels: Record<number, string> = {
-  [ActivityType.TYPE_0]: '类型0',
-  [ActivityType.TYPE_1]: '类型1',
-  [ActivityType.TYPE_2]: '类型2',
+  [ActivityType.FREE_FCFS]: '免费，先到先得',
+  [ActivityType.PAID_FCFS]: '收费，先交费先得',
+  [ActivityType.FREE_REVIEW]: '免费，审核筛选',
 };
 
 // 报名审核状态

@@ -7,6 +7,7 @@ import CropperImageUpload from '@/components/common/CropperImageUpload';
 import ImageUpload from '@/components/common/ImageUpload';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
 import FormConfigEditor from '@/components/operation/FormConfigEditor';
+import AgreementEditor from '@/components/operation/AgreementEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 
 export interface ZoneEditModalProps {
@@ -34,6 +35,7 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
             banner: zone.banner || '',
             description: zone.description || '',
             form_config: zone.form_config || '',
+            agreement: zone.agreement || '',
           });
         }, 0);
       } else {
@@ -54,6 +56,7 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
         banner: values.banner || '',
         description: values.description || '',
         form_config: values.form_config || '',
+        agreement: values.agreement || '',
         status: statusEnabled ? ZoneStatus.ENABLED : ZoneStatus.DISABLED,
       };
 
@@ -125,16 +128,26 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
           label="专区介绍"
           name="description"
         >
-          <RichTextEditor placeholder="请输入专区介绍" showImageUpload={false} />
+          <RichTextEditor placeholder="请输入专区介绍" showImageUpload={false} className="rich-text-editor-short" />
         </Form.Item>
 
-        <Form.Item
-          label="申请表单配置"
-          name="form_config"
-          extra="配置用户申请专区时需要填写的字段"
-        >
-          <FormConfigEditor />
-        </Form.Item>
+        {/* ====== 申请表单配置 ====== */}
+        <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>申请表单配置</div>
+          <div style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>配置用户申请专区时需要填写的字段</div>
+          <Form.Item name="form_config" style={{ marginBottom: 0 }}>
+            <FormConfigEditor />
+          </Form.Item>
+        </div>
+
+        {/* ====== 相关文档 ====== */}
+        <div style={{ background: '#fafafa', borderLeft: '3px solid #1677ff', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#1677ff' }}>相关文档</div>
+          <div style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>配置专区用户协议、隐私政策等文档，可添加多项</div>
+          <Form.Item name="agreement" style={{ marginBottom: 0 }}>
+            <AgreementEditor />
+          </Form.Item>
+        </div>
 
         <Form.Item label="状态">
           <Switch

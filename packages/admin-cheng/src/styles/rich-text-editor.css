@@ -27,3 +27,8 @@
 .rich-text-editor .ql-container.qlSnow {
   border-radius: 0 0 6px 6px;
 }
+
+/* 较低高度变体 */
+.rich-text-editor-short .ql-editor {
+  height: 280px;
+}
