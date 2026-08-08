@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button, Space, Form, Input, Switch, Select, InputNumber, DatePicker } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { ActivityV1Status, ActivityType, ActivityTypeLabels } from '@shared/constants';
@@ -37,6 +37,35 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
 
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
+  const initValues = useMemo(() => {
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false };
+    const type = activity.activity_type ?? ActivityType.FREE_FCFS;
+    let locName = '';
+    let locCoord = '';
+    try { const loc = JSON.parse(activity.location || '{}'); locName = loc.name || ''; locCoord = loc.coordinate || ''; } catch { locName = activity.location || ''; }
+    let imageUrls: string[] = [];
+    try { const img = JSON.parse(activity.image || '[]'); imageUrls = Array.isArray(img) ? img : []; } catch { /* ignore */ }
+    return {
+      title: activity.title || '',
+      cover: activity.cover || '',
+      zone_id: activity.zone_id || undefined,
+      gender_enabled: activity.gender_enabled ?? false,
+      image: imageUrls,
+      time_range: activity.start_time && activity.end_time ? [dayjs(activity.start_time), dayjs(activity.end_time)] : undefined,
+      register_range: activity.register_start && activity.register_end ? [dayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
+      location_name: locName,
+      location_coordinate: locCoord || '',
+      activity_type: type,
+      fee: (activity.fee ?? 0) / 100,
+      slots: activity.slots ?? undefined,
+      male_slots: activity.male_slots ?? undefined,
+      female_slots: activity.female_slots ?? undefined,
+      description: activity.description || '',
+      form_config: activity.form_config || '',
+      sort_order: activity.sort_order ?? 0,
+    };
+  }, [activity]);
+
   useEffect(() => {
     zoneApi.getList({ page: 1, size: 100 }).then((res: any) => {
       const list = Array.isArray(res) ? res : (res?.list || []);
@@ -45,53 +74,48 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   }, []);
 
   useEffect(() => {
-    if (visible) {
-      if (mode === 'edit' && activity) {
-        const type = activity.activity_type ?? ActivityType.FREE_FCFS;
-        setActivityType(type);
-        setStatusEnabled(activity.status === ActivityV1Status.ENABLED);
-        setHidden(activity.hidden ?? false);
-        setGenderEnabled(activity.gender_enabled ?? false);
+    if (!visible) return;
+    if (mode === 'edit' && activity) {
+      const type = activity.activity_type ?? ActivityType.FREE_FCFS;
+      setActivityType(type);
+      setStatusEnabled(activity.status === ActivityV1Status.ENABLED);
+      setHidden(activity.hidden ?? false);
+      setGenderEnabled(activity.gender_enabled ?? false);
 
-        let locName = '';
-        let locCoord = '';
-        try { const loc = JSON.parse(activity.location || '{}'); locName = loc.name || ''; locCoord = loc.coordinate || ''; } catch { locName = activity.location || ''; }
+      let locName = '';
+      let locCoord = '';
+      try { const loc = JSON.parse(activity.location || '{}'); locName = loc.name || ''; locCoord = loc.coordinate || ''; } catch { locName = activity.location || ''; }
 
-        let imageUrls: string[] = [];
-        try { const img = JSON.parse(activity.image || '[]'); imageUrls = Array.isArray(img) ? img : []; } catch { /* ignore */ }
+      let imageUrls: string[] = [];
+      try { const img = JSON.parse(activity.image || '[]'); imageUrls = Array.isArray(img) ? img : []; } catch { /* ignore */ }
 
-        setTimeout(() => {
-          form.setFieldsValue({
-            title: activity.title || '',
-            cover: activity.cover || '',
-            zone_id: activity.zone_id || undefined,
-            gender_enabled: activity.gender_enabled ?? false,
-            image: imageUrls,
-            time_range: activity.start_time && activity.end_time
-              ? [dayjs(activity.start_time), dayjs(activity.end_time)]
-              : undefined,
-            register_range: activity.register_start && activity.register_end
-              ? [dayjs(activity.register_start), dayjs(activity.register_end)]
-              : undefined,
-            location_name: locName,
-            location_coordinate: locCoord || '',
-            activity_type: type,
-            fee: (activity.fee ?? 0) / 100,
-            slots: activity.slots ?? undefined,
-            male_slots: activity.male_slots ?? undefined,
-            female_slots: activity.female_slots ?? undefined,
-            description: activity.description || '',
-            form_config: activity.form_config || '',
-            sort_order: activity.sort_order ?? 0,
-          });
-        }, 0);
-      } else {
-        setActivityType(ActivityType.FREE_FCFS);
-        setStatusEnabled(true);
-        setHidden(false);
-        setGenderEnabled(false);
-        setTimeout(() => form.resetFields(), 0);
-      }
+      setTimeout(() => {
+        form.setFieldsValue({
+          title: activity.title || '',
+          cover: activity.cover || '',
+          zone_id: activity.zone_id || undefined,
+          gender_enabled: activity.gender_enabled ?? false,
+          image: imageUrls,
+          time_range: activity.start_time && activity.end_time ? [dayjs(activity.start_time), dayjs(activity.end_time)] : undefined,
+          register_range: activity.register_start && activity.register_end ? [dayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
+          location_name: locName,
+          location_coordinate: locCoord || '',
+          activity_type: type,
+          fee: (activity.fee ?? 0) / 100,
+          slots: activity.slots ?? undefined,
+          male_slots: activity.male_slots ?? undefined,
+          female_slots: activity.female_slots ?? undefined,
+          description: activity.description || '',
+          form_config: activity.form_config || '',
+          sort_order: activity.sort_order ?? 0,
+        });
+      }, 50);
+    } else {
+      form.resetFields();
+      setActivityType(ActivityType.FREE_FCFS);
+      setStatusEnabled(true);
+      setHidden(false);
+      setGenderEnabled(false);
     }
   }, [visible, mode, activity, form]);
 
@@ -184,7 +208,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         onFinish={handleSubmit}
         autoComplete="off"
         scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
-        initialValues={{ activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false }}
+        initialValues={initValues}
       >
         {/* ====== 1. 活动标题 ====== */}
         <Form.Item

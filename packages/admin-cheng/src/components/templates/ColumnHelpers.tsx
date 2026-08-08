@@ -158,7 +158,7 @@ export function sortOrderColumn<T extends Record<string, any>>(
   width: number = 120,
 ) {
   return {
-    title: '排序',
+    title: '权重',
     dataIndex: 'sort_order',
     key: 'sort_order',
     width,

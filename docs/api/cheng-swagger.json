@@ -392,6 +392,77 @@
                 }
             }
         },
+        "/admin/v1/activity/{id}/register/{rid}/audit": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "审核指定活动的报名申请（通过/拒绝）。审核通过仅变更状态；审核拒绝则变更状态并释放名额。\naudit_status 枚举：0=待审核 1=通过 2=拒绝",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "审核活动报名",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "报名记录 ID（UUID）",
+                        "name": "rid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核请求（approved: true=通过 false=拒绝）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.AuditRegistrationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/activity/{id}/sort-order": {
             "patch": {
                 "security": [
@@ -7828,6 +7899,150 @@
                 }
             }
         },
+        "/api/v1/gifts": {
+            "get": {
+                "description": "无需认证。返回全部启用状态的礼物，按 sort_order 降序、created_at 升序排列。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-礼物"
+                ],
+                "summary": "礼物目录列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftPublicResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gifts/received/{userID}": {
+            "get": {
+                "description": "无需认证。按用户 ID 查询收到的礼物汇总，按礼物分组聚合。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-礼物"
+                ],
+                "summary": "用户收到礼物汇总",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 UUID",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftReceivedSummary"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "userID 参数缺失（code=40002）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在或未发布脱单档案（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/gifts/{id}": {
+            "get": {
+                "description": "无需认证。按 ID 查询单个礼物详情，仅返回启用状态的礼物。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口-礼物"
+                ],
+                "summary": "礼物详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "礼物 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftPublicResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "礼物 ID 缺失（code=40002）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "礼物不存在或已下架（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/settings/{key}": {
             "get": {
                 "description": "无需认证。按 key 读取已启用的设置项（status=0 且未软删除）。停用或不存在返回 404。",
@@ -8334,6 +8549,207 @@
                         "description": "刷新窗口未到或令牌已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/gifts": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "赠送礼物给目标用户，消耗金币增加接收方人气值。免费额度内不消耗金币。礼物直接送达无需接收方确认。不能给自己送礼物。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-礼物"
+                ],
+                "summary": "赠送礼物",
+                "parameters": [
+                    {
+                        "description": "送礼请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.SendGiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.SendGiftResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "礼物不存在或已下架/接收方不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "金币不足（code=40305）/ 自送禁止（code=42217）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "操作过于频繁（code=40004）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/gifts/received": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户收到的礼物记录，关联赠送方用户资料 + 礼物信息。按时间倒序排列，支持分页。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-礼物"
+                ],
+                "summary": "我收到的礼物",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.ReceivedGiftItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/gifts/sent": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户送出的礼物记录，关联接收方用户资料 + 礼物信息。按时间倒序排列，支持分页。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-礼物"
+                ],
+                "summary": "我送出的礼物",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.SentGiftItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -10511,6 +10927,12 @@
                         "description": "每页条数（默认 20，最大 50）",
                         "name": "size",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "渠道筛选（1=送礼 2=签到 3=注册 4=管理后台 5=撮合 6=迁移，不传=全部）",
+                        "name": "channel",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -11046,6 +11468,23 @@
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.AuditRegistrationRequest": {
+            "type": "object",
+            "required": [
+                "approved"
+            ],
+            "properties": {
+                "approved": {
+                    "description": "true=通过 false=拒绝",
+                    "type": "boolean"
+                },
+                "reason": {
+                    "description": "审核备注/原因",
+                    "type": "string",
+                    "maxLength": 500
                 }
             }
         },
@@ -12734,6 +13173,212 @@
                 },
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftBrief": {
+            "type": "object",
+            "properties": {
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftPublicResponse": {
+            "type": "object",
+            "properties": {
+                "free_quota": {
+                    "type": "integer"
+                },
+                "gift_type": {
+                    "type": "integer"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "price_cashs": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftReceivedGiftData": {
+            "type": "object",
+            "properties": {
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftReceivedSummary": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "gift": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftReceivedGiftData"
+                },
+                "total_popularity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftUserSummary": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.ReceivedGiftItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "from_uid": {
+                    "type": "string"
+                },
+                "from_user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftUserSummary"
+                },
+                "gift": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftBrief"
+                },
+                "gift_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.SendGiftRequest": {
+            "type": "object",
+            "required": [
+                "gift_id",
+                "to_uid"
+            ],
+            "properties": {
+                "gift_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "to_uid": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.SendGiftResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_log_id": {
+                    "type": "string"
+                },
+                "gift_name": {
+                    "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_gift_model.SentGiftItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "gift": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftBrief"
+                },
+                "gift_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "to_uid": {
+                    "type": "string"
+                },
+                "to_user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_gift_model.GiftUserSummary"
                 }
             }
         },
@@ -14637,6 +15282,9 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.WalletTransactionItem": {
             "type": "object",
             "properties": {
+                "channel": {
+                    "type": "integer"
+                },
                 "coins_after": {
                     "type": "integer"
                 },
@@ -14657,6 +15305,9 @@
                     "type": "integer"
                 },
                 "reason": {
+                    "type": "string"
+                },
+                "source_id": {
                     "type": "string"
                 }
             }

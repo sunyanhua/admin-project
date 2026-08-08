@@ -130,24 +130,21 @@ const ActivityManagement = () => {
       title: '标题',
       dataIndex: 'title',
       key: 'title',
-      render: (text: string) => (
-        <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => {}}>
-          <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', textAlign: 'left' }}>{text}</span>
-        </Button>
-      ),
-    },
-    {
-      title: '方式',
-      dataIndex: 'activity_type',
-      key: 'activity_type',
-      width: 100,
-      render: (v: number) => {
-        const shortLabel: Record<number, string> = {
-          [ActivityType.FREE_FCFS]: '免费',
-          [ActivityType.PAID_FCFS]: '收费',
-          [ActivityType.FREE_REVIEW]: '审核',
+      render: (text: string, r: Activity) => {
+        const typeTag: Record<number, { label: string; color: string }> = {
+          [ActivityType.FREE_FCFS]: { label: '免费', color: 'green' },
+          [ActivityType.PAID_FCFS]: { label: '收费', color: 'orange' },
+          [ActivityType.FREE_REVIEW]: { label: '审核', color: 'purple' },
         };
-        return <Tag title={ActivityTypeLabels[v] ?? v}>{shortLabel[v] ?? v}</Tag>;
+        const tag = typeTag[r.activity_type];
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => {}}>
+            <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', textAlign: 'left' }}>
+              {tag && <Tag color={tag.color} style={{ marginRight: 4, verticalAlign: 'middle' }}>{tag.label}</Tag>}
+              {text}
+            </span>
+          </Button>
+        );
       },
     },
     {
@@ -170,7 +167,7 @@ const ActivityManagement = () => {
       render: (v: boolean) => <Tag color={v ? 'default' : 'success'}>{v ? '隐藏' : '显示'}</Tag>,
     },
     {
-      title: '排序',
+      title: '权重',
       dataIndex: 'sort_order',
       key: 'sort_order',
       width: 120,
