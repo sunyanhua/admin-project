@@ -16888,6 +16888,10 @@
                 "description": {
                     "type": "string"
                 },
+                "form_config": {
+                    "description": "报名表单配置（JSON 字符串，前端自主解析）",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
