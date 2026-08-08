@@ -34,6 +34,9 @@ import ZoneApplicationList from '@/pages/operation/ZoneApplicationList';
 import ActivityManagement from '@/pages/operation/ActivityManagement';
 import EventRegisterList from '@/pages/events/EventRegisterList';
 
+// 礼物管理
+import GiftManagement from '@/pages/community/GiftManagement';
+
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
 
@@ -87,7 +90,7 @@ const router = createHashRouter([
           { path: 'match-profiles', element: <MatchProfileManagement /> },
           { path: 'user-verify', element: <PlaceholderPage title="用户认证" /> },
           // 互动管理
-          { path: 'gifts', element: <PlaceholderPage title="礼物管理" /> },
+          { path: 'gifts', element: <GiftManagement /> },
           { path: 'lottery', element: <PlaceholderPage title="抽奖管理" /> },
           // 社区统计
           { path: 'stats', element: <PlaceholderPage title="平台数据统计" /> },

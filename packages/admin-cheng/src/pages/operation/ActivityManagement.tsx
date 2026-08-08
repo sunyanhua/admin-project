@@ -40,6 +40,7 @@ const ActivityManagement = () => {
       page: params.page,
       size: params.page_size,
       status: params.status,
+      keyword: params.keyword,
     });
   }, []);
 

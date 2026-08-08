@@ -1,39 +1,39 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space, Image } from 'antd';
+import { Button, Space, InputNumber, Tag, Image } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { ZoneStatus } from '@shared/constants';
+import { GiftStatus } from '@shared/constants';
 import { getSmallUrl } from '@/utils/imageUtils';
-import { zoneApi, Zone } from '@/api/services/zone';
+import { giftApi, Gift } from '@/api/services/gift';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
-import ZoneEditModal from '@/components/operation/ZoneEditModal';
+import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
+import GiftEditModal from '@/components/community/GiftEditModal';
 
 const STATUS_OPTIONS = [
-  { label: '启用', value: ZoneStatus.ENABLED },
-  { label: '禁用', value: ZoneStatus.DISABLED },
+  { label: '启用', value: GiftStatus.ENABLED },
+  { label: '禁用', value: GiftStatus.DISABLED },
 ];
 
 const filters: FilterConfig[] = [
   { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
-  { name: 'keyword', placeholder: '搜索专区名称', type: 'input' },
+  { name: 'keyword', placeholder: '搜索礼物名称', type: 'input' },
 ];
 
-const ZoneManagement = () => {
+const GiftManagement = () => {
   const { success, error: showError } = useAppNotification();
   const [modalVisible, setModalVisible] = useState(false);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
-  const [editingZone, setEditingZone] = useState<Zone | null>(null);
+  const [editingGift, setEditingGift] = useState<Gift | null>(null);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
-  const fetchZones = useCallback(async (params: any) => {
-    return zoneApi.getList({
+  const fetchGifts = useCallback(async (params: any) => {
+    return giftApi.getList({
       page: params.page,
       size: params.page_size,
       status: params.status,
@@ -41,7 +41,7 @@ const ZoneManagement = () => {
     });
   }, []);
 
-  const formatZoneResponse = useCallback((res: any) => {
+  const formatResponse = useCallback((res: any) => {
     const list = Array.isArray(res) ? res : (res?.list || []);
     const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
     return { list, count: total };
@@ -54,27 +54,21 @@ const ZoneManagement = () => {
     onPageChange,
     refresh,
     search,
-  } = useListPage<Zone>({
-    fetchFn: fetchZones,
-    formatResponse: formatZoneResponse,
+  } = useListPage<Gift>({
+    fetchFn: fetchGifts,
+    formatResponse,
   });
 
   const handleSearchChange = (name: string, value: any) => {
     setSearchValues((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSearch = (vals: Record<string, any>) => {
-    search(vals);
-  };
+  const handleSearch = (vals: Record<string, any>) => { search(vals); };
+  const handleReset = () => { setSearchValues({}); search({}); };
 
-  const handleReset = () => {
-    setSearchValues({});
-    search({});
-  };
-
-  const handleStatusToggle = async (record: Zone, checked: boolean) => {
+  const handleStatusToggle = async (record: Gift, checked: boolean) => {
     try {
-      await zoneApi.toggleStatus(record.id, checked ? ZoneStatus.ENABLED : ZoneStatus.DISABLED);
+      await giftApi.toggleStatus(record.id, checked ? GiftStatus.ENABLED : GiftStatus.DISABLED);
       success('状态更新成功');
       refresh();
     } catch (err: any) {
@@ -82,32 +76,43 @@ const ZoneManagement = () => {
     }
   };
 
+  const handleSortChange = async (record: Gift, value: number | null) => {
+    if (value == null) return;
+    try {
+      await giftApi.update(record.id, { sort_order: value });
+      success('权重更新成功');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '权重更新失败');
+    }
+  };
+
   const handleAdd = () => {
     setEditMode('create');
-    setEditingZone(null);
+    setEditingGift(null);
     setModalVisible(true);
   };
 
-  const handleEdit = (record: Zone) => {
+  const handleEdit = (record: Gift) => {
     setEditMode('edit');
-    setEditingZone(record);
+    setEditingGift(record);
     setModalVisible(true);
   };
 
   const handleCloseModal = () => {
     setModalVisible(false);
-    setEditingZone(null);
+    setEditingGift(null);
   };
 
-  const columns: ColumnsType<Zone> = [
+  const columns: ColumnsType<Gift> = [
     {
-      title: 'Logo',
-      dataIndex: 'logo',
-      key: 'logo',
+      title: '图标',
+      dataIndex: 'icon',
+      key: 'icon',
       width: 80,
       render: (url: string) => (
         url
-          ? <Image src={getSmallUrl(url)} alt="logo" preview={{ src: url }} style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }} />
+          ? <Image src={getSmallUrl(url)} alt="icon" preview={{ src: url }} style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4 }} />
           : <span style={{ color: '#999' }}>-</span>
       ),
     },
@@ -118,26 +123,58 @@ const ZoneManagement = () => {
       render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
     },
     {
-      title: '成员数',
-      dataIndex: 'member_count',
-      key: 'member_count',
+      title: '人气值',
+      dataIndex: 'popularity',
+      key: 'popularity',
       width: 90,
-      render: (count?: number) => count ?? 0,
     },
-    statusSwitchColumn<Zone>('status', ZoneStatus.ENABLED, ZoneStatus.DISABLED, handleStatusToggle, '启用', '停用', 100),
-    dateTimeColumn<Zone>('created_at', '创建时间'),
+    {
+      title: '金币',
+      dataIndex: 'price_coins',
+      key: 'price_coins',
+      width: 90,
+      render: (v: number) => v ?? 0,
+    },
+    {
+      title: '兑换量',
+      dataIndex: 'redeemed_count',
+      key: 'redeemed_count',
+      width: 90,
+      render: (v: number) => v ?? 0,
+    },
+    statusSwitchColumn<Gift>('status', GiftStatus.ENABLED, GiftStatus.DISABLED, handleStatusToggle, '启用', '禁用', 100),
+    {
+      title: '权重',
+      dataIndex: 'sort_order',
+      key: 'sort_order',
+      width: 120,
+      render: (v: number | undefined, r: Gift) => (
+        <InputNumber
+          min={0}
+          value={v ?? 0}
+          style={{ width: 70 }}
+          onBlur={(e) => {
+            const val = e.target.value;
+            const num = val === '' ? undefined : parseInt(val);
+            if (num !== (r.sort_order ?? undefined)) {
+              handleSortChange(r, num ?? 0);
+            }
+          }}
+        />
+      ),
+    },
     ActionColumn({
       onEdit: (record) => handleEdit(record),
-      render: (record: Zone) => (
+      render: (record: Gift) => (
         <Space size="small" className="action-buttons">
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
           </Button>
-          {(record.member_count ?? 0) === 0 && (
+          {(record.redeemed_count ?? 0) === 0 && (
             <Button type="link" size="small" danger icon={<DeleteOutlined />}
               onClick={() => confirmDelete({
                 name: record.name,
-                deleteFn: () => zoneApi.delete(record.id),
+                deleteFn: () => giftApi.delete(record.id),
                 onSuccess: refresh,
               })}>
               删除
@@ -154,13 +191,13 @@ const ZoneManagement = () => {
   return (
     <>
       <StandardPage
-        title="合作专区管理"
-        description="管理合作专区，配置专区信息和申请表单。"
+        title="礼物管理"
+        description="管理平台礼物目录，配置礼物的类型、价格、人气值和图标。"
         showRefreshButton
         onRefresh={refresh}
         showAddButton
         onAdd={handleAdd}
-        addButtonText="创建专区"
+        addButtonText="创建礼物"
         searchArea={
           <SearchPanel
             filters={filters}
@@ -181,10 +218,10 @@ const ZoneManagement = () => {
         }
       />
 
-      <ZoneEditModal
+      <GiftEditModal
         visible={modalVisible}
         mode={editMode}
-        zone={editingZone}
+        gift={editingGift}
         onClose={handleCloseModal}
         onSuccess={refresh}
       />
@@ -192,4 +229,4 @@ const ZoneManagement = () => {
   );
 };
 
-export default ZoneManagement;
+export default GiftManagement;

@@ -65,6 +65,12 @@ function build() {
     preserveWebConfig('restore');
   }
 
+  // 清理临时目录
+  const tmpDir = path.join(__dirname, '..', `${outDir}-tmp`);
+  if (existsSync(tmpDir)) {
+    rmSync(tmpDir, { recursive: true, force: true });
+    console.log(`[build] Cleaned up: ${outDir}-tmp/`);
+  }
   console.log(`[build] Done: ${outDir}/`);
 }
 
