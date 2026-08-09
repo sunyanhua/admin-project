@@ -2,7 +2,6 @@ import axios from 'axios';
 
 // 全局消息处理（由 App 组件注入，解决 antd v5 静态方法无法消费 Context 的警告）
 let showError: (msg: string) => void = (msg) => {
-  // 兜底：如果 App 还未挂载，直接用 alert
   console.error(msg);
 };
 
@@ -21,6 +20,7 @@ export const ADMIN_USER_KEY = prefixed('admin_user');
 // Token 存储 key
 const ACCESS_TOKEN_KEY = prefixed('admin_access_token');
 const TOKEN_EXPIRY_KEY = prefixed('admin_token_expiry');
+const CREDENTIALS_KEY = prefixed('admin_credentials');
 
 export const getAccessToken = (): string | null => localStorage.getItem(ACCESS_TOKEN_KEY);
 export const getTokenExpiry = (): number => {
@@ -41,41 +41,74 @@ export const clearTokens = () => {
   localStorage.removeItem(TOKEN_EXPIRY_KEY);
 };
 
-// ====== 主动刷新调度 ======
-let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+// ====== 凭据存储（用于无 refresh 接口时自动重新登录） ======
 
-function scheduleRefresh() {
-  if (refreshTimer) clearTimeout(refreshTimer);
-  const expiry = getTokenExpiry();
-  if (!expiry) return;
-  const delay = expiry - Date.now();
-  if (delay <= 0) return; // 已经过期，等自然 401 触发刷新
-  // 在到期时间点自动刷新
-  refreshTimer = setTimeout(async () => {
-    const token = getAccessToken();
-    if (!token) return;
-    try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL || ''}/admin/v1/login/refresh`,
-        null,
-        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } },
-      );
-      if (res.data?.code === 0 && res.data?.data?.token) {
-        const { token: newToken } = res.data.data;
-        setTokens(newToken, '', 7200); // 刷新成功后重新调度
-        scheduleRefresh();
-      }
-    } catch { /* 刷新失败不处理，自然 401 会触发重新登录 */ }
-  }, delay);
+function encodeCredentials(username: string, password: string): string {
+  return btoa(`${username}:${password}`);
 }
 
-export function cancelRefreshScheduler() {
-  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
+function decodeCredentials(encoded: string): { username: string; password: string } | null {
+  try {
+    const decoded = atob(encoded);
+    const idx = decoded.indexOf(':');
+    if (idx <= 0) return null;
+    return { username: decoded.substring(0, idx), password: decoded.substring(idx + 1) };
+  } catch { return null; }
+}
+
+export function storeCredentials(username: string, password: string) {
+  localStorage.setItem(CREDENTIALS_KEY, encodeCredentials(username, password));
+}
+
+export function getStoredCredentials(): { username: string; password: string } | null {
+  const encoded = localStorage.getItem(CREDENTIALS_KEY);
+  return encoded ? decodeCredentials(encoded) : null;
+}
+
+export function clearCredentials() {
+  localStorage.removeItem(CREDENTIALS_KEY);
+}
+
+// ====== 自动重新登录（替代不存在的 refresh 接口） ======
+
+let relayinTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function doRelogin(): Promise<string | null> {
+  const creds = getStoredCredentials();
+  if (!creds) return null;
+  try {
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL || ''}/admin/v1/login`,
+      { username: creds.username, password: creds.password },
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+    if (res.data?.code === 0 && res.data?.data?.access_token) {
+      const { access_token, expires_at } = res.data.data;
+      const expiresIn = expires_at ? Math.max(0, expires_at - Math.floor(Date.now() / 1000)) : 43200;
+      setTokens(access_token, '', expiresIn);
+      scheduleRelogin();
+      return access_token;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
+function scheduleRelogin() {
+  if (relayinTimer) clearTimeout(relayinTimer);
+  const expiry = getTokenExpiry();
+  if (!expiry) return;
+  const delay = Math.max(0, expiry - Date.now());
+  if (delay <= 0) return;
+  relayinTimer = setTimeout(() => doRelogin(), delay);
+}
+
+export function cancelReloginScheduler() {
+  if (relayinTimer) { clearTimeout(relayinTimer); relayinTimer = null; }
 }
 
 // 初始化时恢复调度
 (function () {
-  if (getAccessToken()) scheduleRefresh();
+  if (getAccessToken()) scheduleRelogin();
 })();
 
 const instance = axios.create({
@@ -84,16 +117,16 @@ const instance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let isRelogging = false;
+let reloginSubscribers: ((token: string) => void)[] = [];
 
-function onTokenRefreshed(token: string) {
-  refreshSubscribers.forEach(cb => cb(token));
-  refreshSubscribers = [];
+function onReloginSuccess(token: string) {
+  reloginSubscribers.forEach(cb => cb(token));
+  reloginSubscribers = [];
 }
 
-function addRefreshSubscriber(cb: (token: string) => void) {
-  refreshSubscribers.push(cb);
+function addReloginSubscriber(cb: (token: string) => void) {
+  reloginSubscribers.push(cb);
 }
 
 instance.interceptors.request.use(
@@ -113,10 +146,9 @@ instance.interceptors.response.use(
     const { data } = response;
     if (data.code !== undefined) {
       if (data.code === 0) {
-          // PagedResponse: 保留 pagination 元数据 → { list, total, pagination }
-          if (data.pagination) return { list: data.data, total: data.pagination.total, pagination: data.pagination };
-          return data.data;
-        }
+        if (data.pagination) return { list: data.data, total: data.pagination.total, pagination: data.pagination };
+        return data.data;
+      }
       return Promise.reject({ response: { data: { message: data.message || '请求失败' } } });
     }
     if (data.data !== undefined) return data.data;
@@ -125,56 +157,44 @@ instance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // 401 → 尝试刷新 Token（文档：POST /admin/v1/login/refresh，需 AdminAuth，无 body）
+    // 401 → 用存储的凭据重新登录获取新 token（无 refresh 接口的替代方案）
     if (error.response?.status === 401 && !originalRequest._retry) {
-      if (!isRefreshing) {
+      if (!isRelogging) {
         originalRequest._retry = true;
-        isRefreshing = true;
-        try {
-          const oldToken = getAccessToken();
-          const refreshResponse = await axios.post(
-            `${import.meta.env.VITE_API_BASE_URL || ''}/admin/v1/login/refresh`,
-            null,
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                ...(oldToken ? { Authorization: `Bearer ${oldToken}` } : {}),
-              },
-            },
-          );
-          if (refreshResponse.data?.code === 0 && refreshResponse.data?.data?.token) {
-            const { token: newToken, expires_in } = refreshResponse.data.data;
-            setTokens(newToken, '', expires_in || 7200);
-            isRefreshing = false;
-            onTokenRefreshed(newToken);
-            originalRequest.headers.Authorization = `Bearer ${newToken}`;
-            return instance(originalRequest);
-          }
-        } catch {
-          isRefreshing = false;
-          refreshSubscribers = [];
+        isRelogging = true;
+        const newToken = await doRelogin();
+        isRelogging = false;
+        if (newToken) {
+          onReloginSuccess(newToken);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return instance(originalRequest);
         }
+        reloginSubscribers = [];
       } else {
         return new Promise((resolve) => {
-          addRefreshSubscriber((token: string) => {
+          addReloginSubscriber((token: string) => {
             originalRequest.headers.Authorization = `Bearer ${token}`;
             resolve(instance(originalRequest));
           });
         });
       }
 
-      // 刷新失败 → 退回登录
+      // 重新登录失败 → 退回登录页
+      cancelReloginScheduler();
       clearTokens();
+      clearCredentials();
       localStorage.removeItem(ADMIN_USER_KEY);
       window.location.href = window.location.pathname + '#/login';
       return Promise.reject(error);
     }
 
-    // HTTP 错误统一 reject，不做 UI 提示（由调用方自行处理，避免重复弹窗）
+    // 其他 HTTP 错误统一 reject
     if (error.response) {
       const { status } = error.response;
       if (status === 401) {
+        cancelReloginScheduler();
         clearTokens();
+        clearCredentials();
         localStorage.removeItem(ADMIN_USER_KEY);
         window.location.href = window.location.pathname + '#/login';
       }

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { authApi } from '@/api/services/auth';
-import { getAccessToken, setTokens, clearTokens, cancelRefreshScheduler, ADMIN_USER_KEY } from '@/api';
+import { getAccessToken, setTokens, clearTokens, cancelReloginScheduler, storeCredentials, clearCredentials, ADMIN_USER_KEY } from '@/api';
 
 interface MenuItem {
   name: string;
@@ -137,8 +137,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Swagger 返回 expires_at（Unix 时间戳），setTokens 需要 duration 秒数
     const expiresIn = loginRes?.expires_at
       ? Math.max(0, loginRes.expires_at - Math.floor(Date.now() / 1000))
-      : 7200;
+      : 43200;
     setTokens(accessToken, '', expiresIn);
+    storeCredentials(username, password);
 
     // 调用 profile 获取管理员完整信息
     await fetchProfile();
@@ -149,8 +150,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await authApi.logout();
     } finally {
-      cancelRefreshScheduler();
+      cancelReloginScheduler();
       clearTokens();
+      clearCredentials();
       localStorage.removeItem(ADMIN_USER_KEY);
       setUser(null);
       setMenu([]);
