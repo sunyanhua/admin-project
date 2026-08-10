@@ -32,6 +32,8 @@ const LotteryManagement = () => {
   const [prizeModalVisible, setPrizeModalVisible] = useState(false);
   const [prizeModalPoolId, setPrizeModalPoolId] = useState('');
   const [prizeModalPoolName, setPrizeModalPoolName] = useState('');
+  const [prizeModalPoolStart, setPrizeModalPoolStart] = useState('');
+  const [prizeModalPoolEnd, setPrizeModalPoolEnd] = useState('');
 
   // 中奖名单弹窗
   const [winnerModalVisible, setWinnerModalVisible] = useState(false);
@@ -121,7 +123,11 @@ const LotteryManagement = () => {
       render: (_: any, r: Pool) => (
         <Space size="small" className="action-buttons">
           <Button type="link" size="small" icon={<GiftOutlined />}
-            onClick={() => { setPrizeModalPoolId(r.id); setPrizeModalPoolName(r.name); setPrizeModalVisible(true); }}>奖品</Button>
+            onClick={() => {
+              setPrizeModalPoolId(r.id); setPrizeModalPoolName(r.name);
+              setPrizeModalPoolStart(r.start_time || ''); setPrizeModalPoolEnd(r.end_time || '');
+              setPrizeModalVisible(true);
+            }}>奖品</Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>编辑</Button>
           <Button type="link" size="small" danger icon={<DeleteOutlined />}
             onClick={() => confirmDelete({
@@ -156,6 +162,7 @@ const LotteryManagement = () => {
         onClose={() => setPoolModalVisible(false)} onSuccess={refresh} />
 
       <PrizeManageModal visible={prizeModalVisible} poolId={prizeModalPoolId} poolName={prizeModalPoolName}
+        poolStartTime={prizeModalPoolStart} poolEndTime={prizeModalPoolEnd}
         onClose={() => setPrizeModalVisible(false)} />
 
       <WinnerListModal visible={winnerModalVisible} poolId={winnerModalPoolId} poolName={winnerModalPoolName}

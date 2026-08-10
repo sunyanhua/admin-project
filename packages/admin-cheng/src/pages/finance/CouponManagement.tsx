@@ -4,6 +4,7 @@ import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import { EyeOutlined, SendOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 import { couponApi } from '@/api/services/coupon';
 import { categoryApi } from '@/api/services/category';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -118,8 +119,8 @@ const CouponManagement = () => {
         scope_ids: buildScopeIds(vals),
         allow_rollback: vals.allow_rollback ?? true,
       };
-      if (vals.start_time) couponBody.start_time = vals.start_time.toISOString();
-      if (vals.end_time) couponBody.end_time = vals.end_time.toISOString();
+      if (vals.start_time) couponBody.start_time = dayjsToApi(vals.start_time);
+      if (vals.end_time) couponBody.end_time = dayjsToApi(vals.end_time);
       const couponRes: any = await couponApi.createCoupon(couponBody);
       const couponId = couponRes?.id ?? couponRes?.data?.id;
       if (!couponId) { success('创建成功（领取规则创建失败）'); setAddModalOpen(false); refresh(); return; }

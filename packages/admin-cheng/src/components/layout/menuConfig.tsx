@@ -150,28 +150,19 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       ],
     },
 
-    // 2. 活动管理
+    // 2. 活动与合作
     {
       key: 'event-group',
       icon: <ShopOutlined />,
-      label: '活动管理',
+      label: '活动与合作',
       children: [
         { key: '/operation/activity', icon: <CalendarOutlined />, label: '活动管理' },
-      ],
-    },
-
-    // 3. 合作管理
-    {
-      key: 'cooperation-group',
-      icon: <ApartmentOutlined />,
-      label: '合作管理',
-      children: [
         { key: '/operation/cooperation', icon: <ApartmentOutlined />, label: '合作专区管理' },
         { key: '/operation/cooperation-verify', icon: <IdcardOutlined />, label: '专区用户认证' },
       ],
     },
 
-    // 4. 财务管理
+    // 3. 财务管理
     {
       key: 'finance-group',
       icon: <DollarOutlined />,

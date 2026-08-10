@@ -3,6 +3,7 @@ import { Form, Input, DatePicker, Button, Space } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { sourceApi } from '@/api/services/source';
 import { useAppNotification } from '@/hooks/useAppNotification';
+import { dayjsToApi } from '@/utils/format';
 
 export interface SourceAddModalProps {
   visible: boolean;
@@ -19,8 +20,8 @@ const SourceAddModal: React.FC<SourceAddModalProps> = ({ visible, onClose, onSuc
     try {
       setLoading(true);
       const data: any = { name: values.name, status: 0 };
-      if (values.start_time) data.start_time = values.start_time.toISOString();
-      if (values.end_time) data.end_time = values.end_time.toISOString();
+      if (values.start_time) data.start_time = dayjsToApi(values.start_time);
+      if (values.end_time) data.end_time = dayjsToApi(values.end_time);
       await sourceApi.createSource(data);
       success('添加成功');
       form.resetFields();

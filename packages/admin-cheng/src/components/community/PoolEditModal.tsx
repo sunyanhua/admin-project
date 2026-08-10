@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Button, Space, Form, Input, Switch, DatePicker } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { PoolType } from '@shared/constants';
+import { safeDayjs, dayjsToApi } from '@/utils/format';
 import { lotteryApi, Pool, CreatePoolRequest } from '@/api/services/lottery';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import dayjs, { Dayjs } from 'dayjs';
 
 export interface PoolEditModalProps {
   visible: boolean;
@@ -31,7 +31,7 @@ const PoolEditModal: React.FC<PoolEditModalProps> = ({ visible, mode, pool, onCl
           description: pool.description || '',
           icon: pool.icon || '',
           image: pool.image || '',
-          time_range: pool.start_time && pool.end_time ? [dayjs(pool.start_time), dayjs(pool.end_time)] : undefined,
+          time_range: pool.start_time && pool.end_time ? [safeDayjs(pool.start_time), safeDayjs(pool.end_time)] : undefined,
         });
       }, 50);
     } else {
@@ -51,8 +51,8 @@ const PoolEditModal: React.FC<PoolEditModalProps> = ({ visible, mode, pool, onCl
         description: mode === 'edit' ? (values.description || '') : undefined,
         icon: values.icon || '',
         image: values.image || '',
-        start_time: startTime ? (startTime as Dayjs).toISOString() : undefined,
-        end_time: endTime ? (endTime as Dayjs).toISOString() : undefined,
+        start_time: dayjsToApi(startTime as any),
+        end_time: dayjsToApi(endTime as any),
       };
       if (mode === 'edit' && pool) {
         await lotteryApi.updatePool(pool.id, payload);

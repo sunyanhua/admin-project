@@ -15,6 +15,7 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import dayjs, { Dayjs } from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 
 const STATUS_OPTIONS = [
   { label: '上线', value: BannerStatus.ONLINE },
@@ -154,8 +155,8 @@ const BannerManagement = () => {
         link_data: linkType !== BannerLinkType.NONE ? (values.link_data || '') : '',
         status: statusEnabled ? BannerStatus.ONLINE : BannerStatus.OFFLINE,
         sort_order: values.sort_order ?? undefined,
-        start_at: values.start_at ? (values.start_at as Dayjs).toISOString() : undefined,
-        end_at: values.end_at ? (values.end_at as Dayjs).toISOString() : undefined,
+        start_at: dayjsToApi(values.start_at as Dayjs),
+        end_at: dayjsToApi(values.end_at as Dayjs),
       };
 
       if (editingBanner) {

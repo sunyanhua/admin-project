@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Form, Input, DatePicker, Switch, Button, Space } from 'antd';
 import dayjs from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { Source, sourceApi } from '@/api/services/source';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -33,9 +34,9 @@ const SourceEditModal: React.FC<SourceEditModalProps> = ({ visible, onClose, sou
       setLoading(true);
       const data: any = { name: values.name };
       data.status = statusEnabled ? 0 : 1;
-      if (values.start_time) data.start_time = values.start_time.toISOString();
+      if (values.start_time) data.start_time = dayjsToApi(values.start_time);
       else data.start_time = '';
-      if (values.end_time) data.end_time = values.end_time.toISOString();
+      if (values.end_time) data.end_time = dayjsToApi(values.end_time);
       else data.end_time = '';
       await sourceApi.updateSource(source.id, data);
       success('更新成功');

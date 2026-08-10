@@ -64,6 +64,7 @@ export interface ZoneListParams {
   page?: number;
   size?: number;
   status?: number;
+  keyword?: string;
 }
 
 export const zoneApi = {

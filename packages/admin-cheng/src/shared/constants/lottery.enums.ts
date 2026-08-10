@@ -24,6 +24,12 @@ export const PrizeTypeLabels: Record<number, string> = {
   [PrizeType.PHYSICAL]: '实物',
 };
 
+export const PrizeTypeColors: Record<number, string> = {
+  [PrizeType.COINS]: 'red',
+  [PrizeType.VOUCHER]: 'blue',
+  [PrizeType.PHYSICAL]: 'green',
+};
+
 // 发货状态
 export enum ShipStatus {
   UNREGISTERED = 0,

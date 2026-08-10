@@ -3,7 +3,7 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, Tag } from 'antd';
 import { FormOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { PrizeTypeLabels, ShipStatusLabels, ShipStatusColors } from '@shared/constants';
+import { PrizeTypeLabels, PrizeTypeColors, ShipStatusLabels, ShipStatusColors } from '@shared/constants';
 import { lotteryApi, UserPrize } from '@/api/services/lottery';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -55,7 +55,7 @@ const WinnerListModal: React.FC<WinnerListModalProps> = ({ visible, poolId, pool
         <span style={{ wordBreak: 'break-word' }}>{(r as any).prize_name || '-'}</span>
       ) },
     { title: '类型', dataIndex: 'prize_type', key: 'prize_type', width: 80,
-      render: (v: number) => <Tag>{PrizeTypeLabels[v] ?? v}</Tag> },
+      render: (v: number) => <Tag color={PrizeTypeColors[v] || 'default'}>{PrizeTypeLabels[v] ?? v}</Tag> },
     { title: '价值', dataIndex: 'amount', key: 'amount', width: 80, render: (v: number) => v ?? 0 },
     { title: '发货', dataIndex: 'ship_status', key: 'ship_status', width: 90,
       render: (v: number | null) => v != null ? <Tag color={ShipStatusColors[v]}>{ShipStatusLabels[v]}</Tag> : '-' },

@@ -18,16 +18,17 @@ export interface PrizeEditModalProps {
 }
 
 const PRIZE_TYPE_OPTIONS = [
-  { label: PrizeTypeLabels[PrizeType.PHYSICAL], value: PrizeType.PHYSICAL },
-  { label: PrizeTypeLabels[PrizeType.VOUCHER], value: PrizeType.VOUCHER },
+  { label: '请选择', value: 0 },
   { label: PrizeTypeLabels[PrizeType.COINS], value: PrizeType.COINS },
+  { label: PrizeTypeLabels[PrizeType.VOUCHER], value: PrizeType.VOUCHER },
+  { label: PrizeTypeLabels[PrizeType.PHYSICAL], value: PrizeType.PHYSICAL },
 ];
 
 const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, prize, onClose, onSuccess }) => {
   const { success, error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [statusEnabled, setStatusEnabled] = useState(true);
-  const [prizeType, setPrizeType] = useState<number>(PrizeType.PHYSICAL);
+  const [prizeType, setPrizeType] = useState<number>(0);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -47,8 +48,9 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
       }, 50);
     } else {
       setStatusEnabled(true);
-      setPrizeType(PrizeType.PHYSICAL);
+      setPrizeType(0);
       form.resetFields();
+      setTimeout(() => form.setFieldsValue({ prize_type: 0 }), 0);
     }
   }, [visible, mode, prize, form]);
 
@@ -108,7 +110,7 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off"
         scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
-        initialValues={{ prize_type: PrizeType.COINS }}
+        initialValues={{ prize_type: 0 }}
       >
         <Form.Item label="奖品名称" name="name" rules={[{ required: true, message: '请输入奖品名称' }, { max: 64, message: '最多64个字符' }]}>
           <Input placeholder="如：iPhone 16" maxLength={64} showCount />
@@ -121,8 +123,12 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
         </Form.Item>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
-          <Form.Item label="奖品类型" name="prize_type" rules={[{ required: true }]}>
-            <Select options={PRIZE_TYPE_OPTIONS} onChange={(v) => setPrizeType(v)} />
+          <Form.Item label="奖品类型" name="prize_type" required
+            rules={[{
+              validator: (_, v) => v > 0 ? Promise.resolve() : Promise.reject(new Error('请选择奖品类型')),
+            }]}
+          >
+            <Select options={PRIZE_TYPE_OPTIONS} onChange={(v) => setPrizeType(v || 0)} />
           </Form.Item>
 
           {isRedPacket && (

@@ -30,6 +30,11 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
+/* 表头加深，与浅灰背景区分 */
+.sm-body .ant-table-thead > tr > th {
+  background: #e8e8e8;
+}
+
 /* 底部按钮区 */
 .sm-footer {
   flex-shrink: 0;

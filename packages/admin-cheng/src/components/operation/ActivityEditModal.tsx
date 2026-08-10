@@ -10,6 +10,7 @@ import { RichTextEditor } from '@/components/templates/RichTextEditor';
 import FormConfigEditor from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import dayjs, { Dayjs } from 'dayjs';
+import { dayjsToApi, safeDayjs } from '@/utils/format';
 
 export interface ActivityEditModalProps {
   visible: boolean;
@@ -51,8 +52,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       zone_id: activity.zone_id || undefined,
       gender_enabled: activity.gender_enabled ?? false,
       image: imageUrls,
-      time_range: activity.start_time && activity.end_time ? [dayjs(activity.start_time), dayjs(activity.end_time)] : undefined,
-      register_range: activity.register_start && activity.register_end ? [dayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
+      time_range: activity.start_time && activity.end_time ? [safeDayjs(activity.start_time), safeDayjs(activity.end_time)] : undefined,
+      register_range: activity.register_start && activity.register_end ? [safeDayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
       location_name: locName,
       location_coordinate: locCoord || '',
       activity_type: type,
@@ -96,8 +97,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           zone_id: activity.zone_id || undefined,
           gender_enabled: activity.gender_enabled ?? false,
           image: imageUrls,
-          time_range: activity.start_time && activity.end_time ? [dayjs(activity.start_time), dayjs(activity.end_time)] : undefined,
-          register_range: activity.register_start && activity.register_end ? [dayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
+          time_range: activity.start_time && activity.end_time ? [safeDayjs(activity.start_time), safeDayjs(activity.end_time)] : undefined,
+          register_range: activity.register_start && activity.register_end ? [safeDayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
           location_name: locName,
           location_coordinate: locCoord || '',
           activity_type: type,
@@ -140,10 +141,10 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         image,
         activity_type: activityType,
         description: values.description || '',
-        start_time: startTime ? (startTime as Dayjs).toISOString() : '',
-        end_time: endTime ? (endTime as Dayjs).toISOString() : '',
-        register_start: registerStart ? (registerStart as Dayjs).toISOString() : '',
-        register_end: registerEnd ? (registerEnd as Dayjs).toISOString() : '',
+        start_time: dayjsToApi(startTime as Dayjs) || '',
+        end_time: dayjsToApi(endTime as Dayjs) || '',
+        register_start: dayjsToApi(registerStart as Dayjs) || '',
+        register_end: dayjsToApi(registerEnd as Dayjs) || '',
         location,
         form_config: values.form_config || '',
         require_match_profile: true,

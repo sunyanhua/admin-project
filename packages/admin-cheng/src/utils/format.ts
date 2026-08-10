@@ -41,9 +41,46 @@ export const formatDateTime = (dateStr: string): string => {
   }
 };
 
+import dayjs from 'dayjs';
+
+/**
+ * dayjs 安全解析：将 API 返回的日期字符串转为 dayjs 实例（始终按本地时间解析）。
+ *
+ * 用法：
+ *   const d = safeDayjs(activity.start_time);
+ *   // 用于 DatePicker value / RangePicker value / 回填 Form 时间字段
+ *
+ * 说明：项目没有安装 dayjs/plugin/utc，dayjs() 对不同格式的日期串解读不一致，
+ * 有的当 UTC 有的当本地，导致与 DatePicker 显示差 8 小时。
+ * 此方法强制手动拆解字段，保证 dayjs 实例的分秒与字符串字面值完全一致。
+ */
+export function safeDayjs(raw?: string | null): dayjs.Dayjs | undefined {
+  if (!raw) return undefined;
+  const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if (!m) return undefined;
+  const d = dayjs(new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]));
+  return d.isValid() ? d : undefined;
+}
+
+/**
+ * dayjs 转 API 字符串：将 DatePicker 选出的 dayjs 实例格式化为后端传输串。
+ *
+ * 用法：
+ *   const apiPayload = { start_time: dayjsToApi(startDayjs) };
+ *
+ * 说明：使用 .format('YYYY-MM-DDTHH:mm:ssZ') 动态追加本地时区偏移（如 +08:00）。
+ * safeDayjs 通过 new Date(...) 构造，实例始终为本地时间，所以 Z token 始终输出 +08:00。
+ * 禁止使用 .toISOString()（会转成 UTC，偏移 8 小时）。
+ */
+export function dayjsToApi(d?: dayjs.Dayjs | null): string | undefined {
+  if (!d) return undefined;
+  return d.format('YYYY-MM-DDTHH:mm:ssZ');
+}
+
 /**
  * 格式化日期
  * 格式：2026/04/08
+ * 请使用日期格式化函数，不要直接操作字符串
  */
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return '-';
