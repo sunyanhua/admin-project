@@ -27,4 +27,5 @@ export { UserStatus as UserStatusV6 } from './user-v6.enums';
 export * from './v6.wallet.enums';
 export * from './zone.enums';
 export * from './gift.enums';
+export * from './lottery.enums';
 export * from './wxa.enums';

@@ -5307,6 +5307,1032 @@
                 }
             }
         },
+        "/admin/v1/lottery/deployment/active": {
+            "get": {
+                "description": "查询当前全部活跃投放记录（只读视图——未被抽走的 deployment 记录，最多 1000 条）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "活跃投放",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.ActiveDeploymentItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/deployment/batch": {
+            "get": {
+                "description": "分页查询投放批次记录。支持可选 status 筛选（0=待处理 1=处理中 2=已完成 3=失败）和 keyword 模糊搜索（pool_id::text ILIKE）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "投放批次记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=待处理 1=处理中 2=已完成 3=失败",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字模糊搜索（奖池 ID）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminBatchListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/pool": {
+            "get": {
+                "description": "分页查询奖池列表。支持可选 status 筛选（0=启用 1=禁用；不传返回全部）和 keyword 模糊搜索（name ILIKE）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "奖池列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=禁用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字模糊搜索（名称）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPoolListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建新的抽奖奖池。pool_type: 0=一次性 1=次数（本次仅实施一次性）。时间格式为 RFC3339。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "创建奖池",
+                "parameters": [
+                    {
+                        "description": "奖池信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.CreatePoolRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPoolDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/pool/{id}": {
+            "get": {
+                "description": "按 ID 查询单个奖池详情（不过滤状态）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "奖池详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPoolDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖池不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "编辑奖池信息（PATCH 指针语义——仅更新非 nil 字段）。时间格式为 RFC3339。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "编辑奖池",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "奖池信息（仅传需要变更的字段）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.UpdatePoolRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖池不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "软删除指定奖池。已开始的奖池不允许删除。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "删除奖池",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误 / 已开始的奖池不允许删除",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖池不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/pool/{id}/prize": {
+            "get": {
+                "description": "分页查询指定奖池下的奖品列表。支持可选 status 筛选和 keyword 模糊搜索（name ILIKE）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "奖品列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=禁用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字模糊搜索（名称）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPrizeListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "在指定奖池下创建新奖品。prize_type: 1=现金红包 2=兑换券 3=实物。amount 仅 prize_type=1 时有效（单位：分）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "创建奖品",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "奖品信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.CreatePrizeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPrizeDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/pool/{id}/status": {
+            "patch": {
+                "description": "独立设置奖池的启用/禁用状态。status: 0=启用 1=禁用。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "奖池状态设置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态：0=启用 1=禁用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.PoolStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖池不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/prize/{id}": {
+            "get": {
+                "description": "按 ID 查询单个奖品详情（不过滤状态）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "奖品详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPrizeDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "编辑奖品信息（PATCH 指针语义——仅更新非 nil 字段）。prize_type: 1=现金红包 2=兑换券 3=实物。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "编辑奖品",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "奖品信息（仅传需要变更的字段）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.UpdatePrizeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "软删除指定奖品。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "删除奖品",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/prize/{id}/deploy": {
+            "post": {
+                "description": "为指定奖品创建投放批次（异步——Consumer 后台批量写入 deployment 记录）。券码类奖品（prize_type=2）必须提供 voucher_codes 且数量等于 total_count。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "创建投放",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "投放参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.DeployRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.DeploySubmitResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误 / 投放启用时间不在奖池有效期内（code=40804）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "奖池已禁用",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/prize/{id}/status": {
+            "patch": {
+                "description": "独立设置奖品的启用/禁用状态。status: 0=启用 1=禁用。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "奖品状态设置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态：0=启用 1=禁用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.PrizeStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/user-prize": {
+            "get": {
+                "description": "分页查询全部用户的中奖记录。支持可选 status/prize_type 筛选和 keyword 模糊搜索（user_id::text ILIKE）。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "中奖记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "领取状态：0=未领取 1=已领取",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "奖品类型：1=现金红包 2=兑换券 3=实物",
+                        "name": "prize_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字模糊搜索（用户 ID）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminUserPrizeListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/lottery/user-prize/{id}/ship": {
+            "put": {
+                "description": "管理后台对中奖实物奖品进行发货登记。ship_status: 0=未登记 1=已登记 2=已发货。ship_status=2 时自动设置 shipped_at。",
+                "tags": [
+                    "管理后台-抽奖"
+                ],
+                "summary": "发货登记",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "发货信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.ShipRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/mach": {
             "get": {
                 "security": [
@@ -9739,6 +10765,315 @@
                 }
             }
         },
+        "/api/v1/wxa/lottery/my": {
+            "get": {
+                "description": "分页查询当前用户的全部中奖记录，按中奖时间倒序排列。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-抽奖"
+                ],
+                "summary": "我的奖品",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.MyPrizeItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/lottery/my/{id}/claim": {
+            "put": {
+                "description": "中奖用户填写实物奖品的收货地址进行领取登记。仅 prize_type=3（实物）可调用，调用后 status 变更为已领取。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-抽奖"
+                ],
+                "summary": "实物领取登记",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "收货信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.ClaimRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/lottery/my/{id}/claim-cash": {
+            "post": {
+                "description": "中奖用户领取现金红包奖品，余额即时到账。仅 prize_type=1（现金红包）且 status=0（未领取）可调用。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-抽奖"
+                ],
+                "summary": "现金红包领取",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.ClaimCashResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误或奖品类型/状态不符",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/lottery/pool/{id}": {
+            "get": {
+                "description": "按 ID 查询奖池详情及全部启用奖品列表（C 端公开接口，任意认证用户可查看）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-抽奖"
+                ],
+                "summary": "奖池详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.PoolDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖池不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/lottery/{pool_id}/draw": {
+            "post": {
+                "description": "参与指定一次性奖池的抽奖。每用户每个奖池仅可参与一次。中奖返回奖品信息，未中奖返回友好提示。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-抽奖"
+                ],
+                "summary": "一次性抽奖",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "奖池 ID（UUID）",
+                        "name": "pool_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.DrawResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误 / 不在抽奖时间内",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖池不存在或已禁用",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "503": {
+                        "description": "抽奖服务繁忙（code=40801）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/pair/couple/by-users/{maleID}/{femaleID}": {
             "get": {
                 "security": [
@@ -11099,7 +12434,7 @@
         },
         "/api/v1/wxa/user": {
             "get": {
-                "description": "返回当前 JWT 用户的全部非系统级信息，聚合账户/基础资料/脱单档案/钱包四表数据。未注册返回 null，未填写基础资料时 profile 为 null，脱单档案未提交时 match_profile 为 null，钱包未创建时 wallet 为 null。",
+                "description": "返回当前 JWT 用户的全部非系统级信息，分步查询——先查 v6_user + v6_user_profile 核心数据，再条件查询 v6_user_match_profile（has_match_profile=true 时触发）、独立查询 v6_user_wallet（积分金币）/ v6_user_balance（可提现余额）/ v6_user_match_stats（被操作统计）/ v6_user_opinion_stats（嗑学成绩单）/ v6_user_daily（今日汇总）。未注册返回 null，未填写基础资料时 profile 为 null，脱单档案未提交时 match_profile 为 null。",
                 "produces": [
                     "application/json"
                 ],
@@ -14485,6 +15820,728 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.ActiveDeploymentItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "enabled_at": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pool_id": {
+                    "type": "string"
+                },
+                "prize_id": {
+                    "type": "string"
+                },
+                "seed": {
+                    "type": "integer"
+                },
+                "voucher_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminBatchListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "error_message": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pool_id": {
+                    "type": "string"
+                },
+                "prize_id": {
+                    "type": "string"
+                },
+                "processed_count": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.DeploymentBatchStatus"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPoolDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pool_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPoolType"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "updated_by": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPoolListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pool_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPoolType"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPrizeDetailResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pool_id": {
+                    "type": "string"
+                },
+                "prize_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "used_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminPrizeListItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pool_id": {
+                    "type": "string"
+                },
+                "prize_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "used_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.AdminUserPrizeListItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "carrier": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pool_id": {
+                    "type": "string"
+                },
+                "prize_id": {
+                    "type": "string"
+                },
+                "prize_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
+                },
+                "ship_status": {
+                    "description": "NULL=不适用, 0=未登记, 1=已登记, 2=已发货",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ShipStatus"
+                        }
+                    ]
+                },
+                "shipped_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserPrizeClaimStatus"
+                },
+                "tracking_number": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "won_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.ClaimCashResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.ClaimRequest": {
+            "type": "object",
+            "required": [
+                "receiver_address",
+                "receiver_name",
+                "receiver_phone"
+            ],
+            "properties": {
+                "receiver_address": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "receiver_name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "receiver_phone": {
+                    "type": "string",
+                    "maxLength": 32
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.CreatePoolRequest": {
+            "type": "object",
+            "required": [
+                "end_time",
+                "name",
+                "pool_type",
+                "start_time"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "pool_type": {
+                    "description": "0=一次性 1=次数",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                },
+                "start_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.CreatePrizeRequest": {
+            "type": "object",
+            "required": [
+                "end_time",
+                "name",
+                "prize_type",
+                "start_time"
+            ],
+            "properties": {
+                "amount": {
+                    "description": "红包金额（分），prize_type=1 时必填",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "prize_type": {
+                    "description": "1=现金红包 2=兑换券 3=实物",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "start_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.DeployRequest": {
+            "type": "object",
+            "required": [
+                "total_count"
+            ],
+            "properties": {
+                "enabled_at": {
+                    "description": "Unix 秒级时间戳，不传默认 NOW",
+                    "type": "integer"
+                },
+                "total_count": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "voucher_codes": {
+                    "description": "券码列表（prize_type=2 时必填，len 必须等于 total_count）",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.DeploySubmitResponse": {
+            "type": "object",
+            "properties": {
+                "batch_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.DeploymentBatchStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.DrawResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "description": "红包金额（分），中奖且 prize_type=1 时填充",
+                    "type": "integer"
+                },
+                "message": {
+                    "description": "未中奖/已参与/奖品已抢光的友好提示",
+                    "type": "string"
+                },
+                "prize_name": {
+                    "description": "中奖时填充",
+                    "type": "string"
+                },
+                "prize_type": {
+                    "description": "中奖时填充",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
+                        }
+                    ]
+                },
+                "user_prize_id": {
+                    "description": "中奖时填充",
+                    "type": "string"
+                },
+                "voucher_code": {
+                    "description": "券码，中奖且 prize_type=2 时填充",
+                    "type": "string"
+                },
+                "won": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.MyPrizeItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pool_id": {
+                    "type": "string"
+                },
+                "prize_id": {
+                    "type": "string"
+                },
+                "prize_name": {
+                    "type": "string"
+                },
+                "prize_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
+                },
+                "ship_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ShipStatus"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserPrizeClaimStatus"
+                },
+                "won_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.PoolDetailResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pool_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPoolType"
+                },
+                "prizes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.PrizeItem"
+                    }
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.PoolStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=禁用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.PrizeItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "prize_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "total_count": {
+                    "type": "integer"
+                },
+                "used_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.PrizeStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=禁用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.ShipRequest": {
+            "type": "object",
+            "required": [
+                "ship_status"
+            ],
+            "properties": {
+                "carrier": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "receiver_address": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "receiver_name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "receiver_phone": {
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "ship_status": {
+                    "description": "0=未登记 1=已登记 2=已发货",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
+                },
+                "tracking_number": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.UpdatePoolRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "pool_type": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                },
+                "start_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.UpdatePrizeRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "prize_type": {
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "start_time": {
+                    "description": "RFC3339",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_mach_model.CreateMachRequest": {
             "type": "object",
             "required": [
@@ -15619,6 +17676,7 @@
                     "type": "string"
                 },
                 "wallet_balance": {
+                    "description": "可提现余额（来源：v6_user_balance.balance），单位：分",
                     "type": "integer"
                 }
             }
@@ -15693,6 +17751,20 @@
                 "reason": {
                     "description": "Reason 审核意见（拒绝时建议填写原因）。",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.BalanceInfo": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "earned": {
+                    "type": "integer"
+                },
+                "withdrawn": {
+                    "type": "integer"
                 }
             }
         },
@@ -16453,15 +18525,20 @@
                 },
                 "user_id": {
                     "type": "string"
-                },
-                "wallet_balance": {
-                    "type": "integer"
                 }
             }
         },
         "github_com_vbegin_tlnc_v6_internal_module_user_model.UserInfoResponse": {
             "type": "object",
             "properties": {
+                "balance": {
+                    "description": "Balance 可提现余额（v6_user_balance，注册时初始化——始终存在）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.BalanceInfo"
+                        }
+                    ]
+                },
                 "daily_data": {
                     "description": "DailyData 今日汇总（v6_user_daily 非系统字段，今日尚无操作时为 null）。",
                     "allOf": [
@@ -17310,6 +19387,34 @@
                 "CommonStatusDisabled"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.DeploymentBatchStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "DeploymentBatchCompleted": "已完成",
+                "DeploymentBatchFailed": "失败",
+                "DeploymentBatchPending": "待处理",
+                "DeploymentBatchProcessing": "处理中"
+            },
+            "x-enum-descriptions": [
+                "待处理",
+                "处理中",
+                "已完成",
+                "失败"
+            ],
+            "x-enum-varnames": [
+                "DeploymentBatchPending",
+                "DeploymentBatchProcessing",
+                "DeploymentBatchCompleted",
+                "DeploymentBatchFailed"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.Education": {
             "type": "integer",
             "format": "int32",
@@ -17428,6 +19533,50 @@
                 "IncomeRange8KTo12K",
                 "IncomeRange12KTo18K",
                 "IncomeRangeAbove18K"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPoolType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-comments": {
+                "LotteryPoolTypeMulti": "次数奖池（本次不实施）",
+                "LotteryPoolTypeOnce": "一次性奖池"
+            },
+            "x-enum-descriptions": [
+                "一次性奖池",
+                "次数奖池（本次不实施）"
+            ],
+            "x-enum-varnames": [
+                "LotteryPoolTypeOnce",
+                "LotteryPoolTypeMulti"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "LotteryPrizeTypeCash": "现金红包",
+                "LotteryPrizeTypePhysical": "实物",
+                "LotteryPrizeTypeVoucher": "兑换券"
+            },
+            "x-enum-descriptions": [
+                "现金红包",
+                "兑换券",
+                "实物"
+            ],
+            "x-enum-varnames": [
+                "LotteryPrizeTypeCash",
+                "LotteryPrizeTypeVoucher",
+                "LotteryPrizeTypePhysical"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask": {
@@ -17626,6 +19775,30 @@
                 "ProfileAuditRejected"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.ShipStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "ShipStatusRegistered": "已登记",
+                "ShipStatusShipped": "已发货",
+                "ShipStatusUnregistered": "未登记"
+            },
+            "x-enum-descriptions": [
+                "未登记",
+                "已登记",
+                "已发货"
+            ],
+            "x-enum-varnames": [
+                "ShipStatusUnregistered",
+                "ShipStatusRegistered",
+                "ShipStatusShipped"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.UploadStatus": {
             "type": "integer",
             "format": "int32",
@@ -17668,6 +19841,26 @@
                 "UserGenderUnset",
                 "UserGenderMale",
                 "UserGenderFemale"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.UserPrizeClaimStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-comments": {
+                "UserPrizeClaimStatusClaimed": "已领取",
+                "UserPrizeClaimStatusUnclaimed": "未领取"
+            },
+            "x-enum-descriptions": [
+                "未领取",
+                "已领取"
+            ],
+            "x-enum-varnames": [
+                "UserPrizeClaimStatusUnclaimed",
+                "UserPrizeClaimStatusClaimed"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.UserStatus": {

@@ -96,7 +96,6 @@ export const sidebarMenuConfig: Record<string, any[]> = {
         { key: '/system/popups', icon: <ScheduleOutlined />, label: '弹窗管理' },
         { key: '/system/agreements', icon: <FileTextOutlined />, label: '协议文档' },
         { key: '/system/faq', icon: <QuestionCircleOutlined />, label: 'FAQ管理' },
-        { key: '/system/points', icon: <DollarOutlined />, label: '积分配置' },
       ],
     },
   ],

@@ -1,186 +1,210 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Switch, InputNumber, Space, Form, Input } from 'antd';
-import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
+import { Button, Space, InputNumber, Tag } from 'antd';
+import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { helpsApi, Help } from '@/api/services/helps';
+import { helpCategoryApi, helpEntryApi, HelpCategory, HelpEntry } from '@/api/services/helps-v1';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { ActionColumn } from '@/components/templates/ActionColumn';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { RichTextEditor } from '@/components/templates/RichTextEditor';
-import ScrollableModal from '@/components/templates/ScrollableModal';
+import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
+import HelpCategoryEditModal from '@/components/system/HelpCategoryEditModal';
+import HelpEntryEditModal from '@/components/system/HelpEntryEditModal';
 
 const STATUS_OPTIONS = [
   { label: '启用', value: 0 },
-  { label: '禁用', value: 1 },
-];
-
-const filters: FilterConfig[] = [
-  { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
-  { name: 'keyword', placeholder: '关键词搜索', type: 'input' },
+  { label: '停用', value: 1 },
 ];
 
 const FaqManagement = () => {
   const { success, error: showError } = useAppNotification();
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingHelp, setEditingHelp] = useState<Help | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingDetail, setLoadingDetail] = useState(false);
-  const [statusEnabled, setStatusEnabled] = useState(true);
-  const [form] = Form.useForm();
 
-  const fetchHelps = useCallback(async (params: any) => {
-    return helpsApi.getHelps(params);
+  // 分类状态
+  const [categories, setCategories] = useState<HelpCategory[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([]);
+  const [categoryModalVisible, setCategoryModalVisible] = useState(false);
+  const [categoryEditMode, setCategoryEditMode] = useState<'create' | 'edit'>('create');
+  const [editingCategory, setEditingCategory] = useState<HelpCategory | null>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined);
+
+  // 条目状态
+  const [entryModalVisible, setEntryModalVisible] = useState(false);
+  const [entryEditMode, setEntryEditMode] = useState<'create' | 'edit'>('create');
+  const [editingEntry, setEditingEntry] = useState<HelpEntry | null>(null);
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+
+  // 加载全部分类
+  const loadCategories = useCallback(async () => {
+    try {
+      const res: any = await helpCategoryApi.getList({ page: 1, size: 100 });
+      const list: HelpCategory[] = Array.isArray(res) ? res : (res?.list || []);
+      setCategories(list);
+      const opts = list.map((c) => ({ label: c.name, value: c.id }));
+      setCategoryOptions(opts);
+    } catch {
+      setCategories([]);
+      setCategoryOptions([]);
+    }
   }, []);
 
-  const formatHelpResponse = useCallback((res: any) => ({
-    list: res?.list || res?.data || [],
-    count: res?.total ?? res?.count ?? 0,
-  }), []);
+  useEffect(() => { loadCategories(); }, [loadCategories]);
 
-  const {
-    data,
-    loading: listLoading,
-    pagination,
-    onPageChange,
-    refresh,
-    search,
-  } = useListPage<Help>({
-    fetchFn: fetchHelps,
-    formatResponse: formatHelpResponse,
+  // 按树形顺序排列（根 → 子 → 孙）
+  const sortedCategories = categories.slice().sort((a, b) => {
+    const getPath = (c: HelpCategory): string => {
+      const findParent = (id: string | undefined, depth: number): string => {
+        if (!id || depth > 5) return '';
+        const p = categories.find((x) => x.id === id);
+        return p ? findParent(p.parent_id, depth + 1) + p.name + '\x00' : '';
+      };
+      return findParent(c.parent_id, 0) + c.name;
+    };
+    return getPath(a).localeCompare(getPath(b));
   });
 
-  const handleSearch = (vals: Record<string, any>) => {
-    search(vals);
+  // 条目列表
+  const fetchEntries = useCallback(async (params: any) => {
+    return helpEntryApi.getList({
+      page: params.page,
+      size: params.page_size,
+      status: params.status,
+      keyword: params.keyword,
+      category_root_id: selectedCategoryId,
+    });
+  }, [selectedCategoryId]);
+
+  const formatEntryResponse = useCallback((res: any) => {
+    const list = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
+    return { list, count: total };
+  }, []);
+
+  const { data, loading, pagination, onPageChange, refresh: refreshEntries, search } = useListPage<HelpEntry>({
+    fetchFn: fetchEntries,
+    formatResponse: formatEntryResponse,
+  });
+
+  const handleSearchChange = (name: string, value: any) => {
+    setSearchValues((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleSearch = (vals: Record<string, any>) => { search(vals); };
+  const handleReset = () => { setSearchValues({}); search({}); };
+
   // 状态切换
-  const handleStatusToggle = async (record: Help, checked: boolean) => {
+  const handleEntryStatusToggle = async (record: HelpEntry, checked: boolean) => {
     try {
-      await helpsApi.updateHelp(record.id, { status: checked ? 0 : 1 });
+      await helpEntryApi.toggleStatus(record.id, checked ? 0 : 1);
       success('状态更新成功');
-      refresh();
+      refreshEntries();
     } catch (err: any) {
       showError(err?.response?.data?.message || '状态更新失败');
     }
   };
 
-  // 权重修改
-  const handleSortChange = async (record: Help, value: number | null) => {
+  const handleEntrySortChange = async (record: HelpEntry, value: number | null) => {
+    if (value == null) return;
     try {
-      await helpsApi.updateHelp(record.id, { sort_order: value ?? undefined });
+      await helpEntryApi.update(record.id, { sort_order: value });
       success('权重更新成功');
-      refresh();
+      refreshEntries();
     } catch (err: any) {
       showError(err?.response?.data?.message || '权重更新失败');
     }
   };
 
-  const handleAdd = () => {
-    setEditingHelp(null);
-    setStatusEnabled(true);
-    setModalVisible(true);
-    setTimeout(() => form.resetFields(), 0);
+  // 分类操作
+  const handleAddCategory = (parentId?: string) => {
+    setCategoryEditMode('create');
+    setEditingCategory(null);
+    setCategoryModalVisible(true);
   };
 
-  const handleEdit = async (record: Help) => {
-    setEditingHelp(record);
-    setLoadingDetail(true);
-    try {
-      const res: any = await helpsApi.getHelpDetail(record.id);
-      const detail = res?.data || res || {};
-      const helpData = { ...record, ...detail };
-      setEditingHelp(helpData);
-      setStatusEnabled(helpData.status !== 1);
-      setModalVisible(true);
-      setTimeout(() => {
-        form.setFieldsValue({
-          title: helpData.title || '',
-          content: helpData.content || '',
-          sort_order: helpData.sort_order,
-        });
-      }, 0);
-    } catch {
-      setStatusEnabled(record.status !== 1);
-      setModalVisible(true);
-      setTimeout(() => {
-        form.setFieldsValue({
-          title: record.title || '',
-          content: record.content || '',
-          sort_order: record.sort_order,
-        });
-      }, 0);
-    } finally {
-      setLoadingDetail(false);
-    }
+  const handleEditCategory = (catId: string) => {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return;
+    setCategoryEditMode('edit');
+    setEditingCategory(cat);
+    setCategoryModalVisible(true);
   };
 
-  const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields();
-      setLoading(true);
-
-      const payload: Record<string, any> = {
-        title: values.title,
-        content: values.content || undefined,
-        status: statusEnabled ? 0 : 1,
-        sort_order: values.sort_order ?? undefined,
-      };
-
-      if (editingHelp) {
-        await helpsApi.updateHelp(editingHelp.id, payload);
-        success('更新成功');
-      } else {
-        await helpsApi.createHelp(payload as any);
-        success('添加成功');
-      }
-      setModalVisible(false);
-      refresh();
-    } catch (err: any) {
-      if (err?.errorFields) return;
-      showError(err?.response?.data?.message || '操作失败');
-    } finally {
-      setLoading(false);
-    }
+  const handleDeleteCategory = (catId: string) => {
+    const cat = categories.find((c) => c.id === catId);
+    if (!cat) return;
+    confirmDelete({
+      name: cat.name,
+      deleteFn: () => helpCategoryApi.delete(catId),
+      onSuccess: () => { refreshEntries(); loadCategories(); },
+    });
   };
 
-  const columns: ColumnsType<Help> = [
+  // 条目操作
+  const handleAddEntry = () => {
+    setEntryEditMode('create');
+    setEditingEntry(null);
+    setEntryModalVisible(true);
+  };
+
+  const handleEditEntry = (record: HelpEntry) => {
+    setEntryEditMode('edit');
+    setEditingEntry(record);
+    setEntryModalVisible(true);
+  };
+
+  const entriesFilter: FilterConfig[] = [
+    { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
+    { name: 'keyword', placeholder: '搜索问题/答案', type: 'input' },
+  ];
+
+  const getCategoryName = (id: string) => {
+    const c = categories.find((x) => x.id === id);
+    return c ? c.name : '';
+  };
+
+  const entryColumns: ColumnsType<HelpEntry> = [
     {
-      title: '标题',
-      dataIndex: 'title',
-      key: 'title',
+      title: '问题',
+      dataIndex: 'question',
+      key: 'question',
       render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
     },
+    {
+      title: '分类',
+      dataIndex: 'category_id',
+      key: 'category_id',
+      width: 100,
+      render: (v: string) => <Tag title={getCategoryName(v)}>{getCategoryName(v) || '-'}</Tag>,
+    },
+    statusSwitchColumn<HelpEntry>('status', 0, 1, handleEntryStatusToggle, '启用', '停用', 100),
     {
       title: '权重',
       dataIndex: 'sort_order',
       key: 'sort_order',
       width: 120,
-      render: (orderon: number | undefined, record: Help) => (
+      render: (v: number | undefined, r: HelpEntry) => (
         <InputNumber
           min={0}
-          value={orderon}
+          value={v ?? 0}
           style={{ width: 70 }}
           onBlur={(e) => {
             const val = e.target.value;
-            const num = val === '' ? null : parseInt(val);
-            if (num !== (record.sort_order ?? null)) {
-              handleSortChange(record, num);
+            const num = val === '' ? undefined : parseInt(val);
+            if (num !== (r.sort_order ?? undefined)) {
+              handleEntrySortChange(r, num ?? 0);
             }
           }}
         />
       ),
     },
-    statusSwitchColumn<Help>('status', 0, 1, handleStatusToggle, '启用', '禁用', 100),
     ActionColumn({
-      onEdit: (record) => handleEdit(record),
+      onEdit: (record) => handleEditEntry(record),
       onDelete: (record) => confirmDelete({
-        name: record.title,
-        deleteFn: () => helpsApi.deleteHelp(record.id),
-        onSuccess: refresh,
+        name: record.question,
+        deleteFn: () => helpEntryApi.delete(record.id),
+        onSuccess: refreshEntries,
       }),
       showView: false,
     }),
@@ -189,84 +213,117 @@ const FaqManagement = () => {
   return (
     <>
       <StandardPage
-        title="帮助中心"
-        description="管理帮助中心的常见问题与文章。"
+        title="FAQ 管理"
+        description="管理帮助分类和常见问题条目，支持多级分类和富文本答案。"
         showRefreshButton
-        onRefresh={refresh}
-        showAddButton
-        onAdd={handleAdd}
-        addButtonText="添加文章"
-        searchArea={
-          <SearchPanel
-            filters={filters}
-            values={{}}
-            onChange={() => {}}
-            onSearch={handleSearch}
-            onReset={() => search({})}
-          />
-        }
+        onRefresh={() => { refreshEntries(); loadCategories(); }}
         table={
-          <StandardTable
-            columns={columns}
-            dataSource={data}
-            loading={listLoading}
-            pagination={pagination}
-            onPageChange={onPageChange}
-          />
+          <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: 16, minHeight: 400 }}>
+            {/* 左侧分类列表 */}
+            <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+                <span style={{ fontWeight: 600, fontSize: 14 }}>分类</span>
+                <Button type="link" size="small" icon={<PlusOutlined />}
+                  onClick={() => handleAddCategory()} />
+              </div>
+              {sortedCategories.length > 0 ? (
+                <>
+                  {/* 全部类别 */}
+                  <div
+                    onClick={() => { setSelectedCategoryId(undefined); setTimeout(() => refreshEntries(), 0); }}
+                    style={{
+                      display: 'flex', alignItems: 'center',
+                      padding: '8px 14px', cursor: 'pointer',
+                      borderBottom: '1px solid #f0f0f0',
+                      background: !selectedCategoryId ? '#e6f4ff' : '#fff',
+                      color: !selectedCategoryId ? '#1677ff' : undefined,
+                      fontWeight: !selectedCategoryId ? 600 : undefined,
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <span>全部类别</span>
+                  </div>
+                  {sortedCategories.map((cat, idx) => {
+                  const depth = (cat.level ?? 1) - 1;
+                  const isSelected = selectedCategoryId === cat.id;
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => { setSelectedCategoryId(cat.id); setTimeout(() => refreshEntries(), 0); }}
+                      className="faq-category-row"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 14px',
+                        paddingLeft: `${14 + depth * 20}px`,
+                        cursor: 'pointer',
+                        borderBottom: idx < sortedCategories.length - 1 ? '1px solid #f0f0f0' : 'none',
+                        background: isSelected ? '#e6f4ff' : '#fff',
+                        color: isSelected ? '#1677ff' : undefined,
+                        fontWeight: isSelected ? 600 : undefined,
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {cat.name}
+                      </span>
+                      <span style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                        <Button type="link" size="small" icon={<EditOutlined style={{ fontSize: 12 }} />}
+                          onClick={(e) => { e.stopPropagation(); handleEditCategory(cat.id); }} />
+                        <Button type="link" size="small" danger icon={<DeleteOutlined style={{ fontSize: 12 }} />}
+                          onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }} />
+                      </span>
+                    </div>
+                  );
+                })}
+                </>
+              ) : (
+                <div style={{ textAlign: 'center', color: '#999', padding: 20, fontSize: 13 }}>暂无分类</div>
+              )}
+            </div>
+
+            {/* 右侧条目列表 */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                <SearchPanel
+                  filters={entriesFilter}
+                  values={searchValues}
+                  onChange={handleSearchChange}
+                  onSearch={handleSearch}
+                  onReset={handleReset}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddEntry}>添加条目</Button>
+              </div>
+              <StandardTable
+                columns={entryColumns}
+                dataSource={data}
+                loading={loading}
+                pagination={pagination}
+                onPageChange={onPageChange}
+              />
+            </div>
+          </div>
         }
       />
 
-      <ScrollableModal
-        title={editingHelp ? '编辑文章' : '添加文章'}
-        open={modalVisible}
-        onCancel={() => { form.resetFields(); setModalVisible(false); }}
-        width={800}
-        destroyOnHidden
-        footer={
-          <Space>
-            <Button onClick={() => { form.resetFields(); setModalVisible(false); }}>取消</Button>
-            <Button type="primary" loading={loading} onClick={() => form.submit()}>
-              {editingHelp ? '保存' : '创建'}
-            </Button>
-          </Space>
-        }
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          autoComplete="off"
-          scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
-        >
-          <Form.Item
-            label="标题"
-            name="title"
-            rules={[{ required: true, message: '请输入标题' }]}
-          >
-            <Input placeholder="请输入文章标题" maxLength={128} showCount />
-          </Form.Item>
+      <HelpCategoryEditModal
+        visible={categoryModalVisible}
+        mode={categoryEditMode}
+        category={editingCategory}
+        parentOptions={categoryOptions}
+        onClose={() => setCategoryModalVisible(false)}
+        onSuccess={() => { refreshEntries(); loadCategories(); }}
+      />
 
-          <Form.Item
-            label="内容"
-            name="content"
-          >
-            <RichTextEditor placeholder="请输入文章内容" />
-          </Form.Item>
-
-          <Form.Item label="权重" name="sort_order" extra="数字越大排序越靠前">
-            <InputNumber min={0} precision={0} placeholder="请输入权重" style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item label="状态">
-            <Switch
-              checked={statusEnabled}
-              onChange={setStatusEnabled}
-              checkedChildren="启用"
-              unCheckedChildren="禁用"
-            />
-          </Form.Item>
-        </Form>
-      </ScrollableModal>
+      <HelpEntryEditModal
+        visible={entryModalVisible}
+        mode={entryEditMode}
+        entry={editingEntry}
+        categoryOptions={categoryOptions}
+        onClose={() => setEntryModalVisible(false)}
+        onSuccess={refreshEntries}
+      />
     </>
   );
 };

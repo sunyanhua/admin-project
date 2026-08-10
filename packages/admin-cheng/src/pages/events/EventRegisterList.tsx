@@ -27,7 +27,7 @@ const EventRegisterList = () => {
   // 加载活动列表
   useEffect(() => {
     setLoadingActivities(true);
-    activityApi.getList({ page: 1, size: 200 }).then((res: any) => {
+    activityApi.getList({ page: 1, size: 100 }).then((res: any) => {
       const list = Array.isArray(res) ? res : (res?.list || []);
       setActivities(list);
       if (list.length > 0 && !selectedActivityId) {

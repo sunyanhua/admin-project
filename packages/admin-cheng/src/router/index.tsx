@@ -37,6 +37,9 @@ import EventRegisterList from '@/pages/events/EventRegisterList';
 // 礼物管理
 import GiftManagement from '@/pages/community/GiftManagement';
 
+// 抽奖管理
+import LotteryManagement from '@/pages/community/LotteryManagement';
+
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
 
@@ -91,7 +94,7 @@ const router = createHashRouter([
           { path: 'user-verify', element: <PlaceholderPage title="用户认证" /> },
           // 互动管理
           { path: 'gifts', element: <GiftManagement /> },
-          { path: 'lottery', element: <PlaceholderPage title="抽奖管理" /> },
+          { path: 'lottery', element: <LotteryManagement /> },
           // 社区统计
           { path: 'stats', element: <PlaceholderPage title="平台数据统计" /> },
           { path: 'trends', element: <PlaceholderPage title="趋势统计" /> },
