@@ -35,7 +35,7 @@ export interface UpdateSortOrderRequest {
 
 export const submissionApi = {
   /** 投稿列表 */
-  getList: (params?: { page?: number; page_size?: number; status?: number; keyword?: string }) => {
+  getList: (params?: { page?: number; size?: number; status?: number; keyword?: string }) => {
     return request.get('/admin/v1/bizops/submission', { params });
   },
 

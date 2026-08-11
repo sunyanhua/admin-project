@@ -5488,6 +5488,583 @@
                 }
             }
         },
+        "/admin/v1/bizops/source": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询来源列表。支持可选 status 筛选（0=启用 1=禁用；不传返回全部）和关键字搜索。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "来源列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=禁用",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字模糊搜索（名称）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.AdminSourceListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "创建新的渠道来源。status 默认启用（0）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "创建来源",
+                "parameters": [
+                    {
+                        "description": "来源信息",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.CreateSourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.AdminSourceDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "时间窗口无效（code=41704）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/source/register-stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按天聚合各来源的注册量（排除 source_id 为空的旧数据），支持按 source_id 和日期范围筛选。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "注册统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "来源 ID（UUID）",
+                        "name": "source_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期（YYYY-MM-DD）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期（YYYY-MM-DD）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.SourceStatsItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/source/report-stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按天聚合各来源的上报量，支持按 source_id 和日期范围筛选。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "上报统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "来源 ID（UUID）",
+                        "name": "source_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期（YYYY-MM-DD）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期（YYYY-MM-DD）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.SourceStatsItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/source/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按 ID 查询单个来源详情（含已删除）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "来源详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "来源 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.AdminSourceDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "来源不存在（code=41701）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "编辑来源（PATCH 指针语义——仅更新非 nil 字段）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "编辑来源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "来源 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "来源信息（仅传需要变更的字段）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.UpdateSourceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.AdminSourceDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "来源不存在（code=41701）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "时间窗口无效（code=41704）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "软删除来源。已删除的来源不影响历史上报/注册数据。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "删除来源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "来源 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "来源不存在（code=41701）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/source/{id}/status": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "设置来源的启用/禁用状态。status: 0=启用 1=禁用",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-来源归因"
+                ],
+                "summary": "启用/禁用来源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "来源 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态请求：0=启用 1=禁用",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.SourceStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.AdminSourceDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "来源不存在（code=41701）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/submission": {
             "get": {
                 "description": "管理后台分页查询投稿列表，支持按审核状态筛选和关键字搜索",
@@ -5511,7 +6088,7 @@
                     {
                         "type": "integer",
                         "description": "每页条数（默认 20，最大 100）",
-                        "name": "page_size",
+                        "name": "size",
                         "in": "query"
                     },
                     {
@@ -5533,17 +6110,26 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminSubmissionListResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminSubmissionItem"
+                                            }
                                         }
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     },
                     "401": {
@@ -8194,7 +8780,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.UploadFileResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.UploadFileResult"
                                         }
                                     }
                                 }
@@ -8280,7 +8866,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.ChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult"
                                         }
                                     }
                                 }
@@ -8298,7 +8884,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.InitChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.InitChunkResult"
                                         }
                                     }
                                 }
@@ -8316,7 +8902,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.ChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult"
                                         }
                                     }
                                 }
@@ -8372,7 +8958,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.UploadFileResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.UploadFileResult"
                                         }
                                     }
                                 }
@@ -8428,7 +9014,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.UploadFileResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.UploadFileResult"
                                         }
                                     }
                                 }
@@ -8514,7 +9100,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.ChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult"
                                         }
                                     }
                                 }
@@ -8532,7 +9118,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.InitChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.InitChunkResult"
                                         }
                                     }
                                 }
@@ -8550,7 +9136,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.ChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult"
                                         }
                                     }
                                 }
@@ -8606,7 +9192,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.UploadFileResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.UploadFileResult"
                                         }
                                     }
                                 }
@@ -8692,7 +9278,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.ChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult"
                                         }
                                     }
                                 }
@@ -8710,7 +9296,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.InitChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.InitChunkResult"
                                         }
                                     }
                                 }
@@ -8728,7 +9314,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.ChunkResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult"
                                         }
                                     }
                                 }
@@ -10259,6 +10845,46 @@
                 }
             }
         },
+        "/api/v1/source/report": {
+            "post": {
+                "description": "上报渠道来源访问。无效来源静默忽略，一律返回 200（防探测）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开-来源归因"
+                ],
+                "summary": "来源上报",
+                "parameters": [
+                    {
+                        "description": "上报请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_source_model.ReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "一律 200（防探测）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "429": {
+                        "description": "请求过于频繁（IP 限流 1024/s）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/submission": {
             "get": {
                 "description": "分页查询已审核通过且设为公开的投稿（无需认证）",
@@ -10282,7 +10908,7 @@
                     {
                         "type": "integer",
                         "description": "每页条数（默认 20，最大 100）",
-                        "name": "page_size",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -10292,17 +10918,26 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.SubmissionPublicListResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.SubmissionPublicItem"
+                                            }
                                         }
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     }
                 }
@@ -12722,7 +13357,7 @@
                     {
                         "type": "integer",
                         "description": "每页条数（默认 20，最大 100）",
-                        "name": "page_size",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
@@ -12732,17 +13367,26 @@
                         "schema": {
                             "allOf": [
                                 {
-                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
                                 },
                                 {
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.MySubmissionListResponse"
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.MySubmissionItem"
+                                            }
                                         }
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     },
                     "401": {
@@ -12899,7 +13543,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/internal_module_upload.WxaUploadResult"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_upload_model.WxaUploadResult"
                                         }
                                     }
                                 }
@@ -15140,7 +15784,11 @@
                 },
                 "status": {
                     "description": "0=启用 1=停用",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -15276,7 +15924,11 @@
                 },
                 "status": {
                     "description": "0=上架 1=下架",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "summary": {
                     "type": "string"
@@ -15374,7 +16026,11 @@
                 },
                 "status": {
                     "description": "0=上架 1=下架",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "title": {
                     "type": "string"
@@ -15418,7 +16074,11 @@
                 },
                 "status": {
                     "description": "0=启用 1=停用",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -15695,7 +16355,11 @@
                 },
                 "status": {
                     "description": "0=启用 1=停用",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -15761,7 +16425,11 @@
                 },
                 "status": {
                     "description": "0=启用 1=停用",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -15924,7 +16592,7 @@
                     "type": "integer"
                 },
                 "gift_type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.GiftType"
                 },
                 "icon": {
                     "type": "string"
@@ -15968,7 +16636,7 @@
                     "type": "integer"
                 },
                 "gift_type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.GiftType"
                 },
                 "icon": {
                     "type": "string"
@@ -16060,7 +16728,7 @@
                     "type": "string"
                 },
                 "type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.GiftType"
                 }
             }
         },
@@ -16071,7 +16739,7 @@
                     "type": "integer"
                 },
                 "gift_type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.GiftType"
                 },
                 "icon": {
                     "type": "string"
@@ -16115,7 +16783,7 @@
                     "type": "integer"
                 },
                 "type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.GiftType"
                 }
             }
         },
@@ -16159,7 +16827,7 @@
                     "type": "string"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "nickname": {
                     "type": "string"
@@ -17661,7 +18329,7 @@
                     "type": "string"
                 },
                 "type": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.SettingValueType"
                 },
                 "value": {
                     "type": "string"
@@ -17691,11 +18359,19 @@
                 },
                 "status": {
                     "description": "0=启用 1=停用",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "type": {
                     "description": "0=string 1=number 2=bool 3=json 4=text 5=image",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.SettingValueType"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -17750,6 +18426,158 @@
                 "value": {
                     "type": "string",
                     "maxLength": 10000
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_source_model.AdminSourceDetailResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "registered_count": {
+                    "type": "integer"
+                },
+                "report_count": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_source_model.AdminSourceListItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "registered_count": {
+                    "type": "integer"
+                },
+                "report_count": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_source_model.CreateSourceRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "end_time": {
+                    "description": "RFC 3339 格式，空=不限",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "start_time": {
+                    "description": "RFC 3339 格式，空=不限",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_source_model.ReportRequest": {
+            "type": "object",
+            "required": [
+                "source_id"
+            ],
+            "properties": {
+                "source_id": {
+                    "description": "来源 ID（UUID 格式）",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_source_model.SourceStatsItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "source_id": {
+                    "type": "string"
+                },
+                "source_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_source_model.SourceStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "description": "0=启用 1=禁用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_source_model.UpdateSourceRequest": {
+            "type": "object",
+            "properties": {
+                "end_time": {
+                    "description": "nil=不修改，非 nil 的空字符串=清除",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "start_time": {
+                    "description": "nil=不修改，非 nil 的空字符串=清除",
+                    "type": "string"
                 }
             }
         },
@@ -17893,29 +18721,6 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminSubmissionListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminSubmissionItem"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
         "github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminUpdateSortOrderRequest": {
             "type": "object",
             "required": [
@@ -17960,29 +18765,6 @@
                     "type": "boolean"
                 },
                 "reward_coins": {
-                    "type": "integer"
-                }
-            }
-        },
-        "github_com_vbegin_tlnc_v6_internal_module_submission_model.MySubmissionListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.MySubmissionItem"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
                     "type": "integer"
                 }
             }
@@ -18084,29 +18866,6 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_submission_model.SubmissionPublicListResponse": {
-            "type": "object",
-            "properties": {
-                "items": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.SubmissionPublicItem"
-                    }
-                },
-                "page": {
-                    "type": "integer"
-                },
-                "page_size": {
-                    "type": "integer"
-                },
-                "total": {
-                    "type": "integer"
-                },
-                "total_pages": {
-                    "type": "integer"
-                }
-            }
-        },
         "github_com_vbegin_tlnc_v6_internal_module_submission_model.SubmitSubmissionRequest": {
             "type": "object",
             "required": [
@@ -18127,6 +18886,56 @@
                 },
                 "is_public": {
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult": {
+            "type": "object",
+            "properties": {
+                "chunk_index": {
+                    "type": "integer"
+                },
+                "file_id": {
+                    "type": "string"
+                },
+                "file_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UploadStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_upload_model.InitChunkResult": {
+            "type": "object",
+            "properties": {
+                "chunk_ticket": {
+                    "type": "string"
+                },
+                "file_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_upload_model.UploadFileResult": {
+            "type": "object",
+            "properties": {
+                "file_id": {
+                    "type": "string"
+                },
+                "file_url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_upload_model.WxaUploadResult": {
+            "type": "object",
+            "properties": {
+                "attachment": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
+                },
+                "media_url": {
+                    "type": "string"
                 }
             }
         },
@@ -19099,6 +19908,10 @@
                 },
                 "phone": {
                     "description": "Phone 手机号。",
+                    "type": "string"
+                },
+                "source_id": {
+                    "description": "SourceID 渠道来源 ID（可选，UUID 格式）。",
                     "type": "string"
                 }
             }
@@ -20386,6 +21199,26 @@
                 "FeelingLike"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.GiftType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "GiftTypeNormal": "普通",
+                "GiftTypeSpecial": "特殊"
+            },
+            "x-enum-descriptions": [
+                "普通",
+                "特殊"
+            ],
+            "x-enum-varnames": [
+                "GiftTypeNormal",
+                "GiftTypeSpecial"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange": {
             "type": "integer",
             "format": "int32",
@@ -20658,6 +21491,42 @@
                 "ProfileAuditRejected"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.SettingValueType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+            ],
+            "x-enum-comments": {
+                "SettingValueTypeBool": "bool",
+                "SettingValueTypeImage": "image",
+                "SettingValueTypeJSON": "json",
+                "SettingValueTypeNumber": "number",
+                "SettingValueTypeString": "string",
+                "SettingValueTypeText": "text"
+            },
+            "x-enum-descriptions": [
+                "string",
+                "number",
+                "bool",
+                "json",
+                "text",
+                "image"
+            ],
+            "x-enum-varnames": [
+                "SettingValueTypeString",
+                "SettingValueTypeNumber",
+                "SettingValueTypeBool",
+                "SettingValueTypeJSON",
+                "SettingValueTypeText",
+                "SettingValueTypeImage"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.ShipStatus": {
             "type": "integer",
             "format": "int32",
@@ -20916,67 +21785,6 @@
                 },
                 "user": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
-                }
-            }
-        },
-        "internal_module_upload.ChunkResult": {
-            "type": "object",
-            "properties": {
-                "chunk_index": {
-                    "type": "integer"
-                },
-                "file_id": {
-                    "type": "string"
-                },
-                "file_url": {
-                    "type": "string"
-                },
-                "status": {
-                    "description": "上传进度状态，见 status.UploadStatusXxx",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UploadStatus"
-                        }
-                    ]
-                }
-            }
-        },
-        "internal_module_upload.InitChunkResult": {
-            "type": "object",
-            "properties": {
-                "chunk_ticket": {
-                    "type": "string"
-                },
-                "file_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_module_upload.UploadFileResult": {
-            "type": "object",
-            "properties": {
-                "file_id": {
-                    "type": "string"
-                },
-                "file_url": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_module_upload.WxaUploadResult": {
-            "type": "object",
-            "properties": {
-                "attachment": {
-                    "description": "提交时携带（含 media_id + verify_code）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
-                        }
-                    ]
-                },
-                "media_url": {
-                    "description": "temp CDN URL，仅展示",
-                    "type": "string"
                 }
             }
         }

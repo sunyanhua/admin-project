@@ -43,7 +43,7 @@ const ProgramSubmission = () => {
   const fetchSubmissions = useCallback(async (params: any) => {
     return submissionApi.getList({
       page: params.page,
-      page_size: params.page_size,
+      size: params.page_size,
       status: params.status,
       keyword: params.keyword,
     });
