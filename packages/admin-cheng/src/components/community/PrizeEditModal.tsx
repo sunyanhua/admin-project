@@ -17,6 +17,11 @@ export interface PrizeEditModalProps {
   onSuccess: () => void;
 }
 
+const DEFAULT_ICONS: Record<number, string> = {
+  [PrizeType.COINS]: 'https://tlnc-cdn.vbegin.com.cn/upload/upload/1/20260810/019feb5f-b517-7cd8-ab6f-84354200c5e0.png',
+  [PrizeType.VOUCHER]: 'https://tlnc-cdn.vbegin.com.cn/upload/prod/1/20260810/019febec-e12a-75b5-bcf4-0f553752f230.png',
+};
+
 const PRIZE_TYPE_OPTIONS = [
   { label: '请选择', value: 0 },
   { label: PrizeTypeLabels[PrizeType.COINS], value: PrizeType.COINS },
@@ -116,19 +121,18 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
           <Input placeholder="如：iPhone 16" maxLength={64} showCount />
         </Form.Item>
 
-        <Form.Item label="奖品图标" name="icon" extra="建议尺寸：200 × 200 像素"
-          rules={[{ required: true, message: '请上传奖品图标' }]}
-        >
-          <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素" />
-        </Form.Item>
-
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
           <Form.Item label="奖品类型" name="prize_type" required
             rules={[{
               validator: (_, v) => v > 0 ? Promise.resolve() : Promise.reject(new Error('请选择奖品类型')),
             }]}
           >
-            <Select options={PRIZE_TYPE_OPTIONS} onChange={(v) => setPrizeType(v || 0)} />
+            <Select options={PRIZE_TYPE_OPTIONS} onChange={(v) => {
+              setPrizeType(v || 0);
+              if (mode === 'create' && DEFAULT_ICONS[v as number]) {
+                form.setFieldsValue({ icon: DEFAULT_ICONS[v as number] });
+              }
+            }} />
           </Form.Item>
 
           {isRedPacket && (
@@ -139,6 +143,12 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
             </Form.Item>
           )}
         </div>
+
+        <Form.Item label="奖品图标" name="icon" extra="建议尺寸：200 × 200 像素"
+          rules={[{ required: true, message: '请上传奖品图标' }]}
+        >
+          <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素" />
+        </Form.Item>
 
         {isVoucher && (
           <Form.Item label="券码说明" name="description"

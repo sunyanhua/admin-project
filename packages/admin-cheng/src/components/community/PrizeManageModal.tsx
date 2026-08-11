@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, Tag } from 'antd';
-import { SendOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { SendOutlined, PlusOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { PrizeTypeLabels, PrizeTypeColors } from '@shared/constants';
 import { lotteryApi, Prize } from '@/api/services/lottery';
@@ -31,6 +31,7 @@ const PrizeManageModal: React.FC<PrizeManageModalProps> = ({ visible, poolId, po
   const { success, error: showError } = useAppNotification();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingPrize, setEditingPrize] = useState<Prize | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
   const [deployModalVisible, setDeployModalVisible] = useState(false);
   const [deployingPrize, setDeployingPrize] = useState<Prize | null>(null);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -72,6 +73,20 @@ const PrizeManageModal: React.FC<PrizeManageModalProps> = ({ visible, poolId, po
   };
 
   const handleAdd = () => { setEditingPrize(null); setEditModalVisible(true); };
+
+  const handleEdit = async (r: Prize) => {
+    try {
+      setEditLoading(true);
+      const detail = await lotteryApi.getPrizeDetail(r.id);
+      setEditingPrize(detail as unknown as Prize);
+      setEditModalVisible(true);
+    } catch (e: any) {
+      showError(e?.response?.data?.message || '获取奖品详情失败');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const handleDeploy = (r: Prize) => { setDeployingPrize(r); setDeployModalVisible(true); };
 
   const filters: FilterConfig[] = [
@@ -87,9 +102,10 @@ const PrizeManageModal: React.FC<PrizeManageModalProps> = ({ visible, poolId, po
     { title: '余量', key: 'remaining', width: 70,
       render: (_: any, r: Prize) => (r.total_count ?? 0) - (r.used_count ?? 0) },
     statusSwitchColumn<Prize>('status', 0, 1, handleStatusToggle, '启用', '禁用', 100),
-    { title: '操作', key: 'action', width: 90, fixed: 'right' as const,
+    { title: '操作', key: 'action', width: 140, fixed: 'right' as const,
       render: (_: any, r: Prize) => (
         <Space size="small" className="action-buttons">
+          <Button type="link" size="small" icon={<EditOutlined />} loading={editLoading} onClick={() => handleEdit(r)}>编辑</Button>
           <Button type="link" size="small" icon={<SendOutlined />} onClick={() => handleDeploy(r)}>投放</Button>
         </Space>
       ),
@@ -115,8 +131,8 @@ const PrizeManageModal: React.FC<PrizeManageModalProps> = ({ visible, poolId, po
         <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
       </div>
 
-      <PrizeEditModal visible={editModalVisible} mode="create" poolId={poolId} prize={editingPrize}
-        onClose={() => setEditModalVisible(false)} onSuccess={refresh} />
+      <PrizeEditModal visible={editModalVisible} mode={editingPrize ? 'edit' : 'create'} poolId={poolId} prize={editingPrize}
+        onClose={() => { setEditModalVisible(false); setEditingPrize(null); }} onSuccess={refresh} />
       <PrizeDeployModal visible={deployModalVisible} prize={deployingPrize}
         poolStartTime={poolStartTime} poolEndTime={poolEndTime}
         onClose={() => setDeployModalVisible(false)} onSuccess={refresh} />
