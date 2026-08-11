@@ -28,17 +28,23 @@ import AgreementManagement from '@/pages/community/AgreementManagement';
 
 // 合作管理页面
 import ZoneManagement from '@/pages/operation/ZoneManagement';
-import ZoneApplicationList from '@/pages/operation/ZoneApplicationList';
 
 // 活动管理页面（v1）
 import ActivityManagement from '@/pages/operation/ActivityManagement';
 import EventRegisterList from '@/pages/events/EventRegisterList';
 
+// 首页弹窗管理
+import HomePopupManagement from '@/pages/system/HomePopupManagement';
 // 礼物管理
 import GiftManagement from '@/pages/community/GiftManagement';
 
 // 抽奖管理
 import LotteryManagement from '@/pages/community/LotteryManagement';
+
+// 广播投稿管理
+import ProgramSubmission from '@/pages/operation/ProgramSubmission';
+// 广播节目管理
+import ProgramManagement from '@/pages/operation/ProgramManagement';
 
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
@@ -77,7 +83,7 @@ const router = createHashRouter([
           { path: 'visits/users', element: <VisitUserStats /> },
           // 配置管理
           { path: 'banners', element: <BannerManagement /> },
-          { path: 'popups', element: <PlaceholderPage title="弹窗管理" /> },
+          { path: 'popups', element: <HomePopupManagement /> },
           { path: 'agreements', element: <AgreementManagement /> },
           { path: 'faq', element: <FaqManagement /> },
           { path: 'points', element: <PlaceholderPage title="积分配置" /> },
@@ -106,14 +112,13 @@ const router = createHashRouter([
         path: 'operation',
         children: [
           // 节目管理
-          { path: 'programs', element: <PlaceholderPage title="广播节目管理" /> },
-          { path: 'program-submissions', element: <PlaceholderPage title="广播投稿管理" /> },
+          { path: 'programs', element: <ProgramManagement /> },
+          { path: 'program-submissions', element: <ProgramSubmission /> },
           // 活动管理
           { path: 'activity', element: <ActivityManagement /> },
           { path: 'event-orders', element: <EventRegisterList /> },
           // 合作管理
           { path: 'cooperation', element: <ZoneManagement /> },
-          { path: 'cooperation-verify', element: <ZoneApplicationList /> },
           // 财务管理
           { path: 'orders', element: <PlaceholderPage title="订单管理" /> },
           { path: 'finance-stats', element: <PlaceholderPage title="财务统计" /> },

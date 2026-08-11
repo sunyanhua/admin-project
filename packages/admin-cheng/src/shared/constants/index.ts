@@ -29,3 +29,4 @@ export * from './zone.enums';
 export * from './gift.enums';
 export * from './lottery.enums';
 export * from './wxa.enums';
+export * from './submission.enums';

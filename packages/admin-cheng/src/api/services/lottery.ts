@@ -91,6 +91,7 @@ export interface UpdatePrizeRequest {
 export interface DeployRequest {
   total_count: number;
   voucher_codes?: string[];
+  enabled_at?: number;
   start_time?: string;
   end_time?: string;
 }

@@ -61,3 +61,32 @@ export const RegisterPayStatusColors: Record<number, string> = {
   [RegisterPayStatus.PAID]: 'success',
   [RegisterPayStatus.REFUNDED]: 'warning',
 };
+
+// 报名状态（免费FCFS：0=已完成 1=已取消）
+export enum RegisterStatus {
+  COMPLETED = 0,
+  CANCELLED = 1,
+}
+
+export const RegisterStatusLabels: Record<number, string> = {
+  [RegisterStatus.COMPLETED]: '已完成',
+  [RegisterStatus.CANCELLED]: '已取消',
+};
+
+export const RegisterStatusColors: Record<number, string> = {
+  [RegisterStatus.COMPLETED]: 'success',
+  [RegisterStatus.CANCELLED]: 'default',
+};
+
+// 报名用户性别（0=未设置 1=男 2=女）
+export enum RegisterGender {
+  UNSET = 0,
+  MALE = 1,
+  FEMALE = 2,
+}
+
+export const RegisterGenderLabels: Record<number, string> = {
+  [RegisterGender.UNSET]: '未设置',
+  [RegisterGender.MALE]: '男',
+  [RegisterGender.FEMALE]: '女',
+};

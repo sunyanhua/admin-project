@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, Image } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { ZoneStatus } from '@shared/constants';
 import { getSmallUrl } from '@/utils/imageUtils';
@@ -14,6 +14,7 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ZoneEditModal from '@/components/operation/ZoneEditModal';
+import ZoneVerifyModal from '@/components/operation/ZoneVerifyModal';
 
 const STATUS_OPTIONS = [
   { label: '启用', value: ZoneStatus.ENABLED },
@@ -30,6 +31,9 @@ const ZoneManagement = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editMode, setEditMode] = useState<'create' | 'edit'>('create');
   const [editingZone, setEditingZone] = useState<Zone | null>(null);
+  const [verifyModalVisible, setVerifyModalVisible] = useState(false);
+  const [verifyZoneId, setVerifyZoneId] = useState('');
+  const [verifyZoneName, setVerifyZoneName] = useState('');
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchZones = useCallback(async (params: any) => {
@@ -99,6 +103,12 @@ const ZoneManagement = () => {
     setEditingZone(null);
   };
 
+  const handleVerify = (record: Zone) => {
+    setVerifyZoneId(record.id);
+    setVerifyZoneName(record.name);
+    setVerifyModalVisible(true);
+  };
+
   const columns: ColumnsType<Zone> = [
     {
       title: 'Logo',
@@ -130,6 +140,9 @@ const ZoneManagement = () => {
       onEdit: (record) => handleEdit(record),
       render: (record: Zone) => (
         <Space size="small" className="action-buttons">
+          <Button type="link" size="small" icon={<SafetyCertificateOutlined />} onClick={() => handleVerify(record)}>
+            认证
+          </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
           </Button>
@@ -187,6 +200,13 @@ const ZoneManagement = () => {
         zone={editingZone}
         onClose={handleCloseModal}
         onSuccess={refresh}
+      />
+
+      <ZoneVerifyModal
+        visible={verifyModalVisible}
+        zoneId={verifyZoneId}
+        zoneName={verifyZoneName}
+        onClose={() => setVerifyModalVisible(false)}
       />
     </>
   );

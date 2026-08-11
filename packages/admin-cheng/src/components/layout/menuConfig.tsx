@@ -93,7 +93,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       label: '配置管理',
       children: [
         { key: '/system/banners', icon: <PictureOutlined />, label: '轮播图管理' },
-        { key: '/system/popups', icon: <ScheduleOutlined />, label: '弹窗管理' },
+        { key: '/system/popups', icon: <ScheduleOutlined />, label: '首页弹窗管理' },
         { key: '/system/agreements', icon: <FileTextOutlined />, label: '协议文档' },
         { key: '/system/faq', icon: <QuestionCircleOutlined />, label: 'FAQ管理' },
       ],
@@ -158,7 +158,6 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       children: [
         { key: '/operation/activity', icon: <CalendarOutlined />, label: '活动管理' },
         { key: '/operation/cooperation', icon: <ApartmentOutlined />, label: '合作专区管理' },
-        { key: '/operation/cooperation-verify', icon: <IdcardOutlined />, label: '专区用户认证' },
       ],
     },
 

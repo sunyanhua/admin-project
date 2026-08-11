@@ -6,7 +6,6 @@ import {
   RegisterPayStatus, RegisterPayStatusLabels, RegisterPayStatusColors,
 } from '@shared/constants';
 import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
-import { zoneApi, Zone } from '@/api/services/zone';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -89,12 +88,12 @@ const EventRegisterList = () => {
     },
     {
       title: '附件', dataIndex: 'attachments', key: 'attachments', width: 100,
-      render: (urls: string[]) => {
-        if (!urls || urls.length === 0) return <span style={{ color: '#999' }}>-</span>;
+      render: (items: RegisterRecord['attachments']) => {
+        if (!items || items.length === 0) return <span style={{ color: '#999' }}>-</span>;
         return (
           <Space size={4} wrap>
-            {urls.slice(0, 3).map((url, idx) => (
-              <Image key={idx} src={url} preview={{ src: url }}
+            {items.slice(0, 3).map((att, idx) => (
+              <Image key={idx} src={att.url} preview={{ src: att.url }}
                 style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4 }} />
             ))}
           </Space>

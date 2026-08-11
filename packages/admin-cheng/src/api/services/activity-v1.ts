@@ -94,15 +94,28 @@ export interface UpdateActivityRequest {
 // 报名记录
 // ========================
 
+export interface DBAttachment {
+  file_type?: string;
+  media_id?: string;
+  url: string;
+}
+
 export interface RegisterRecord {
   id: string;
   activity_id: string;
   user_id: string;
+  avatar?: string;
+  nickname?: string;
+  age?: number;
+  phone?: string;
   form_data: string;
   extra_data: string;
-  attachments: string[];
+  attachments: DBAttachment[];
   audit_status: number;
   pay_status: number;
+  gender: number;
+  register_status?: number; // 0=已完成 1=已取消（免费 FCFS）
+  completed_at?: string;    // 完成时间（付费 FCFS）
   checkin_at?: string;
   created_at?: string;
   updated_at?: string;
@@ -111,27 +124,37 @@ export interface RegisterRecord {
 export const activityApi = {
   /** 分页查询活动列表 */
   getList: (params?: { status?: number; keyword?: string; page?: number; size?: number }) => {
-    return request.get('/admin/v1/activity', { params });
+    return request.get('/admin/v1/bizops/activity', { params });
+  },
+
+  /** 活动详情 */
+  getDetail: (id: string) => {
+    return request.get(`/admin/v1/bizops/activity/${id}`);
   },
 
   /** 创建活动 */
   create: (data: CreateActivityRequest) => {
-    return request.post('/admin/v1/activity', data);
+    return request.post('/admin/v1/bizops/activity', data);
   },
 
   /** 编辑活动 */
   update: (id: string, data: UpdateActivityRequest) => {
-    return request.put(`/admin/v1/activity/${id}`, data);
+    return request.put(`/admin/v1/bizops/activity/${id}`, data);
   },
 
   /** 删除活动（软删除） */
   delete: (id: string) => {
-    return request.delete(`/admin/v1/activity/${id}`);
+    return request.delete(`/admin/v1/bizops/activity/${id}`);
+  },
+
+  /** 启用/停用活动 */
+  toggleStatus: (id: string, status: number) => {
+    return request.patch(`/admin/v1/bizops/activity/${id}/status`, { status });
   },
 
   /** 调整排序 */
   updateSortOrder: (id: string, sort_order: number) => {
-    return request.patch(`/admin/v1/activity/${id}/sort-order`, { sort_order });
+    return request.patch(`/admin/v1/bizops/activity/${id}/sort-order`, { sort_order });
   },
 
   // ========================
@@ -139,7 +162,12 @@ export const activityApi = {
   // ========================
 
   /** 活动报名记录列表 */
-  getRegisters: (activityId: string, params?: { page?: number; size?: number }) => {
-    return request.get(`/admin/v1/activity/${activityId}/register`, { params });
+  getRegisters: (activityId: string, params?: { page?: number; size?: number; audit_status?: number; pay_status?: number; register_status?: number; gender?: number; keyword?: string }) => {
+    return request.get(`/admin/v1/bizops/activity/${activityId}/register`, { params });
+  },
+
+  /** 审核报名 */
+  auditRegister: (activityId: string, registerId: string, data: { approved: boolean; reason?: string }) => {
+    return request.put(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/audit`, data);
   },
 };

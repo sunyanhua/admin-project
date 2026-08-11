@@ -92,16 +92,16 @@ const ActivityRegisterList = () => {
       dataIndex: 'attachments',
       key: 'attachments',
       width: 120,
-      render: (urls: string[]) => {
-        if (!urls || urls.length === 0) return <span style={{ color: '#999' }}>-</span>;
+      render: (items: RegisterRecord['attachments']) => {
+        if (!items || items.length === 0) return <span style={{ color: '#999' }}>-</span>;
         return (
           <Space size={4} wrap>
-            {urls.slice(0, 3).map((url, idx) => (
-              <Image key={idx} src={url} preview={{ src: url }}
+            {items.slice(0, 3).map((att, idx) => (
+              <Image key={idx} src={att.url} preview={{ src: att.url }}
                 style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid #e8e8e8' }}
               />
             ))}
-            {urls.length > 3 && <span style={{ color: '#999', fontSize: 12 }}>+{urls.length - 3}</span>}
+            {items.length > 3 && <span style={{ color: '#999', fontSize: 12 }}>+{items.length - 3}</span>}
           </Space>
         );
       },

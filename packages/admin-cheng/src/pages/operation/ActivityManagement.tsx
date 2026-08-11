@@ -33,6 +33,8 @@ const ActivityManagement = () => {
   const [registerModalVisible, setRegisterModalVisible] = useState(false);
   const [registerActivityId, setRegisterActivityId] = useState('');
   const [registerActivityTitle, setRegisterActivityTitle] = useState('');
+  const [registerActivityType, setRegisterActivityType] = useState<number>(0);
+  const [registerHasFormConfig, setRegisterHasFormConfig] = useState(false);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchActivities = useCallback(async (params: any) => {
@@ -71,9 +73,7 @@ const ActivityManagement = () => {
 
   const handleStatusToggle = async (record: Activity, checked: boolean) => {
     try {
-      await activityApi.update(record.id, {
-        status: checked ? ActivityV1Status.ENABLED : ActivityV1Status.DISABLED,
-      });
+      await activityApi.toggleStatus(record.id, checked ? ActivityV1Status.ENABLED : ActivityV1Status.DISABLED);
       success('状态更新成功');
       refresh();
     } catch (err: any) {
@@ -112,6 +112,8 @@ const ActivityManagement = () => {
   const handleShowRegisters = (record: Activity) => {
     setRegisterActivityId(record.id);
     setRegisterActivityTitle(record.title);
+    setRegisterActivityType(record.activity_type);
+    setRegisterHasFormConfig(!!record.form_config);
     setRegisterModalVisible(true);
   };
 
@@ -154,7 +156,12 @@ const ActivityManagement = () => {
       width: 120,
       render: (_: any, r: Activity) => {
         if (r.gender_enabled) {
-          return `${r.male_registered_count ?? 0}/${r.male_slots ?? '-'}  ${r.female_registered_count ?? 0}/${r.female_slots ?? '-'}`;
+          return (
+            <div>
+              <div>男 {r.male_registered_count ?? 0}/{r.male_slots ?? '-'}</div>
+              <div>女 {r.female_registered_count ?? 0}/{r.female_slots ?? '-'}</div>
+            </div>
+          );
         }
         return `${r.registered_count ?? 0}/${r.slots ?? '-'}`;
       },
@@ -257,6 +264,8 @@ const ActivityManagement = () => {
         visible={registerModalVisible}
         activityId={registerActivityId}
         activityTitle={registerActivityTitle}
+        activityType={registerActivityType}
+        hasFormConfig={registerHasFormConfig}
         onClose={() => setRegisterModalVisible(false)}
       />
     </>

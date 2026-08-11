@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space, Tag } from 'antd';
+import { Button, Space } from 'antd';
 import { EditOutlined, GiftOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { PoolTypeLabels } from '@shared/constants';
 import { lotteryApi, Pool, UserPrize } from '@/api/services/lottery';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
@@ -90,10 +89,6 @@ const LotteryManagement = () => {
 
   const columns: ColumnsType<Pool> = [
     { title: '名称', dataIndex: 'name', key: 'name', render: (t: string) => <span style={{ wordBreak: 'break-word' }}>{t}</span> },
-    {
-      title: '类型', dataIndex: 'pool_type', key: 'pool_type', width: 90,
-      render: (v: number) => <Tag title={PoolTypeLabels[v]}>{PoolTypeLabels[v] ?? v}</Tag>,
-    },
     {
       title: '中奖人数', key: 'winners', width: 140,
       render: (_: any, r: Pool) => {

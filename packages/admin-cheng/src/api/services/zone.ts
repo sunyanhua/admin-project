@@ -70,32 +70,32 @@ export interface ZoneListParams {
 export const zoneApi = {
   /** 分页查询专区列表 */
   getList: (params?: ZoneListParams) => {
-    return request.get('/admin/v1/zone', { params });
+    return request.get('/admin/v1/bizops/zone', { params });
   },
 
   /** 专区详情 */
   getDetail: (id: string) => {
-    return request.get(`/admin/v1/zone/${id}`);
+    return request.get(`/admin/v1/bizops/zone/${id}`);
   },
 
   /** 创建专区 */
   create: (data: CreateZoneRequest) => {
-    return request.post('/admin/v1/zone', data);
+    return request.post('/admin/v1/bizops/zone', data);
   },
 
   /** 编辑专区 */
   update: (id: string, data: UpdateZoneRequest) => {
-    return request.put(`/admin/v1/zone/${id}`, data);
+    return request.put(`/admin/v1/bizops/zone/${id}`, data);
   },
 
   /** 删除专区（软删除） */
   delete: (id: string) => {
-    return request.delete(`/admin/v1/zone/${id}`);
+    return request.delete(`/admin/v1/bizops/zone/${id}`);
   },
 
   /** 启用/停用专区 */
   toggleStatus: (id: string, status: ZoneStatus) => {
-    return request.patch(`/admin/v1/zone/${id}/status`, { status });
+    return request.patch(`/admin/v1/bizops/zone/${id}/status`, { status });
   },
 
   // ========================
@@ -104,16 +104,16 @@ export const zoneApi = {
 
   /** 专区申请列表 */
   getApplications: (zoneId: string, params?: { page?: number; size?: number }) => {
-    return request.get(`/admin/v1/zone/${zoneId}/application`, { params });
+    return request.get(`/admin/v1/bizops/zone/${zoneId}/application`, { params });
   },
 
   /** 审核申请（1=通过 2=拒绝） */
   reviewApplication: (zoneId: string, applicationId: string, data: { status: number; review_remark?: string }) => {
-    return request.put(`/admin/v1/zone/${zoneId}/application/${applicationId}`, data);
+    return request.put(`/admin/v1/bizops/zone/${zoneId}/application/${applicationId}`, data);
   },
 
   /** 撤销审核 */
   revokeApplication: (zoneId: string, applicationId: string) => {
-    return request.put(`/admin/v1/zone/${zoneId}/application/${applicationId}/revoke`);
+    return request.put(`/admin/v1/bizops/zone/${zoneId}/application/${applicationId}/revoke`);
   },
 };
