@@ -23,7 +23,7 @@ const SOURCE_STATUS = { ENABLED: 0, DISABLED: 1 } as const;
 
 const STATUS_OPTIONS = [
   { label: '启用', value: 0 },
-  { label: '禁用', value: 1 },
+  { label: '停用', value: 1 },
 ];
 
 const filters: FilterConfig[] = [
@@ -192,7 +192,7 @@ const SourceManagement = () => {
 
   const handleStatusToggle = async (record: Source, checked: boolean) => {
     try {
-      await sourceApi.updateSource(record.id, { status: checked ? SOURCE_STATUS.ENABLED : SOURCE_STATUS.DISABLED });
+      await sourceApi.toggleSourceStatus(record.id, checked ? SOURCE_STATUS.ENABLED : SOURCE_STATUS.DISABLED);
       success('状态更新成功');
       refresh();
     } catch (err: any) {

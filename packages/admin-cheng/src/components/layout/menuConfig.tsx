@@ -32,7 +32,6 @@ import {
 /** 顶部一级菜单配置 */
 export const topMenuItems = [
   { key: 'system', icon: <SettingOutlined />, label: '系统管理' },
-  { key: 'community', icon: <TeamOutlined />, label: '社区管理' },
   { key: 'operation', icon: <ShopOutlined />, label: '运营管理' },
 ];
 
@@ -100,17 +99,18 @@ export const sidebarMenuConfig: Record<string, any[]> = {
     },
   ],
 
-  // ========== 二、社区管理 ==========
-  community: [
+  // ========== 二、运营管理 ==========
+  operation: [
+    // === 社区管理原菜单（放在运营管理顶部） ===
     // 1. 用户资料
     {
       key: 'user-profile-group',
       icon: <IdcardOutlined />,
       label: '用户资料',
       children: [
-        { key: '/community/users', icon: <UserOutlined />, label: '基础资料管理' },
-        { key: '/community/match-profiles', icon: <IdcardOutlined />, label: '脱单资料管理' },
-        { key: '/community/user-verify', icon: <SafetyCertificateOutlined />, label: '用户认证' },
+        { key: '/operation/users', icon: <UserOutlined />, label: '基础资料管理' },
+        { key: '/operation/match-profiles', icon: <IdcardOutlined />, label: '脱单资料管理' },
+        { key: '/operation/user-verify', icon: <SafetyCertificateOutlined />, label: '用户认证' },
       ],
     },
 
@@ -120,26 +120,13 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       icon: <GiftOutlined />,
       label: '互动管理',
       children: [
-        { key: '/community/gifts', icon: <GiftOutlined />, label: '礼物管理' },
-        { key: '/community/lottery', icon: <TrophyOutlined />, label: '抽奖管理' },
+        { key: '/operation/gifts', icon: <GiftOutlined />, label: '礼物管理' },
+        { key: '/operation/lottery', icon: <TrophyOutlined />, label: '抽奖管理' },
       ],
     },
 
-    // 3. 社区统计
-    {
-      key: 'community-stats-group',
-      icon: <BarChartOutlined />,
-      label: '社区统计',
-      children: [
-        { key: '/community/stats', icon: <LineChartOutlined />, label: '平台数据统计' },
-        { key: '/community/trends', icon: <RiseOutlined />, label: '趋势统计' },
-      ],
-    },
-  ],
-
-  // ========== 三、运营管理 ==========
-  operation: [
-    // 1. 节目管理
+    // === 运营管理原菜单 ===
+    // 3. 节目管理
     {
       key: 'program-group',
       icon: <SoundOutlined />,
@@ -150,7 +137,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       ],
     },
 
-    // 2. 活动与合作
+    // 4. 活动与合作
     {
       key: 'event-group',
       icon: <ShopOutlined />,
@@ -161,13 +148,25 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       ],
     },
 
-    // 3. 财务管理
+    // 5. 财务管理
     {
       key: 'finance-group',
       icon: <DollarOutlined />,
       label: '财务管理',
       children: [
         { key: '/operation/orders', icon: <ShoppingCartOutlined />, label: '订单管理' },
+      ],
+    },
+
+    // === 放在最下面 ===
+    // 6. 社区统计
+    {
+      key: 'community-stats-group',
+      icon: <BarChartOutlined />,
+      label: '社区统计',
+      children: [
+        { key: '/operation/stats', icon: <LineChartOutlined />, label: '平台数据统计' },
+        { key: '/operation/trends', icon: <RiseOutlined />, label: '趋势统计' },
         { key: '/operation/finance-stats', icon: <BarChartOutlined />, label: '财务统计' },
       ],
     },

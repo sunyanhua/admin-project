@@ -38,6 +38,11 @@ export const sourceApi = {
     return request.delete(`/admin/v1/bizops/source/${id}`);
   },
 
+  // 启用/停用 — PATCH /admin/v1/bizops/source/{id}/status
+  toggleSourceStatus: (id: number, status: number) => {
+    return request.patch(`/admin/v1/bizops/source/${id}/status`, { status });
+  },
+
   // 注册用户按天汇总 — GET /admin/v1/bizops/source/register-stats
   getRegisterStats: (params: { start_date: string; end_date: string }) => {
     return request.get('/admin/v1/bizops/source/register-stats', { params });

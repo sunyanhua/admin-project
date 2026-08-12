@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Input, Select, Switch, Divider } from 'antd';
+import { Button, Input, Select } from 'antd';
 import { PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons';
 
 // ==================== Types ====================
@@ -7,6 +7,7 @@ import { PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons'
 type FieldType = 'text' | 'textarea' | 'select' | 'multi_select' | 'image';
 
 export interface FormField {
+  id: string;
   label: string;
   type: FieldType;
   required: boolean;
@@ -26,8 +27,9 @@ const FIELD_TYPE_OPTIONS = [
   { label: '图片上传', value: 'image' as const },
 ];
 
-let keyCounter = 0;
-function nextKey() { return `f_${Date.now()}_${keyCounter++}`; }
+function generateFieldId(): string {
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
 
 // ==================== Component ====================
 
@@ -40,28 +42,46 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
     try {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) {
-        setFields(parsed.map((f: any) => ({
-          label: f.label || '',
-          type: f.type || 'text',
-          required: f.required === true,
-          options: f.options || undefined,
-        })));
+        let hasNewId = false;
+        const withIds = parsed.map((f: any) => {
+          if (!f.id) hasNewId = true;
+          return {
+            id: f.id || generateFieldId(),
+            label: f.label || '',
+            type: f.type || 'text',
+            required: f.required === true,
+            options: f.options || undefined,
+          };
+        });
+        setFields(withIds);
+        // 旧数据补齐 id 后回写表单，确保提交时值也带 id
+        if (hasNewId) {
+          const clean = withIds.filter((f) => f.label.trim()).map(f => ({
+            id: f.id, label: f.label, type: f.type, required: f.required,
+            options: f.options?.length ? f.options : undefined,
+          }));
+          onChange?.(clean.length > 0 ? JSON.stringify(clean) : '');
+        }
       } else {
         setFields([]);
       }
     } catch {
       setFields([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const emit = useCallback((newFields: FormField[]) => {
     setFields(newFields);
-    const clean = newFields.filter((f) => f.label.trim());
+    const clean = newFields.filter((f) => f.label.trim()).map(f => ({
+      id: f.id, label: f.label, type: f.type, required: f.required,
+      options: f.options?.length ? f.options : undefined,
+    }));
     onChange?.(clean.length > 0 ? JSON.stringify(clean) : '');
   }, [onChange]);
 
   const addField = useCallback(() => {
-    const f: FormField = { label: '', type: 'text', required: false };
+    const f: FormField = { id: generateFieldId(), label: '', type: 'text', required: false };
     emit([...fields, f]);
   }, [fields, emit]);
 
@@ -89,7 +109,7 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
         const isSelect = field.type === 'select' || field.type === 'multi_select';
         return (
           <div
-            key={`${idx}`}
+            key={field.id}
             draggable
             onDragStart={() => { dragItemIdx.current = idx; }}
             onDragEnter={() => { dragOverIdx.current = idx; }}

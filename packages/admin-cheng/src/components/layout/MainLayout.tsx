@@ -51,8 +51,6 @@ const MainLayout = () => {
     let topMenu = 'system';
     if (currentPath === '/' || currentPath.startsWith('/system')) {
       topMenu = 'system';
-    } else if (currentPath.startsWith('/community')) {
-      topMenu = 'community';
     } else if (currentPath.startsWith('/operation')) {
       topMenu = 'operation';
     }

@@ -36,7 +36,7 @@ const FaqManagement = () => {
   const [editingEntry, setEditingEntry] = useState<HelpEntry | null>(null);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
-  // 加载全部分类
+  // 加载全部分类（一级分类）
   const loadCategories = useCallback(async () => {
     try {
       const res: any = await helpCategoryApi.getList({ page: 1, size: 100 });
@@ -51,19 +51,6 @@ const FaqManagement = () => {
   }, []);
 
   useEffect(() => { loadCategories(); }, [loadCategories]);
-
-  // 按树形顺序排列（根 → 子 → 孙）
-  const sortedCategories = categories.slice().sort((a, b) => {
-    const getPath = (c: HelpCategory): string => {
-      const findParent = (id: string | undefined, depth: number): string => {
-        if (!id || depth > 5) return '';
-        const p = categories.find((x) => x.id === id);
-        return p ? findParent(p.parent_id, depth + 1) + p.name + '\x00' : '';
-      };
-      return findParent(c.parent_id, 0) + c.name;
-    };
-    return getPath(a).localeCompare(getPath(b));
-  });
 
   // 条目列表
   const fetchEntries = useCallback(async (params: any) => {
@@ -226,9 +213,8 @@ const FaqManagement = () => {
                 <Button type="link" size="small" icon={<PlusOutlined />}
                   onClick={() => handleAddCategory()} />
               </div>
-              {sortedCategories.length > 0 ? (
+              {categories.length > 0 ? (
                 <>
-                  {/* 全部类别 */}
                   <div
                     onClick={() => { setSelectedCategoryId(undefined); setTimeout(() => refreshEntries(), 0); }}
                     style={{
@@ -241,24 +227,21 @@ const FaqManagement = () => {
                       transition: 'background 0.15s',
                     }}
                   >
-                    <span>全部类别</span>
+                    <span>全部分类</span>
                   </div>
-                  {sortedCategories.map((cat, idx) => {
-                  const depth = (cat.level ?? 1) - 1;
+                  {categories.map((cat, idx) => {
                   const isSelected = selectedCategoryId === cat.id;
                   return (
                     <div
                       key={cat.id}
                       onClick={() => { setSelectedCategoryId(cat.id); setTimeout(() => refreshEntries(), 0); }}
-                      className="faq-category-row"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         padding: '8px 14px',
-                        paddingLeft: `${14 + depth * 20}px`,
                         cursor: 'pointer',
-                        borderBottom: idx < sortedCategories.length - 1 ? '1px solid #f0f0f0' : 'none',
+                        borderBottom: idx < categories.length - 1 ? '1px solid #f0f0f0' : 'none',
                         background: isSelected ? '#e6f4ff' : '#fff',
                         color: isSelected ? '#1677ff' : undefined,
                         fontWeight: isSelected ? 600 : undefined,
@@ -311,7 +294,6 @@ const FaqManagement = () => {
         visible={categoryModalVisible}
         mode={categoryEditMode}
         category={editingCategory}
-        parentOptions={categoryOptions}
         onClose={() => setCategoryModalVisible(false)}
         onSuccess={() => { refreshEntries(); loadCategories(); }}
       />

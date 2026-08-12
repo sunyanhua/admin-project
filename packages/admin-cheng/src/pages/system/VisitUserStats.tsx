@@ -1,294 +1,188 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, DatePicker, Space, Typography, Table } from 'antd';
+import { Card, Row, Col, Statistic, DatePicker, Space, Typography, Table, Spin, Select, Tabs } from 'antd';
 import {
-  ComposedChart,
-  Line,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  UserOutlined, UserAddOutlined, PercentageOutlined, TeamOutlined,
+} from '@ant-design/icons';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-import { UserOutlined, UserAddOutlined, ShareAltOutlined, TeamOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
-import { statisticsApi } from '@/api/services/statistics';
+import { datacubeApi, RetainResponse, PortraitItem } from '@/api/services/datacube';
 import { useAppNotification } from '@/hooks/useAppNotification';
 
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
 
-interface RetainTotalData {
-  visit_uv: number;
-  visit_uv_new: number;
-}
+const toDateStr = (d: Dayjs) => d.format('YYYYMMDD');
 
-interface SummaryTotalData {
-  visit_total: number;
-  share_pv: number;
-  share_uv: number;
-}
-
-interface UserDailyItem {
-  ref_date: string;
-  visit_uv: number;
-  visit_uv_new: number;
-}
-
-interface SummaryDailyItem {
-  ref_date: string;
-  share_pv: number;
-  share_uv: number;
-}
+const PORTRAIT_MAP: Record<number, string> = { 1: '性别分布', 2: '年龄分布', 3: '地域分布' };
 
 const VisitUserStats = () => {
   const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
-  const [retainTotalData, setRetainTotalData] = useState<RetainTotalData | null>(null);
-  const [summaryTotalData, setSummaryTotalData] = useState<SummaryTotalData | null>(null);
-  const [userDailyData, setUserDailyData] = useState<UserDailyItem[]>([]);
-  const [summaryDailyData, setSummaryDailyData] = useState<SummaryDailyItem[]>([]);
+  const [retain, setRetain] = useState<RetainResponse | null>(null);
+  const [portrait, setPortrait] = useState<PortraitItem[]>([]);
+  const [portraitTab, setPortraitTab] = useState('1');
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs()]);
 
-  const fetchTotalData = useCallback(async () => {
-    try {
-      const [retainRes, summaryRes]: [any, any] = await Promise.all([
-        statisticsApi.getRetainTotal({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-        }),
-        statisticsApi.getSummaryTotal({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-        }),
-      ]);
-
-      const retainList = retainRes?.data?.list || retainRes?.data || [];
-      if (retainList.length > 0) {
-        setRetainTotalData(retainList[0]);
-      } else {
-        setRetainTotalData(null);
-      }
-
-      const summaryList = summaryRes?.data?.list || summaryRes?.data || [];
-      if (summaryList.length > 0) {
-        setSummaryTotalData(summaryList[0]);
-      } else {
-        setSummaryTotalData(null);
-      }
-    } catch (error: any) {
-      showError(error.response?.data?.msg || '获取累计数据失败');
-      setRetainTotalData(null);
-      setSummaryTotalData(null);
-    }
-  }, [dateRange]);
-
-  const fetchDailyData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
+    const params = { start_date: toDateStr(dateRange[0]), end_date: toDateStr(dateRange[1]) };
     try {
-      const [userRes, summaryRes]: [any, any] = await Promise.all([
-        statisticsApi.getRetainDaily({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-          start: 0,
-          length: 100,
-        }),
-        statisticsApi.getSummaryDaily({
-          date_min: dateRange[0].format('YYYY-MM-DD HH:mm:ss'),
-          date_max: dateRange[1].format('YYYY-MM-DD HH:mm:ss'),
-          start: 0,
-          length: 100,
-        }),
+      const [retRes, porRes]: any[] = await Promise.all([
+        datacubeApi.getRetain(params).catch(() => null),
+        datacubeApi.getPortrait(params),
       ]);
-
-      const userList = userRes?.data?.list || userRes?.data || [];
-      const summaryList = summaryRes?.data?.list || summaryRes?.data || [];
-
-      const validUserList = userList.filter((item: UserDailyItem) => item.ref_date);
-      const validSummaryList = summaryList.filter((item: SummaryDailyItem) => item.ref_date);
-
-      const sortedUser = [...validUserList].sort((a: UserDailyItem, b: UserDailyItem) =>
-        dayjs(a.ref_date).valueOf() - dayjs(b.ref_date).valueOf()
-      );
-      const sortedSummary = [...validSummaryList].sort((a: SummaryDailyItem, b: SummaryDailyItem) =>
-        dayjs(a.ref_date).valueOf() - dayjs(b.ref_date).valueOf()
-      );
-
-      setUserDailyData(sortedUser);
-      setSummaryDailyData(sortedSummary);
-    } catch (error: any) {
-      showError(error.response?.data?.msg || '获取趋势数据失败');
-      setUserDailyData([]);
-      setSummaryDailyData([]);
+      setRetain(retRes as RetainResponse | null);
+      setPortrait(Array.isArray(porRes) ? porRes : []);
+    } catch (e: any) {
+      showError(e?.response?.data?.message || '获取数据失败');
     } finally {
       setLoading(false);
     }
   }, [dateRange]);
 
-  useEffect(() => {
-    fetchTotalData();
-  }, [fetchTotalData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  useEffect(() => {
-    fetchDailyData();
-  }, [fetchDailyData]);
+  // 留存图表数据
+  const retainDaily = retain?.retain_json?.daily || [];
+  const retainWeekly = retain?.retain_json?.weekly || [];
+  const retainMonthly = retain?.retain_json?.monthly || [];
+  const retainLabels = ['1天后', '2天后', '3天后', '4天后', '5天后', '6天后', '7天后', '14天后', '30天后'];
+  const retainChartData = retainDaily.map((d, i) => ({
+    name: retainLabels[i] || `第${d.key}天`,
+    日留存: +(d.value * 100).toFixed(1),
+    周留存: +(retainWeekly[i]?.value ?? 0) * 100,
+    月留存: +(retainMonthly[i]?.value ?? 0) * 100,
+  }));
 
-  const chartData = userDailyData.map((userItem, index) => {
-    const summaryItem = summaryDailyData[index] || {};
-    return {
-      date: dayjs(userItem.ref_date).format('YYYY-MM-DD'),
-      用户访问: userItem.visit_uv,
-      用户新增: userItem.visit_uv_new,
-      转发次数: summaryItem.share_pv || 0,
-      转发人数: summaryItem.share_uv || 0,
-    };
-  });
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div style={{ background: '#fff', border: '1px solid #d9d9d9', padding: 12, fontSize: 12 }}>
-          <p style={{ margin: 0, fontWeight: 'bold' }}>{label}</p>
-          {payload.map((item: any, index: number) => (
-            <p key={index} style={{ margin: '4px 0', color: item.color }}>
-              {item.name}: {item.value}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
+  // 画像 Tab
+  const portraitByTab = portrait.filter(p => p.category === PORTRAIT_MAP[+portraitTab]);
+  const genderData = portrait.filter(p => p.category === '性别分布').map(p => ({ name: p.name, value: p.value, percentage: p.percentage }));
+  const genderChart = genderData.map(d => ({ name: d.name, UV: d.value }));
 
   return (
     <div>
       <Title level={2}>访问用户统计</Title>
-      <Text type="secondary">小程序用户访问与转发数据统计</Text>
+      <Text type="secondary">用户留存数据、画像分布分析</Text>
 
-      <Row gutter={[8, 16]} style={{ marginTop: 24, marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={4}>
-          <Card loading={!summaryTotalData}>
-            <Statistic
-              title="累计用户"
-              value={summaryTotalData?.visit_total ?? 0}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={4}>
-          <Card loading={!retainTotalData}>
-            <Statistic
-              title="用户访问"
-              value={retainTotalData?.visit_uv ?? 0}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={4}>
-          <Card loading={!retainTotalData}>
-            <Statistic
-              title="用户新增"
-              value={retainTotalData?.visit_uv_new ?? 0}
-              prefix={<UserAddOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={4}>
-          <Card loading={!summaryTotalData}>
-            <Statistic
-              title="转发次数"
-              value={summaryTotalData?.share_pv ?? 0}
-              prefix={<ShareAltOutlined />}
-              valueStyle={{ color: '#fa8c16' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={4}>
-          <Card loading={!summaryTotalData}>
-            <Statistic
-              title="转发人数"
-              value={summaryTotalData?.share_uv ?? 0}
-              prefix={<ShareAltOutlined />}
-              valueStyle={{ color: '#eb2f96' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      <Spin spinning={loading}>
+        <Row gutter={[16, 16]} style={{ marginTop: 24, marginBottom: 24 }}>
+          <Col xs={24} sm={12} md={6}>
+            <Card><Statistic title="活跃 UV" value={retain?.visit_uv ?? '-'} prefix={<TeamOutlined />} valueStyle={{ color: '#1890ff' }} /></Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card><Statistic title="新用户 UV" value={retain?.visit_uv_new ?? '-'} prefix={<UserAddOutlined />} valueStyle={{ color: '#52c41a' }} /></Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card><Statistic title="次日留存率" value={retainDaily[0] ? `${(retainDaily[0].value * 100).toFixed(1)}%` : '-'} prefix={<PercentageOutlined />} valueStyle={{ color: '#722ed1' }} /></Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card><Statistic title="数据日期" value={retain?.ref_date || '-'} prefix={<UserOutlined />} valueStyle={{ fontSize: 16 }} /></Card>
+          </Col>
+        </Row>
 
-      <Card
-        title="用户访问趋势统计"
-        extra={
-          <Space>
-            <RangePicker
-              value={dateRange}
-              disabledDate={(current) => current && current < dayjs('2026-06-04').startOf('day')}
-              onChange={(dates) => {
-                if (dates && dates.length === 2) {
-                  setDateRange([dates[0] as Dayjs, dates[1] as Dayjs]);
-                }
-              }}
-            />
-          </Space>
-        }
-      >
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartData} barSize={40}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 12 }}
-              axisLine={{ stroke: '#d9d9d9' }}
-              tickLine={{ stroke: '#d9d9d9' }}
-            />
-            <YAxis
-              yAxisId="left"
-              tick={{ fontSize: 12 }}
-              axisLine={{ stroke: '#d9d9d9' }}
-              tickLine={{ stroke: '#d9d9d9' }}
-              label={{ value: '用户', angle: -90, position: 'insideLeft', fontSize: 12 }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              tick={{ fontSize: 12 }}
-              axisLine={{ stroke: '#d9d9d9' }}
-              tickLine={{ stroke: '#d9d9d9' }}
-              label={{ value: '转发', angle: 90, position: 'insideRight', fontSize: 12 }}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              layout="horizontal"
-              align="center"
-              verticalAlign="bottom"
-              iconType="circle"
-              iconSize={8}
-              wrapperStyle={{ fontSize: 12 }}
-            />
-            <Bar yAxisId="right" dataKey="转发次数" fill="#fa8c16" name="转发次数" />
-            <Bar yAxisId="right" dataKey="转发人数" fill="#eb2f96" name="转发人数" />
-            <Line yAxisId="left" type="monotone" dataKey="用户访问" stroke="#52c41a" strokeWidth={2} dot={false} name="用户访问" />
-            <Line yAxisId="left" type="monotone" dataKey="用户新增" stroke="#722ed1" strokeWidth={2} dot={false} name="用户新增" />
-          </ComposedChart>
-        </ResponsiveContainer>
-        <Table
-          dataSource={chartData}
-          rowKey="date"
-          pagination={false}
-          size="small"
-          style={{ marginTop: 16 }}
-          columns={[
-            { title: '日期', dataIndex: 'date', key: 'date', width: 120 },
-            { title: '用户访问', dataIndex: '用户访问', key: '用户访问', width: 100 },
-            { title: '用户新增', dataIndex: '用户新增', key: '用户新增', width: 100 },
-            { title: '转发次数', dataIndex: '转发次数', key: '转发次数', width: 100 },
-            { title: '转发人数', dataIndex: '转发人数', key: '转发人数', width: 100 },
-          ]}
-        />
-      </Card>
+        <Card title="用户留存" style={{ marginBottom: 24 }}>
+          {retainChartData.length > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={retainChartData} barSize={30}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} unit="%" />
+                  <Tooltip formatter={(v: number) => `${v}%`} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar dataKey="日留存" fill="#1890ff" name="日留存" />
+                  <Bar dataKey="周留存" fill="#52c41a" name="周留存" />
+                  <Bar dataKey="月留存" fill="#722ed1" name="月留存" />
+                </BarChart>
+              </ResponsiveContainer>
+              <Table dataSource={retainChartData} rowKey="name" pagination={false} size="small" style={{ marginTop: 16 }}
+                columns={[
+                  { title: '指标', dataIndex: 'name', key: 'name', width: 120 },
+                  { title: '日留存', dataIndex: '日留存', key: 'd', width: 100, render: (v: number) => `${v}%` },
+                  { title: '周留存', dataIndex: '周留存', key: 'w', width: 100, render: (v: number) => `${v}%` },
+                  { title: '月留存', dataIndex: '月留存', key: 'm', width: 100, render: (v: number) => `${v}%` },
+                ]}
+              />
+            </>
+          ) : (
+            <div style={{ padding: 32, textAlign: 'center', color: '#999' }}>暂无留存数据</div>
+          )}
+        </Card>
+
+        <Card
+          title="用户画像"
+          extra={
+            <RangePicker value={dateRange} size="small"
+              onChange={d => { if (d?.[0] && d?.[1]) setDateRange([d[0], d[1]]); }} />
+          }
+        >
+          <Tabs
+            activeKey={portraitTab}
+            onChange={setPortraitTab}
+            items={[
+              {
+                key: '1',
+                label: '性别分布',
+                children: (
+                  <Row gutter={24}>
+                    <Col xs={24} md={12}>
+                      <Table dataSource={genderData} rowKey="name" pagination={false} size="small"
+                        columns={[
+                          { title: '性别', dataIndex: 'name', key: 'name', width: 80 },
+                          { title: 'UV', dataIndex: 'value', key: 'value', width: 100 },
+                          { title: '占比', dataIndex: 'percentage', key: 'percentage', width: 100,
+                            render: (v: number) => `${(v * 100).toFixed(1)}%` },
+                        ]}
+                      />
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <ResponsiveContainer width="100%" height={250}>
+                        <BarChart data={genderChart}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="UV" fill="#1890ff" name="UV" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </Col>
+                  </Row>
+                ),
+              },
+              {
+                key: '2',
+                label: '年龄分布',
+                children: (
+                  <Table dataSource={portrait.filter(p => p.category === '年龄分布').map(p => ({ ...p, percent: `${(p.percentage * 100).toFixed(1)}%` }))}
+                    rowKey="name" pagination={false} size="small"
+                    columns={[
+                      { title: '年龄段', dataIndex: 'name', key: 'name' },
+                      { title: 'UV', dataIndex: 'value', key: 'value', width: 120 },
+                      { title: '占比', dataIndex: 'percent', key: 'percent', width: 120 },
+                    ]}
+                  />
+                ),
+              },
+              {
+                key: '3',
+                label: '地域分布',
+                children: (
+                  <Table dataSource={portrait.filter(p => p.category === '地域分布').map(p => ({ ...p, percent: `${(p.percentage * 100).toFixed(1)}%` }))}
+                    rowKey="key" pagination={false} size="small"
+                    columns={[
+                      { title: '地区', dataIndex: 'name', key: 'name' },
+                      { title: 'UV', dataIndex: 'value', key: 'value', width: 120 },
+                      { title: '占比', dataIndex: 'percent', key: 'percent', width: 120 },
+                    ]}
+                  />
+                ),
+              },
+            ]}
+          />
+        </Card>
+      </Spin>
     </div>
   );
 };

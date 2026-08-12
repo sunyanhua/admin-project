@@ -54,14 +54,16 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // 跟踪编辑来源：true = 编辑器内部输入，false = 外部 value prop 变化
   const internalEditRef = useRef(false);
   const prevValueRef = useRef(value);
+  const valueRef = useRef(value);
+  valueRef.current = value;
 
-  // 首次挂载注入内容（ReactQuill 的 defaultValue 会把 HTML 当纯文本）
+  // 首次挂载注入内容（用 valueRef 拿到最新值）
   useEffect(() => {
     let attempts = 0;
     const timer = setInterval(() => {
       const editor = editorRef.current?.getEditor?.();
       if (editor?.root) {
-        editor.root.innerHTML = value || '';
+        editor.root.innerHTML = valueRef.current || '';
         clearInterval(timer);
       } else if (++attempts > 50) {
         clearInterval(timer);
@@ -71,7 +73,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // value prop 变化时同步编辑器 — 仅响应外部变化（切 Tab 等），编辑器内部输入不重置
+  // value prop 变化时同步编辑器
   useEffect(() => {
     if (internalEditRef.current) {
       internalEditRef.current = false;

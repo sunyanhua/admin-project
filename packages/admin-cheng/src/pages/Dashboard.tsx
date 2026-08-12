@@ -16,7 +16,7 @@ const Dashboard = () => {
   const { success, error: showError } = useAppNotification();
   const navigate = useNavigate();
   const [stats, setStats] = useState([
-    { title: '用户总数', value: '-', icon: <UserOutlined />, color: '#1890ff', bg: '#e6f7ff', path: '/community/users' },
+    { title: '用户总数', value: '-', icon: <UserOutlined />, color: '#1890ff', bg: '#e6f7ff', path: '/operation/users' },
     { title: '动态总数', value: '-', icon: <FileTextOutlined />, color: '#faad14', bg: '#fff7e6', path: '/community/feeds' },
     { title: '活动总数', value: '-', icon: <ShopOutlined />, color: '#52c41a', bg: '#f6ffed', path: '/events/list' },
     { title: '收入总额', value: '-', icon: <DollarOutlined />, color: '#722ed1', bg: '#f9f0ff', path: '/events/finance/payments' },
@@ -28,7 +28,7 @@ const Dashboard = () => {
     statisticsApi.getDatacube().then((res: any) => {
       const d = res?.data || res || {};
       setStats([
-        { title: '用户总数', value: d.users_total ?? d.user_total ?? '-', icon: <UserOutlined />, color: '#1890ff', bg: '#e6f7ff', path: '/community/users' },
+        { title: '用户总数', value: d.users_total ?? d.user_total ?? '-', icon: <UserOutlined />, color: '#1890ff', bg: '#e6f7ff', path: '/operation/users' },
         { title: '动态总数', value: d.feeds_total ?? d.feed_total ?? '-', icon: <FileTextOutlined />, color: '#faad14', bg: '#fff7e6', path: '/community/feeds' },
         { title: '活动总数', value: d.events_total ?? d.event_total ?? '-', icon: <ShopOutlined />, color: '#52c41a', bg: '#f6ffed', path: '/events/list' },
         { title: '收入总额', value: (() => { const v = d.event_order_payable; return v != null ? `¥${(v / 100).toFixed(2)}` : '-'; })(), icon: <DollarOutlined />, color: '#722ed1', bg: '#f9f0ff', path: '/events/finance/payments' },

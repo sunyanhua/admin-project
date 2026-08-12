@@ -90,27 +90,20 @@ const router = createHashRouter([
         ],
       },
 
-      // ========== 社区管理 ==========
-      {
-        path: 'community',
-        children: [
-          // 用户资料
-          { path: 'users', element: <UserList /> },
-          { path: 'match-profiles', element: <MatchProfileManagement /> },
-          { path: 'user-verify', element: <PlaceholderPage title="用户认证" /> },
-          // 互动管理
-          { path: 'gifts', element: <GiftManagement /> },
-          { path: 'lottery', element: <LotteryManagement /> },
-          // 社区统计
-          { path: 'stats', element: <PlaceholderPage title="平台数据统计" /> },
-          { path: 'trends', element: <PlaceholderPage title="趋势统计" /> },
-        ],
-      },
-
-      // ========== 运营管理 ==========
+      // ========== 运营管理（含原社区管理菜单，放在顶部） ==========
       {
         path: 'operation',
         children: [
+          // 用户资料（原社区管理）
+          { path: 'users', element: <UserList /> },
+          { path: 'match-profiles', element: <MatchProfileManagement /> },
+          { path: 'user-verify', element: <PlaceholderPage title="用户认证" /> },
+          // 互动管理（原社区管理）
+          { path: 'gifts', element: <GiftManagement /> },
+          { path: 'lottery', element: <LotteryManagement /> },
+          // 社区统计（原社区管理）
+          { path: 'stats', element: <PlaceholderPage title="平台数据统计" /> },
+          { path: 'trends', element: <PlaceholderPage title="趋势统计" /> },
           // 节目管理
           { path: 'programs', element: <ProgramManagement /> },
           { path: 'program-submissions', element: <ProgramSubmission /> },

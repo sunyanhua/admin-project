@@ -37,7 +37,7 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
             form_config: zone.form_config || '',
             agreement: zone.agreement || '',
           });
-        }, 0);
+        }, 50);
       } else {
         setStatusEnabled(true);
         setTimeout(() => form.resetFields(), 0);
