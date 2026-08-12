@@ -1,13 +1,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Tag, Space, Modal, Avatar } from 'antd';
-import { CheckOutlined, CloseOutlined, ReloadOutlined, EyeOutlined } from '@ant-design/icons';
+import { Button, Tag, Space, Avatar } from 'antd';
+import { CheckOutlined, ReloadOutlined, EyeOutlined, ExportOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import * as XLSX from 'xlsx';
 import {
   RegisterAuditStatus, RegisterAuditStatusLabels, RegisterAuditStatusColors,
   RegisterPayStatus, RegisterPayStatusLabels, RegisterPayStatusColors,
   RegisterGender, RegisterGenderLabels,
-  RegisterStatus, RegisterStatusLabels, RegisterStatusColors,
+  FreeFCFSStatusLabels, FreeFCFSStatusColors,
   ActivityType,
 } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
@@ -16,30 +17,97 @@ import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
+import { DetailModal } from '@/components/templates/DetailModal';
+import { buildUserDetailSections } from '@/components/user/UserDetailSections';
+import type {
+  CommunityUserSummary,
+  CommunityProfileSummary,
+  CommunityMatchProfileSummary,
+  CommunityWalletSummary,
+} from '@/api/types/user';
+import { ProfileAuditStatus, MatchProfileAuditStatus } from '@/api/types/status';
+import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import UserInfoModal from '@/components/operation/UserInfoModal';
+import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
 
 interface ActivityRegisterModalProps {
   visible: boolean;
   activityId: string;
   activityTitle: string;
   activityType: number;
-  hasFormConfig: boolean;
+  formConfig: FormField[];
   onClose: () => void;
 }
 
+const EMPTY_WALLET: CommunityWalletSummary = {
+  points: 0, points_earned: 0, points_spent: 0,
+  coins: 0, coins_earned: 0, coins_spent: 0,
+  version: 0, created_at: '', updated_at: '',
+};
+
+function buildUserDetailFromRecord(r: RegisterRecord) {
+  const up = r.user_profile as any;
+  const ud = r.user_data as any;
+  const mp = r.user_match_profile as any;
+  const nickname = up?.nickname || r.nickname || r.user_id;
+  const avatar = up?.avatar || r.avatar || '';
+  const gender = up?.gender ?? r.gender;
+  const age = up?.age ?? r.age ?? 0;
+  return {
+    user: {
+      user_id: r.user_id, phone: ud?.phone || r.phone || '', wallet_balance: 0,
+      credits: ud?.credits ?? 0, credits_weekly: 0, credits_weekly_rank: null,
+      is_migrated: true, is_activated: ud?.is_activated ?? true,
+      activated_at: ud?.activated_at || null,
+      last_active_at: ud?.last_active_at || null,
+      created_at: ud?.created_at || r.created_at || '',
+      has_profile: true, has_match_profile: !!mp,
+      status: 0,
+    } as CommunityUserSummary,
+    profile: {
+      nickname, avatar,
+      gender: gender ?? 0,
+      birth_date: up?.birth_date || '',
+      age: age ?? 0, zodiac: up?.zodiac || '',
+      audit_status: up?.audit_status ?? ProfileAuditStatus.APPROVED,
+      created_at: up?.created_at || '', updated_at: up?.updated_at || '',
+    } as CommunityProfileSummary,
+    matchProfile: mp ? {
+      match_code: mp.match_code || '', popularity: mp.popularity ?? 0,
+      is_active: mp.is_active ?? true, visibility: mp.visibility ?? 1,
+      zone_id: mp.zone_id || null, real_name: mp.real_name || '',
+      cn_zodiac: mp.cn_zodiac || '', marital_status: mp.marital_status ?? 0,
+      education: mp.education ?? 0, profession: mp.profession || '',
+      workplace: mp.workplace || '', hometown: mp.hometown || '',
+      current_city: mp.current_city || '', height: mp.height ?? 0,
+      weight: mp.weight ?? 0, hobby_tags: mp.hobby_tags || '',
+      income_range: mp.income_range ?? null, self_intro: mp.self_intro || '',
+      partner_demand: mp.partner_demand || '', photos: mp.photos || [],
+      id_card_tail: mp.id_card_tail || null, blood_type: mp.blood_type ?? 0,
+      ethnicity: mp.ethnicity || '', household_registration: mp.household_registration || '',
+      specialties: mp.specialties || '',
+      audit_status: mp.audit_status ?? MatchProfileAuditStatus.APPROVED,
+      audit_reason: mp.audit_reason || null, audited_by: mp.audited_by || null,
+      audited_at: mp.audited_at || null, can_modify_at: mp.can_modify_at || null,
+      is_org_certified: mp.is_org_certified || false,
+      is_real_verified: mp.is_real_verified || false,
+      gifts_received: mp.gifts_received ?? 0,
+    } as unknown as CommunityMatchProfileSummary : null,
+    wallet: EMPTY_WALLET,
+  };
+}
+
 const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
-  visible, activityId, activityTitle, activityType, hasFormConfig, onClose,
+  visible, activityId, activityTitle, activityType, formConfig, onClose,
 }) => {
   const { success, error: showError } = useAppNotification();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
-  const [auditModalVisible, setAuditModalVisible] = useState(false);
-  const [auditRecord, setAuditRecord] = useState<RegisterRecord | null>(null);
-  const [auditApproved, setAuditApproved] = useState(false);
-  const [auditReason, setAuditReason] = useState('');
-  const [auditLoading, setAuditLoading] = useState(false);
-  const [userInfoVisible, setUserInfoVisible] = useState(false);
-  const [userInfoRecord, setUserInfoRecord] = useState<RegisterRecord | null>(null);
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [detailRecord, setDetailRecord] = useState<RegisterRecord | null>(null);
+  const [detailReadonly, setDetailReadonly] = useState(false);
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailRecord, setUserDetailRecord] = useState<RegisterRecord | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const isFreeFCFS = activityType === ActivityType.FREE_FCFS;
   const isPaidFCFS = activityType === ActivityType.PAID_FCFS;
@@ -51,7 +119,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       page: params.page, size: params.page_size,
       audit_status: params.audit_status,
       pay_status: params.pay_status,
-      register_status: params.register_status,
       gender: params.gender,
       keyword: params.keyword,
     });
@@ -82,38 +149,93 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const handleSearch = (vals: Record<string, any>) => search(vals);
   const handleReset = () => { setSearchValues({}); search({}); };
 
-  const handleAudit = (record: RegisterRecord, approved: boolean) => {
-    setAuditRecord(record);
-    setAuditApproved(approved);
-    setAuditReason('');
-    setAuditModalVisible(true);
-  };
-
-  const confirmAudit = async () => {
-    if (!auditRecord) return;
+  const handleExport = async () => {
+    setExporting(true);
     try {
-      setAuditLoading(true);
-      await activityApi.auditRegister(auditRecord.activity_id, auditRecord.id, {
-        approved: auditApproved,
-        reason: auditReason || undefined,
-      });
-      success(auditApproved ? '已通过' : '已拒绝');
-      setAuditModalVisible(false);
-      refresh();
+      // 循环分页拉取全部数据
+      const allData: RegisterRecord[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await activityApi.getRegisters(activityId, { page, size: 100 });
+        const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        allData.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      const headers = ['用户名', '姓名', '性别', '年龄', '手机号', '婚姻状况', '学历', '户籍', '单位'];
+      if (isFreeFCFS) headers.push('报名状态');
+      else if (isPaidFCFS) { headers.push('支付状态', '完成时间'); }
+      else if (isFreeReview) { headers.push('审核状态', '拒绝原因', '报名时间'); }
+      if (!isFreeReview) headers.push('报名时间');
+      formConfig.forEach(f => headers.push(f.label));
+      const rows: string[][] = [];
+      const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
+      const EDUCATION_MAP: Record<number, string> = { 1: '高中及以下', 2: '大专', 3: '本科', 4: '硕士', 5: '博士', 6: '其他' };
+      for (const item of allData) {
+        const up = item.user_profile;
+        const mp = item.user_match_profile as any;
+        const nickname = up?.nickname || item.nickname || item.user_id;
+        const name = mp?.real_name || '';
+        const gender = up?.gender ?? item.gender;
+        const genderLabel = gender != null ? (RegisterGenderLabels[gender] ?? String(gender)) : '';
+        const age = up?.age ?? item.age ?? '';
+        const phone = (item.user_data as any)?.phone || item.phone || '';
+        const marital = mp?.marital_status != null ? (MARITAL_MAP[mp.marital_status] || String(mp.marital_status)) : '';
+        const edu = mp?.education != null ? (EDUCATION_MAP[mp.education] || String(mp.education)) : '';
+        const household = mp?.household_registration || '';
+        const workplace = mp?.workplace || '';
+        const createdAt = item.created_at ? item.created_at.replace('T', ' ').substring(0, 19) : '';
+        const completedAt = item.completed_at ? item.completed_at.replace('T', ' ').substring(0, 19) : '';
+        let formDataMap: Record<string, any> = {};
+        try { formDataMap = JSON.parse(item.form_data || '{}'); } catch { /* ignore */ }
+        const attsByField: Record<string, string[]> = {};
+        for (const att of (item.attachments || [])) {
+          const tag = (att as any).tags || '';
+          if (!attsByField[tag]) attsByField[tag] = [];
+          attsByField[tag].push(att.url);
+        }
+        const row = [nickname, name, genderLabel, String(age), phone, marital, edu, household, workplace];
+        if (isFreeFCFS) { row.push(FreeFCFSStatusLabels[item.pay_status] || String(item.pay_status)); }
+        else if (isPaidFCFS) { row.push(RegisterPayStatusLabels[item.pay_status] || String(item.pay_status), completedAt); }
+        else if (isFreeReview) { row.push(RegisterAuditStatusLabels[item.audit_status] || String(item.audit_status), item.audit_reason || '', createdAt); }
+        if (!isFreeReview) row.push(createdAt);
+        formConfig.forEach(f => {
+          const val = formDataMap[f.id];
+          const urls = attsByField[f.id] || [];
+          const parts: string[] = [];
+          if (val != null) parts.push(String(val));
+          parts.push(...urls);
+          row.push(parts.join(', '));
+        });
+        rows.push(row);
+      }
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = headers.map(() => ({ wch: 20 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '报名名单');
+      XLSX.writeFile(wb, `${activityTitle}_报名名单.xlsx`);
+      success('导出成功');
     } catch (err: any) {
-      showError(err?.response?.data?.message || '审核操作失败');
+      showError(err?.response?.data?.message || '导出失败');
     } finally {
-      setAuditLoading(false);
+      setExporting(false);
     }
   };
 
-  // 左上角筛选条件取决于活动类型
+  const openDetail = (record: RegisterRecord, readonly: boolean) => {
+    setDetailRecord(record);
+    setDetailReadonly(readonly);
+    setDetailVisible(true);
+  };
+
+  // 筛选
   const filters: FilterConfig[] = [];
   if (isFreeFCFS) {
-    filters.push({ name: 'register_status', placeholder: '全部报名状态', type: 'select',
+    filters.push({ name: 'pay_status', placeholder: '全部报名状态', type: 'select',
       options: [
-        { label: '已完成', value: RegisterStatus.COMPLETED },
-        { label: '已取消', value: RegisterStatus.CANCELLED },
+        { label: '已完成', value: RegisterPayStatus.PAID },
+        { label: '已取消', value: RegisterPayStatus.REFUNDED },
       ],
     });
   } else if (isPaidFCFS) {
@@ -138,102 +260,86 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       { label: '女', value: RegisterGender.FEMALE },
     ],
   });
-  filters.push({ name: 'keyword', placeholder: '搜索用户ID', type: 'input' });
+  filters.push({ name: 'keyword', placeholder: '搜索用户名/昵称', type: 'input' });
 
-  // 列定义
   const columns: ColumnsType<RegisterRecord> = [
-    // 第1列：用户头像+昵称
     {
-      title: '用户',
+      title: '用户名',
       key: 'user',
       width: 160,
-      render: (_: any, r: RegisterRecord) => (
-        <Button type="link" style={{ padding: 0, height: 'auto' }}
-          onClick={() => { setUserInfoRecord(r); setUserInfoVisible(true); }}>
-          <Space size={4}>
-            <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }}
-              src={getAvatarUrl((r as any).avatar)} />
-            <span style={{ fontSize: 14 }}>{(r as any).nickname || r.user_id}</span>
-          </Space>
-        </Button>
-      ),
+      render: (_: any, r: RegisterRecord) => {
+        const up = r.user_profile;
+        const nickname = up?.nickname || r.nickname || r.user_id;
+        const avatar = up?.avatar || r.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            onClick={() => { setUserDetailRecord(r); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
     },
     {
-      title: '性别', dataIndex: 'gender', key: 'gender', width: 70,
-      render: (v: number) => RegisterGenderLabels[v] ?? v,
+      title: '姓名',
+      key: 'real_name',
+      width: 100,
+      render: (_: any, r: RegisterRecord) => {
+        const name = r.user_match_profile?.real_name;
+        return name || <span style={{ color: '#999' }}>-</span>;
+      },
     },
     {
-      title: '年龄', dataIndex: 'age', key: 'age', width: 60,
-      render: (v: number) => v ?? '-',
+      title: '性别',
+      key: 'gender',
+      width: 70,
+      render: (_: any, r: RegisterRecord) => {
+        const g = r.user_profile?.gender ?? r.gender;
+        return g != null ? (RegisterGenderLabels[g] ?? g) : '-';
+      },
     },
     {
-      title: '手机号', dataIndex: 'phone', key: 'phone', width: 130,
-      render: (v: string) => v || '-',
+      title: '手机号',
+      key: 'phone',
+      width: 130,
+      render: (_: any, r: RegisterRecord) => {
+        const phone = r.user_data?.phone || r.phone;
+        return phone || <span style={{ color: '#999' }}>-</span>;
+      },
     },
   ];
 
-  // 根据活动类型追加列
   if (isFreeFCFS) {
     columns.push(
       dateTimeColumn<RegisterRecord>('created_at', '报名时间'),
-      {
-        title: '报名状态', dataIndex: 'register_status', key: 'register_status', width: 90,
-        render: (v: number) => (
-          <Tag color={RegisterStatusColors[v] || 'default'}>{RegisterStatusLabels[v] ?? v}</Tag>
-        ),
-      },
+      { title: '报名状态', dataIndex: 'pay_status', key: 'pay_status', width: 90,
+        render: (v: number) => <Tag color={FreeFCFSStatusColors[v] || 'default'}>{FreeFCFSStatusLabels[v] ?? v}</Tag> },
     );
   } else if (isPaidFCFS) {
     columns.push(
-      {
-        title: '支付状态', dataIndex: 'pay_status', key: 'pay_status', width: 90,
-        render: (v: number) => (
-          <Tag color={RegisterPayStatusColors[v] || 'default'}>{RegisterPayStatusLabels[v] ?? v}</Tag>
-        ),
-      },
+      { title: '支付状态', dataIndex: 'pay_status', key: 'pay_status', width: 90,
+        render: (v: number) => <Tag color={RegisterPayStatusColors[v] || 'default'}>{RegisterPayStatusLabels[v] ?? v}</Tag> },
       dateTimeColumn<RegisterRecord>('completed_at', '完成时间'),
     );
   } else if (isFreeReview) {
     columns.push(
-      {
-        title: '审核状态', dataIndex: 'audit_status', key: 'audit_status', width: 80,
-        render: (v: number) => (
-          <Tag color={RegisterAuditStatusColors[v] || 'default'}>{RegisterAuditStatusLabels[v] ?? v}</Tag>
-        ),
-      },
+      { title: '审核状态', dataIndex: 'audit_status', key: 'audit_status', width: 80,
+        render: (v: number) => <Tag color={RegisterAuditStatusColors[v] || 'default'}>{RegisterAuditStatusLabels[v] ?? v}</Tag> },
       dateTimeColumn<RegisterRecord>('created_at', '报名时间'),
     );
   }
 
   // 报名信息列
-  if (hasFormConfig) {
+  if (formConfig.length > 0) {
     columns.push({
       title: '报名信息', key: 'form_info', width: 80,
       render: (_: any, r: RegisterRecord) => {
         if (!r.form_data) return <span style={{ color: '#999' }}>-</span>;
-        try {
-          const parsed = typeof r.form_data === 'string' ? JSON.parse(r.form_data) : r.form_data;
-          const text = typeof parsed === 'object' ? JSON.stringify(parsed) : String(parsed);
-          return (
-            <Button type="link" size="small" icon={<EyeOutlined />}
-              onClick={() => Modal.info({
-                title: '报名信息',
-                content: <pre style={{ maxHeight: 400, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{text}</pre>,
-                width: 500,
-                maskClosable: false,
-              })}>[详情]</Button>
-          );
-        } catch {
-          return (
-            <Button type="link" size="small" icon={<EyeOutlined />}
-              onClick={() => Modal.info({
-                title: '报名信息',
-                content: <pre style={{ maxHeight: 400, overflow: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.form_data}</pre>,
-                width: 500,
-                maskClosable: false,
-              })}>[详情]</Button>
-          );
-        }
+        return (
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r, true)}>[详情]</Button>
+        );
       },
     });
   }
@@ -246,11 +352,10 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         const isPending = r.audit_status === RegisterAuditStatus.PENDING;
         return (
           <Space size="small" className="action-buttons">
-            {isPending && (
-              <>
-                <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => handleAudit(r, true)}>通过</Button>
-                <Button type="link" size="small" danger icon={<CloseOutlined />} onClick={() => handleAudit(r, false)}>拒绝</Button>
-              </>
+            {isPending ? (
+              <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => openDetail(r, false)}>审核</Button>
+            ) : (
+              <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r, true)}>查看</Button>
             )}
           </Space>
         );
@@ -270,53 +375,38 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
-            <Button icon={<ReloadOutlined />} onClick={refresh} style={{ marginLeft: 12, flexShrink: 0 }}>刷新</Button>
+          <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+            <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+            <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
+          </Space>
           </div>
-          <StandardTable
-            columns={columns}
-            dataSource={data}
-            loading={loading}
-            pagination={pagination}
-            onPageChange={onPageChange}
-          />
+          <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
         </div>
       </ScrollableModal>
 
-      <Modal
-        title={auditApproved ? '审核通过' : '审核拒绝'}
-        open={auditModalVisible}
-        onCancel={() => setAuditModalVisible(false)}
-        onOk={confirmAudit}
-        confirmLoading={auditLoading}
-        okText="确认"
-        cancelText="取消"
-        maskClosable={false}
-      >
-        <p style={{ marginBottom: 12 }}>
-          {auditApproved
-            ? `确认通过用户 ${auditRecord?.user_id} 的报名申请？`
-            : `确认拒绝用户 ${auditRecord?.user_id} 的报名申请？拒绝后将释放名额。`}
-        </p>
-        {!auditApproved && (
-          <div>
-            <div style={{ marginBottom: 4, fontWeight: 500 }}>拒绝原因（选填）</div>
-            <textarea
-              value={auditReason}
-              onChange={e => setAuditReason(e.target.value)}
-              maxLength={500}
-              rows={3}
-              style={{ width: '100%', padding: '8px 12px', border: '1px solid #d9d9d9', borderRadius: 6, resize: 'vertical' }}
-              placeholder="请输入拒绝原因"
-            />
-          </div>
-        )}
-      </Modal>
-
-      <UserInfoModal
-        visible={userInfoVisible}
-        record={userInfoRecord}
-        onClose={() => { setUserInfoVisible(false); setUserInfoRecord(null); }}
+      <ActivityRegisterDetailModal
+        visible={detailVisible}
+        record={detailRecord}
+        formConfig={formConfig}
+        activityType={activityType}
+        readonly={detailReadonly}
+        onClose={() => { setDetailVisible(false); setDetailRecord(null); }}
+        onSuccess={refresh}
       />
+
+      {userDetailRecord && (
+        <DetailModal
+          title="用户资料"
+          open={userDetailVisible}
+          entity={buildUserDetailFromRecord(userDetailRecord)}
+          width={720}
+          className="user-detail-modal"
+          onClose={() => { setUserDetailVisible(false); setUserDetailRecord(null); }}
+          render={(props: ReturnType<typeof buildUserDetailFromRecord>) =>
+            buildUserDetailSections(props)
+          }
+        />
+      )}
     </>
   );
 };

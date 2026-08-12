@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getAccessToken } from '..';
 import type { UploadFileResult } from '../types/upload';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 
 /** 通用非分片上传辅助函数 */
 const uploadFile = (

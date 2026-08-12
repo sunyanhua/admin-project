@@ -393,7 +393,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询指定活动的报名记录，支持多维度组合筛选。\naudit_status: 0=待审核 1=通过 2=拒绝；pay_status: 0=待支付 1=已支付 2=已退款；\ngender: 0=未设置 1=男 2=女；keyword: 按报名用户 UUID 模糊匹配",
+                "description": "分页查询指定活动的报名记录，支持多维度组合筛选。\naudit_status: 0=待审核 1=通过 2=拒绝；pay_status: 0=待支付 1=已支付 2=已退款；\ngender: 0=未设置 1=男 2=女；keyword: 按用户昵称（模糊）、手机号（精确）、真实姓名（精确）搜索",
                 "produces": [
                     "application/json"
                 ],
@@ -429,7 +429,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "关键字模糊搜索（user_id）",
+                        "description": "关键字搜索（昵称、手机号、姓名）",
                         "name": "keyword",
                         "in": "query"
                     },
@@ -7184,7 +7184,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询指定专区的申请记录。响应字段 status: 0=待审核 1=已通过 2=已拒绝 3=已撤销",
+                "description": "分页查询指定专区的申请记录，支持状态筛选和关键字搜索。\n响应字段 status: 0=待审核 1=已通过 2=已拒绝 3=已撤销；\nkeyword: 按用户昵称（模糊）、手机号（精确）、真实姓名（精确）搜索",
                 "produces": [
                     "application/json"
                 ],
@@ -7199,6 +7199,18 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选（0=待审核 1=已通过 2=已拒绝 3=已撤销）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字搜索（昵称、手机号、姓名）",
+                        "name": "keyword",
+                        "in": "query"
                     },
                     {
                         "type": "integer",
@@ -15699,7 +15711,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.DBAttachment"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
                 "audit_status": {
@@ -15730,8 +15742,22 @@
                 "updated_at": {
                     "type": "string"
                 },
+                "user_data": {
+                    "description": "关联用户数据（批量查询填充，允许 null——用户可能未完善资料或已注销）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserData"
+                        }
+                    ]
+                },
                 "user_id": {
                     "type": "string"
+                },
+                "user_match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserMatchProfileData"
+                },
+                "user_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserProfileData"
                 }
             }
         },
@@ -15761,7 +15787,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.DBAttachment"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.PrivateAttachmentInfo"
                     }
                 },
                 "audit_status": {
@@ -18135,15 +18161,11 @@
                     "description": "未中奖/已参与/奖品已抢光的友好提示",
                     "type": "string"
                 },
-                "prize_name": {
-                    "description": "中奖时填充",
-                    "type": "string"
-                },
-                "prize_type": {
-                    "description": "中奖时填充",
+                "prize_data": {
+                    "description": "中奖时填充，奖品公开信息",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.LotteryPrizeData"
                         }
                     ]
                 },
@@ -18157,6 +18179,29 @@
                 },
                 "won": {
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_lottery_model.LotteryPrizeData": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "prize_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
                 }
             }
         },
@@ -19373,7 +19418,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
                 "audit_reason": {
@@ -19388,9 +19433,6 @@
                 "audited_by": {
                     "type": "string"
                 },
-                "avatar": {
-                    "type": "string"
-                },
                 "content": {
                     "type": "string"
                 },
@@ -19406,20 +19448,34 @@
                 "is_public": {
                     "type": "boolean"
                 },
-                "nickname": {
-                    "type": "string"
-                },
                 "reward_coins": {
                     "type": "integer"
                 },
                 "sort_order": {
                     "type": "integer"
                 },
+                "type": {
+                    "type": "integer"
+                },
                 "updated_at": {
                     "type": "string"
                 },
+                "user_data": {
+                    "description": "关联用户数据（批量查询填充；nickname/avatar 已迁移至 user_profile 子对象）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserData"
+                        }
+                    ]
+                },
                 "user_id": {
                     "type": "string"
+                },
+                "user_match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserMatchProfileData"
+                },
+                "user_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserProfileData"
                 }
             }
         },
@@ -19432,7 +19488,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
                 "audit_reason": {
@@ -19442,9 +19498,6 @@
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.SubmissionAuditStatus"
                 },
                 "audited_at": {
-                    "type": "string"
-                },
-                "avatar": {
                     "type": "string"
                 },
                 "content": {
@@ -19462,17 +19515,31 @@
                 "is_public": {
                     "type": "boolean"
                 },
-                "nickname": {
-                    "type": "string"
-                },
                 "reward_coins": {
                     "type": "integer"
                 },
                 "sort_order": {
                     "type": "integer"
                 },
+                "type": {
+                    "type": "integer"
+                },
+                "user_data": {
+                    "description": "关联用户数据（批量查询填充；nickname/avatar 已迁移至 user_profile 子对象）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserData"
+                        }
+                    ]
+                },
                 "user_id": {
                     "type": "string"
+                },
+                "user_match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserMatchProfileData"
+                },
+                "user_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserProfileData"
                 }
             }
         },
@@ -19491,10 +19558,10 @@
             "type": "object",
             "properties": {
                 "attachments": {
-                    "description": "审核通过→CDN URL；否则→[]",
+                    "description": "审核通过→CDN URL；否则→预签名 URL",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.PrivateAttachmentInfo"
                     }
                 },
                 "audit_reason": {
@@ -19509,10 +19576,6 @@
                 "created_at": {
                     "type": "string"
                 },
-                "has_attachments": {
-                    "description": "不受审核状态影响",
-                    "type": "boolean"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -19520,6 +19583,9 @@
                     "type": "boolean"
                 },
                 "reward_coins": {
+                    "type": "integer"
+                },
+                "type": {
                     "type": "integer"
                 }
             }
@@ -19530,7 +19596,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.PrivateAttachmentInfo"
                     }
                 },
                 "audit_reason": {
@@ -19545,9 +19611,6 @@
                 "created_at": {
                     "type": "string"
                 },
-                "has_attachments": {
-                    "type": "boolean"
-                },
                 "id": {
                     "type": "string"
                 },
@@ -19555,6 +19618,9 @@
                     "type": "boolean"
                 },
                 "reward_coins": {
+                    "type": "integer"
+                },
+                "type": {
                     "type": "integer"
                 }
             }
@@ -19569,7 +19635,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
                 "avatar": {
@@ -19586,6 +19652,9 @@
                 },
                 "sort_order": {
                     "type": "integer"
+                },
+                "type": {
+                    "type": "integer"
                 }
             }
         },
@@ -19599,7 +19668,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
                 "avatar": {
@@ -19617,6 +19686,9 @@
                     "type": "string"
                 },
                 "sort_order": {
+                    "type": "integer"
+                },
+                "type": {
                     "type": "integer"
                 }
             }
@@ -19641,6 +19713,9 @@
                 },
                 "is_public": {
                     "type": "boolean"
+                },
+                "type": {
+                    "type": "integer"
                 }
             }
         },
@@ -21363,7 +21438,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.DBAttachment"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
                 "created_at": {
@@ -21387,8 +21462,22 @@
                 "updated_at": {
                     "type": "string"
                 },
+                "user_data": {
+                    "description": "关联用户数据（批量查询填充，允许 null——用户可能未完善资料或已注销）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserData"
+                        }
+                    ]
+                },
                 "user_id": {
                     "type": "string"
+                },
+                "user_match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserMatchProfileData"
+                },
+                "user_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserProfileData"
                 },
                 "zone_id": {
                     "type": "string"
@@ -21401,7 +21490,7 @@
                 "attachments": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.DBAttachment"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.PrivateAttachmentInfo"
                     }
                 },
                 "created_at": {
@@ -21652,7 +21741,7 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_pkg_attachment.DBAttachment": {
+        "github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo": {
             "type": "object",
             "properties": {
                 "file_type": {
@@ -21662,14 +21751,205 @@
                     "type": "string"
                 },
                 "tags": {
-                    "description": "用户标签",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_attachment.PrivateAttachmentInfo": {
+            "type": "object",
+            "properties": {
+                "file_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UploadFileType"
+                },
+                "media_id": {
+                    "type": "string"
+                },
+                "tags": {
                     "type": "string"
                 },
                 "url": {
                     "type": "string"
                 },
                 "verify_code": {
-                    "description": "转存后校验码（编辑时复用）",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserData": {
+            "type": "object",
+            "properties": {
+                "activated_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "credits": {
+                    "type": "integer"
+                },
+                "has_match_profile": {
+                    "type": "boolean"
+                },
+                "has_profile": {
+                    "type": "boolean"
+                },
+                "is_activated": {
+                    "type": "boolean"
+                },
+                "last_active_at": {
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "解密后的完整手机号",
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserStatus"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserMatchProfileData": {
+            "type": "object",
+            "properties": {
+                "audit_reason": {
+                    "type": "string"
+                },
+                "audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
+                },
+                "blood_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "current_city": {
+                    "type": "string"
+                },
+                "education": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
+                },
+                "ethnicity": {
+                    "type": "string"
+                },
+                "gifts_received": {
+                    "type": "integer"
+                },
+                "graduate": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "hobby_tags": {
+                    "type": "string"
+                },
+                "hometown": {
+                    "type": "string"
+                },
+                "household_registration": {
+                    "type": "string"
+                },
+                "id_card_tail": {
+                    "type": "string"
+                },
+                "income_range": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_org_certified": {
+                    "type": "boolean"
+                },
+                "is_real_verified": {
+                    "type": "boolean"
+                },
+                "marital_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
+                },
+                "match_code": {
+                    "type": "string"
+                },
+                "partner_demand": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "profession": {
+                    "type": "string"
+                },
+                "real_name": {
+                    "description": "解密后的完整真实姓名",
+                    "type": "string"
+                },
+                "self_intro": {
+                    "type": "string"
+                },
+                "specialties": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility"
+                },
+                "weight": {
+                    "type": "integer"
+                },
+                "workplace": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserProfileData": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "zodiac": {
                     "type": "string"
                 }
             }

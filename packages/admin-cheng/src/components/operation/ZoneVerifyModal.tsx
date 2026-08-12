@@ -1,17 +1,30 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space } from 'antd';
-import { EditOutlined, UndoOutlined } from '@ant-design/icons';
+import { Button, Space, Avatar } from 'antd';
+import { EditOutlined, UndoOutlined, ReloadOutlined, EyeOutlined, ExportOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import * as XLSX from 'xlsx';
 import {
   ApplicationReviewStatus,
   ApplicationReviewStatusColors,
+  ApplicationReviewStatusLabels,
+  RegisterGenderLabels,
 } from '@shared/constants';
+import { getAvatarUrl } from '@/utils/imageUtils';
 import { zoneApi, Application } from '@/api/services/zone';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn, statusTagColumn } from '@/components/templates/ColumnHelpers';
+import { DetailModal } from '@/components/templates/DetailModal';
+import { buildUserDetailSections } from '@/components/user/UserDetailSections';
+import type {
+  CommunityUserSummary,
+  CommunityProfileSummary,
+  CommunityMatchProfileSummary,
+  CommunityWalletSummary,
+} from '@/api/types/user';
+import { ProfileAuditStatus, MatchProfileAuditStatus } from '@/api/types/status';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ZoneApplicationReviewModal from '@/components/operation/ZoneApplicationReviewModal';
 
@@ -36,28 +49,84 @@ interface ZoneVerifyModalProps {
   onClose: () => void;
 }
 
+const EMPTY_WALLET: CommunityWalletSummary = {
+  points: 0, points_earned: 0, points_spent: 0,
+  coins: 0, coins_earned: 0, coins_spent: 0,
+  version: 0, created_at: '', updated_at: '',
+};
+
+function buildUserDetailFromApp(app: Application) {
+  const ud = app.user_data as any;
+  const up = app.user_profile as any;
+  const mp = app.user_match_profile as any;
+  return {
+    user: {
+      user_id: app.user_id, phone: (ud as any)?.phone || mp?.phone || '', wallet_balance: 0,
+      credits: ud?.credits ?? 0, credits_weekly: 0, credits_weekly_rank: null,
+      is_migrated: true, is_activated: ud?.is_activated ?? false,
+      activated_at: ud?.activated_at || null,
+      last_active_at: ud?.last_active_at || null,
+      created_at: ud?.created_at || '',
+      has_profile: ud?.has_profile ?? false,
+      has_match_profile: ud?.has_match_profile ?? false,
+      status: ud?.status,
+    } as CommunityUserSummary,
+    profile: {
+      nickname: up?.nickname || app.user_id, avatar: up?.avatar || '',
+      gender: up?.gender ?? 0, birth_date: up?.birth_date || '',
+      age: up?.age ?? 0, zodiac: up?.zodiac || '',
+      audit_status: up?.audit_status ?? ProfileAuditStatus.PENDING,
+      created_at: up?.created_at || '', updated_at: up?.updated_at || '',
+    } as CommunityProfileSummary,
+    matchProfile: mp ? {
+      match_code: mp.match_code || '', popularity: mp.popularity ?? 0,
+      is_active: mp.is_active ?? false, visibility: mp.visibility ?? 1,
+      zone_id: mp.zone_id || null, real_name: mp.real_name || '',
+      cn_zodiac: mp.cn_zodiac || '', marital_status: mp.marital_status ?? 0,
+      education: mp.education ?? 0, profession: mp.profession || '',
+      workplace: mp.workplace || '', hometown: mp.hometown || '',
+      current_city: mp.current_city || '', height: mp.height ?? 0,
+      weight: mp.weight ?? 0, hobby_tags: mp.hobby_tags || '',
+      income_range: mp.income_range ?? null, self_intro: mp.self_intro || '',
+      partner_demand: mp.partner_demand || '', photos: mp.photos || [],
+      id_card_tail: mp.id_card_tail || null, blood_type: mp.blood_type ?? 0,
+      ethnicity: mp.ethnicity || '', household_registration: mp.household_registration || '',
+      specialties: mp.specialties || '',
+      audit_status: mp.audit_status ?? MatchProfileAuditStatus.PENDING,
+      audit_reason: mp.audit_reason || null, audited_by: mp.audited_by || null,
+      audited_at: mp.audited_at || null, can_modify_at: mp.can_modify_at || null,
+      is_org_certified: mp.is_org_certified || false,
+      is_real_verified: mp.is_real_verified || false,
+      gifts_received: mp.gifts_received ?? 0,
+    } as unknown as CommunityMatchProfileSummary : null,
+    wallet: EMPTY_WALLET,
+  };
+}
+
 const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zoneName, onClose }) => {
   const { success, error: showError } = useAppNotification();
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reviewReadonly, setReviewReadonly] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
-  const [searchValues, setSearchValues] = useState<Record<string, any>>({ status: '' });
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailData, setUserDetailData] = useState<Application | null>(null);
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const [exporting, setExporting] = useState(false);
 
   const fetchApps = useCallback(async (params: any) => {
     if (!zoneId) return { list: [], total: 0 };
     return zoneApi.getApplications(zoneId, {
       page: params.page, size: params.page_size,
+      status: params.status || undefined,
+      keyword: params.keyword || undefined,
     });
   }, [zoneId]);
 
   const formatAppResponse = useCallback((res: any) => {
     const list = Array.isArray(res) ? res : (res?.list || []);
     const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
-    let filtered = list;
-    if (searchValues.status !== '' && searchValues.status != null) {
-      filtered = list.filter((item: Application) => item.status === searchValues.status);
-    }
-    return { list: filtered, count: searchValues.status !== '' && searchValues.status != null ? filtered.length : total };
-  }, [searchValues.status]);
+    return { list, count: total };
+  }, []);
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<Application>({
     fetchFn: fetchApps, formatResponse: formatAppResponse,
@@ -68,20 +137,89 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
     const key = `${visible}-${zoneId}`;
     if (visible && zoneId && key !== prevKeyRef.current) {
       prevKeyRef.current = key;
-      setSearchValues({ status: '' });
-      search({ _t: Date.now(), status: '' });
+      setSearchValues({});
+      search({ _t: Date.now() });
     }
   }, [visible, zoneId, search]);
 
-  const handleSearchChange = (name: string, value: any) => {
-    setSearchValues(p => ({ ...p, [name]: value }));
-  };
-
+  const handleSearchChange = (name: string, value: any) => setSearchValues(p => ({ ...p, [name]: value }));
   const handleSearch = (vals: Record<string, any>) => search(vals);
-  const handleReset = () => { setSearchValues({ status: '' }); search({ status: '' }); };
+  const handleReset = () => { setSearchValues({}); search({}); };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const allData: Application[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await zoneApi.getApplications(zoneId, { page, size: 100 });
+        const list: Application[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        allData.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      const zoneRes: any = await zoneApi.getDetail(zoneId);
+      const zoneData = zoneRes as any;
+      let formFields: Array<{ id: string; label: string }> = [];
+      try {
+        const fc = typeof zoneData?.form_config === 'string' ? JSON.parse(zoneData.form_config) : zoneData?.form_config;
+        if (Array.isArray(fc)) formFields = fc.map((f: any) => ({ id: f.id, label: f.label }));
+      } catch { /* ignore */ }
+      const headers = ['用户名', '姓名', '性别', '手机号', '审核状态', '拒绝原因', '申请时间'];
+      formFields.forEach(f => headers.push(f.label));
+      const rows: string[][] = [];
+      for (const item of allData) {
+        const profile = item.user_profile;
+        const mp = item.user_match_profile as any;
+        const nickname = profile?.nickname || item.user_id;
+        const gender = profile?.gender != null ? (RegisterGenderLabels[profile.gender] ?? String(profile.gender)) : '';
+        const phone = (item.user_data as any)?.phone || mp?.phone || '';
+        const name = mp?.real_name || '';
+        const statusText = ApplicationReviewStatusLabels[item.status] || String(item.status);
+        const remark = item.review_remark || '';
+        let formDataMap: Record<string, any> = {};
+        try { formDataMap = JSON.parse(item.form_data || '{}'); } catch { /* ignore */ }
+        const createdAt = item.created_at ? item.created_at.replace('T', ' ').substring(0, 19) : '';
+        const attsByField: Record<string, string[]> = {};
+        for (const att of (item.attachments || [])) {
+          const tag = (att as any).tags || '';
+          if (!attsByField[tag]) attsByField[tag] = [];
+          attsByField[tag].push(att.url);
+        }
+        const row = [nickname, name, gender, phone, statusText, remark, createdAt];
+        formFields.forEach(f => {
+          const val = formDataMap[f.id];
+          const urls = attsByField[f.id] || [];
+          const parts: string[] = [];
+          if (val != null) parts.push(String(val));
+          parts.push(...urls);
+          row.push(parts.join(', '));
+        });
+        rows.push(row);
+      }
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = headers.map(() => ({ wch: 20 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '用户认证');
+      XLSX.writeFile(wb, `${zoneName}_认证申请.xlsx`);
+      success('导出成功');
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleReview = (record: Application) => {
     setSelectedApp(record);
+    setReviewReadonly(false);
+    setReviewModalVisible(true);
+  };
+
+  const handleView = (record: Application) => {
+    setSelectedApp(record);
+    setReviewReadonly(true);
     setReviewModalVisible(true);
   };
 
@@ -97,16 +235,57 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
 
   const filters: FilterConfig[] = [
     { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
+    { name: 'keyword', placeholder: '搜索用户名/昵称', type: 'input' },
   ];
 
   const columns: ColumnsType<Application> = [
-    { title: '用户ID', dataIndex: 'user_id', key: 'user_id', width: 160 },
-    statusTagColumn<Application>('status', STATUS_MAP, '审核状态', 100),
-    { title: '审核备注', dataIndex: 'review_remark', key: 'review_remark',
-      render: (text: string) => (
-        text ? <span style={{ wordBreak: 'break-word' }}>{text}</span> : <span style={{ color: '#999' }}>-</span>
-      ),
+    {
+      title: '用户名',
+      key: 'user',
+      width: 160,
+      render: (_: any, r: Application) => {
+        const profile = r.user_profile;
+        const nickname = profile?.nickname || r.user_id;
+        const avatar = profile?.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            onClick={() => { setUserDetailData(r); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
     },
+    {
+      title: '姓名',
+      key: 'real_name',
+      width: 100,
+      render: (_: any, r: Application) => {
+        const name = r.user_match_profile?.real_name;
+        return name || <span style={{ color: '#999' }}>-</span>;
+      },
+    },
+    {
+      title: '性别',
+      key: 'gender',
+      width: 70,
+      render: (_: any, r: Application) => {
+        const g = r.user_profile?.gender;
+        return g != null ? (RegisterGenderLabels[g] ?? g) : '-';
+      },
+    },
+    {
+      title: '手机号',
+      key: 'phone',
+      width: 130,
+      render: (_: any, r: Application) => {
+        const phone = (r.user_data as any)?.phone || (r.user_match_profile as any)?.phone;
+        return phone || <span style={{ color: '#999' }}>-</span>;
+      },
+    },
+    statusTagColumn<Application>('status', STATUS_MAP, '审核状态', 100),
     dateTimeColumn<Application>('created_at', '申请时间'),
     {
       title: '操作', key: 'action', width: 140, fixed: 'right' as const,
@@ -116,7 +295,16 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleReview(record)}>审核</Button>
           )}
           {record.status === ApplicationReviewStatus.APPROVED && (
-            <Button type="link" size="small" danger icon={<UndoOutlined />} onClick={() => handleRevoke(record)}>撤销</Button>
+            <>
+              <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>查看</Button>
+              <Button type="link" size="small" danger icon={<UndoOutlined />} onClick={() => handleRevoke(record)}>撤销</Button>
+            </>
+          )}
+          {record.status === ApplicationReviewStatus.REJECTED && (
+            <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>查看</Button>
+          )}
+          {record.status === ApplicationReviewStatus.REVOKED && (
+            <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>查看</Button>
           )}
         </Space>
       ),
@@ -129,11 +317,15 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
         title={`用户认证 - ${zoneName}`}
         open={visible}
         onCancel={onClose}
-        width={900}
+        width={1100}
         footer={false}
       >
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
+          <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+            <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+            <Button icon={<ReloadOutlined />} onClick={() => search({ _t: Date.now() })}>刷新</Button>
+          </Space>
         </div>
         <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
       </ScrollableModal>
@@ -142,9 +334,24 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
         visible={reviewModalVisible}
         zoneId={zoneId}
         application={selectedApp}
-        onClose={() => { setReviewModalVisible(false); setSelectedApp(null); }}
+        readonly={reviewReadonly}
+        onClose={() => { setReviewModalVisible(false); setSelectedApp(null); setReviewReadonly(false); }}
         onSuccess={refresh}
       />
+
+      {userDetailData && (
+        <DetailModal
+          title="用户资料"
+          open={userDetailVisible}
+          entity={buildUserDetailFromApp(userDetailData)}
+          width={720}
+          className="user-detail-modal"
+          onClose={() => { setUserDetailVisible(false); setUserDetailData(null); }}
+          render={(props: ReturnType<typeof buildUserDetailFromApp>) =>
+            buildUserDetailSections(props)
+          }
+        />
+      )}
     </>
   );
 };

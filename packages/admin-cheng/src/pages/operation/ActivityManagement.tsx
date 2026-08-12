@@ -14,6 +14,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ActivityEditModal from '@/components/operation/ActivityEditModal';
 import ActivityRegisterModal from '@/components/operation/ActivityRegisterModal';
+import type { FormField } from '@/components/operation/FormConfigEditor';
 
 const STATUS_OPTIONS = [
   { label: '上线', value: ActivityV1Status.ENABLED },
@@ -34,7 +35,7 @@ const ActivityManagement = () => {
   const [registerActivityId, setRegisterActivityId] = useState('');
   const [registerActivityTitle, setRegisterActivityTitle] = useState('');
   const [registerActivityType, setRegisterActivityType] = useState<number>(0);
-  const [registerHasFormConfig, setRegisterHasFormConfig] = useState(false);
+  const [registerFormConfig, setRegisterFormConfig] = useState<FormField[]>([]);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchActivities = useCallback(async (params: any) => {
@@ -113,7 +114,10 @@ const ActivityManagement = () => {
     setRegisterActivityId(record.id);
     setRegisterActivityTitle(record.title);
     setRegisterActivityType(record.activity_type);
-    setRegisterHasFormConfig(!!record.form_config);
+    try {
+      const fc = typeof record.form_config === 'string' ? JSON.parse(record.form_config) : record.form_config;
+      setRegisterFormConfig(Array.isArray(fc) ? fc.map((f: any) => ({ id: f.id, label: f.label, type: f.type, required: f.required, options: f.options })) : []);
+    } catch { setRegisterFormConfig([]); }
     setRegisterModalVisible(true);
   };
 
@@ -265,7 +269,7 @@ const ActivityManagement = () => {
         activityId={registerActivityId}
         activityTitle={registerActivityTitle}
         activityType={registerActivityType}
-        hasFormConfig={registerHasFormConfig}
+        formConfig={registerFormConfig}
         onClose={() => setRegisterModalVisible(false)}
       />
     </>

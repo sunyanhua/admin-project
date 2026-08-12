@@ -100,6 +100,46 @@ export interface DBAttachment {
   url: string;
 }
 
+export interface RegisterUserProfile {
+  nickname?: string;
+  avatar?: string;
+  gender?: number;
+  age?: number;
+  birth_date?: string;
+  zodiac?: string;
+  audit_status?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RegisterUserData {
+  phone?: string;
+  credits?: number;
+  is_activated?: boolean;
+  last_active_at?: string;
+  created_at?: string;
+}
+
+export interface RegisterMatchProfile {
+  real_name?: string;
+  match_code?: string;
+  marital_status?: number;
+  education?: number;
+  profession?: string;
+  workplace?: string;
+  hometown?: string;
+  current_city?: string;
+  height?: number;
+  weight?: number;
+  hobby_tags?: string;
+  self_intro?: string;
+  partner_demand?: string;
+  photos?: string[];
+  is_org_certified?: boolean;
+  is_real_verified?: boolean;
+  zone_id?: string;
+}
+
 export interface RegisterRecord {
   id: string;
   activity_id: string;
@@ -113,12 +153,15 @@ export interface RegisterRecord {
   attachments: DBAttachment[];
   audit_status: number;
   pay_status: number;
+  audit_reason?: string;
   gender: number;
-  register_status?: number; // 0=已完成 1=已取消（免费 FCFS）
   completed_at?: string;    // 完成时间（付费 FCFS）
   checkin_at?: string;
   created_at?: string;
   updated_at?: string;
+  user_data?: RegisterUserData;
+  user_profile?: RegisterUserProfile;
+  user_match_profile?: RegisterMatchProfile;
 }
 
 export const activityApi = {
@@ -162,7 +205,7 @@ export const activityApi = {
   // ========================
 
   /** 活动报名记录列表 */
-  getRegisters: (activityId: string, params?: { page?: number; size?: number; audit_status?: number; pay_status?: number; register_status?: number; gender?: number; keyword?: string }) => {
+  getRegisters: (activityId: string, params?: { page?: number; size?: number; audit_status?: number; pay_status?: number; gender?: number; keyword?: string }) => {
     return request.get(`/admin/v1/bizops/activity/${activityId}/register`, { params });
   },
 

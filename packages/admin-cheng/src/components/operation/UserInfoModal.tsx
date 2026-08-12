@@ -1,11 +1,20 @@
 import { Modal, Descriptions, Avatar } from 'antd';
 import { RegisterGenderLabels } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
-import type { RegisterRecord } from '@/api/services/activity-v1';
+
+export interface UserInfoData {
+  user_id: string;
+  avatar?: string;
+  nickname?: string;
+  gender?: number;
+  age?: number;
+  phone?: string;
+  real_name?: string;
+}
 
 interface UserInfoModalProps {
   visible: boolean;
-  record: RegisterRecord | null;
+  record: UserInfoData | null;
   onClose: () => void;
 }
 
@@ -21,14 +30,15 @@ const UserInfoModal: React.FC<UserInfoModalProps> = ({ visible, record, onClose 
       maskClosable={false}
     >
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <Avatar size={80} src={getAvatarUrl((record as any).avatar)} style={{ borderRadius: '50%' }} />
-        <div style={{ fontSize: 16, fontWeight: 500, marginTop: 8 }}>{(record as any).nickname || record.user_id}</div>
+        <Avatar size={80} src={getAvatarUrl(record.avatar)} style={{ borderRadius: '50%' }} />
+        <div style={{ fontSize: 16, fontWeight: 500, marginTop: 8 }}>{record.nickname || record.user_id}</div>
       </div>
       <Descriptions column={2} size="small" bordered>
         <Descriptions.Item label="用户ID">{record.user_id}</Descriptions.Item>
-        <Descriptions.Item label="性别">{RegisterGenderLabels[record.gender] ?? record.gender}</Descriptions.Item>
-        <Descriptions.Item label="年龄">{(record as any).age ?? '-'}</Descriptions.Item>
-        <Descriptions.Item label="手机号">{(record as any).phone ?? '-'}</Descriptions.Item>
+        <Descriptions.Item label="性别">{record.gender != null ? (RegisterGenderLabels[record.gender] ?? record.gender) : '-'}</Descriptions.Item>
+        <Descriptions.Item label="年龄">{record.age ?? '-'}</Descriptions.Item>
+        <Descriptions.Item label="手机号">{record.phone || '-'}</Descriptions.Item>
+        {record.real_name && <Descriptions.Item label="姓名">{record.real_name}</Descriptions.Item>}
       </Descriptions>
     </Modal>
   );

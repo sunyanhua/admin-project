@@ -53,11 +53,62 @@ export interface Application {
   user_id: string;
   status: number; // 0=待审核 1=通过 2=拒绝 3=已撤销
   form_data: string;
-  attachments: string[];
+  attachments: DBAttachment[];
   review_remark: string;
-  created_at?: string;
   reviewed_at?: string;
+  created_at?: string;
   updated_at?: string;
+  user_data?: ApplicationUserData;
+  user_profile?: ApplicationUserProfile;
+  user_match_profile?: ApplicationUserMatchProfile;
+}
+
+export interface DBAttachment {
+  file_type?: number;
+  media_id?: string;
+  url: string;
+}
+
+export interface ApplicationUserData {
+  user_id: string;
+  status: number;
+  phone?: string;
+  credits: number;
+  has_profile: boolean;
+  has_match_profile: boolean;
+  is_activated: boolean;
+  activated_at?: string;
+  last_active_at?: string;
+  created_at?: string;
+}
+
+export interface ApplicationUserProfile {
+  nickname: string;
+  avatar: string;
+  gender: number;
+  birth_date?: string;
+  age?: number;
+  zodiac?: string;
+  audit_status: number;
+}
+
+export interface ApplicationUserMatchProfile {
+  real_name?: string;
+  match_code?: string;
+  phone?: string;
+  gender?: number;
+  marital_status?: number;
+  education?: number;
+  profession?: string;
+  workplace?: string;
+  hometown?: string;
+  current_city?: string;
+  height?: number;
+  weight?: number;
+  is_org_certified?: boolean;
+  is_real_verified?: boolean;
+  zone_id?: string;
+  photos?: string[];
 }
 
 export interface ZoneListParams {
@@ -103,7 +154,7 @@ export const zoneApi = {
   // ========================
 
   /** 专区申请列表 */
-  getApplications: (zoneId: string, params?: { page?: number; size?: number }) => {
+  getApplications: (zoneId: string, params?: { page?: number; size?: number; status?: number; keyword?: string }) => {
     return request.get(`/admin/v1/bizops/zone/${zoneId}/application`, { params });
   },
 
