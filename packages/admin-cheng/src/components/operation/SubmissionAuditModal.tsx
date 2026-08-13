@@ -36,12 +36,13 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
     if (record.audit_status === SubmissionAuditStatus.APPROVED) {
       setAction(SubmissionAuditStatus.APPROVED);
       setApprovedAt(safeDayjs(record.approved_at) || null);
+      setRewardCoins(record.reward_coins ?? 20);
     } else {
       setAction(SubmissionAuditStatus.APPROVED);
       setApprovedAt(null);
+      setRewardCoins(20);
     }
     setReason(record.audit_reason || '');
-    setRewardCoins(record.reward_coins ?? null);
   }, [visible, record]);
 
   if (!record) return null;
@@ -149,6 +150,7 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
                 min={0}
                 precision={0}
                 value={rewardCoins}
+                disabled={actionLocked}
                 onChange={v => setRewardCoins(v)}
                 style={{ width: 200 }}
                 placeholder="请输入奖励金币数量"
