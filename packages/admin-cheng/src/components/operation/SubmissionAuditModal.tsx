@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Radio, DatePicker, Avatar, Image, Input, InputNumber } from 'antd';
+import { Button, Space, Radio, DatePicker, Avatar, Image, Input, InputNumber, Tag } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { SubmissionAuditStatus } from '@shared/constants';
+import { SubmissionAuditStatus, SubmissionTypeLabels, SubmissionTypeColors } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { submissionApi, Submission } from '@/api/services/submission';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -104,6 +104,11 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
       {/* 内容 */}
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>内容</div>
       <div style={{ marginBottom: 16, padding: 12, background: '#fafafa', borderRadius: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13 }}>
+        {record.type != null && (
+          <Tag color={SubmissionTypeColors[record.type] || 'default'} style={{ marginBottom: 8 }}>
+            {SubmissionTypeLabels[record.type] ?? record.type}
+          </Tag>
+        )}
         {record.content || <span style={{ color: '#999' }}>-</span>}
       </div>
 

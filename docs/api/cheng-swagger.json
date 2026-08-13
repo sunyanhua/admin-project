@@ -15574,7 +15574,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=禁用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -16469,7 +16468,11 @@
             ],
             "properties": {
                 "status": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
                 }
             }
         },
@@ -16557,7 +16560,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=停用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -16703,7 +16705,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=上架 1=下架",
                     "type": "integer",
                     "enum": [
                         0,
@@ -16847,7 +16848,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=上架 1=下架",
                     "type": "integer",
                     "enum": [
                         0,
@@ -17117,7 +17117,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=停用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -17187,7 +17186,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=停用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -17552,7 +17550,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=禁用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -18282,7 +18279,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=禁用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -18333,7 +18329,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=禁用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -18570,15 +18565,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_mach_model.MachStatusRequest": {
             "type": "object",
             "required": [
-                "id",
                 "status"
             ],
             "properties": {
-                "id": {
-                    "type": "string"
-                },
                 "status": {
-                    "description": "*int 指针避免 required+零值冲突",
                     "type": "integer",
                     "enum": [
                         0,
@@ -18589,18 +18579,12 @@
         },
         "github_com_vbegin_tlnc_v6_internal_module_mach_model.UpdateMachRequest": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
                 "api_v3_key": {
                     "description": "nil=不修改，非 nil=更新（含空字符串清空）",
                     "type": "string"
                 },
                 "cert_pem": {
-                    "type": "string"
-                },
-                "id": {
                     "type": "string"
                 },
                 "key_pem": {
@@ -19188,7 +19172,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=停用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -19355,7 +19338,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=禁用",
                     "type": "integer",
                     "enum": [
                         0,
@@ -20966,7 +20948,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "Status 用户状态：0=正常(解禁) 1=禁用。*int 指针而非 int 或 status.UserStatus，\n因为 binding:\"required\" 对数值类型的零值 0 判为\"未提供\"；指针的 required 只检查 non-nil，\n允许 JSON 显式传入 0（UserStatusNormal）。",
                     "type": "integer",
                     "enum": [
                         0,
@@ -21396,9 +21377,6 @@
         },
         "github_com_vbegin_tlnc_v6_internal_module_wxa_model.UpdateWxaAppRequest": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
                 "app_name": {
                     "type": "string"
@@ -21409,9 +21387,6 @@
                 "app_type": {
                     "type": "integer"
                 },
-                "id": {
-                    "type": "string"
-                },
                 "status": {
                     "type": "integer"
                 }
@@ -21420,15 +21395,15 @@
         "github_com_vbegin_tlnc_v6_internal_module_wxa_model.UpdateWxaAppStatusRequest": {
             "type": "object",
             "required": [
-                "id",
                 "status"
             ],
             "properties": {
-                "id": {
-                    "type": "string"
-                },
                 "status": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
                 }
             }
         },
@@ -21705,7 +21680,6 @@
             ],
             "properties": {
                 "status": {
-                    "description": "0=启用 1=禁用",
                     "type": "integer",
                     "enum": [
                         0,

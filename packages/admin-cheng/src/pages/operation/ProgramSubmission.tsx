@@ -7,6 +7,8 @@ import {
   SubmissionAuditStatus,
   SubmissionAuditStatusLabels,
   SubmissionAuditStatusColors,
+  SubmissionTypeLabels,
+  SubmissionTypeColors,
 } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { submissionApi, Submission } from '@/api/services/submission';
@@ -107,10 +109,16 @@ const ProgramSubmission = () => {
       title: '内容',
       dataIndex: 'content',
       key: 'content',
-      render: (text: string) => {
-        if (!text) return <span style={{ color: '#999' }}>-</span>;
+      render: (text: string, r: Submission) => {
+        const typeTag = r.type != null ? (
+          <Tag color={SubmissionTypeColors[r.type] || 'default'} style={{ marginRight: 4 }}>
+            {SubmissionTypeLabels[r.type] ?? r.type}
+          </Tag>
+        ) : null;
+        if (!text) return typeTag || <span style={{ color: '#999' }}>-</span>;
         return (
           <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {typeTag}
             {text.length > 120 ? `${text.slice(0, 120)}...` : text}
           </span>
         );
