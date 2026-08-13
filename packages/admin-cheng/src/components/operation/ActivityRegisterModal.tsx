@@ -17,15 +17,7 @@ import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
-import { DetailModal } from '@/components/templates/DetailModal';
-import { buildUserDetailSections } from '@/components/user/UserDetailSections';
-import type {
-  CommunityUserSummary,
-  CommunityProfileSummary,
-  CommunityMatchProfileSummary,
-  CommunityWalletSummary,
-} from '@/api/types/user';
-import { ProfileAuditStatus, MatchProfileAuditStatus } from '@/api/types/status';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
@@ -39,63 +31,6 @@ interface ActivityRegisterModalProps {
   onClose: () => void;
 }
 
-const EMPTY_WALLET: CommunityWalletSummary = {
-  points: 0, points_earned: 0, points_spent: 0,
-  coins: 0, coins_earned: 0, coins_spent: 0,
-  version: 0, created_at: '', updated_at: '',
-};
-
-function buildUserDetailFromRecord(r: RegisterRecord) {
-  const up = r.user_profile as any;
-  const ud = r.user_data as any;
-  const mp = r.user_match_profile as any;
-  const nickname = up?.nickname || r.nickname || r.user_id;
-  const avatar = up?.avatar || r.avatar || '';
-  const gender = up?.gender ?? r.gender;
-  const age = up?.age ?? r.age ?? 0;
-  return {
-    user: {
-      user_id: r.user_id, phone: ud?.phone || r.phone || '', wallet_balance: 0,
-      credits: ud?.credits ?? 0, credits_weekly: 0, credits_weekly_rank: null,
-      is_migrated: true, is_activated: ud?.is_activated ?? true,
-      activated_at: ud?.activated_at || null,
-      last_active_at: ud?.last_active_at || null,
-      created_at: ud?.created_at || r.created_at || '',
-      has_profile: true, has_match_profile: !!mp,
-      status: 0,
-    } as CommunityUserSummary,
-    profile: {
-      nickname, avatar,
-      gender: gender ?? 0,
-      birth_date: up?.birth_date || '',
-      age: age ?? 0, zodiac: up?.zodiac || '',
-      audit_status: up?.audit_status ?? ProfileAuditStatus.APPROVED,
-      created_at: up?.created_at || '', updated_at: up?.updated_at || '',
-    } as CommunityProfileSummary,
-    matchProfile: mp ? {
-      match_code: mp.match_code || '', popularity: mp.popularity ?? 0,
-      is_active: mp.is_active ?? true, visibility: mp.visibility ?? 1,
-      zone_id: mp.zone_id || null, real_name: mp.real_name || '',
-      cn_zodiac: mp.cn_zodiac || '', marital_status: mp.marital_status ?? 0,
-      education: mp.education ?? 0, profession: mp.profession || '',
-      workplace: mp.workplace || '', hometown: mp.hometown || '',
-      current_city: mp.current_city || '', height: mp.height ?? 0,
-      weight: mp.weight ?? 0, hobby_tags: mp.hobby_tags || '',
-      income_range: mp.income_range ?? null, self_intro: mp.self_intro || '',
-      partner_demand: mp.partner_demand || '', photos: mp.photos || [],
-      id_card_tail: mp.id_card_tail || null, blood_type: mp.blood_type ?? 0,
-      ethnicity: mp.ethnicity || '', household_registration: mp.household_registration || '',
-      specialties: mp.specialties || '',
-      audit_status: mp.audit_status ?? MatchProfileAuditStatus.APPROVED,
-      audit_reason: mp.audit_reason || null, audited_by: mp.audited_by || null,
-      audited_at: mp.audited_at || null, can_modify_at: mp.can_modify_at || null,
-      is_org_certified: mp.is_org_certified || false,
-      is_real_verified: mp.is_real_verified || false,
-      gifts_received: mp.gifts_received ?? 0,
-    } as unknown as CommunityMatchProfileSummary : null,
-    wallet: EMPTY_WALLET,
-  };
-}
 
 const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   visible, activityId, activityTitle, activityType, formConfig, onClose,
@@ -106,7 +41,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const [detailRecord, setDetailRecord] = useState<RegisterRecord | null>(null);
   const [detailReadonly, setDetailReadonly] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
-  const [userDetailRecord, setUserDetailRecord] = useState<RegisterRecord | null>(null);
+  const [userDetailUserId, setUserDetailUserId] = useState<string>('');
   const [exporting, setExporting] = useState(false);
 
   const isFreeFCFS = activityType === ActivityType.FREE_FCFS;
@@ -273,7 +208,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         const avatar = up?.avatar || r.avatar || '';
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }}
-            onClick={() => { setUserDetailRecord(r); setUserDetailVisible(true); }}>
+            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
             <Space size={4}>
               <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
@@ -394,19 +329,11 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         onSuccess={refresh}
       />
 
-      {userDetailRecord && (
-        <DetailModal
-          title="用户资料"
-          open={userDetailVisible}
-          entity={buildUserDetailFromRecord(userDetailRecord)}
-          width={720}
-          className="user-detail-modal"
-          onClose={() => { setUserDetailVisible(false); setUserDetailRecord(null); }}
-          render={(props: ReturnType<typeof buildUserDetailFromRecord>) =>
-            buildUserDetailSections(props)
-          }
-        />
-      )}
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+      />
     </>
   );
 };

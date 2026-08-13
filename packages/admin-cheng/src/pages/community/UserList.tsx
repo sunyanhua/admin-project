@@ -8,8 +8,7 @@ import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { StatusSwitch } from '@/components/templates/StatusSwitch';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { DetailModal } from '@/components/templates/DetailModal';
-import { buildUserDetailSections } from '@/components/user/UserDetailSections';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
 import { AdminUserStatus, MatchProfileAuditStatus } from '@/api/types/status';
@@ -260,23 +259,12 @@ const UserList = () => {
         }
       />
 
-      <DetailModal
-        title="用户详情"
-        open={detailModalOpen}
-        entity={detailItem}
-        width={720}
-        className="user-detail-modal"
+      <UserDetailCardModal
+        visible={detailModalOpen}
+        userId={detailItem?.user.user_id}
+        onEditProfile={() => setEditProfileOpen(true)}
+        onAuditProfile={() => setAuditProfileOpen(true)}
         onClose={() => { setDetailModalOpen(false); setDetailItem(null); }}
-        render={(item: CommunityUserItem) =>
-          buildUserDetailSections({
-            user: item.user,
-            profile: item.profile,
-            matchProfile: item.match_profile || null,
-            wallet: item.wallet,
-            onEditProfile: () => setEditProfileOpen(true),
-            onAuditProfile: () => setAuditProfileOpen(true),
-          })
-        }
       />
 
       <ProfileEditModal

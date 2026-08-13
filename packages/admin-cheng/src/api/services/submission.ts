@@ -4,13 +4,62 @@ import request from '..';
 // 广播投稿（Submission）
 // ========================
 
+export interface SubmissionAttachment {
+  file_type?: number;
+  media_id?: string;
+  tags?: string;
+  url: string;
+}
+
+export interface SubmissionUserProfile {
+  nickname?: string;
+  avatar?: string;
+  gender?: number;
+  age?: number;
+  birth_date?: string;
+  zodiac?: string;
+  audit_status?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface SubmissionUserData {
+  phone?: string;
+  credits?: number;
+  is_activated?: boolean;
+  activated_at?: string;
+  last_active_at?: string;
+  created_at?: string;
+}
+
+export interface SubmissionMatchProfile {
+  real_name?: string;
+  match_code?: string;
+  marital_status?: number;
+  education?: number;
+  profession?: string;
+  workplace?: string;
+  hometown?: string;
+  current_city?: string;
+  height?: number;
+  weight?: number;
+  hobby_tags?: string;
+  income_range?: number;
+  self_intro?: string;
+  partner_demand?: string;
+  photos?: string[];
+  is_org_certified?: boolean;
+  is_real_verified?: boolean;
+  zone_id?: string;
+}
+
 export interface Submission {
   id: string;
   user_id: string;
-  nickname: string;
-  avatar: string;
+  nickname?: string;
+  avatar?: string;
   content: string;
-  attachments: string[];
+  attachments: SubmissionAttachment[];
   is_public: boolean;
   sort_order: number;
   reward_coins: number;
@@ -19,7 +68,11 @@ export interface Submission {
   audited_at?: string;
   approved_at?: string;
   delete_files: boolean;
+  type?: number;
   created_at?: string;
+  user_data?: SubmissionUserData;
+  user_profile?: SubmissionUserProfile;
+  user_match_profile?: SubmissionMatchProfile;
 }
 
 export interface AuditSubmissionRequest {
@@ -27,6 +80,7 @@ export interface AuditSubmissionRequest {
   delete_files?: boolean;
   reason?: string;
   reward_coins?: number;
+  approved_at?: string; // 播出日期（通过时可选设置）
 }
 
 export interface UpdateSortOrderRequest {

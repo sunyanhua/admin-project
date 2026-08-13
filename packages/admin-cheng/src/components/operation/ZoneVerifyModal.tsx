@@ -16,15 +16,7 @@ import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn, statusTagColumn } from '@/components/templates/ColumnHelpers';
-import { DetailModal } from '@/components/templates/DetailModal';
-import { buildUserDetailSections } from '@/components/user/UserDetailSections';
-import type {
-  CommunityUserSummary,
-  CommunityProfileSummary,
-  CommunityMatchProfileSummary,
-  CommunityWalletSummary,
-} from '@/api/types/user';
-import { ProfileAuditStatus, MatchProfileAuditStatus } from '@/api/types/status';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ZoneApplicationReviewModal from '@/components/operation/ZoneApplicationReviewModal';
 
@@ -49,59 +41,6 @@ interface ZoneVerifyModalProps {
   onClose: () => void;
 }
 
-const EMPTY_WALLET: CommunityWalletSummary = {
-  points: 0, points_earned: 0, points_spent: 0,
-  coins: 0, coins_earned: 0, coins_spent: 0,
-  version: 0, created_at: '', updated_at: '',
-};
-
-function buildUserDetailFromApp(app: Application) {
-  const ud = app.user_data as any;
-  const up = app.user_profile as any;
-  const mp = app.user_match_profile as any;
-  return {
-    user: {
-      user_id: app.user_id, phone: (ud as any)?.phone || mp?.phone || '', wallet_balance: 0,
-      credits: ud?.credits ?? 0, credits_weekly: 0, credits_weekly_rank: null,
-      is_migrated: true, is_activated: ud?.is_activated ?? false,
-      activated_at: ud?.activated_at || null,
-      last_active_at: ud?.last_active_at || null,
-      created_at: ud?.created_at || '',
-      has_profile: ud?.has_profile ?? false,
-      has_match_profile: ud?.has_match_profile ?? false,
-      status: ud?.status,
-    } as CommunityUserSummary,
-    profile: {
-      nickname: up?.nickname || app.user_id, avatar: up?.avatar || '',
-      gender: up?.gender ?? 0, birth_date: up?.birth_date || '',
-      age: up?.age ?? 0, zodiac: up?.zodiac || '',
-      audit_status: up?.audit_status ?? ProfileAuditStatus.PENDING,
-      created_at: up?.created_at || '', updated_at: up?.updated_at || '',
-    } as CommunityProfileSummary,
-    matchProfile: mp ? {
-      match_code: mp.match_code || '', popularity: mp.popularity ?? 0,
-      is_active: mp.is_active ?? false, visibility: mp.visibility ?? 1,
-      zone_id: mp.zone_id || null, real_name: mp.real_name || '',
-      cn_zodiac: mp.cn_zodiac || '', marital_status: mp.marital_status ?? 0,
-      education: mp.education ?? 0, profession: mp.profession || '',
-      workplace: mp.workplace || '', hometown: mp.hometown || '',
-      current_city: mp.current_city || '', height: mp.height ?? 0,
-      weight: mp.weight ?? 0, hobby_tags: mp.hobby_tags || '',
-      income_range: mp.income_range ?? null, self_intro: mp.self_intro || '',
-      partner_demand: mp.partner_demand || '', photos: mp.photos || [],
-      id_card_tail: mp.id_card_tail || null, blood_type: mp.blood_type ?? 0,
-      ethnicity: mp.ethnicity || '', household_registration: mp.household_registration || '',
-      specialties: mp.specialties || '',
-      audit_status: mp.audit_status ?? MatchProfileAuditStatus.PENDING,
-      audit_reason: mp.audit_reason || null, audited_by: mp.audited_by || null,
-      audited_at: mp.audited_at || null, can_modify_at: mp.can_modify_at || null,
-      is_org_certified: mp.is_org_certified || false,
-      is_real_verified: mp.is_real_verified || false,
-      gifts_received: mp.gifts_received ?? 0,
-    } as unknown as CommunityMatchProfileSummary : null,
-    wallet: EMPTY_WALLET,
-  };
-}
 
 const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zoneName, onClose }) => {
   const { success, error: showError } = useAppNotification();
@@ -109,7 +48,7 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
   const [reviewReadonly, setReviewReadonly] = useState(false);
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
-  const [userDetailData, setUserDetailData] = useState<Application | null>(null);
+  const [userDetailUserId, setUserDetailUserId] = useState<string>('');
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [exporting, setExporting] = useState(false);
 
@@ -249,7 +188,7 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
         const avatar = profile?.avatar || '';
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }}
-            onClick={() => { setUserDetailData(r); setUserDetailVisible(true); }}>
+            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
             <Space size={4}>
               <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
@@ -339,19 +278,11 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
         onSuccess={refresh}
       />
 
-      {userDetailData && (
-        <DetailModal
-          title="用户资料"
-          open={userDetailVisible}
-          entity={buildUserDetailFromApp(userDetailData)}
-          width={720}
-          className="user-detail-modal"
-          onClose={() => { setUserDetailVisible(false); setUserDetailData(null); }}
-          render={(props: ReturnType<typeof buildUserDetailFromApp>) =>
-            buildUserDetailSections(props)
-          }
-        />
-      )}
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+      />
     </>
   );
 };

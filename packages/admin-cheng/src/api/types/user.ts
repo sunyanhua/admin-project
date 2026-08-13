@@ -123,21 +123,12 @@ export interface AdminUserListItem {
   last_active_at: string;
 }
 
-/** C 端用户详情 — Swagger AdminUserDetailResponse */
+/** C 端用户详情 — Swagger AdminUserDetailResponse（嵌套结构） */
 export interface AdminUserDetailResponse {
-  user_id: string;
-  nickname: string;
-  avatar: string;
-  real_name: string;
-  phone: string;
-  gender: UserGender;
-  birth_date: string;
-  zodiac: string;
-  cn_zodiac: string;
-  profile_audit_status: ProfileAuditStatus;
-  match_profile?: AdminUserMatchProfileView;
-  created_at: string;
-  last_active_at: string;
+  user: CommunityUserSummary;
+  profile: CommunityProfileSummary;
+  match_profile?: CommunityMatchProfileSummary;
+  wallet: CommunityWalletSummary | null;
 }
 
 /** 脱单档案视图 — Swagger AdminUserMatchProfileView */

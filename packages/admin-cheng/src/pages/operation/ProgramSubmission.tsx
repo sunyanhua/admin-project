@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space, Tag, Image, Avatar, InputNumber, Modal, Input } from 'antd';
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, Image, Avatar, InputNumber } from 'antd';
+import { EditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import {
   SubmissionAuditStatus,
@@ -15,8 +15,8 @@ import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
-
-const { TextArea } = Input;
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
+import SubmissionAuditModal from '@/components/operation/SubmissionAuditModal';
 
 const STATUS_OPTIONS = [
   { label: '待审核', value: SubmissionAuditStatus.PENDING },
@@ -34,11 +34,8 @@ const ProgramSubmission = () => {
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [auditModalVisible, setAuditModalVisible] = useState(false);
   const [auditRecord, setAuditRecord] = useState<Submission | null>(null);
-  const [auditApproved, setAuditApproved] = useState(false);
-  const [auditReason, setAuditReason] = useState('');
-  const [auditRewardCoins, setAuditRewardCoins] = useState<number | null>(null);
-  const [auditDeleteFiles, setAuditDeleteFiles] = useState(false);
-  const [auditLoading, setAuditLoading] = useState(false);
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState<string>('');
 
   const fetchSubmissions = useCallback(async (params: any) => {
     return submissionApi.getList({
@@ -50,7 +47,7 @@ const ProgramSubmission = () => {
   }, []);
 
   const formatResponse = useCallback((res: any) => {
-    const list = Array.isArray(res) ? res : (res?.items || []);
+    const list = Array.isArray(res) ? res : (res?.list || []);
     const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
     return { list, count: total };
   }, []);
@@ -77,33 +74,9 @@ const ProgramSubmission = () => {
     }
   };
 
-  const handleAudit = (record: Submission, approved: boolean) => {
+  const handleAudit = (record: Submission) => {
     setAuditRecord(record);
-    setAuditApproved(approved);
-    setAuditReason('');
-    setAuditRewardCoins(null);
-    setAuditDeleteFiles(false);
     setAuditModalVisible(true);
-  };
-
-  const confirmAudit = async () => {
-    if (!auditRecord) return;
-    try {
-      setAuditLoading(true);
-      await submissionApi.audit(auditRecord.id, {
-        action: auditApproved ? SubmissionAuditStatus.APPROVED : SubmissionAuditStatus.REJECTED,
-        reason: auditReason || undefined,
-        reward_coins: auditApproved && auditRewardCoins != null ? auditRewardCoins : undefined,
-        delete_files: auditDeleteFiles || undefined,
-      });
-      success(auditApproved ? '审核通过' : '已拒绝');
-      setAuditModalVisible(false);
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '审核操作失败');
-    } finally {
-      setAuditLoading(false);
-    }
   };
 
   const columns: ColumnsType<Submission> = [
@@ -111,15 +84,24 @@ const ProgramSubmission = () => {
       title: '发布者',
       key: 'user',
       width: 160,
-      render: (_: any, r: Submission) => (
-        <Button type="link" style={{ padding: 0, height: 'auto' }}>
-          <Space size={4}>
-            <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }}
-              src={getAvatarUrl(r.avatar)} />
-            <span style={{ fontSize: 14 }}>{r.nickname || r.user_id}</span>
-          </Space>
-        </Button>
-      ),
+      render: (_: any, r: Submission) => {
+        const up = r.user_profile;
+        const nickname = up?.nickname || r.nickname || r.user_id;
+        const avatar = up?.avatar || r.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            onClick={() => {
+              setUserDetailUserId(r.user_id);
+              setUserDetailVisible(true);
+            }}>
+            <Space size={4}>
+              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }}
+                src={getAvatarUrl(avatar)} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
     },
     {
       title: '内容',
@@ -136,21 +118,17 @@ const ProgramSubmission = () => {
     },
     {
       title: '附件', dataIndex: 'attachments', key: 'attachments', width: 100,
-      render: (urls: string[]) => {
-        if (!urls || urls.length === 0) return <span style={{ color: '#999' }}>-</span>;
+      render: (atts: Submission['attachments']) => {
+        if (!atts || atts.length === 0) return <span style={{ color: '#999' }}>-</span>;
         return (
           <Space size={4} wrap>
-            {urls.slice(0, 3).map((url, idx) => (
-              <Image key={idx} src={url} preview={{ src: url }}
+            {atts.slice(0, 3).map((att, idx) => (
+              <Image key={idx} src={att.url} preview={{ src: att.url }}
                 style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, border: '1px solid #e8e8e8' }} />
             ))}
           </Space>
         );
       },
-    },
-    {
-      title: '公开', dataIndex: 'is_public', key: 'is_public', width: 80,
-      render: (v: boolean) => <Tag color={v ? 'success' : 'default'}>{v ? '是' : '否'}</Tag>,
     },
     {
       title: '审核', dataIndex: 'audit_status', key: 'audit_status', width: 80,
@@ -161,8 +139,8 @@ const ProgramSubmission = () => {
       ),
     },
     {
-      title: '金币', dataIndex: 'reward_coins', key: 'reward_coins', width: 80,
-      render: (v: number) => v ?? 0,
+      title: '播出日期', dataIndex: 'approved_at', key: 'approved_at', width: 120,
+      render: (v: string) => v ? (v.replace('T', ' ').substring(0, 10)) : <span style={{ color: '#999' }}>-</span>,
     },
     {
       title: '权重',
@@ -189,23 +167,13 @@ const ProgramSubmission = () => {
     {
       title: '操作',
       key: 'action',
-      width: 140,
+      width: 100,
       fixed: 'right' as const,
-      render: (_: any, r: Submission) => {
-        const isPending = r.audit_status === SubmissionAuditStatus.PENDING;
-        return (
-          <Space size="small" className="action-buttons">
-            {isPending && (
-              <>
-                <Button type="link" size="small" icon={<CheckOutlined />}
-                  onClick={() => handleAudit(r, true)}>通过</Button>
-                <Button type="link" size="small" danger icon={<CloseOutlined />}
-                  onClick={() => handleAudit(r, false)}>拒绝</Button>
-              </>
-            )}
-          </Space>
-        );
-      },
+      render: (_: any, r: Submission) => (
+        <Space size="small" className="action-buttons">
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleAudit(r)}>审核</Button>
+        </Space>
+      ),
     },
   ];
 
@@ -213,7 +181,7 @@ const ProgramSubmission = () => {
     <>
       <StandardPage
         title="广播投稿管理"
-        description="审核和管理用户提交的广播节目投稿，支持审核通过并发放金币奖励。"
+        description="审核和管理用户提交的广播节目投稿，支持设置播出日期。"
         showRefreshButton
         onRefresh={refresh}
         searchArea={
@@ -236,43 +204,18 @@ const ProgramSubmission = () => {
         }
       />
 
-      <Modal
-        title={auditApproved ? '审核通过' : '审核拒绝'}
-        open={auditModalVisible}
-        onCancel={() => setAuditModalVisible(false)}
-        onOk={confirmAudit}
-        confirmLoading={auditLoading}
-        okText="确认"
-        cancelText="取消"
-        maskClosable={false}
-        width={480}
-      >
-        <p style={{ marginBottom: 16 }}>
-          {auditApproved
-            ? `确认通过"${auditRecord?.nickname || auditRecord?.user_id}"的投稿？`
-            : `确认拒绝"${auditRecord?.nickname || auditRecord?.user_id}"的投稿？`}
-        </p>
+      <SubmissionAuditModal
+        visible={auditModalVisible}
+        record={auditRecord}
+        onClose={() => { setAuditModalVisible(false); setAuditRecord(null); }}
+        onSuccess={refresh}
+      />
 
-        {auditApproved && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ marginBottom: 4, fontWeight: 500 }}>金币奖励（选填）</div>
-            <InputNumber min={0} precision={0} style={{ width: '100%' }}
-              placeholder="通过时可发放金币奖励"
-              value={auditRewardCoins}
-              onChange={(v) => setAuditRewardCoins(v)} />
-          </div>
-        )}
-
-        {!auditApproved && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ marginBottom: 4, fontWeight: 500 }}>拒绝原因</div>
-            <TextArea rows={3} maxLength={512} showCount
-              value={auditReason}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setAuditReason(e.target.value)}
-              placeholder="请输入拒绝原因" />
-          </div>
-        )}
-      </Modal>
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+      />
     </>
   );
 };
