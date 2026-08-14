@@ -11,6 +11,7 @@ import {
   SubmissionTypeColors,
 } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
+import { parseApiTime } from '@/utils/format';
 import { submissionApi, Submission } from '@/api/services/submission';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
@@ -148,7 +149,10 @@ const ProgramSubmission = () => {
     },
     {
       title: '播出日期', dataIndex: 'approved_at', key: 'approved_at', width: 120,
-      render: (v: string) => v ? (v.replace('T', ' ').substring(0, 10)) : <span style={{ color: '#999' }}>-</span>,
+      render: (v: string) => {
+        const d = parseApiTime(v);
+        return d ? d.format('YYYY-MM-DD') : <span style={{ color: '#999' }}>-</span>;
+      },
     },
     {
       title: '权重',

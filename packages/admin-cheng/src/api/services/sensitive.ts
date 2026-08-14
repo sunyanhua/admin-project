@@ -66,7 +66,11 @@ export const sensitiveApi = {
             id: mockSensitiveWords.length + 1,
             word: data.word,
             status: data.status,
-            createdAt: new Date().toISOString().split('T')[0] + ' ' + new Date().toTimeString().split(' ')[0],
+            createdAt: (() => {
+              const d = new Date();
+              const pad = (n: number) => String(n).padStart(2, '0');
+              return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            })(),
             remark: data.remark || ''
           };
           mockSensitiveWords.push(newWord);

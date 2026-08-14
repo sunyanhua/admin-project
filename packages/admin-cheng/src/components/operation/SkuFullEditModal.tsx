@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button, Space, InputNumber, Switch, DatePicker } from 'antd';
 import dayjs, { Dayjs } from 'dayjs';
 import ScrollableModal from '@/components/templates/ScrollableModal';
+import { parseApiTime, dayjsToApi } from '@/utils/format';
 
 export interface SkuItem {
   key: string;
@@ -47,8 +48,8 @@ const SkuFullEditModal: React.FC<{
       setPrice(sku.price);
       setStock(sku.stock);
       setStatus(sku.status);
-      setUsable(sku.usable ? dayjs(sku.usable) : null);
-      setExpiry(sku.expiry ? dayjs(sku.expiry) : null);
+      setUsable(parseApiTime(sku.usable) || null);
+      setExpiry(parseApiTime(sku.expiry) || null);
       const map: Record<string, number> = {};
       for (const g of productGroups) map[g.name] = 0;
       for (const f of (sku.additional_fields_config || [])) {
@@ -67,8 +68,8 @@ const SkuFullEditModal: React.FC<{
     }
     onApply(sku.key, {
       price, stock, status,
-      usable: usable ? usable.format('YYYY-MM-DDTHH:mm:ssZ') : null,
-      expiry: expiry ? expiry.format('YYYY-MM-DDTHH:mm:ssZ') : null,
+      usable: usable ? dayjsToApi(usable) ?? null : null,
+      expiry: expiry ? dayjsToApi(expiry) ?? null : null,
       additional_fields_config: afc,
     });
     onClose();

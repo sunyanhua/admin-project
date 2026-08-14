@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Button, Radio, Select, DatePicker, TimePicker, InputNumber, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 
 interface SkuRow {
   key: string;
@@ -78,13 +79,13 @@ const Step2ExpirySection: React.FC<Step2ExpirySectionProps> = ({
       if (batchEnabled.usable) {
         const usable = (hasDateSpec && batchUsableMode === 'relative')
           ? computeRelativeTime(row.dateValue, batchUsableDays, batchUsableTime)
-          : batchUsable ? batchUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+          : batchUsable ? (dayjsToApi(batchUsable) ?? null) : null;
         updateStep2Sku(row.spec_indices, 'usable', usable);
       }
       if (batchEnabled.expiry) {
         const expiry = (hasDateSpec && batchExpiryMode === 'relative')
           ? computeRelativeTime(row.dateValue, batchExpiryDays, batchExpiryTime)
-          : batchExpiry ? batchExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+          : batchExpiry ? (dayjsToApi(batchExpiry) ?? null) : null;
         updateStep2Sku(row.spec_indices, 'expiry', expiry);
       }
     }

@@ -4,7 +4,7 @@ import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import { EyeOutlined, SendOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
-import { dayjsToApi } from '@/utils/format';
+import { dayjsToApi, parseApiTime } from '@/utils/format';
 import { couponApi } from '@/api/services/coupon';
 import { categoryApi } from '@/api/services/category';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -148,8 +148,8 @@ const CouponManagement = () => {
       discount_amount: record.discount_amount / 100,
       threshold_amount: record.threshold_amount / 100,
       total_stock: record.total_stock,
-      start_time: record.start_time ? dayjs(record.start_time) : undefined,
-      end_time: record.end_time ? dayjs(record.end_time) : undefined,
+      start_time: parseApiTime(record.start_time),
+      end_time: parseApiTime(record.end_time),
     });
     setEditModalOpen(true);
   };
@@ -160,8 +160,8 @@ const CouponManagement = () => {
     try {
       const data: any = {};
       if (vals.name !== editRecord.name) data.name = vals.name;
-      if (vals.start_time !== undefined) data.start_time = vals.start_time ? vals.start_time.toISOString() : '';
-      if (vals.end_time !== undefined) data.end_time = vals.end_time ? vals.end_time.toISOString() : '';
+      if (vals.start_time !== undefined) data.start_time = vals.start_time ? dayjsToApi(vals.start_time) : '';
+      if (vals.end_time !== undefined) data.end_time = vals.end_time ? dayjsToApi(vals.end_time) : '';
       await couponApi.updateCoupon(editRecord.id, data);
       success('更新成功');
       setEditModalOpen(false); setEditRecord(null);
@@ -213,8 +213,8 @@ const CouponManagement = () => {
     {
       title: '有效期', key: 'validity', width: 200,
       render: (_: any, r: CouponRecord) => {
-        const start = r.start_time ? dayjs(r.start_time).format('YYYY/MM/DD HH:mm') : '立即生效';
-        const end = r.end_time ? dayjs(r.end_time).format('YYYY/MM/DD HH:mm') : '永久有效';
+        const start = parseApiTime(r.start_time)?.format('YYYY/MM/DD HH:mm') || '立即生效';
+        const end = parseApiTime(r.end_time)?.format('YYYY/MM/DD HH:mm') || '永久有效';
         return `${start} ~ ${end}`;
       },
     },

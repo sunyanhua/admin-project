@@ -6197,6 +6197,59 @@
                 }
             }
         },
+        "/admin/v1/bizops/submission/{id}/approved-at": {
+            "patch": {
+                "description": "管理后台单独更新投稿的审核通过时间（null 清除）；仅审核通过的投稿可改",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "投稿管理"
+                ],
+                "summary": "更新审核通过时间",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "投稿 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核通过时间请求参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminUpdateApprovedAtRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或状态不允许",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/submission/{id}/audit": {
             "post": {
                 "description": "管理后台对投稿执行审核操作（通过/拒绝），通过时可发放金币奖励",
@@ -11296,6 +11349,64 @@
                 }
             }
         },
+        "/api/v1/pair/couples/random": {
+            "get": {
+                "description": "无需认证，随机返回 N 条 matching > 0 的配对（含 couple 统计 + 男女双方完整公开画像）。双方中任一退出/隐藏/停用的配对自动过滤。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口"
+                ],
+                "summary": "公开随机配对",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "返回条数：1-50，默认 10",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/settings/{key}": {
             "get": {
                 "description": "无需认证。按 key 读取已启用的设置项（status=0 且未软删除）。停用或不存在返回 404。",
@@ -11600,6 +11711,67 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.PublicMatchProfileListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/user/match-profile/random": {
+            "get": {
+                "description": "无需认证，随机返回 N 条审核通过且全开放可见的脱单用户公开画像。支持性别筛选，不分页。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口"
+                ],
+                "summary": "公开随机脱单资料",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "性别：1=男 2=女",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "返回条数：1-50，默认 10",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "返回随机公开画像数组",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                                            }
                                         }
                                     }
                                 }
@@ -12283,6 +12455,62 @@
                     },
                     "401": {
                         "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/lottery/my/{id}": {
+            "get": {
+                "description": "查询当前用户单条中奖记录详情，含领取登记收货信息、快递信息、兑换码等全量字段。仅中奖用户本人可访问。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-抽奖"
+                ],
+                "summary": "我的奖品详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户奖品 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_lottery_model.MyPrizeItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "奖品记录不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -13294,7 +13522,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "牵线用户（红娘）对配对组合（男方+女方）执行撮合或拆散操作。配对 ID 由服务端根据男女双方 ID 独立计算。不允许多次对同一配对操作同一类型。撮合+1 匹配度（帮TA选来源 +20），拆散-1 匹配度（帮TA选来源 -20）。帮TA选来源需校验亲友团关系。撮合操作若使匹配度达到 1314 阈值则触发 IM 开通。操作后加入已操作集合。注意：匹配者仅需基础资料审核通过即可发起操作，不要求脱单档案——与自身脱单资料状态无关。",
+                "description": "牵线用户（红娘）对配对组合（男方+女方）执行撮合或拆散操作。配对 ID 由服务端根据男女双方 ID 独立计算。不允许多次对同一配对操作同一类型。来源由服务端实时判定：牵线者是配对双方任一方的亲友团成员 → 帮TA选（撮合+20/拆散-20），否则普通牵线（撮合+1/拆散-1）。撮合操作若使匹配度达到 1314 阈值则触发 IM 开通。操作后加入已操作集合。注意：匹配者仅需基础资料审核通过即可发起操作，不要求脱单档案——与自身脱单资料状态无关。",
                 "consumes": [
                     "application/json"
                 ],
@@ -13348,7 +13576,7 @@
                         }
                     },
                     "403": {
-                        "description": "操作禁止（code=40301 非亲友团成员 / code=40302 重复操作）",
+                        "description": "操作禁止（code=40302 重复操作）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -13360,7 +13588,7 @@
                         }
                     },
                     "422": {
-                        "description": "配对资格不满足（code=40310：匹配者基础资料未通过/男女方基础或脱单档案未通过/性别未设置/账户已停用；code=42217：男女不能为同一用户）",
+                        "description": "配对资格不满足（code=40310：匹配者基础资料未通过/男女方基础或脱单档案未通过/未创建脱单档案/已退出脱单/性别未设置；code=42217：男女不能为同一用户）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -13863,7 +14091,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session-storage_model.SessionStorageListResponse"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageListResponse"
                                         }
                                     }
                                 }
@@ -13919,7 +14147,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session-storage_model.SessionStorageItemResponse"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageItemResponse"
                                         }
                                     }
                                 }
@@ -13978,7 +14206,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session-storage_model.SessionStorageWriteRequest"
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageWriteRequest"
                         }
                     }
                 ],
@@ -17797,6 +18025,9 @@
                 "description": {
                     "type": "string"
                 },
+                "draw_count": {
+                    "type": "integer"
+                },
                 "end_time": {
                     "type": "string"
                 },
@@ -17826,6 +18057,9 @@
                 },
                 "updated_by": {
                     "type": "string"
+                },
+                "win_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -17837,6 +18071,9 @@
                 },
                 "created_by": {
                     "type": "string"
+                },
+                "draw_count": {
+                    "type": "integer"
                 },
                 "end_time": {
                     "type": "string"
@@ -17858,6 +18095,9 @@
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "win_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -17900,7 +18140,7 @@
                 "updated_at": {
                     "type": "string"
                 },
-                "used_count": {
+                "win_count": {
                     "type": "integer"
                 }
             }
@@ -17935,7 +18175,7 @@
                 "updated_at": {
                     "type": "string"
                 },
-                "used_count": {
+                "win_count": {
                     "type": "integer"
                 }
             }
@@ -17981,8 +18221,22 @@
                 "updated_at": {
                     "type": "string"
                 },
+                "user_data": {
+                    "description": "关联用户数据（批量查询填充）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserData"
+                        }
+                    ]
+                },
                 "user_id": {
                     "type": "string"
+                },
+                "user_match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserMatchProfileData"
+                },
+                "user_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.AdminUserProfileData"
                 },
                 "won_at": {
                     "type": "string"
@@ -18208,6 +18462,9 @@
                 "amount": {
                     "type": "integer"
                 },
+                "carrier": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -18223,11 +18480,29 @@
                 "prize_type": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LotteryPrizeType"
                 },
+                "receiver_address": {
+                    "type": "string"
+                },
+                "receiver_name": {
+                    "type": "string"
+                },
+                "receiver_phone": {
+                    "type": "string"
+                },
                 "ship_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ShipStatus"
                 },
+                "shipped_at": {
+                    "type": "string"
+                },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserPrizeClaimStatus"
+                },
+                "tracking_number": {
+                    "type": "string"
+                },
+                "voucher_code": {
+                    "type": "string"
                 },
                 "won_at": {
                     "type": "string"
@@ -18317,7 +18592,7 @@
                 "total_count": {
                     "type": "integer"
                 },
-                "used_count": {
+                "win_count": {
                     "type": "integer"
                 }
             }
@@ -18756,7 +19031,7 @@
                     "type": "string"
                 },
                 "gender": {
-                    "type": "integer"
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
                 },
                 "nickname": {
                     "type": "string"
@@ -18886,8 +19161,7 @@
             "required": [
                 "female_id",
                 "male_id",
-                "opinion_type",
-                "source"
+                "opinion_type"
             ],
             "properties": {
                 "female_id": {
@@ -18904,17 +19178,6 @@
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionType"
-                        }
-                    ]
-                },
-                "source": {
-                    "enum": [
-                        1,
-                        2
-                    ],
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource"
                         }
                     ]
                 }
@@ -19028,7 +19291,7 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_session-storage_model.SessionStorageItemResponse": {
+        "github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageItemResponse": {
             "type": "object",
             "properties": {
                 "data": {
@@ -19045,18 +19308,18 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_session-storage_model.SessionStorageListResponse": {
+        "github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageListResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session-storage_model.SessionStorageItemResponse"
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageItemResponse"
                     }
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_session-storage_model.SessionStorageWriteRequest": {
+        "github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageWriteRequest": {
             "type": "object",
             "properties": {
                 "data": {
@@ -19525,6 +19788,16 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminUpdateApprovedAtRequest": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "description": "RFC3339（如 \"2026-08-14T12:00:00+08:00\"）；null=清除",
+                    "type": "string",
+                    "maxLength": 40
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_submission_model.AdminUpdateSortOrderRequest": {
             "type": "object",
             "required": [
@@ -19611,7 +19884,7 @@
             "type": "object",
             "properties": {
                 "approved_at": {
-                    "description": "RFC3339 格式",
+                    "description": "审核通过时间 RFC3339 格式",
                     "type": "string"
                 },
                 "attachments": {
@@ -19626,6 +19899,10 @@
                 "content": {
                     "type": "string"
                 },
+                "created_at": {
+                    "description": "投稿时间 RFC3339 格式",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -19637,6 +19914,10 @@
                 },
                 "type": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "description": "投稿人内部 ID（UUID v7，非 openid/unionid；2026-08-14 公开决策）",
+                    "type": "string"
                 }
             }
         },
@@ -19644,7 +19925,7 @@
             "type": "object",
             "properties": {
                 "approved_at": {
-                    "description": "RFC3339 格式（公开列表仅含已审核通过记录，非空）",
+                    "description": "审核通过时间 RFC3339 格式（公开列表仅含已审核通过记录，非空）",
                     "type": "string"
                 },
                 "attachments": {
@@ -19660,6 +19941,10 @@
                 "content": {
                     "type": "string"
                 },
+                "created_at": {
+                    "description": "投稿时间 RFC3339 格式",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -19672,6 +19957,10 @@
                 },
                 "type": {
                     "type": "integer"
+                },
+                "user_id": {
+                    "description": "投稿人内部 ID（UUID v7，非 openid/unionid；2026-08-14 公开决策）",
+                    "type": "string"
                 }
             }
         },
@@ -22066,13 +22355,28 @@
                 "beat_lovebirds_count": {
                     "type": "integer"
                 },
+                "help_select_count": {
+                    "type": "integer"
+                },
                 "helped_succeed_count": {
                     "type": "integer"
                 },
                 "icing_on_cake_count": {
                     "type": "integer"
                 },
+                "match_count": {
+                    "type": "integer"
+                },
                 "mismatched_count": {
+                    "type": "integer"
+                },
+                "penalty_count": {
+                    "type": "integer"
+                },
+                "score_count": {
+                    "type": "integer"
+                },
+                "split_count": {
                     "type": "integer"
                 },
                 "started_fate_count": {
@@ -22100,6 +22404,9 @@
         "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo": {
             "type": "object",
             "properties": {
+                "blood_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
+                },
                 "cn_zodiac": {
                     "type": "string"
                 },
@@ -22108,6 +22415,9 @@
                 },
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
+                },
+                "ethnicity": {
+                    "type": "string"
                 },
                 "gifts_received": {
                     "type": "integer"
@@ -22122,6 +22432,9 @@
                     "type": "string"
                 },
                 "hometown": {
+                    "type": "string"
+                },
+                "household_registration": {
                     "type": "string"
                 },
                 "id_card_tail": {
@@ -22158,6 +22471,9 @@
                     "type": "string"
                 },
                 "self_intro": {
+                    "type": "string"
+                },
+                "specialties": {
                     "type": "string"
                 },
                 "weight": {

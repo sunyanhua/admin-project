@@ -5,8 +5,8 @@ import { SubmissionAuditStatus, SubmissionTypeLabels, SubmissionTypeColors } fro
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { submissionApi, Submission } from '@/api/services/submission';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import dayjs, { Dayjs } from 'dayjs';
-import { safeDayjs } from '@/utils/format';
+import { Dayjs } from 'dayjs';
+import { safeDayjs, dayjsToApi, parseApiTime } from '@/utils/format';
 
 interface SubmissionAuditModalProps {
   visible: boolean;
@@ -35,7 +35,7 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
     if (!visible || !record) return;
     if (record.audit_status === SubmissionAuditStatus.APPROVED) {
       setAction(SubmissionAuditStatus.APPROVED);
-      setApprovedAt(safeDayjs(record.approved_at) || null);
+      setApprovedAt(parseApiTime(record.approved_at) || null);
       setRewardCoins(record.reward_coins ?? 20);
     } else {
       setAction(SubmissionAuditStatus.APPROVED);
@@ -62,14 +62,19 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
     }
     try {
       setSubmitting(true);
-      await submissionApi.audit(record.id, {
-        action,
-        reason: action === SubmissionAuditStatus.REJECTED ? reason : undefined,
-        reward_coins: action === SubmissionAuditStatus.APPROVED ? (rewardCoins ?? 0) : undefined,
-        approved_at: action === SubmissionAuditStatus.APPROVED && approvedAt
-          ? approvedAt.format('YYYY-MM-DD')
-          : undefined,
-      });
+      const statusChanged = action !== record.audit_status;
+      if (statusChanged) {
+        // 审核状态变更 → 走 audit 接口
+        await submissionApi.audit(record.id, {
+          action,
+          reason: action === SubmissionAuditStatus.REJECTED ? reason : undefined,
+          reward_coins: action === SubmissionAuditStatus.APPROVED ? (rewardCoins ?? 0) : undefined,
+        });
+      }
+      // 通过状态（含本次审核通过后）→ 播出日期单独走 approved-at 接口
+      if (action === SubmissionAuditStatus.APPROVED) {
+        await submissionApi.updateApprovedAt(record.id, approvedAt ? (dayjsToApi(approvedAt) ?? null) : null);
+      }
       success('保存成功');
       onClose();
       onSuccess();

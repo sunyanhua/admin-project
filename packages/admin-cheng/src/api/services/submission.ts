@@ -80,7 +80,6 @@ export interface AuditSubmissionRequest {
   delete_files?: boolean;
   reason?: string;
   reward_coins?: number;
-  approved_at?: string; // 播出日期（通过时可选设置）
 }
 
 export interface UpdateSortOrderRequest {
@@ -101,6 +100,11 @@ export const submissionApi = {
   /** 审核投稿 */
   audit: (id: string, data: AuditSubmissionRequest) => {
     return request.post(`/admin/v1/bizops/submission/${id}/audit`, data);
+  },
+
+  /** 更新审核通过时间（null 清除；仅审核通过的可改） */
+  updateApprovedAt: (id: string, approvedAt: string | null) => {
+    return request.patch(`/admin/v1/bizops/submission/${id}/approved-at`, { approved_at: approvedAt });
   },
 
   /** 调整排序 */

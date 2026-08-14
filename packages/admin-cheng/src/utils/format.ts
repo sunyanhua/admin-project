@@ -4,6 +4,12 @@
  * 导致与本地时间差8小时。这里手工按各字段构造，确保是本地时区。
  */
 export function parseAsLocal(dateStr: string): Date | null {
+  // 带时区后缀（Z 或 ±hh:mm）→ Date 构造函数正确转换 UTC→本地
+  if (/(Z|[+-]\d{2}:\d{2})$/.test(dateStr)) {
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // 无时区后缀 → 手工按各字段构造，确保是本地时区
   // 匹配 "YYYY-MM-DD HH:mm:ss" 或 "YYYY-MM-DDTHH:mm:ss" 等变体
   const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
   if (!m) return null;
@@ -60,6 +66,22 @@ export function safeDayjs(raw?: string | null): dayjs.Dayjs | undefined {
   if (!m) return undefined;
   const d = dayjs(new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]));
   return d.isValid() ? d : undefined;
+}
+
+/**
+ * 通用 API 时间解析：正确处理带时区后缀（Z / +08:00）的字符串。
+ *
+ * 后端将时间统一转 UTC 存储（如 2026-08-19T16:00:00Z = 本地 8 月 20 日 00:00）。
+ * safeDayjs 无视时区后缀、按字面值构造本地时间，会把 Z 串差 8 小时。
+ * 带时区后缀的字符串交给 new Date() 解析（自动 UTC→本地），其余走 safeDayjs。
+ */
+export function parseApiTime(raw?: string | null): dayjs.Dayjs | undefined {
+  if (!raw) return undefined;
+  if (raw.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(raw)) {
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? undefined : dayjs(d);
+  }
+  return safeDayjs(raw);
 }
 
 /**

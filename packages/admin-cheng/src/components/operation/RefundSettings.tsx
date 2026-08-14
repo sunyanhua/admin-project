@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Radio, Select, Button, DatePicker, TimePicker, Table, InputNumber, Input, Space, Form, Alert } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 import { refundRuleApi, RefundRule, RefundRuleStage } from '../../api/services/refundRule';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -240,8 +241,8 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
     const date = dayjs(dateValue);
     if (!date.isValid()) return null;
     const result = date.subtract(days, 'day');
-    if (time) return result.hour(time.hour()).minute(time.minute()).second(0).format('YYYY-MM-DDTHH:mm:ssZ');
-    return result.format('YYYY-MM-DDTHH:mm:ssZ');
+    if (time) return dayjsToApi(result.hour(time.hour()).minute(time.minute()).second(0)) ?? null;
+    return dayjsToApi(result) ?? null;
   };
 
   const applyBatch = () => {
@@ -252,7 +253,7 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
       if (!selectedKeys.has(row.key)) continue;
       const val = (hasDateSpec && batchDeadlineMode === 'relative')
         ? computeRelativeTime(row.dateValue, batchDeadlineDays, batchDeadlineTime)
-        : batchDeadline ? batchDeadline.format('YYYY-MM-DDTHH:mm:ssZ') : '';
+        : batchDeadline ? (dayjsToApi(batchDeadline) ?? null) : '';
       newDeadlines[row.spec_indices] = val || '';
     }
     onChange({ ...value, skuDeadlines: newDeadlines });
@@ -316,7 +317,7 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
               <DatePicker showTime
                 value={value.unifiedDeadline ? dayjs(value.unifiedDeadline) : null}
                 placeholder="请选择"
-                onChange={(v) => onChange({ ...value, unifiedDeadline: v ? v.format('YYYY-MM-DDTHH:mm:ssZ') : null })}
+                onChange={(v) => onChange({ ...value, unifiedDeadline: v ? (dayjsToApi(v) ?? null) : null })}
               />
             </div>
           )}
@@ -404,7 +405,7 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
                         <DatePicker showTime
                           value={value.skuDeadlines[r.spec_indices] ? dayjs(value.skuDeadlines[r.spec_indices]) : null}
                           placeholder="请选择" style={{ width: '100%' }}
-                          onChange={(v) => onChange({ ...value, skuDeadlines: { ...value.skuDeadlines, [r.spec_indices]: v ? v.format('YYYY-MM-DDTHH:mm:ssZ') : '' } })} />
+                          onChange={(v) => onChange({ ...value, skuDeadlines: { ...value.skuDeadlines, [r.spec_indices]: v ? (dayjsToApi(v) ?? null) : '' } })} />
                       ),
                     },
                   ]}

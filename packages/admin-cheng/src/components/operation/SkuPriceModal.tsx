@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { App, Button, Radio, Space, Table, InputNumber, Switch, Select, DatePicker, TimePicker } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs, { Dayjs } from 'dayjs';
+import { parseApiTime, dayjsToApi } from '@/utils/format';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { productApi } from '../../api/services/product';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -142,8 +143,8 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
     const date = dayjs(dateValue);
     if (!date.isValid()) return null;
     const result = date.subtract(days, 'day');
-    if (time) return result.hour(time.hour()).minute(time.minute()).second(0).format('YYYY-MM-DDTHH:mm:ssZ');
-    return result.format('YYYY-MM-DDTHH:mm:ssZ');
+    if (time) return dayjsToApi(result.hour(time.hour()).minute(time.minute()).second(0)) ?? null;
+    return dayjsToApi(result) ?? null;
   };
 
   // ---- 批量设置 ----
@@ -178,12 +179,12 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
         if (btEnabled.usable) {
           patch.usable = (hasDateSpec && batchUsableMode === 'relative')
             ? computeRelativeTime(displaySkus.find((r) => r.key === k)?.specParts?.[dateSpecIndex], batchUsableDays, batchUsableTime)
-            : batchUsable ? batchUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+            : batchUsable ? (dayjsToApi(batchUsable) ?? null) : null;
         }
         if (btEnabled.expiry) {
           patch.expiry = (hasDateSpec && batchExpiryMode === 'relative')
             ? computeRelativeTime(displaySkus.find((r) => r.key === k)?.specParts?.[dateSpecIndex], batchExpiryDays, batchExpiryTime)
-            : batchExpiry ? batchExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+            : batchExpiry ? (dayjsToApi(batchExpiry) ?? null) : null;
         }
 
         // 报名信息
@@ -252,7 +253,10 @@ const SkuPriceModal: React.FC<SkuPriceModalProps> = ({
     } catch (err: any) { showError(err?.response?.data?.message || '获取商品状态失败'); }
   };
 
-  const fmtTime = (v?: string | null) => v ? dayjs(v).format('YYYY/MM/DD HH:mm') : '-';
+  const fmtTime = (v?: string | null) => {
+    const d = parseApiTime(v);
+    return d ? d.format('YYYY/MM/DD HH:mm') : '-';
+  };
 
   const fmtAfc = (list?: any[] | null) => {
     if (!list || list.length === 0) return '-';

@@ -6,6 +6,7 @@ import RefundSettings, { RefundSettingsData, RefundMode, REFUND_TYPE_MAP } from 
 import BookingSlotManager, { BookingSlotManagerHandle } from './BookingSlotManager';
 import Step2ExpirySection from './Step2ExpirySection';
 import dayjs, { Dayjs } from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 import SkuConfigPanel, {
   SkuConfigPanelHandle, SpecGroup, SkuRow, cartesian,
 } from './SkuConfigPanel';
@@ -310,8 +311,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
     const date = dayjs(dateValue);
     if (!date.isValid()) return null;
     const result = date.subtract(days, 'day');
-    if (time) return result.hour(time.hour()).minute(time.minute()).second(0).format('YYYY-MM-DDTHH:mm:ssZ');
-    return result.format('YYYY-MM-DDTHH:mm:ssZ');
+    if (time) return dayjsToApi(result.hour(time.hour()).minute(time.minute()).second(0)) ?? null;
+    return dayjsToApi(result) ?? null;
   };
 
   // ---- 附加信息分配批量应用 ----
@@ -468,8 +469,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           let usable: string | null = null, expiry: string | null = null;
           if (!ticketMode) {
             if (expiryMode === 'unified') {
-              usable = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : null;
-              expiry = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : null;
+              usable = unifiedUsable ? (dayjsToApi(unifiedUsable) ?? null) : null;
+              expiry = unifiedExpiry ? (dayjsToApi(unifiedExpiry) ?? null) : null;
             } else {
               const s2e = textToStep2.get(specText) || {};
               usable = s2e.usable || null;
@@ -480,7 +481,7 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           // SKU refund_base_time（用 step2Indices 查 skuDeadlines，保持 key 格式一致）
           let skuRefundBaseTime = '';
           if (refundSettings.mode === 'anytime') {
-            skuRefundBaseTime = dayjs().add(30, 'year').format('YYYY-MM-DDTHH:mm:ssZ');
+            skuRefundBaseTime = dayjsToApi(dayjs().add(30, 'year')) ?? '';
           } else if (refundSettings.mode === 'deadline' || refundSettings.mode === 'staged') {
             if (refundSettings.deadlineMode === 'unified') {
               skuRefundBaseTime = refundSettings.unifiedDeadline || '';
@@ -565,8 +566,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
         config: g.fields.map(({ key, preset, ...rest }) => rest),
       });
 
-      const unifiedUsableStr = unifiedUsable ? unifiedUsable.format('YYYY-MM-DDTHH:mm:ssZ') : '';
-      const unifiedExpiryStr = unifiedExpiry ? unifiedExpiry.format('YYYY-MM-DDTHH:mm:ssZ') : '';
+      const unifiedUsableStr = unifiedUsable ? (dayjsToApi(unifiedUsable) ?? null) : '';
+      const unifiedExpiryStr = unifiedExpiry ? (dayjsToApi(unifiedExpiry) ?? null) : '';
 
       // 退款相关字段
       const refundType = REFUND_TYPE_MAP[refundSettings.mode];

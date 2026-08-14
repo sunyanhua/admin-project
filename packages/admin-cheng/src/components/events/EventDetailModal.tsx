@@ -4,7 +4,7 @@ import { Modal, Descriptions, Tag, Space, Image, Avatar, Button, Form, Input, Up
 import { PlusOutlined } from '@ant-design/icons';
 import { eventApi } from '@/api/services/event';
 import { EventStatus } from '@shared/constants/event.enums';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, parseApiTime, dayjsToApi } from '@/utils/format';
 import { getAvatarUrl, getFullWidthUrl } from '@/utils/imageUtils';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ImageUpload from '@/components/common/ImageUpload';
@@ -95,9 +95,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
       image: data.image || '',
       intro: data.intro,
       arg_0: data.arg_0 || '',
-      start_time: data.start_time ? dayjs(data.start_time) : null,
-      reg_expiry: data.reg_expiry ? dayjs(data.reg_expiry) : null,
-      refund_expiry: data.refund_expiry ? dayjs(data.refund_expiry) : null,
+      start_time: parseApiTime(data.start_time) || null,
+      reg_expiry: parseApiTime(data.reg_expiry) || null,
+      refund_expiry: parseApiTime(data.refund_expiry) || null,
     });
     setEditModalVisible(true);
   };
@@ -110,9 +110,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
       const payload = {
         ...vals,
         arg_0: multiImages.join('|'),
-        start_time: vals.start_time ? dayjs(vals.start_time).format('YYYY-MM-DD HH:mm:ss') : null,
-        reg_expiry: vals.reg_expiry ? dayjs(vals.reg_expiry).format('YYYY-MM-DD HH:mm:ss') : null,
-        refund_expiry: vals.refund_expiry ? dayjs(vals.refund_expiry).format('YYYY-MM-DD HH:mm:ss') : null,
+        start_time: vals.start_time ? dayjsToApi(vals.start_time) : null,
+        reg_expiry: vals.reg_expiry ? dayjsToApi(vals.reg_expiry) : null,
+        refund_expiry: vals.refund_expiry ? dayjsToApi(vals.refund_expiry) : null,
       };
       await eventApi.updateEvent(data.id, payload);
       success('修改成功');

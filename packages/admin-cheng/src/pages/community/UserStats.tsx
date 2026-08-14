@@ -15,6 +15,7 @@ import {
 import { UserOutlined, FilterOutlined } from '@ant-design/icons';
 import { statisticsApi } from '@/api/services/statistics';
 import dayjs from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
@@ -36,8 +37,8 @@ const UserStats = () => {
     try {
       const [min, max] = registerDateRange;
       const res: any = await statisticsApi.getUserRegister({
-        min: min.format('YYYY-MM-DD HH:mm:ss'),
-        max: max.format('YYYY-MM-DD HH:mm:ss'),
+        min: dayjsToApi(min),
+        max: dayjsToApi(max),
       });
       setRegisterData((res || []).map((item: any) => ({
         ...item,
