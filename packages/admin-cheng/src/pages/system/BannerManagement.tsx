@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Switch, InputNumber, Space, Form, Input, DatePicker, Radio, Tag, Image } from 'antd';
+import { Button, Switch, InputNumber, Space, Form, Input, DatePicker, Image } from 'antd';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
-import { BannerStatus, BannerLinkType, BannerLinkTypeLabels } from '@shared/constants';
+import { BannerStatus } from '@shared/constants';
 import { getFullWidthUrl } from '@/utils/imageUtils';
 import { bannerApi, Banner, CreateBannerRequest } from '@/api/services/banner';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
@@ -32,7 +32,6 @@ const BannerManagement = () => {
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [linkType, setLinkType] = useState<number>(BannerLinkType.NONE);
   const [statusEnabled, setStatusEnabled] = useState(true);
   const [form] = Form.useForm();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -100,7 +99,6 @@ const BannerManagement = () => {
 
   const handleAdd = () => {
     setEditingBanner(null);
-    setLinkType(BannerLinkType.NONE);
     setStatusEnabled(true);
     setModalVisible(true);
     setTimeout(() => form.resetFields(), 0);
@@ -114,7 +112,6 @@ const BannerManagement = () => {
       const bannerData = detail || record;
       setEditingBanner(bannerData);
       setStatusEnabled(bannerData.status === BannerStatus.ONLINE);
-      setLinkType(bannerData.link_type ?? BannerLinkType.NONE);
       setModalVisible(true);
       setTimeout(() => {
         form.setFieldsValue({
@@ -128,7 +125,6 @@ const BannerManagement = () => {
       }, 0);
     } catch {
       setStatusEnabled(record.status === BannerStatus.ONLINE);
-      setLinkType(record.link_type ?? BannerLinkType.NONE);
       setModalVisible(true);
       setTimeout(() => {
         form.setFieldsValue({
@@ -151,8 +147,7 @@ const BannerManagement = () => {
       const payload: CreateBannerRequest = {
         title: values.title,
         cover: values.cover || '',
-        link_type: linkType,
-        link_data: linkType !== BannerLinkType.NONE ? (values.link_data || '') : '',
+        link_data: values.link_data || '',
         status: statusEnabled ? BannerStatus.ONLINE : BannerStatus.OFFLINE,
         sort_order: values.sort_order ?? undefined,
         start_at: dayjsToApi(values.start_at as Dayjs),
@@ -181,13 +176,6 @@ const BannerManagement = () => {
     }
   };
 
-  const handleLinkTypeChange = (value: number) => {
-    setLinkType(value);
-    if (value === BannerLinkType.NONE) {
-      form.setFieldsValue({ link_data: '' });
-    }
-  };
-
   const columns: ColumnsType<Banner> = [
     {
       title: '标题',
@@ -205,13 +193,6 @@ const BannerManagement = () => {
           ? <Image src={getFullWidthUrl(url)} alt="banner" preview={{ src: url }} style={{ height: 50, objectFit: 'contain', borderRadius: 4 }} />
           : <span style={{ color: '#999' }}>-</span>
       ),
-    },
-    {
-      title: '链接类型',
-      dataIndex: 'link_type',
-      key: 'link_type',
-      width: 100,
-      render: (v: number) => <Tag title={BannerLinkTypeLabels[v]}>{BannerLinkTypeLabels[v] ?? v}</Tag>,
     },
     {
       title: '权重',
@@ -314,24 +295,13 @@ const BannerManagement = () => {
             <CropperImageUpload aspect={600 / 200} sizeHint="建议尺寸：600 × 200 像素" />
           </Form.Item>
 
-          <Form.Item label="链接类型" required>
-            <Radio.Group value={linkType} onChange={(e) => handleLinkTypeChange(e.target.value)}>
-              <Radio.Button value={BannerLinkType.NONE}>{BannerLinkTypeLabels[BannerLinkType.NONE]}</Radio.Button>
-              <Radio.Button value={BannerLinkType.EXTERNAL}>{BannerLinkTypeLabels[BannerLinkType.EXTERNAL]}</Radio.Button>
-              <Radio.Button value={BannerLinkType.INTERNAL}>{BannerLinkTypeLabels[BannerLinkType.INTERNAL]}</Radio.Button>
-            </Radio.Group>
+          <Form.Item
+            label="跳转链接"
+            name="link_data"
+            extra="选填，如：https://example.com 或 /pages/activity/detail?id=123"
+          >
+            <Input placeholder="请输入跳转链接（选填）" />
           </Form.Item>
-
-          {linkType !== BannerLinkType.NONE && (
-            <Form.Item
-              label={linkType === BannerLinkType.EXTERNAL ? '外链地址' : '内部页面路径'}
-              name="link_data"
-              rules={[{ required: true, message: '请输入链接地址' }, { max: 2048, message: '最多2048个字符' }]}
-              extra={linkType === BannerLinkType.INTERNAL ? '如: /pages/activity/detail?id=123' : '如: https://example.com'}
-            >
-              <Input placeholder={linkType === BannerLinkType.EXTERNAL ? '请输入完整 URL' : '请输入小程序页面路径'} />
-            </Form.Item>
-          )}
 
           <Form.Item label="展示开始时间" name="start_at" extra="不填写则不限">
             <DatePicker showTime format="YYYY/MM/DD HH:mm:ss" placeholder="选择开始时间" style={{ width: '100%' }} />
