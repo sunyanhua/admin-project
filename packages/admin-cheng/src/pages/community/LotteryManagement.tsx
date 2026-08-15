@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space } from 'antd';
 import { EditOutlined, GiftOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { lotteryApi, Pool, UserPrize } from '@/api/services/lottery';
+import { lotteryApi, Pool } from '@/api/services/lottery';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -39,9 +39,6 @@ const LotteryManagement = () => {
   const [winnerModalPoolId, setWinnerModalPoolId] = useState('');
   const [winnerModalPoolName, setWinnerModalPoolName] = useState('');
 
-  // 中奖人数缓存
-  const [winnerCounts, setWinnerCounts] = useState<Record<string, number>>({});
-
   const fetchPools = useCallback(async (params: any) => {
     return lotteryApi.getPools({
       page: params.page, size: params.page_size,
@@ -57,18 +54,6 @@ const LotteryManagement = () => {
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<Pool>({
     fetchFn: fetchPools, formatResponse: formatPoolResponse,
   });
-
-  // 加载各奖池中奖人数
-  useEffect(() => {
-    lotteryApi.getUserPrizes({ page: 1, size: 100 }).then((res: any) => {
-      const list: UserPrize[] = Array.isArray(res) ? res : (res?.list || []);
-      const counts: Record<string, number> = {};
-      for (const up of list) {
-        if (up.pool_id) counts[up.pool_id] = (counts[up.pool_id] || 0) + 1;
-      }
-      setWinnerCounts(counts);
-    }).catch(() => {});
-  }, [data]);
 
   const handleSearchChange = (name: string, value: any) => setSearchValues(p => ({ ...p, [name]: value }));
   const handleSearch = (vals: Record<string, any>) => search(vals);
@@ -92,7 +77,7 @@ const LotteryManagement = () => {
     {
       title: '中奖人数', key: 'winners', width: 140,
       render: (_: any, r: Pool) => {
-        const count = winnerCounts[r.id] || 0;
+        const count = r.win_count ?? 0;
         if (count > 0) {
           return <span>{count} 人 <a onClick={() => { setWinnerModalPoolId(r.id); setWinnerModalPoolName(r.name); setWinnerModalVisible(true); }}>[名单]</a></span>;
         }

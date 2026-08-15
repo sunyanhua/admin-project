@@ -14,6 +14,8 @@ export interface Pool {
   start_time?: string;
   end_time?: string;
   status: number; // 0=启用 1=禁用
+  win_count?: number;   // 中奖人数（列表直接返回）
+  draw_count?: number;  // 抽奖次数
   created_by?: string;
   created_at?: string;
   updated_at?: string;
@@ -114,6 +116,7 @@ export interface UserPrize {
   pool_id: string;
   prize_id: string;
   prize_type: number;
+  prize_name?: string;
   amount: number;
   ship_status?: number | null;
   carrier?: string;
@@ -123,6 +126,20 @@ export interface UserPrize {
   won_at?: string;
   created_at?: string;
   updated_at?: string;
+  user_data?: {
+    phone?: string;
+    credits?: number;
+    is_activated?: boolean;
+  };
+  user_profile?: {
+    nickname?: string;
+    avatar?: string;
+    gender?: number;
+    age?: number;
+  };
+  user_match_profile?: {
+    real_name?: string;
+  };
 }
 
 export const lotteryApi = {
@@ -175,7 +192,7 @@ export const lotteryApi = {
   },
 
   // === 中奖记录 ===
-  getUserPrizes: (params?: { status?: number; keyword?: string; page?: number; size?: number }) => {
+  getUserPrizes: (params?: { status?: number; keyword?: string; page?: number; size?: number; pool_id?: string; prize_type?: number }) => {
     return request.get('/admin/v1/bizops/lottery/user-prize', { params });
   },
   shipUserPrize: (id: string, data: { ship_status: number; carrier?: string; tracking_number?: string }) => {
