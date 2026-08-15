@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EyeOutlined, EditOutlined, DeleteOutlined, QrcodeOutlined } from '@ant-design/icons';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
 import { getMediumUrl } from '@/utils/imageUtils';
@@ -206,6 +207,9 @@ const ActivityManagement = () => {
       fixed: 'right' as const,
       render: (_: any, r: Activity) => (
         <Space size="small" className="action-buttons">
+          <SourceQrcodeModal basePage={`pages/activity/detail?id=${r.id}`}>
+            <Button type="link" size="small" icon={<QrcodeOutlined />}>码</Button>
+          </SourceQrcodeModal>
           <Button type="link" size="small" icon={<EyeOutlined />}
             onClick={() => handleShowRegisters(r)}>
             报名

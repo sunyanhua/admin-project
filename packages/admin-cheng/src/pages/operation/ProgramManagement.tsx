@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Card, Tabs, Form, Button, Input, Typography, Space, Spin, Tag, Modal, Image } from 'antd';
-import { SaveOutlined, PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
+import { SaveOutlined, PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined, QrcodeOutlined } from '@ant-design/icons';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { PrizeTypeColors } from '@shared/constants';
 import { settingsApi, SettingType } from '@/api/services/settings';
 import { getSmallUrl } from '@/utils/imageUtils';
@@ -294,14 +295,19 @@ const ProgramManagement: React.FC = () => {
         </Form.Item>
 
         <Form.Item style={{ marginTop: 24 }}>
-          <Button type="primary" icon={<SaveOutlined />} loading={broadcastSaving} onClick={async () => {
-            setBroadcastSaving(true);
-            await saveBroadcastToSetting(broadcastData, broadcastSettingId);
-            setBroadcastSaving(false);
-            success('保存成功');
-          }}>
-            保存
-          </Button>
+          <Space>
+            <Button type="primary" icon={<SaveOutlined />} loading={broadcastSaving} onClick={async () => {
+              setBroadcastSaving(true);
+              await saveBroadcastToSetting(broadcastData, broadcastSettingId);
+              setBroadcastSaving(false);
+              success('保存成功');
+            }}>
+              保存
+            </Button>
+            <SourceQrcodeModal basePage="pages/program/index">
+              <Button icon={<QrcodeOutlined />}>小程序码</Button>
+            </SourceQrcodeModal>
+          </Space>
         </Form.Item>
       </Form>
     </Spin>

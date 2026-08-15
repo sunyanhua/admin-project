@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, Image } from 'antd';
-import { EditOutlined, DeleteOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, SafetyCertificateOutlined, QrcodeOutlined } from '@ant-design/icons';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ZoneStatus } from '@shared/constants';
 import { getSmallUrl } from '@/utils/imageUtils';
@@ -140,6 +141,9 @@ const ZoneManagement = () => {
       onEdit: (record) => handleEdit(record),
       render: (record: Zone) => (
         <Space size="small" className="action-buttons">
+          <SourceQrcodeModal basePage={`pages/zone/detail?id=${record.id}`}>
+            <Button type="link" size="small" icon={<QrcodeOutlined />}>码</Button>
+          </SourceQrcodeModal>
           <Button type="link" size="small" icon={<SafetyCertificateOutlined />} onClick={() => handleVerify(record)}>
             认证
           </Button>

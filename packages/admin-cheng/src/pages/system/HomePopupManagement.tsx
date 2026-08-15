@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Card, Form, Button, Input, Typography, Spin, DatePicker } from 'antd';
-import { SaveOutlined } from '@ant-design/icons';
+import { Card, Form, Button, Input, Typography, Spin, DatePicker, Space } from 'antd';
+import { SaveOutlined, ClearOutlined } from '@ant-design/icons';
 import { settingsApi, SettingType } from '@/api/services/settings';
 import ImageUpload from '@/components/common/ImageUpload';
 import { safeDayjs, dayjsToApi } from '@/utils/format';
@@ -10,17 +10,21 @@ import dayjs, { Dayjs } from 'dayjs';
 const { RangePicker } = DatePicker;
 
 interface HomePopupData {
+  popup_id: string;
   image: string;
   link: string;
   start_time: string;
   end_time: string;
 }
 
-const EMPTY_DATA: HomePopupData = { image: '', link: '', start_time: '', end_time: '' };
+const emptyData = (): HomePopupData => ({ popup_id: '', image: '', link: '', start_time: '', end_time: '' });
+
+/** 系统自动生成弹窗 ID（不展示给用户） */
+const generatePopupId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 const HomePopupManagement: React.FC = () => {
   const { success, error: showError } = useAppNotification();
-  const [data, setData] = useState<HomePopupData>(EMPTY_DATA);
+  const [data, setData] = useState<HomePopupData>(emptyData);
   const [timeRange, setTimeRange] = useState<[Dayjs, Dayjs] | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -37,6 +41,7 @@ const HomePopupManagement: React.FC = () => {
         try {
           const parsed = typeof item.value === 'string' ? JSON.parse(item.value) : item.value;
           const d: HomePopupData = {
+            popup_id: parsed.popup_id || generatePopupId(),
             image: parsed.image || '',
             link: parsed.link || '',
             start_time: parsed.start_time || '',
@@ -49,14 +54,14 @@ const HomePopupManagement: React.FC = () => {
             if (s && e) setTimeRange([s, e]);
           }
         } catch {
-          setData(EMPTY_DATA);
+          setData(emptyData());
         }
       } else {
         setSettingId('');
-        setData(EMPTY_DATA);
+        setData(emptyData());
       }
     } catch {
-      setData(EMPTY_DATA);
+      setData(emptyData());
     } finally {
       setLoading(false);
     }
@@ -64,24 +69,46 @@ const HomePopupManagement: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const saveToSetting = async (value: string) => {
+    if (settingId) {
+      await settingsApi.updateSetting(settingId, { value });
+    } else {
+      const createRes: any = await settingsApi.createSetting({
+        key: 'home_popup',
+        type: SettingType.JSON,
+        value,
+        group_name: 'popup',
+      });
+      if (createRes?.id) setSettingId(createRes.id);
+    }
+  };
+
   const handleSave = async () => {
-    const value = JSON.stringify(data);
     setSaving(true);
     try {
-      if (settingId) {
-        await settingsApi.updateSetting(settingId, { value });
-      } else {
-        const createRes: any = await settingsApi.createSetting({
-          key: 'home_popup',
-          type: SettingType.JSON,
-          value,
-          group_name: 'popup',
-        });
-        if (createRes?.id) setSettingId(createRes.id);
-      }
+      // 每次编辑自动生成新的弹窗 ID
+      const payload = { ...data, popup_id: generatePopupId() };
+      setData(payload);
+      await saveToSetting(JSON.stringify(payload));
       success('保存成功');
     } catch (err: any) {
       showError(err?.response?.data?.message || '保存失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleClear = async () => {
+    setSaving(true);
+    try {
+      // 清空表单 + 提交空 JSON 值
+      const empty = emptyData();
+      setData(empty);
+      setTimeRange(null);
+      await saveToSetting(JSON.stringify(empty));
+      success('已清空');
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '清空失败');
     } finally {
       setSaving(false);
     }
@@ -131,9 +158,14 @@ const HomePopupManagement: React.FC = () => {
             </Form.Item>
 
             <Form.Item style={{ marginTop: 24 }}>
-              <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={handleSave}>
-                保存
-              </Button>
+              <Space>
+                <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={handleSave}>
+                  保存
+                </Button>
+                <Button icon={<ClearOutlined />} onClick={handleClear}>
+                  清空
+                </Button>
+              </Space>
             </Form.Item>
           </Form>
         </Spin>

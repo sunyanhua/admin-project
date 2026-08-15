@@ -1,67 +1,88 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Select, Modal, Image, Divider, Row, Col } from 'antd';
+import { Button, Space, Select, Modal, Image, Divider, Spin } from 'antd';
 import { QrcodeOutlined, CopyOutlined } from '@ant-design/icons';
-import { statisticsApi } from '@/api/services/statistics';
+import { wxaApi } from '@/api/services/wxa';
 import { sourceApi } from '@/api/services/source';
 import { useAppNotification } from '@/hooks/useAppNotification';
 
-const APPID = 'wxb0f15549e07308d5';
+// 本小程序微信 ID / 原始 ID
+const APPID = 'wx8aed7b2d08302c3b';
+const ORIGINAL_ID = 'gh_6cea97604e22';
+
+// 统一解析页路径（小程序端扫码后由该页还原 scene）
+const RESOLVE_PAGE = 'pages/source/index';
 
 export interface SourceQrcodeModalProps {
+  /** 目标页面路径（如 pages/activity/detail?id=xxx） */
   basePage: string;
   children?: React.ReactNode;
 }
 
 const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, children }) => {
-  const { success } = useAppNotification();
+  const { success, error: showError } = useAppNotification();
   const [modalVisible, setModalVisible] = useState(false);
   const [sources, setSources] = useState<any[]>([]);
   const [selectedSource, setSelectedSource] = useState<string>('');
   const [pagePath, setPagePath] = useState('');
   const [qrcodeUrl, setQrcodeUrl] = useState('');
+  const [shortLink, setShortLink] = useState('');
   const [qrLoading, setQrLoading] = useState(false);
 
   useEffect(() => {
-    if (modalVisible) {
-      sourceApi.getSources({ key: 'default', status: 0, length: 100 }).then((res: any) => {
-        setSources(res?.data || []);
-        // 打开弹窗默认选中"无来源"并立即调用接口
+    if (!modalVisible) return;
+    sourceApi.getSources({ page: 1, size: 100, status: 0 })
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : (res?.list || []);
+        setSources(list);
+      })
+      .catch(() => setSources([]))
+      .finally(() => {
+        // 打开弹窗默认选中"无来源"并立即生成
         handleSourceChange('');
-      }).catch(() => { /* 获取来源列表失败 */ });
-    }
+      });
   }, [modalVisible]);
 
   const handleSourceChange = async (sourceId: string) => {
     setSelectedSource(sourceId);
     setPagePath('');
     setQrcodeUrl('');
+    setShortLink('');
     setQrLoading(true);
     try {
-      // 判断页面路径是否已有查询参数，决定source参数的连接方式
+      // 判断页面路径是否已有查询参数，决定 source 参数的连接方式
       const hasQuery = basePage.includes('?');
       const separator = hasQuery ? '&' : '?';
+      const fullData = sourceId === '' ? basePage : `${basePage}${separator}source=${sourceId}`;
 
-      const sceneRes: any = await statisticsApi.getScene({
-        appid: APPID,
-        data: sourceId === '' ? basePage : `${basePage}${separator}source=${sourceId}`,
-      });
-      const sceneStr = sceneRes?.id || '';
-      // 无论有无来源，都生成 /pages/source/index?id={sceneStr} 路径
-      const path = `/pages/source/index?id=${sceneStr}`;
+      // 1. 原始数据 → 32 位短引用（scene 落库）
+      const sceneRes: any = await wxaApi.createScene({ data: fullData });
+      const sceneRef = sceneRes?.id || '';
+      if (!sceneRef) throw new Error('scene 转码失败');
+
+      // 2. 展示统一解析页路径
+      const path = `/${RESOLVE_PAGE}?scene=${sceneRef}`;
       setPagePath(path);
 
-      // 提取page路径（不含query参数）用于qrcode接口
-      const pagePathOnly = basePage.split('?')[0];
-
-      const qrRes: any = await statisticsApi.getQrcode({
+      // 3. 小程序码：解析页 + 短引用（原生直传）
+      const qrRes: any = await wxaApi.createQrcode({
         appid: APPID,
-        page: sourceId === '' ? pagePathOnly : 'pages/source/index',
-        scene: sourceId === '' ? basePage : `${basePage}${separator}source=${sourceId}`,
+        page: RESOLVE_PAGE,
+        scene: sceneRef,
+        encode: false,
         width: 640,
         check_path: false,
       });
-      setQrcodeUrl(qrRes || '');
-    } catch { /* qrcode generation failed */
+      setQrcodeUrl(qrRes?.image_url || '');
+
+      // 4. 短链（page_url 需带 .html）
+      const linkRes: any = await wxaApi.createShortlink({
+        appid: APPID,
+        page_url: `${RESOLVE_PAGE}.html?scene=${sceneRef}`,
+        is_permanent: false,
+      });
+      setShortLink(linkRes?.link || '');
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '生成失败');
     } finally {
       setQrLoading(false);
     }
@@ -72,13 +93,14 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
       {children ? (
         <span onClick={() => setModalVisible(true)}>{children}</span>
       ) : (
-        <Button type="default" size="small" icon={<QrcodeOutlined />} onClick={() => setModalVisible(true)} style={{ borderRadius: 4, color: '#1890ff', borderColor: '#1890ff', padding: '0 4px', marginLeft: 6 }} />
+        <Button type="default" size="small" icon={<QrcodeOutlined />} onClick={() => setModalVisible(true)}
+          style={{ borderRadius: 4, color: '#1890ff', borderColor: '#1890ff', padding: '0 4px', marginLeft: 6 }} />
       )}
 
       <Modal
         title="获取页面地址和小程序码"
         open={modalVisible}
-        onCancel={() => { setModalVisible(false); setSelectedSource(''); setPagePath(''); setQrcodeUrl(''); }}
+        onCancel={() => { setModalVisible(false); setSelectedSource(''); setPagePath(''); setQrcodeUrl(''); setShortLink(''); }}
         footer={null}
         width={600}
         maskClosable={false}
@@ -86,8 +108,8 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
         <div style={{ padding: '16px 0' }}>
           <div style={{ marginBottom: 16 }}>
             <Space size={24} split={<Divider type="vertical" />}>
-              <span>原始ID：gh_1a79e8bbfa0f <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('gh_1a79e8bbfa0f'); success('复制成功'); }} /></span>
-              <span>微信ID：wxb0f15549e07308d5 <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('wxb0f15549e07308d5'); success('复制成功'); }} /></span>
+              <span>原始ID：{ORIGINAL_ID} <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(ORIGINAL_ID); success('复制成功'); }} /></span>
+              <span>微信ID：{APPID} <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(APPID); success('复制成功'); }} /></span>
             </Space>
           </div>
           <Divider style={{ margin: '16px 0' }} />
@@ -101,7 +123,7 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
             >
               <Select.Option value="">无来源</Select.Option>
               {sources.map((s: any) => (
-                <Select.Option key={s.id} value={String(s.id)}>{s.title}</Select.Option>
+                <Select.Option key={s.id} value={String(s.id)}>{s.name}</Select.Option>
               ))}
             </Select>
           </div>
@@ -114,6 +136,15 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
               </Space>
             </div>
           )}
+          {shortLink && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>小程序短链接（30天内有效）：</label>
+              <Space size={4}>
+                <span style={{ color: '#1890ff' }}>{shortLink}</span>
+                <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(shortLink); success('复制成功'); }} />
+              </Space>
+            </div>
+          )}
           {qrcodeUrl && (
             <div>
               <label style={{ display: 'block', marginBottom: 8, fontWeight: 500, textAlign: 'left' }}>小程序码：</label>
@@ -122,7 +153,7 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
               </div>
             </div>
           )}
-          {qrLoading && <div style={{ textAlign: 'center', padding: 40 }}>生成中...</div>}
+          {qrLoading && <div style={{ textAlign: 'center', padding: 40 }}><Spin /> 生成中...</div>}
         </div>
       </Modal>
     </>

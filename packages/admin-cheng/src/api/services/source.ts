@@ -2,11 +2,13 @@ import request from '..';
 
 // 来源实体（v1）
 export interface Source {
-  id: number;
+  id: string;
   name: string;
   start_time?: string;
   end_time?: string;
   status: number; // 0=启用, 1=禁用
+  registered_count?: number;
+  report_count?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -19,7 +21,7 @@ export const sourceApi = {
   },
 
   // 查询来源详情 — GET /admin/v1/bizops/source/{id}
-  getSourceDetail: (id: number) => {
+  getSourceDetail: (id: string) => {
     return request.get(`/admin/v1/bizops/source/${id}`);
   },
 
@@ -29,17 +31,17 @@ export const sourceApi = {
   },
 
   // 编辑来源 — PUT /admin/v1/bizops/source/{id}
-  updateSource: (id: number, data: { name?: string; start_time?: string; end_time?: string; status?: number }) => {
+  updateSource: (id: string, data: { name?: string; start_time?: string; end_time?: string; status?: number }) => {
     return request.put(`/admin/v1/bizops/source/${id}`, data);
   },
 
   // 删除来源 — DELETE /admin/v1/bizops/source/{id}
-  deleteSource: (id: number) => {
+  deleteSource: (id: string) => {
     return request.delete(`/admin/v1/bizops/source/${id}`);
   },
 
   // 启用/停用 — PATCH /admin/v1/bizops/source/{id}/status
-  toggleSourceStatus: (id: number, status: number) => {
+  toggleSourceStatus: (id: string, status: number) => {
     return request.patch(`/admin/v1/bizops/source/${id}/status`, { status });
   },
 

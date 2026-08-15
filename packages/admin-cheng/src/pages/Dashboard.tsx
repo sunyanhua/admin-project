@@ -66,14 +66,14 @@ const Dashboard = () => {
           </Descriptions.Item>
           <Descriptions.Item label="原始ID">
             <Space size={4}>
-              gh_1a79e8bbfa0f
-              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('gh_1a79e8bbfa0f'); success('复制成功'); }} />
+              gh_6cea97604e22
+              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('gh_6cea97604e22'); success('复制成功'); }} />
             </Space>
           </Descriptions.Item>
           <Descriptions.Item label="微信ID">
             <Space size={4}>
-              wxb0f15549e07308d5
-              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('wxb0f15549e07308d5'); success('复制成功'); }} />
+              wx8aed7b2d08302c3b
+              <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText('wx8aed7b2d08302c3b'); success('复制成功'); }} />
             </Space>
           </Descriptions.Item>
                   </Descriptions>

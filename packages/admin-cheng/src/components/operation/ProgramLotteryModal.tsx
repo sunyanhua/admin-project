@@ -275,7 +275,6 @@ const ProgramLotteryModal: React.FC<ProgramLotteryModalProps> = ({
           await lotteryApi.deployPrize(prizeId, {
             total_count: count,
             voucher_codes: voucherCodes,
-            enabled_at: poolStart.unix(),
             start_time: dayjsToApi(poolStart),
             end_time: dayjsToApi(poolEnd),
           });
