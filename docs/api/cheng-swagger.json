@@ -20294,6 +20294,10 @@
                 "nickname": {
                     "type": "string"
                 },
+                "profile_incomplete": {
+                    "description": "ProfileIncomplete 是否需要继续完善资料（birth_date IS NULL → true；2026-08-16 老大决策，C端+后台均暴露）",
+                    "type": "boolean"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -21078,6 +21082,10 @@
                 },
                 "nickname": {
                     "type": "string"
+                },
+                "profile_incomplete": {
+                    "description": "ProfileIncomplete 是否需要继续完善资料（birth_date IS NULL → true；2026-08-16 老大决策，C端+后台均暴露）",
+                    "type": "boolean"
                 },
                 "zodiac": {
                     "type": "string"
@@ -22430,7 +22438,10 @@
                 "beat_lovebirds_count": {
                     "type": "integer"
                 },
-                "help_select_count": {
+                "help_select_match_count": {
+                    "type": "integer"
+                },
+                "help_select_split_count": {
                     "type": "integer"
                 },
                 "helped_succeed_count": {
@@ -22765,6 +22776,10 @@
                 },
                 "nickname": {
                     "type": "string"
+                },
+                "profile_incomplete": {
+                    "description": "ProfileIncomplete 是否需要继续完善资料（birth_date IS NULL → true；2026-08-16 老大决策，C端+后台均暴露）",
+                    "type": "boolean"
                 },
                 "updated_at": {
                     "type": "string"
@@ -23220,13 +23235,15 @@
                 3,
                 4,
                 5,
-                6
+                6,
+                7
             ],
             "x-enum-comments": {
                 "MatchingChangeSourceFeelingDislike": "无感",
                 "MatchingChangeSourceFeelingLike": "关注",
                 "MatchingChangeSourceFeelingUndo": "撤销无感",
                 "MatchingChangeSourceLoves": "心动",
+                "MatchingChangeSourceMigrated": "旧系统迁移来源（迁移改造 A8）",
                 "MatchingChangeSourceOpinionHelpSelect": "帮TA选撮合/拆散",
                 "MatchingChangeSourceOpinionRecommend": "牵线推荐撮合/拆散"
             },
@@ -23236,7 +23253,8 @@
                 "撤销无感",
                 "心动",
                 "牵线推荐撮合/拆散",
-                "帮TA选撮合/拆散"
+                "帮TA选撮合/拆散",
+                "旧系统迁移来源（迁移改造 A8）"
             ],
             "x-enum-varnames": [
                 "MatchingChangeSourceFeelingLike",
@@ -23244,7 +23262,8 @@
                 "MatchingChangeSourceFeelingUndo",
                 "MatchingChangeSourceLoves",
                 "MatchingChangeSourceOpinionRecommend",
-                "MatchingChangeSourceOpinionHelpSelect"
+                "MatchingChangeSourceOpinionHelpSelect",
+                "MatchingChangeSourceMigrated"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource": {
