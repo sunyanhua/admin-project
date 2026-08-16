@@ -13495,7 +13495,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "分页查询当前用户的心动记录（数据源为聚合表 v6_pair_loves，user+target+自然日粒度：同日对同一目标的多次心动折叠为一条 daily_count 累加，跨天产生独立记录）。按 updated_at DESC, created_at DESC 倒序（最近心动过的对象在前）。目标用户信息使用独立的 4 字段摘要（昵称/头像/性别/年龄），不揭示脱单档案敏感数据。couple_data 为配对摘要（配对 ID/匹配度/周匹配度/双方心动与好感位掩码/观点一致与分歧数），迁移历史记录 couple_id 缺失或 couple 不存在时输出 null。",
+                "description": "分页查询当前用户的心动记录（数据源为心动累计表 v6_pair_loves，每对 user+target 一条：total_count 累计心动次数，first/last_loved_at 首次/最近心动时间）。按 updated_at DESC, created_at DESC 倒序（最近心动过的对象在前）。目标用户信息使用独立的 4 字段摘要（昵称/头像/性别/年龄），不揭示脱单档案敏感数据。couple_data 为配对摘要（配对 ID/匹配度/周匹配度/双方心动与好感位掩码/观点一致与分歧数），迁移历史记录 couple_id 缺失或 couple 不存在时输出 null。",
                 "consumes": [
                     "application/json"
                 ],
@@ -13556,7 +13556,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "对目标用户执行心动操作。每日限制 5 次（自然日 00:00 刷新）。首次心动累加 matching（+500），后续心动仅增加人气值（+50）。不加入已操作集合（可对同一用户重复心动）。不触发通知。异性配对、双表审核通过、账户未退出等前置条件不满足时返回 42201。Redis 计数故障或 DB 查询故障时阻断操作。",
+                "description": "对目标用户执行心动操作。每日限制 5 次（自然日 00:00 刷新，Redis INCR + v6_pair_loves_daily 日计数表双门禁）。首次心动累加 matching（+500），后续心动仅增加人气值（+50）。不加入已操作集合（可对同一用户重复心动）。不触发通知。异性配对、双表审核通过、账户未退出等前置条件不满足时返回 42201。Redis 计数故障或 DB 日计数查询故障时阻断操作。",
                 "consumes": [
                     "application/json"
                 ],
@@ -13605,6 +13605,69 @@
                     },
                     "422": {
                         "description": "配对资格不满足（code=40310：审核未通过/性别未设置/同性/账户已停用；code=42205：每日限额已用完/计数服务暂不可用）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/loves/received": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询对我心动的用户列表（数据源为心动累计表 v6_pair_loves，每对 心动者+我 一条：total_count 累计总次数，first/last_loved_at 为首次/最近心动时间）。按 updated_at DESC 倒序（最近对我心动的用户在前）。响应项 Target 字段表示心动者的摘要信息，couple_data 提供配对摘要（互心判断）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "对我心动的列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesReceivedItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -19057,6 +19120,47 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleSummary": {
+            "type": "object",
+            "properties": {
+                "feeling_status": {
+                    "description": "双方好感位掩码",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "配对 ID（HashID，跳转配对详情页用）",
+                    "type": "string"
+                },
+                "loves_status": {
+                    "description": "双方心动位掩码（互心判断）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
+                        }
+                    ]
+                },
+                "matching": {
+                    "description": "当前匹配度",
+                    "type": "integer"
+                },
+                "matching_weekly": {
+                    "description": "周匹配度",
+                    "type": "integer"
+                },
+                "opinion_match_count": {
+                    "description": "观点一致数",
+                    "type": "integer"
+                },
+                "opinion_split_count": {
+                    "description": "观点分歧数",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingDetailResponse": {
             "type": "object",
             "properties": {
@@ -19089,6 +19193,14 @@
         "github_com_vbegin_tlnc_v6_internal_module_pair_model.FeelingListItem": {
             "type": "object",
             "properties": {
+                "couple_data": {
+                    "description": "配对摘要（迁移历史记录 couple_id 缺失或 couple 不存在时输出 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleSummary"
+                        }
+                    ]
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -19153,47 +19265,6 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesCoupleSummary": {
-            "type": "object",
-            "properties": {
-                "feeling_status": {
-                    "description": "双方好感位掩码",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
-                        }
-                    ]
-                },
-                "id": {
-                    "description": "配对 ID（HashID，跳转配对详情页用）",
-                    "type": "string"
-                },
-                "loves_status": {
-                    "description": "双方心动位掩码（互心判断）",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
-                        }
-                    ]
-                },
-                "matching": {
-                    "description": "当前匹配度",
-                    "type": "integer"
-                },
-                "matching_weekly": {
-                    "description": "周匹配度",
-                    "type": "integer"
-                },
-                "opinion_match_count": {
-                    "description": "观点一致数",
-                    "type": "integer"
-                },
-                "opinion_split_count": {
-                    "description": "观点分歧数",
-                    "type": "integer"
-                }
-            }
-        },
         "github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesItem": {
             "type": "object",
             "properties": {
@@ -19201,24 +19272,20 @@
                     "description": "配对摘要（迁移历史记录 couple_id 缺失或 couple 不存在时输出 null）",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesCoupleSummary"
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleSummary"
                         }
                     ]
                 },
-                "created_at": {
-                    "description": "RFC3339（当日首次心动时间）",
+                "first_loved_at": {
+                    "description": "首次心动时间（RFC3339）",
                     "type": "string"
-                },
-                "daily_count": {
-                    "description": "当日心动次数（1-based，同日重复 UPSERT 累加）",
-                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
-                "is_first": {
-                    "description": "是否首次对该目标用户心动（badge 展示）",
-                    "type": "boolean"
+                "last_loved_at": {
+                    "description": "最近心动时间（RFC3339）",
+                    "type": "string"
                 },
                 "target": {
                     "description": "目标用户摘要",
@@ -19229,6 +19296,47 @@
                     ]
                 },
                 "target_user_id": {
+                    "type": "string"
+                },
+                "total_count": {
+                    "description": "累计心动次数（终身）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesReceivedItem": {
+            "type": "object",
+            "properties": {
+                "couple_data": {
+                    "description": "配对摘要（互心判断；迁移历史记录 couple_id 缺失或 couple 不存在时输出 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleSummary"
+                        }
+                    ]
+                },
+                "first_loved_at": {
+                    "description": "首次对我心动时间（RFC3339）",
+                    "type": "string"
+                },
+                "last_loved_at": {
+                    "description": "最近一次对我心动时间（RFC3339）",
+                    "type": "string"
+                },
+                "target": {
+                    "description": "心动者摘要",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.LovesTargetSummary"
+                        }
+                    ]
+                },
+                "total_count": {
+                    "description": "对我心动的总次数（跨所有日期累加）",
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "心动者 UUID",
                     "type": "string"
                 }
             }
