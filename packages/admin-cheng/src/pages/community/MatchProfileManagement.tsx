@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Tag, Avatar, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { EyeOutlined } from '@ant-design/icons';
@@ -79,14 +79,66 @@ const MatchProfileManagement = () => {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [auditProfileOpen, setAuditProfileOpen] = useState(false);
 
+  // 显示状态筛选的本地全量缓存：
+  // 接口不支持按显示状态（visibility/is_active）服务端过滤，只能全量拉取后本地过滤。
+  // 全量数据按"服务端筛选条件(keyword/audit_status) + 数据版本"缓存，
+  // 切换显示状态、翻页都不再重复扫描接口；只有服务端筛选变化或审核操作后才重新扫描。
+  const sweepCache = useRef<{ key: string; data: CommunityUserItem[] } | null>(null);
+  const sweepVersion = useRef(0);
+  const invalidateSweep = useCallback(() => { sweepVersion.current += 1; }, []);
+
   const fetchUsers = useCallback(async (params: any) => {
-    return userApi.getUsers({
-      page: params.page,
-      size: params.page_size || params.size,
-      keyword: params.keyword || undefined,
-      has_match_profile: true,
-      match_audit_status: params.audit_status != null ? params.audit_status : undefined,
-    });
+    const displayStatus = params.display_status;
+    if (!displayStatus) {
+      // 无显示状态筛选：走服务端分页
+      return userApi.getUsers({
+        page: params.page,
+        size: params.page_size || params.size,
+        keyword: params.keyword || undefined,
+        has_match_profile: true,
+        match_audit_status: params.audit_status != null ? params.audit_status : undefined,
+      });
+    }
+    // 显示状态筛选：按服务端条件缓存全量 → 本地过滤 → 本地分页
+    const serverKey = `${params.keyword || ''}|${params.audit_status ?? ''}|${sweepVersion.current}`;
+    if (!sweepCache.current || sweepCache.current.key !== serverKey) {
+      const sweepFilters = {
+        size: 100,
+        keyword: params.keyword || undefined,
+        has_match_profile: true,
+        match_audit_status: params.audit_status != null ? params.audit_status : undefined,
+      };
+      // 第一页先拿总数
+      const firstRes: any = await userApi.getUsers({ page: 1, ...sweepFilters });
+      const firstList: CommunityUserItem[] = firstRes?.list || [];
+      const total = firstRes?.total ?? firstList.length;
+      if (total <= 100) {
+        sweepCache.current = { key: serverKey, data: firstList };
+      } else {
+        // 按页码并行拉取剩余页，按序拼接保持顺序稳定
+        const totalPages = Math.ceil(total / 100);
+        const pages: (CommunityUserItem[])[] = new Array(totalPages);
+        pages[0] = firstList;
+        const CONCURRENCY = 8;
+        let cursor = 1;
+        const workers = Array.from({ length: Math.min(CONCURRENCY, totalPages - 1) }, async () => {
+          while (true) {
+            const p = ++cursor;
+            if (p > totalPages) break;
+            const res: any = await userApi.getUsers({ page: p, ...sweepFilters });
+            pages[p - 1] = res?.list || [];
+          }
+        });
+        await Promise.all(workers);
+        sweepCache.current = { key: serverKey, data: pages.flat() };
+      }
+    }
+    const filtered = sweepCache.current.data.filter((item) =>
+      matchDisplayFilter(item.match_profile, displayStatus),
+    );
+    const pageSize = params.page_size || 10;
+    const start = (params.page - 1) * pageSize;
+    return { list: filtered.slice(start, start + pageSize), total: filtered.length };
   }, []);
 
   const formatUserResponse = useCallback((res: any) => ({
@@ -94,17 +146,10 @@ const MatchProfileManagement = () => {
     count: res?.total ?? 0,
   }), []);
 
-  const { data: rawData, loading, pagination, onPageChange, refresh, search } = useListPage<CommunityUserItem>({
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<CommunityUserItem>({
     fetchFn: fetchUsers,
     formatResponse: formatUserResponse,
   });
-
-  // 客户端过滤：显示状态
-  const data = useMemo(() => {
-    const ds = values.display_status;
-    if (!ds) return rawData;
-    return rawData.filter((item) => matchDisplayFilter(item.match_profile, ds));
-  }, [rawData, values.display_status]);
 
   const handleViewDetail = (record: CommunityUserItem) => {
     setDetailItem(record);
@@ -270,6 +315,7 @@ const MatchProfileManagement = () => {
               },
             } as CommunityUserItem;
           });
+          invalidateSweep();
           refresh();
         }}
       />
@@ -289,6 +335,7 @@ const MatchProfileManagement = () => {
               },
             } as CommunityUserItem;
           });
+          invalidateSweep();
           refresh();
         }}
       />
