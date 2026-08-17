@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, Image } from 'antd';
-import { EditOutlined, DeleteOutlined, SafetyCertificateOutlined, QrcodeOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, SafetyCertificateOutlined, TeamOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ZoneStatus } from '@shared/constants';
@@ -16,6 +16,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ZoneEditModal from '@/components/operation/ZoneEditModal';
 import ZoneVerifyModal from '@/components/operation/ZoneVerifyModal';
+import ZoneUsersModal from '@/components/operation/ZoneUsersModal';
 
 const STATUS_OPTIONS = [
   { label: '启用', value: ZoneStatus.ENABLED },
@@ -35,6 +36,9 @@ const ZoneManagement = () => {
   const [verifyModalVisible, setVerifyModalVisible] = useState(false);
   const [verifyZoneId, setVerifyZoneId] = useState('');
   const [verifyZoneName, setVerifyZoneName] = useState('');
+  const [usersModalVisible, setUsersModalVisible] = useState(false);
+  const [usersZoneId, setUsersZoneId] = useState('');
+  const [usersZoneName, setUsersZoneName] = useState('');
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchZones = useCallback(async (params: any) => {
@@ -110,6 +114,12 @@ const ZoneManagement = () => {
     setVerifyModalVisible(true);
   };
 
+  const handleShowUsers = (record: Zone) => {
+    setUsersZoneId(record.id);
+    setUsersZoneName(record.name);
+    setUsersModalVisible(true);
+  };
+
   const columns: ColumnsType<Zone> = [
     {
       title: 'Logo',
@@ -126,7 +136,12 @@ const ZoneManagement = () => {
       title: '名称',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
+      render: (text: string, r: Zone) => (
+        <Space size={4}>
+          <span style={{ wordBreak: 'break-word' }}>{text}</span>
+          <SourceQrcodeModal basePage={`pages/zone/detail?id=${r.id}`} />
+        </Space>
+      ),
     },
     {
       title: '成员数',
@@ -141,9 +156,9 @@ const ZoneManagement = () => {
       onEdit: (record) => handleEdit(record),
       render: (record: Zone) => (
         <Space size="small" className="action-buttons">
-          <SourceQrcodeModal basePage={`pages/zone/detail?id=${record.id}`}>
-            <Button type="link" size="small" icon={<QrcodeOutlined />}>码</Button>
-          </SourceQrcodeModal>
+          <Button type="link" size="small" icon={<TeamOutlined />} onClick={() => handleShowUsers(record)}>
+            用户
+          </Button>
           <Button type="link" size="small" icon={<SafetyCertificateOutlined />} onClick={() => handleVerify(record)}>
             认证
           </Button>
@@ -211,6 +226,13 @@ const ZoneManagement = () => {
         zoneId={verifyZoneId}
         zoneName={verifyZoneName}
         onClose={() => setVerifyModalVisible(false)}
+      />
+
+      <ZoneUsersModal
+        visible={usersModalVisible}
+        zoneId={usersZoneId}
+        zoneName={usersZoneName}
+        onClose={() => setUsersModalVisible(false)}
       />
     </>
   );

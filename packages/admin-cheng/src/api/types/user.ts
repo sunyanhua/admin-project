@@ -104,6 +104,7 @@ export interface CommunityUserListParams {
   has_profile?: boolean;
   has_match_profile?: boolean;
   match_audit_status?: number;
+  zone_id?: string;
 }
 
 // ========== 旧版（兼容保留） ==========

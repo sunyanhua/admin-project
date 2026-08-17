@@ -7,7 +7,7 @@ import {
   SubmissionAuditStatus,
   SubmissionAuditStatusLabels,
   SubmissionAuditStatusColors,
-  SubmissionTypeLabels,
+  submissionTypeLabel,
   SubmissionTypeColors,
 } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
@@ -113,7 +113,7 @@ const ProgramSubmission = () => {
       render: (text: string, r: Submission) => {
         const typeTag = r.type != null ? (
           <Tag color={SubmissionTypeColors[r.type] || 'default'} style={{ marginRight: 4 }}>
-            {SubmissionTypeLabels[r.type] ?? r.type}
+            {submissionTypeLabel(r.type)}
           </Tag>
         ) : null;
         if (!text) return typeTag || <span style={{ color: '#999' }}>-</span>;

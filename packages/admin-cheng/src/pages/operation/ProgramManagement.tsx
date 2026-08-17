@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Card, Tabs, Form, Button, Input, Typography, Space, Spin, Tag, Modal, Image } from 'antd';
-import { SaveOutlined, PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined, QrcodeOutlined } from '@ant-design/icons';
+import { SaveOutlined, PlusOutlined, EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { PrizeTypeColors } from '@shared/constants';
 import { settingsApi, SettingType } from '@/api/services/settings';
@@ -221,6 +221,13 @@ const ProgramManagement: React.FC = () => {
   const renderBroadcastTab = () => (
     <Spin spinning={broadcastLoading}>
       <Form layout="vertical" style={{ maxWidth: 800 }}>
+        <Form.Item label="节目名称">
+          <Space size={4}>
+            <span style={{ fontSize: 14 }}>一路畅通《他俩能成》</span>
+            <SourceQrcodeModal basePage="pages/program/index" />
+          </Space>
+        </Form.Item>
+
         <Form.Item label="节目图片" extra="建议尺寸：1080 × 540 像素">
           <ImageUpload
             value={broadcastData.image}
@@ -295,19 +302,14 @@ const ProgramManagement: React.FC = () => {
         </Form.Item>
 
         <Form.Item style={{ marginTop: 24 }}>
-          <Space>
-            <Button type="primary" icon={<SaveOutlined />} loading={broadcastSaving} onClick={async () => {
-              setBroadcastSaving(true);
-              await saveBroadcastToSetting(broadcastData, broadcastSettingId);
-              setBroadcastSaving(false);
-              success('保存成功');
-            }}>
-              保存
-            </Button>
-            <SourceQrcodeModal basePage="pages/program/index">
-              <Button icon={<QrcodeOutlined />}>小程序码</Button>
-            </SourceQrcodeModal>
-          </Space>
+          <Button type="primary" icon={<SaveOutlined />} loading={broadcastSaving} onClick={async () => {
+            setBroadcastSaving(true);
+            await saveBroadcastToSetting(broadcastData, broadcastSettingId);
+            setBroadcastSaving(false);
+            success('保存成功');
+          }}>
+            保存
+          </Button>
         </Form.Item>
       </Form>
     </Spin>

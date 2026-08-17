@@ -39,7 +39,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: '' };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -49,7 +49,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
     return {
       title: activity.title || '',
       cover: activity.cover || '',
-      zone_id: activity.zone_id || undefined,
+      zone_id: activity.zone_id || '',
       gender_enabled: activity.gender_enabled ?? false,
       image: imageUrls,
       time_range: activity.start_time && activity.end_time ? [safeDayjs(activity.start_time), safeDayjs(activity.end_time)] : undefined,
@@ -94,7 +94,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         form.setFieldsValue({
           title: activity.title || '',
           cover: activity.cover || '',
-          zone_id: activity.zone_id || undefined,
+          zone_id: activity.zone_id || '',
           gender_enabled: activity.gender_enabled ?? false,
           image: imageUrls,
           time_range: activity.start_time && activity.end_time ? [safeDayjs(activity.start_time), safeDayjs(activity.end_time)] : undefined,
@@ -152,7 +152,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         status: statusEnabled ? ActivityV1Status.ENABLED : ActivityV1Status.DISABLED,
       };
 
-      if (values.zone_id) payload.zone_id = values.zone_id;
+      // 所属专区：选择"无专区"时 zone_id 为空字符串，明确传空给后端
+      payload.zone_id = values.zone_id ?? '';
       if (values.gender_enabled != null) payload.gender_enabled = values.gender_enabled;
 
       if (needsSlots) {
@@ -231,8 +232,11 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         </Form.Item>
 
         {/* ====== 3. 所属专区 ====== */}
-        <Form.Item label="所属专区" name="zone_id">
-          <Select placeholder="请选择专区（可选）" options={zoneOptions} allowClear />
+        <Form.Item label="所属专区" name="zone_id" rules={[{ required: true, message: '请选择所属专区' }]}>
+          <Select
+            placeholder="请选择所属专区"
+            options={[{ label: '无专区', value: '' }, ...zoneOptions]}
+          />
         </Form.Item>
 
         {/* ====== 4 & 5. 活动时间 + 报名时间 ====== */}

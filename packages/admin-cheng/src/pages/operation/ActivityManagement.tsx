@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, QrcodeOutlined } from '@ant-design/icons';
+import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
@@ -146,12 +146,15 @@ const ActivityManagement = () => {
         };
         const tag = typeTag[r.activity_type];
         return (
-          <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => {}}>
-            <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', textAlign: 'left' }}>
-              {tag && <Tag color={tag.color} style={{ marginRight: 4, verticalAlign: 'middle' }}>{tag.label}</Tag>}
-              {text}
-            </span>
-          </Button>
+          <Space size={4}>
+            <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => {}}>
+              <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', textAlign: 'left' }}>
+                {tag && <Tag color={tag.color} style={{ marginRight: 4, verticalAlign: 'middle' }}>{tag.label}</Tag>}
+                {text}
+              </span>
+            </Button>
+            <SourceQrcodeModal basePage={`pages/activity/detail?id=${r.id}`} />
+          </Space>
         );
       },
     },
@@ -207,9 +210,6 @@ const ActivityManagement = () => {
       fixed: 'right' as const,
       render: (_: any, r: Activity) => (
         <Space size="small" className="action-buttons">
-          <SourceQrcodeModal basePage={`pages/activity/detail?id=${r.id}`}>
-            <Button type="link" size="small" icon={<QrcodeOutlined />}>码</Button>
-          </SourceQrcodeModal>
           <Button type="link" size="small" icon={<EyeOutlined />}
             onClick={() => handleShowRegisters(r)}>
             报名
