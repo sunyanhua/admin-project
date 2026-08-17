@@ -6637,6 +6637,77 @@
                 }
             }
         },
+        "/admin/v1/bizops/user/{id}/divine-chance": {
+            "patch": {
+                "description": "管理后台调整 C 端用户的神助攻次数：delta 正数发放（累计同步累加）、负数回收（回收后不得低于 0）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-配对模块"
+                ],
+                "summary": "调整神助攻次数",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "次数调整请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.AdminAdjustDivineRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "调整成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户次数记录不存在（回收时）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "回收后次数低于 0（code=42201）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/user/{id}/match-profile": {
             "put": {
                 "description": "管理后台编辑 C 端用户脱单档案的非系统字段，变更原因必填。仅更新用户自主填写的字段，不含系统管理的 AuditStatus/Timestamps/MatchCode 等。",
@@ -12930,6 +13001,193 @@
                 }
             }
         },
+        "/api/v1/wxa/pair/assist/rank": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户所属全部配对的求助攻队列排位。排位按最后申请时间倒序（1 起）；未申请过求助攻或已达 1314 的配对 rank/assist_at 输出 null。随时可查，不刷新申请时间。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "所属配对排位",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistRankItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/assist/request": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "脱单用户为自己所在配对申请求助攻。前置条件：操作者是配对双方之一；配对未达到过 1314（reached_1314=false）；双方相互关注（feeling_status 含男女双方有感位）且相互心动（loves_status 含男女双方心动位）。不限频——每次申请刷新操作者性别的最后申请时间列（male_assist_at / female_assist_at）。响应附带更新后的求助攻队列排位。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "申请求助攻",
+                "parameters": [
+                    {
+                        "description": "申请请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistRequestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistRequestResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "配对不满足求助攻条件（code=40314）/ 配对已达 1314（code=40315）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "配对不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/assist/requests": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "有神助攻次数的牵线用户查看求助攻列表。过滤条件：申请过求助攻（male_assist_at / female_assist_at 任一非空）且未达到过 1314（reached_1314=false）。按最新申请时间倒序分页。响应项含配对基本信息与男女双方公开资料。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "求助攻列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无神助攻次数（code=40316）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/pair/couple/by-users/{maleID}/{femaleID}": {
             "get": {
                 "security": [
@@ -13119,6 +13377,87 @@
                     },
                     "404": {
                         "description": "记录不存在或无权限（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/divine": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "牵线用户消耗 1 次神助攻机会，将配对的匹配度立即提升至 1314 并触发 IM 开通。前置条件：牵线用户拥有神助攻次数（管理后台发放）；配对必须存在且当前匹配度低于 1314；同一牵线用户对同一配对仅可操作一次。API 内按配对 ID 加 Redis 排他锁，防止同一配对被并发神助攻。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "神助攻操作",
+                "parameters": [
+                    {
+                        "description": "神助攻请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "操作禁止（code=40302 重复操作 / 40311 次数不足 / 40312 配对被并发操作 / 40313 匹配度已达 1314）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "配对不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "配对资格不满足（code=40310）/ 不能对自己操作（code=42217）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -14062,6 +14401,69 @@
                                             "type": "array",
                                             "items": {
                                                 "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesJoinedItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/relatives/recommendations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户的亲友团成员在牵线操作中撮合（配对涉及当前用户）的记录，按撮合时间 created_at DESC 倒序。每项含撮合我的亲友团成员轻量摘要、异性脱单用户完整公开画像（PublicMatchProfile）、我与异性的配对摘要（匹配度/心动/好感位掩码/观点统计）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "亲友团推荐",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesRecommendationItem"
                                             }
                                         }
                                     }
@@ -19120,6 +19522,83 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.AdminAdjustDivineRequest": {
+            "type": "object",
+            "required": [
+                "delta"
+            ],
+            "properties": {
+                "delta": {
+                    "description": "调整量（正=发放，负=回收）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistListItem": {
+            "type": "object",
+            "properties": {
+                "assist_at": {
+                    "description": "最新申请时间（男女取更晚者，RFC3339）",
+                    "type": "string"
+                },
+                "couple": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleInfo"
+                },
+                "created_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "female_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                },
+                "male_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistRankItem": {
+            "type": "object",
+            "properties": {
+                "assist_at": {
+                    "description": "最后申请时间（RFC3339）；未申请过 → null",
+                    "type": "string"
+                },
+                "couple_id": {
+                    "type": "string"
+                },
+                "rank": {
+                    "description": "队列排位（1 起）；未申请过或已达 1314 → null",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistRequestRequest": {
+            "type": "object",
+            "required": [
+                "couple_id"
+            ],
+            "properties": {
+                "couple_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.AssistRequestResponse": {
+            "type": "object",
+            "properties": {
+                "assist_at": {
+                    "description": "本次申请时间（RFC3339）",
+                    "type": "string"
+                },
+                "couple_id": {
+                    "description": "配对 ID",
+                    "type": "string"
+                },
+                "rank": {
+                    "description": "更新后的求助攻队列排位（1 起）",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleSummary": {
             "type": "object",
             "properties": {
@@ -19157,6 +19636,50 @@
                 },
                 "opinion_split_count": {
                     "description": "观点分歧数",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineRequest": {
+            "type": "object",
+            "required": [
+                "female_id",
+                "male_id"
+            ],
+            "properties": {
+                "female_id": {
+                    "type": "string"
+                },
+                "male_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineResponse": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "description": "配对 ID",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "操作时间（RFC3339）",
+                    "type": "string"
+                },
+                "divine_chance": {
+                    "description": "操作后剩余神助攻次数",
+                    "type": "integer"
+                },
+                "id": {
+                    "description": "HashID(\"divine=%s&%s\", matchmakerID, coupleID)",
+                    "type": "string"
+                },
+                "matching_after": {
+                    "description": "操作后匹配度（恒为 1314）",
+                    "type": "integer"
+                },
+                "matching_delta": {
+                    "description": "本次提升量 = 1314 − 操作前匹配度",
                     "type": "integer"
                 }
             }
@@ -19563,6 +20086,39 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "加入亲友团时间（RFC3339）",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "亲友团关系 ID（HashID）",
+                    "type": "string"
+                },
+                "matchmaker_id": {
+                    "description": "亲友团成员（撮合操作者）",
+                    "type": "string"
+                },
+                "opinion_match_count": {
+                    "description": "撮合成功数",
+                    "type": "integer"
+                },
+                "opinion_split_count": {
+                    "description": "拆散数（= total − match）",
+                    "type": "integer"
+                },
+                "opinion_total": {
+                    "description": "撮合+拆散操作总数",
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "脱单用户（本人）",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesJoinRequest": {
             "type": "object",
             "required": [
@@ -19598,6 +20154,21 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesMatchmakerSummary": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "description": "头像 URL，未设置时为 null",
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesMemberItem": {
             "type": "object",
             "properties": {
@@ -19619,6 +20190,55 @@
                 "user_id": {
                     "description": "牵线用户 ID（matchmaker）",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesRecommendationItem": {
+            "type": "object",
+            "properties": {
+                "couple_data": {
+                    "description": "我与异性的配对信息（couple 不存在时输出 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.CoupleSummary"
+                        }
+                    ]
+                },
+                "couple_id": {
+                    "description": "我与异性的配对 ID（HashID）",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "撮合时间（RFC3339）",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "opinion 记录 ID",
+                    "type": "string"
+                },
+                "matchmaker": {
+                    "description": "撮合我的亲友团成员轻量摘要",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesMatchmakerSummary"
+                        }
+                    ]
+                },
+                "relatives_data": {
+                    "description": "撮合者与我的亲友团关系行（v6_pair_relatives 表信息，缺失时 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.RelativesData"
+                        }
+                    ]
+                },
+                "target": {
+                    "description": "异性脱单用户完整公开画像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                        }
+                    ]
                 }
             }
         },
@@ -23456,9 +24076,11 @@
                 4,
                 5,
                 6,
-                7
+                7,
+                8
             ],
             "x-enum-comments": {
+                "MatchingChangeSourceDivine": "神助攻（直达 1314）",
                 "MatchingChangeSourceFeelingDislike": "无感",
                 "MatchingChangeSourceFeelingLike": "关注",
                 "MatchingChangeSourceFeelingUndo": "撤销无感",
@@ -23474,7 +24096,8 @@
                 "心动",
                 "牵线推荐撮合/拆散",
                 "帮TA选撮合/拆散",
-                "旧系统迁移来源（迁移改造 A8）"
+                "旧系统迁移来源（迁移改造 A8）",
+                "神助攻（直达 1314）"
             ],
             "x-enum-varnames": [
                 "MatchingChangeSourceFeelingLike",
@@ -23483,7 +24106,8 @@
                 "MatchingChangeSourceLoves",
                 "MatchingChangeSourceOpinionRecommend",
                 "MatchingChangeSourceOpinionHelpSelect",
-                "MatchingChangeSourceMigrated"
+                "MatchingChangeSourceMigrated",
+                "MatchingChangeSourceDivine"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource": {
