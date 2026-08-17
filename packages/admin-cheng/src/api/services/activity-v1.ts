@@ -57,7 +57,7 @@ export interface CreateActivityRequest {
   extra_params?: string;
   agreement?: string;
   require_match_profile?: boolean;
-  zone_id?: string;
+  zone_id?: string | number;
   gender_enabled?: boolean;
   sort_order?: number;
   status?: number;
@@ -83,7 +83,7 @@ export interface UpdateActivityRequest {
   extra_params?: string;
   agreement?: string;
   require_match_profile?: boolean;
-  zone_id?: string;
+  zone_id?: string | number;
   gender_enabled?: boolean;
   sort_order?: number;
   status?: number;

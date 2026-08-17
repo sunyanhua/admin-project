@@ -139,7 +139,7 @@ const ZoneManagement = () => {
       render: (text: string, r: Zone) => (
         <Space size={4}>
           <span style={{ wordBreak: 'break-word' }}>{text}</span>
-          <SourceQrcodeModal basePage={`pages/zone/detail?id=${r.id}`} />
+          <SourceQrcodeModal basePage={`/pages/zone/index?id=${r.id}`} />
         </Space>
       ),
     },

@@ -153,7 +153,7 @@ const ActivityManagement = () => {
                 {text}
               </span>
             </Button>
-            <SourceQrcodeModal basePage={`pages/activity/detail?id=${r.id}`} />
+            <SourceQrcodeModal basePage={`pages/activity-detail/index?id=${r.id}`} />
           </Space>
         );
       },
