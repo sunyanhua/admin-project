@@ -11647,7 +11647,7 @@
         },
         "/api/v1/h5/auth/send-code": {
             "post": {
-                "description": "手机号格式校验 + 60 秒/每日 10 次频控，生成 6 位验证码并发送（未配置短信通道时随响应返回供联调）。",
+                "description": "手机号格式校验 + 60 秒/每日 10 次频控，生成 6 位验证码并发送。验证码不随响应返回（仅 success=true 标记），开发/测试联调绕过用超级验证码。",
                 "consumes": [
                     "application/json"
                 ],
@@ -11671,7 +11671,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "发送成功（Noop 通道返回验证码）",
+                        "description": "发送成功（success=true，不含验证码）",
                         "schema": {
                             "allOf": [
                                 {
@@ -13343,7 +13343,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "有神助攻次数的牵线用户查看求助攻列表。过滤条件：申请过求助攻（male_assist_at / female_assist_at 任一非空）且未达到过 1314（reached_1314=false）。按最新申请时间倒序分页。响应项含配对基本信息与男女双方公开资料。",
+                "description": "合法牵线用户（账户未注销且基础资料审核通过，与撮合/拆散的匹配者资格同口径）查看求助攻列表，不再要求持有神助攻次数。过滤条件：申请过求助攻（male_assist_at / female_assist_at 任一非空）且未达到过 1314（reached_1314=false）。可选 match_code 筛选（男女任一方脱单号精确命中）。按最新申请时间倒序分页。响应项含配对基本信息与男女双方公开资料。",
                 "consumes": [
                     "application/json"
                 ],
@@ -13365,6 +13365,12 @@
                         "type": "integer",
                         "description": "每页条数，默认 20，最大 100",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "可选：按男女任一方脱单号（8 位）精确筛选",
+                        "name": "match_code",
                         "in": "query"
                     }
                 ],
@@ -13397,7 +13403,13 @@
                         }
                     },
                     "403": {
-                        "description": "无神助攻次数（code=40316）",
+                        "description": "牵线资格不满足——基础资料审核未通过（code=40310）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "账户不存在或已注销（code=40003）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -16110,7 +16122,7 @@
         },
         "/api/v1/wxa/user/register": {
             "post": {
-                "description": "提交手机号和验证码完成注册或激活迁移用户（H5 与微信共用，按 JWT 渠道区分绑定语义）。手机号已绑定或会话已绑定返回 42202。",
+                "description": "注册或激活迁移用户（微信与 H5 共用，按 JWT 渠道区分）。微信渠道提交手机号+验证码；H5 渠道登录时已验证，使用会话数据直接注册（请求仅需可选 source_id）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -16123,7 +16135,7 @@
                 "summary": "用户注册",
                 "parameters": [
                     {
-                        "description": "注册请求",
+                        "description": "注册请求（H5 渠道 phone/code 忽略）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -20070,6 +20082,9 @@
                 "created_user_data": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
                 },
+                "divine_matchmaker_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
                 "female_user_data": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
                 },
@@ -22585,17 +22600,13 @@
         },
         "github_com_vbegin_tlnc_v6_internal_module_user_model.RegisterRequest": {
             "type": "object",
-            "required": [
-                "code",
-                "phone"
-            ],
             "properties": {
                 "code": {
-                    "description": "Code 6 位验证码。",
+                    "description": "Code 6 位验证码（微信渠道必填；H5 渠道忽略——登录时已验证）。",
                     "type": "string"
                 },
                 "phone": {
-                    "description": "Phone 手机号。",
+                    "description": "Phone 手机号（微信渠道必填；H5 渠道忽略——以登录会话数据为准）。",
                     "type": "string"
                 },
                 "source_id": {
@@ -22632,9 +22643,9 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.SendCodeResponse": {
             "type": "object",
             "properties": {
-                "code": {
-                    "description": "Code 联调用验证码（NoopSender 专属；真实通道 null）。",
-                    "type": "string"
+                "success": {
+                    "description": "Success 发送成功标记（恒 true；失败走错误响应）。",
+                    "type": "boolean"
                 }
             }
         },
@@ -23798,8 +23809,21 @@
                 "created_source": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
                 },
+                "divine_at": {
+                    "type": "string"
+                },
+                "divine_matching_delta": {
+                    "type": "integer"
+                },
+                "divine_matchmaker_id": {
+                    "description": "神助攻三字段——最近一次神助攻快照（每次神助攻原子覆盖，nil → 未曾被神助攻）。",
+                    "type": "string"
+                },
                 "feeling_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
+                },
+                "female_assist_at": {
+                    "type": "string"
                 },
                 "female_feeling_at": {
                     "type": "string"
@@ -23835,6 +23859,9 @@
                 "loves_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
                 },
+                "male_assist_at": {
+                    "type": "string"
+                },
                 "male_feeling_at": {
                     "description": "── SET-ONCE 时间戳（nil 表示尚未发生，JSON 输出 null） ──",
                     "type": "string"
@@ -23865,6 +23892,13 @@
                 "opinion_split_count": {
                     "type": "integer"
                 },
+                "reached_1314": {
+                    "description": "── 神助攻 / 求助攻 / 达标 1314 ──\nReached1314 曾达到 1314 标记（SET-ONCE）；Reached1314At 首次达标时间。",
+                    "type": "boolean"
+                },
+                "reached_1314_at": {
+                    "type": "string"
+                },
                 "updated_at": {
                     "type": "string"
                 }
@@ -23877,6 +23911,9 @@
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleInfo"
                 },
                 "created_user_data": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                },
+                "divine_matchmaker_data": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
                 },
                 "female_user_data": {
