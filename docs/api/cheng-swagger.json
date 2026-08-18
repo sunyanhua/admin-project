@@ -11540,6 +11540,169 @@
                 }
             }
         },
+        "/api/v1/h5/auth/login": {
+            "post": {
+                "description": "校验验证码（一次性），查/建 v6_h5_login 会话并签发 Wxa JWT（载荷 Channel=h5）。不建号，注册走统一 register 接口。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "H5 登录"
+                ],
+                "summary": "H5 手机号验证码登录",
+                "parameters": [
+                    {
+                        "description": "H5 登录请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.H5LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "登录成功，返回 JWT Token",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.H5LoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "422": {
+                        "description": "手机号格式错误(40218)或验证码错误(40206)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/h5/auth/refresh": {
+            "post": {
+                "description": "在令牌过期前 30 分钟窗口内刷新，返回全新 JWT（渠道随原令牌保留）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "H5 登录"
+                ],
+                "summary": "刷新 H5 访问令牌",
+                "responses": {
+                    "200": {
+                        "description": "刷新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.RefreshTokenResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "刷新窗口未到或令牌已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/h5/auth/send-code": {
+            "post": {
+                "description": "手机号格式校验 + 60 秒/每日 10 次频控，生成 6 位验证码并发送（未配置短信通道时随响应返回供联调）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "H5 登录"
+                ],
+                "summary": "H5 发送短信验证码",
+                "parameters": [
+                    {
+                        "description": "发送验证码请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.SendCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "发送成功（Noop 通道返回验证码）",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.SendCodeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "422": {
+                        "description": "手机号格式错误(40218)或发送过于频繁(40217)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/pair/couples/random": {
             "get": {
                 "description": "无需认证，随机返回 N 条 matching > 0 的配对（含 couple 统计 + 男女双方完整公开画像）。双方中任一退出/隐藏/停用的配对自动过滤。",
@@ -12572,6 +12735,60 @@
                 }
             }
         },
+        "/api/v1/wxa/heart-report": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取用户本人的累计历程数据报告：加入信息、首次经历、送出/收到统计、TOP 归属人、双向关系、1314 成就、亲友团、牵线战绩、人气与学分。他人信息仅含公开字段（昵称/头像）。传 key 时同 key 仅生成一份冻结快照，命中直接返回。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-心报"
+                ],
+                "summary": "我的历程报告",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "快照 key（可选：1-64 位小写字母/数字/中横线；同 key 返回已落库的冻结快照）",
+                        "name": "key",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.HeartReportResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/login": {
             "post": {
                 "description": "通过 wx.login 返回的临时 code 换取 openid + session_key，签发 C 端 Wxa JWT。首次登录返回 is_new_user=true。",
@@ -13385,6 +13602,67 @@
             }
         },
         "/api/v1/wxa/pair/divine": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查看当前用户（牵线者）操作过的神助攻历史列表，按操作时间倒序分页。与求助攻列表不同，本接口无神助攻次数守卫——无论当前 divine_chance 是否为 0 均可查看自己的操作历史。响应项含配对信息（配对已删除 → null）、男女双方公开画像与本次提升量。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "我操作过的神助攻列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，1-based，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -13458,6 +13736,52 @@
                     },
                     "422": {
                         "description": "配对资格不满足（code=40310）/ 不能对自己操作（code=42217）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pair/divine/info": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户的神助攻信息（剩余机会 divine_chance、累计 divine_total、累计提升匹配度 divine_matching）。无任何前置守卫——无论是否有神助攻次数均可查看。从未发放过神助攻机会（v6_user_divine 无记录）时 data 输出 null。仅暴露业务字段，不含系统字段。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-配对"
+                ],
+                "summary": "我的神助攻信息",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineInfoResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -15786,7 +16110,7 @@
         },
         "/api/v1/wxa/user/register": {
             "post": {
-                "description": "提交手机号和验证码完成注册或激活迁移用户。已绑定微信返回 40303，手机号已绑定返回 42202。",
+                "description": "提交手机号和验证码完成注册或激活迁移用户（H5 与微信共用，按 JWT 渠道区分绑定语义）。手机号已绑定或会话已绑定返回 42202。",
                 "consumes": [
                     "application/json"
                 ],
@@ -15835,12 +16159,6 @@
                     },
                     "401": {
                         "description": "未登录或 Token 已过期",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
-                        }
-                    },
-                    "403": {
-                        "description": "微信已绑定账户(40303)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -18588,6 +18906,211 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_heart_report_model.FirstGiftInfo": {
+            "type": "object",
+            "properties": {
+                "at": {
+                    "description": "首次送礼时间（RFC3339）",
+                    "type": "string"
+                },
+                "gift_name": {
+                    "description": "礼物名称",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_heart_report_model.HeartReportResponse": {
+            "type": "object",
+            "properties": {
+                "credits_balance": {
+                    "description": "当前嗑学分",
+                    "type": "integer"
+                },
+                "days_since_joined": {
+                    "description": "加入天数（UTC now − registered_at）",
+                    "type": "integer"
+                },
+                "divine_matching": {
+                    "description": "神助攻累计提升匹配度",
+                    "type": "integer"
+                },
+                "divine_used": {
+                    "description": "神助攻使用次数",
+                    "type": "integer"
+                },
+                "first_followed": {
+                    "description": "首次关注（现存最早一条，无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                        }
+                    ]
+                },
+                "first_gift": {
+                    "description": "首次送礼（无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.FirstGiftInfo"
+                        }
+                    ]
+                },
+                "first_loved": {
+                    "description": "首次心动（无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                        }
+                    ]
+                },
+                "follows_received": {
+                    "description": "── 我的收获 ─────────────────────────────────────────",
+                    "type": "integer"
+                },
+                "follows_sent": {
+                    "description": "── 我的主动 ─────────────────────────────────────────",
+                    "type": "integer"
+                },
+                "generated_at": {
+                    "description": "报告生成时间",
+                    "type": "string"
+                },
+                "gifts_received_total": {
+                    "description": "收到礼物份数",
+                    "type": "integer"
+                },
+                "gifts_sent_total": {
+                    "description": "送出礼物份数",
+                    "type": "integer"
+                },
+                "has_data": {
+                    "description": "是否有互动数据（全零时 false，前端展示引导文案）",
+                    "type": "boolean"
+                },
+                "loves_received_total": {
+                    "description": "收到心动累计次数",
+                    "type": "integer"
+                },
+                "loves_sent_total": {
+                    "description": "送出心动累计次数",
+                    "type": "integer"
+                },
+                "match_code": {
+                    "description": "能成ID（8 位脱单号，未创建脱单档案时为空串）",
+                    "type": "string"
+                },
+                "mutual_follow_count": {
+                    "description": "── 双向与 1314 ──────────────────────────────────────",
+                    "type": "integer"
+                },
+                "mutual_love_count": {
+                    "description": "互相心动人数",
+                    "type": "integer"
+                },
+                "opinions_match": {
+                    "description": "── 牵线与学分 ───────────────────────────────────────",
+                    "type": "integer"
+                },
+                "opinions_split": {
+                    "description": "牵线拆散次数",
+                    "type": "integer"
+                },
+                "popularity": {
+                    "description": "我的人气值（旧数据以旧口径值展示）",
+                    "type": "integer"
+                },
+                "reached_1314_count": {
+                    "description": "达到过 1314 的配对累计数",
+                    "type": "integer"
+                },
+                "reached_1314_list": {
+                    "description": "已达 1314 的配对列表（对方卡片 + 达标时间）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                    }
+                },
+                "registered_at": {
+                    "description": "── 时光 ─────────────────────────────────────────────",
+                    "type": "string"
+                },
+                "relatives": {
+                    "description": "── 亲友团 ───────────────────────────────────────────",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                    }
+                },
+                "top_gift_giver": {
+                    "description": "送我礼物最多的归属人（按份数，无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                        }
+                    ]
+                },
+                "top_gift_receiver": {
+                    "description": "礼物给到最多的归属人（按累计人气，无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                        }
+                    ]
+                },
+                "top_loved": {
+                    "description": "送出心动最多的归属人（无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                        }
+                    ]
+                },
+                "top_lover": {
+                    "description": "对我心动最多的归属人（无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                        }
+                    ]
+                },
+                "top_supporter": {
+                    "description": "最给力后援（撮合+拆散操作次数最多，无记录 null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_heart_report_model.ReportUserCard": {
+            "type": "object",
+            "properties": {
+                "at": {
+                    "description": "时间（首次/达到时间，RFC3339；无则空串）",
+                    "type": "string"
+                },
+                "avatar": {
+                    "description": "公开资料（未设置时为空串）",
+                    "type": "string"
+                },
+                "count": {
+                    "description": "次数/份数（首次类卡片为 0）",
+                    "type": "integer"
+                },
+                "nickname": {
+                    "description": "公开资料（资料缺失时为空串）",
+                    "type": "string"
+                },
+                "score": {
+                    "description": "分数（礼物人气累计，礼物类卡片用；其余为 0）",
+                    "type": "integer"
+                },
+                "user_id": {
+                    "description": "他人 UUID",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_lottery_model.ActiveDeploymentItem": {
             "type": "object",
             "properties": {
@@ -19636,6 +20159,64 @@
                 },
                 "opinion_split_count": {
                     "description": "观点分歧数",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineInfoResponse": {
+            "type": "object",
+            "properties": {
+                "divine_chance": {
+                    "description": "剩余神助攻机会（可增减）",
+                    "type": "integer"
+                },
+                "divine_matching": {
+                    "description": "累计增加匹配度（只增）",
+                    "type": "integer"
+                },
+                "divine_total": {
+                    "description": "神助攻累计（只增）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pair_model.DivineListItem": {
+            "type": "object",
+            "properties": {
+                "couple": {
+                    "description": "配对信息（配对已删除 → null）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleInfo"
+                        }
+                    ]
+                },
+                "created_at": {
+                    "description": "操作时间（RFC3339）",
+                    "type": "string"
+                },
+                "female_user_data": {
+                    "description": "女方公开画像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                        }
+                    ]
+                },
+                "id": {
+                    "description": "神助攻明细 ID（HashIDFormatDivine）",
+                    "type": "string"
+                },
+                "male_user_data": {
+                    "description": "男方公开画像",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                        }
+                    ]
+                },
+                "matching_delta": {
+                    "description": "本次提升量 = 1314 − 操作前匹配度",
                     "type": "integer"
                 }
             }
@@ -21643,6 +22224,48 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.H5LoginRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "phone"
+            ],
+            "properties": {
+                "code": {
+                    "description": "Code 6 位验证码。",
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "Phone 手机号。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.H5LoginResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "description": "ExpiresAt Token 过期时间（RFC3339 秒精度）。",
+                    "type": "string"
+                },
+                "is_new_user": {
+                    "description": "IsNewUser 会话是否尚未绑定用户（v6_h5_login.user_id IS NULL）。",
+                    "type": "boolean"
+                },
+                "issued_at": {
+                    "description": "IssuedAt Token 签发时间（RFC3339 秒精度）。",
+                    "type": "string"
+                },
+                "token": {
+                    "description": "Token C 端 JWT 访问令牌（载荷 Channel=\"h5\"）。",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "UserID 已注册用户返回 user_id；未注册为空字符串。",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_user_model.LoginWxaRequest": {
             "type": "object",
             "required": [
@@ -21990,6 +22613,27 @@
                 },
                 "user_id": {
                     "description": "UserID 新创建的用户 ID。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.SendCodeRequest": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "phone": {
+                    "description": "Phone 手机号（服务端校验 11 位中国大陆格式，1[3-9] 开头）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.SendCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "Code 联调用验证码（NoopSender 专属；真实通道 null）。",
                     "type": "string"
                 }
             }
