@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { Tag, Avatar, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { EyeOutlined } from '@ant-design/icons';
@@ -10,7 +10,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
-import { MatchProfileAuditStatus } from '@/api/types/status';
+import { MatchProfileAuditStatus, UserVisibility, UserGenderLabels, MaritalStatusLabels } from '@/api/types/status';
 import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
 import type { CommunityUserItem } from '@/api/types/user';
 import '@/styles/user-detail-modal.css';
@@ -29,6 +29,14 @@ const DISPLAY_STATUS_OPTIONS = [
   { label: '已退出', value: 'quit' },
 ];
 
+/** 显示状态下拉 → 服务端筛选参数。已退出只看 is_active，与 visibility 无关 */
+const DISPLAY_STATUS_FILTERS: Record<string, { is_active: boolean; visibility?: number }> = {
+  public: { is_active: true, visibility: UserVisibility.FULL },
+  zone_only: { is_active: true, visibility: UserVisibility.ZONE },
+  hidden: { is_active: true, visibility: UserVisibility.HIDE },
+  quit: { is_active: false },
+};
+
 const filters: FilterConfig[] = [
   { name: 'audit_status', placeholder: '全部审核状态', type: 'select', options: AUDIT_STATUS_OPTIONS },
   { name: 'display_status', placeholder: '全部显示状态', type: 'select', options: DISPLAY_STATUS_OPTIONS },
@@ -42,33 +50,14 @@ const AUDIT_MAP: Record<number, { color: string; text: string }> = {
   [MatchProfileAuditStatus.REVOKED]: { color: 'default', text: '已撤销' },
 };
 
-const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
-const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
-
 /** 显示状态 */
 function getDisplayStatus(mp: CommunityUserItem['match_profile']): { text: string; color: string } {
   if (!mp) return { text: '-', color: 'default' };
   if (!mp.is_active) return { text: '已退出', color: 'default' };
-  if (mp.visibility === 1) return { text: '公开', color: 'success' };
-  if (mp.visibility === 2) return { text: '仅专区可见', color: 'warning' };
-  if (mp.visibility === 3) return { text: '已隐藏', color: 'warning' };
+  if (mp.visibility === UserVisibility.FULL) return { text: '公开', color: 'success' };
+  if (mp.visibility === UserVisibility.ZONE) return { text: '仅专区可见', color: 'warning' };
+  if (mp.visibility === UserVisibility.HIDE) return { text: '已隐藏', color: 'warning' };
   return { text: '-', color: 'default' };
-}
-
-/**
- * 匹配显示状态筛选
- * - public: is_active=true && visibility=1
- * - zone_only: is_active=true && visibility=2
- * - hidden: is_active=true && visibility=3
- * - quit: is_active=false
- */
-function matchDisplayFilter(mp: CommunityUserItem['match_profile'], filter: string): boolean {
-  if (!mp) return false;
-  if (filter === 'public') return mp.is_active && mp.visibility === 1;
-  if (filter === 'zone_only') return mp.is_active && mp.visibility === 2;
-  if (filter === 'hidden') return mp.is_active && mp.visibility === 3;
-  if (filter === 'quit') return !mp.is_active;
-  return true;
 }
 
 const MatchProfileManagement = () => {
@@ -79,66 +68,18 @@ const MatchProfileManagement = () => {
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [auditProfileOpen, setAuditProfileOpen] = useState(false);
 
-  // 显示状态筛选的本地全量缓存：
-  // 接口不支持按显示状态（visibility/is_active）服务端过滤，只能全量拉取后本地过滤。
-  // 全量数据按"服务端筛选条件(keyword/audit_status) + 数据版本"缓存，
-  // 切换显示状态、翻页都不再重复扫描接口；只有服务端筛选变化或审核操作后才重新扫描。
-  const sweepCache = useRef<{ key: string; data: CommunityUserItem[] } | null>(null);
-  const sweepVersion = useRef(0);
-  const invalidateSweep = useCallback(() => { sweepVersion.current += 1; }, []);
-
   const fetchUsers = useCallback(async (params: any) => {
-    const displayStatus = params.display_status;
-    if (!displayStatus) {
-      // 无显示状态筛选：走服务端分页
-      return userApi.getUsers({
-        page: params.page,
-        size: params.page_size || params.size,
-        keyword: params.keyword || undefined,
-        has_match_profile: true,
-        match_audit_status: params.audit_status != null ? params.audit_status : undefined,
-      });
-    }
-    // 显示状态筛选：按服务端条件缓存全量 → 本地过滤 → 本地分页
-    const serverKey = `${params.keyword || ''}|${params.audit_status ?? ''}|${sweepVersion.current}`;
-    if (!sweepCache.current || sweepCache.current.key !== serverKey) {
-      const sweepFilters = {
-        size: 100,
-        keyword: params.keyword || undefined,
-        has_match_profile: true,
-        match_audit_status: params.audit_status != null ? params.audit_status : undefined,
-      };
-      // 第一页先拿总数
-      const firstRes: any = await userApi.getUsers({ page: 1, ...sweepFilters });
-      const firstList: CommunityUserItem[] = firstRes?.list || [];
-      const total = firstRes?.total ?? firstList.length;
-      if (total <= 100) {
-        sweepCache.current = { key: serverKey, data: firstList };
-      } else {
-        // 按页码并行拉取剩余页，按序拼接保持顺序稳定
-        const totalPages = Math.ceil(total / 100);
-        const pages: (CommunityUserItem[])[] = new Array(totalPages);
-        pages[0] = firstList;
-        const CONCURRENCY = 8;
-        let cursor = 1;
-        const workers = Array.from({ length: Math.min(CONCURRENCY, totalPages - 1) }, async () => {
-          while (true) {
-            const p = ++cursor;
-            if (p > totalPages) break;
-            const res: any = await userApi.getUsers({ page: p, ...sweepFilters });
-            pages[p - 1] = res?.list || [];
-          }
-        });
-        await Promise.all(workers);
-        sweepCache.current = { key: serverKey, data: pages.flat() };
-      }
-    }
-    const filtered = sweepCache.current.data.filter((item) =>
-      matchDisplayFilter(item.match_profile, displayStatus),
-    );
-    const pageSize = params.page_size || 10;
-    const start = (params.page - 1) * pageSize;
-    return { list: filtered.slice(start, start + pageSize), total: filtered.length };
+    const displayFilter = params.display_status
+      ? DISPLAY_STATUS_FILTERS[params.display_status]
+      : undefined;
+    return userApi.getUsers({
+      page: params.page,
+      size: params.page_size || params.size,
+      keyword: params.keyword || undefined,
+      has_match_profile: true,
+      match_audit_status: params.audit_status != null ? params.audit_status : undefined,
+      ...displayFilter,
+    });
   }, []);
 
   const formatUserResponse = useCallback((res: any) => ({
@@ -190,7 +131,7 @@ const MatchProfileManagement = () => {
       title: '性别',
       key: 'gender',
       width: 60,
-      render: (_: any, record: CommunityUserItem) => GENDER_MAP[record.profile.gender] || '-',
+      render: (_: any, record: CommunityUserItem) => UserGenderLabels[record.profile.gender] || '-',
     },
     {
       title: '年龄',
@@ -203,7 +144,7 @@ const MatchProfileManagement = () => {
       key: 'marital',
       width: 90,
       render: (_: any, record: CommunityUserItem) =>
-        record.match_profile ? (MARITAL_MAP[record.match_profile.marital_status] || '-') : '-',
+        record.match_profile ? (MaritalStatusLabels[record.match_profile.marital_status] || '-') : '-',
     },
     {
       title: '人气值',
@@ -315,7 +256,6 @@ const MatchProfileManagement = () => {
               },
             } as CommunityUserItem;
           });
-          invalidateSweep();
           refresh();
         }}
       />
@@ -335,7 +275,6 @@ const MatchProfileManagement = () => {
               },
             } as CommunityUserItem;
           });
-          invalidateSweep();
           refresh();
         }}
       />

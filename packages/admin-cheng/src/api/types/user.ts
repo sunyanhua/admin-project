@@ -105,6 +105,10 @@ export interface CommunityUserListParams {
   has_match_profile?: boolean;
   match_audit_status?: number;
   zone_id?: string;
+  /** 脱单档案可见范围：1=全开放 2=仅专区 3=全隐藏 */
+  visibility?: number;
+  /** 脱单档案是否在架（false=已退出） */
+  is_active?: boolean;
 }
 
 // ========== 旧版（兼容保留） ==========

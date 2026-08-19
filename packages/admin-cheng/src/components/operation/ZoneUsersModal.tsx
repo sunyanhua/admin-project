@@ -8,11 +8,8 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import { getMediumUrl } from '@/utils/imageUtils';
-import { MatchProfileAuditStatus } from '@/api/types/status';
+import { MatchProfileAuditStatus, UserGenderLabels, MaritalStatusLabels } from '@/api/types/status';
 import type { CommunityUserItem } from '@/api/types/user';
-
-const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
-const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
 
 const AUDIT_MAP: Record<number, { color: string; text: string }> = {
   [MatchProfileAuditStatus.PENDING]: { color: 'processing', text: '待审核' },
@@ -114,7 +111,7 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
       title: '性别',
       key: 'gender',
       width: 60,
-      render: (_: any, record: CommunityUserItem) => GENDER_MAP[record.profile.gender] || '-',
+      render: (_: any, record: CommunityUserItem) => UserGenderLabels[record.profile.gender] || '-',
     },
     {
       title: '年龄',
@@ -127,7 +124,7 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
       key: 'marital',
       width: 90,
       render: (_: any, record: CommunityUserItem) =>
-        record.match_profile ? (MARITAL_MAP[record.match_profile.marital_status] || '-') : '-',
+        record.match_profile ? (MaritalStatusLabels[record.match_profile.marital_status] || '-') : '-',
     },
     {
       title: '人气值',

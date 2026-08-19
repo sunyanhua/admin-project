@@ -11,6 +11,7 @@ import {
   FreeFCFSStatusLabels, FreeFCFSStatusColors,
   ActivityType,
 } from '@shared/constants';
+import { MaritalStatusLabels, EducationLabels } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
 import { useListPage } from '@/hooks/useListPage';
@@ -105,8 +106,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       if (!isFreeReview) headers.push('报名时间');
       formConfig.forEach(f => headers.push(f.label));
       const rows: string[][] = [];
-      const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
-      const EDUCATION_MAP: Record<number, string> = { 1: '高中及以下', 2: '大专', 3: '本科', 4: '硕士', 5: '博士', 6: '其他' };
       for (const item of allData) {
         const up = item.user_profile;
         const mp = item.user_match_profile as any;
@@ -116,8 +115,8 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         const genderLabel = gender != null ? (RegisterGenderLabels[gender] ?? String(gender)) : '';
         const age = up?.age ?? item.age ?? '';
         const phone = (item.user_data as any)?.phone || item.phone || '';
-        const marital = mp?.marital_status != null ? (MARITAL_MAP[mp.marital_status] || String(mp.marital_status)) : '';
-        const edu = mp?.education != null ? (EDUCATION_MAP[mp.education] || String(mp.education)) : '';
+        const marital = mp?.marital_status != null ? (MaritalStatusLabels[mp.marital_status] || String(mp.marital_status)) : '';
+        const edu = mp?.education != null ? (EducationLabels[mp.education] || String(mp.education)) : '';
         const household = mp?.household_registration || '';
         const workplace = mp?.workplace || '';
         const createdAt = item.created_at ? item.created_at.replace('T', ' ').substring(0, 19) : '';

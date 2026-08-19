@@ -8,7 +8,10 @@ import {
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
 import { getAvatarUrl, getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { MatchProfileAuditStatus, IncomeRange } from '@/api/types/status';
+import {
+  MatchProfileAuditStatus, IncomeRange,
+  UserGenderLabels, MaritalStatusLabels, EducationLabels,
+} from '@/api/types/status';
 import type {
   CommunityUserSummary,
   CommunityProfileSummary,
@@ -30,9 +33,6 @@ export interface CommunityUserDetailProps {
   onAuditProfile?: () => void;
 }
 
-const GENDER_MAP: Record<number, string> = { 1: '男', 2: '女' };
-const MARITAL_MAP: Record<number, string> = { 1: '未婚', 2: '已婚', 3: '离异', 4: '丧偶' };
-const EDUCATION_MAP: Record<number, string> = { 1: '高中及以下', 2: '大专', 3: '本科', 4: '硕士', 5: '博士', 6: '其他' };
 const BLOOD_MAP: Record<number, string> = { 1: 'A', 2: 'B', 3: 'AB', 4: 'O' };
 const INCOME_RANGE_MAP: Record<number, string> = {
   [IncomeRange.BELOW_5K]: '5000 以下',
@@ -131,7 +131,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
           value: <Tag>{userTypeLabel(user)}</Tag>,
           span: 1,
         },
-        { label: '性别', value: GENDER_MAP[profile.gender] || '-', span: 1 },
+        { label: '性别', value: UserGenderLabels[profile.gender] || '-', span: 1 },
         { label: '年龄', value: profile.age ?? '-', span: 1 },
         { label: '生日', value: profile.birth_date ? formatDate(profile.birth_date) : '-', span: 1 },
         { label: '星座', value: profile.zodiac || '-', span: 1 },
@@ -145,10 +145,10 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
       title: <MatchCodeTitle code={matchProfile.match_code} />,
       items: [
         { label: '姓名', value: matchProfile.real_name || '-', span: 1 },
-        { label: '婚姻状况', value: MARITAL_MAP[matchProfile.marital_status] || '-', span: 1 },
+        { label: '婚姻状况', value: MaritalStatusLabels[matchProfile.marital_status] || '-', span: 1 },
         { label: '身高', value: matchProfile.height ? `${matchProfile.height} cm` : '-', span: 1 },
         { label: '体重', value: matchProfile.weight ? `${matchProfile.weight} kg` : '-', span: 1 },
-        { label: '学历', value: EDUCATION_MAP[matchProfile.education] || '-', span: 1 },
+        { label: '学历', value: EducationLabels[matchProfile.education] || '-', span: 1 },
         { label: '职业', value: matchProfile.profession || '-', span: 1 },
         { label: '生肖', value: matchProfile.cn_zodiac || '-', span: 1 },
         { label: '血型', value: BLOOD_MAP[matchProfile.blood_type] || '-', span: 1 },
@@ -292,7 +292,7 @@ function buildLegacySections(props: LegacyUserDetailProps) {
         { label: '昵称', value: <span style={{ fontSize: 16, fontWeight: 600 }}>{d.nick || '-'}</span> },
         { label: '真实姓名', value: d.name || '-' },
         { label: '手机号', value: d.phone || '-' },
-        { label: '性别', value: GENDER_MAP[d.gender] || '未知' },
+        { label: '性别', value: UserGenderLabels[d.gender] || '未知' },
         { label: '生日', value: d.birthday ? formatDate(d.birthday) : '-' },
         { label: '年龄', value: getAge(d.birthday) },
         { label: '星座', value: getZodiac(d.birthday) },

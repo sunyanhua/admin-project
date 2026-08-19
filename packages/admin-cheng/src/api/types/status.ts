@@ -18,6 +18,12 @@ export const UserGender = {
 } as const;
 export type UserGender = (typeof UserGender)[keyof typeof UserGender];
 
+/** 用户性别文案（UNSET 不给文案，由调用方兜底为 '-'） */
+export const UserGenderLabels: Record<number, string> = {
+  [UserGender.MALE]: '男',
+  [UserGender.FEMALE]: '女',
+};
+
 /** 基础资料审核状态 */
 export const ProfileAuditStatus = {
   /** 待审核 */
@@ -83,3 +89,56 @@ export const IncomeRange = {
   ABOVE_18K: 5,
 } as const;
 export type IncomeRange = (typeof IncomeRange)[keyof typeof IncomeRange];
+
+/** 脱单档案可见范围 */
+export const UserVisibility = {
+  /** 全开放 — 所有用户可见 */
+  FULL: 1,
+  /** 仅专区 — 仅配对关系用户可见 */
+  ZONE: 2,
+  /** 全隐藏 — 不对任何人展示 */
+  HIDE: 3,
+} as const;
+export type UserVisibility = (typeof UserVisibility)[keyof typeof UserVisibility];
+
+/** 婚姻状况 */
+export const MaritalStatus = {
+  /** 未婚 */
+  UNMARRIED: 1,
+  /** 离异 */
+  DIVORCED: 2,
+  /** 丧偶 */
+  WIDOWED: 3,
+} as const;
+export type MaritalStatus = (typeof MaritalStatus)[keyof typeof MaritalStatus];
+
+/** 婚姻状况文案 */
+export const MaritalStatusLabels: Record<number, string> = {
+  [MaritalStatus.UNMARRIED]: '未婚',
+  [MaritalStatus.DIVORCED]: '离异',
+  [MaritalStatus.WIDOWED]: '丧偶',
+};
+
+/** 学历 */
+export const Education = {
+  /** 高中及以下 */
+  HIGH_SCHOOL: 1,
+  /** 大专 */
+  ASSOCIATE: 2,
+  /** 本科 */
+  BACHELOR: 3,
+  /** 硕士 */
+  MASTER: 4,
+  /** 博士及以上 */
+  DOCTORATE: 5,
+} as const;
+export type Education = (typeof Education)[keyof typeof Education];
+
+/** 学历文案 */
+export const EducationLabels: Record<number, string> = {
+  [Education.HIGH_SCHOOL]: '高中及以下',
+  [Education.ASSOCIATE]: '大专',
+  [Education.BACHELOR]: '本科',
+  [Education.MASTER]: '硕士',
+  [Education.DOCTORATE]: '博士及以上',
+};
