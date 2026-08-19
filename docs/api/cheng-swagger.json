@@ -6358,7 +6358,7 @@
         },
         "/admin/v1/bizops/user": {
             "get": {
-                "description": "分页查询 C 端用户列表，支持性别、年龄、审核状态、迁移/激活/完善/状态等条件筛选，手机号脱敏返回。",
+                "description": "分页查询 C 端用户列表，支持性别、年龄、审核状态、迁移/激活/完善/状态/显示状态/专区等条件筛选，手机号脱敏返回。传入 visibility 或 zone_id 时结果集隐含收敛为已提交脱单档案的用户。",
                 "produces": [
                     "application/json"
                 ],
@@ -6443,6 +6443,18 @@
                         "type": "integer",
                         "description": "用户状态：0=正常 1=禁用",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "脱单资料显示状态：1=全开放 2=仅专区 3=全隐藏",
+                        "name": "visibility",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "专区 ID（UUID）",
+                        "name": "zone_id",
                         "in": "query"
                     }
                 ],
@@ -16325,6 +16337,139 @@
                 }
             }
         },
+        "/api/v1/wxa/user/zone-member/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "后端自动判断当前用户是否为专区用户（zone_id 非空）。专区用户可查看同专区脱单用户详情；非专区用户或目标非同专区成员 data 为 null。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "专区成员详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.UserPublicProfileResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "路径参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/user/zone-members": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "后端自动判断当前用户是否为专区用户（v6_user_match_profile.zone_id 非空）。专区用户返回同专区脱单用户列表（不含自己）；非专区用户 data 为 null。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "专区脱单用户列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最小年龄（含），18-99",
+                        "name": "min_age",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最大年龄（含），18-99",
+                        "name": "max_age",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.ZoneMembersResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/zone/apply/my": {
             "get": {
                 "security": [
@@ -23049,6 +23194,30 @@
                     "type": "string"
                 },
                 "source_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.ZoneMembersResponse": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "description": "同专区脱单用户公开画像",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                    }
+                },
+                "total": {
+                    "description": "同专区脱单用户总数（不含自己）",
+                    "type": "integer"
+                },
+                "zone_id": {
+                    "description": "当前用户所属专区 ID",
+                    "type": "string"
+                },
+                "zone_name": {
+                    "description": "专区名称（查询失败时为空串）",
                     "type": "string"
                 }
             }
