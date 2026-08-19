@@ -16405,7 +16405,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "后端自动判断当前用户是否为专区用户（v6_user_match_profile.zone_id 非空）。专区用户返回同专区脱单用户列表（不含自己）；非专区用户 data 为 null。",
+                "description": "后端自动判断当前用户是否为专区用户（v6_user_match_profile.zone_id 非空）。专区用户返回同专区脱单用户列表（不含自己，筛选参数与 C 端公开列表一致）；非专区用户 data 为 null。",
                 "consumes": [
                     "application/json"
                 ],
@@ -16419,14 +16419,8 @@
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "页码，默认 1",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "每页条数，默认 20，最大 100",
-                        "name": "size",
+                        "description": "性别：1=男 2=女",
+                        "name": "gender",
                         "in": "query"
                     },
                     {
@@ -16439,6 +16433,66 @@
                         "type": "integer",
                         "description": "最大年龄（含），18-99",
                         "name": "max_age",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "婚姻状况：1=未婚 2=离异 3=丧偶",
+                        "name": "marital_status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最低身高 cm（含），100-250",
+                        "name": "min_height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "最高身高 cm（含），100-250",
+                        "name": "max_height",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "现居城市（精确匹配）",
+                        "name": "current_city",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "学历：1=高中及以下 2=大专 3=本科 4=硕士 5=博士及以上",
+                        "name": "education",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "属相（如",
+                        "name": "cn_zodiac",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "星座（如",
+                        "name": "zodiac",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "搜索关键字——匹配昵称（模糊）和脱单号（精确）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码，默认 1",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数，默认 20，最大 100",
+                        "name": "size",
                         "in": "query"
                     }
                 ],
