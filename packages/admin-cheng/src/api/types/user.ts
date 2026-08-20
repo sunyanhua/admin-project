@@ -56,6 +56,8 @@ export interface CommunityMatchProfileSummary {
   partner_demand: string;
   photos?: string[];
   id_card_tail: string | null;
+  /** 是否实名认证 */
+  is_real_verified?: boolean;
   blood_type: number;
   ethnicity: string;
   household_registration: string;
@@ -161,6 +163,22 @@ export interface AuditMatchProfileRequest {
   /** 1=通过, 2=拒绝 */
   action: 1 | 2;
   reason: string;
+}
+
+/** 用户隐私数据 — POST /admin/v1/bizops/user/privacy/{id}（带水印审计） */
+export interface AdminUserPrivacyResponse {
+  user_id: string;
+  /** 真实姓名（脱敏） */
+  real_name?: string;
+  /** 身份证号码（脱敏） */
+  id_card?: string;
+  id_card_tail?: string;
+  /** 手机号（脱敏） */
+  phone?: string;
+  /** 是否实名认证 */
+  is_real_verified?: boolean;
+  /** 本次读取水印 ID（审计日志关联） */
+  watermark_id?: string;
 }
 
 /** 管理员修改 C 端用户基础资料请求 */

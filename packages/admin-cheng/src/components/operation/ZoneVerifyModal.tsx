@@ -17,6 +17,7 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn, statusTagColumn } from '@/components/templates/ColumnHelpers';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
+import RealNameWithTag from '@/components/user/RealNameWithTag';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ZoneApplicationReviewModal from '@/components/operation/ZoneApplicationReviewModal';
 
@@ -201,10 +202,9 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
       title: '姓名',
       key: 'real_name',
       width: 100,
-      render: (_: any, r: Application) => {
-        const name = r.user_match_profile?.real_name;
-        return name || <span style={{ color: '#999' }}>-</span>;
-      },
+      render: (_: any, r: Application) => (
+        <RealNameWithTag name={r.user_match_profile?.real_name} verified={r.user_match_profile?.is_real_verified} />
+      ),
     },
     {
       title: '性别',

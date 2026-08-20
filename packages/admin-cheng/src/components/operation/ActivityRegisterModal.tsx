@@ -19,6 +19,7 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
+import RealNameWithTag from '@/components/user/RealNameWithTag';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
@@ -220,10 +221,9 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       title: '姓名',
       key: 'real_name',
       width: 100,
-      render: (_: any, r: RegisterRecord) => {
-        const name = r.user_match_profile?.real_name;
-        return name || <span style={{ color: '#999' }}>-</span>;
-      },
+      render: (_: any, r: RegisterRecord) => (
+        <RealNameWithTag name={r.user_match_profile?.real_name} verified={r.user_match_profile?.is_real_verified} />
+      ),
     },
     {
       title: '性别',

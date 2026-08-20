@@ -8,6 +8,7 @@ import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
+import RealNameWithTag from '@/components/user/RealNameWithTag';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
 import { MatchProfileAuditStatus, UserVisibility, UserGenderLabels, MaritalStatusLabels } from '@/api/types/status';
@@ -119,7 +120,9 @@ const MatchProfileManagement = () => {
       title: '姓名',
       key: 'real_name',
       width: 100,
-      render: (_: any, record: CommunityUserItem) => record.match_profile?.real_name || '-',
+      render: (_: any, record: CommunityUserItem) => (
+        <RealNameWithTag name={record.match_profile?.real_name} verified={record.match_profile?.is_real_verified} />
+      ),
     },
     {
       title: '手机号',

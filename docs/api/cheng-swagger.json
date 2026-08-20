@@ -6578,6 +6578,150 @@
                 }
             }
         },
+        "/admin/v1/bizops/user/privacy": {
+            "post": {
+                "description": "分页查询 C 端用户隐私数据全量视图（含证件号码等敏感明文）。POST JSON body 承载筛选条件（与常规用户列表筛选一致 + ids 指定用户数组）。需独立隐私权限 URN。每次读取写审计日志，响应携带数字水印 watermark_id。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-用户模块"
+                ],
+                "summary": "用户隐私数据列表",
+                "parameters": [
+                    {
+                        "description": "筛选条件（page/size/keyword/gender/min_age/max_age/profile_audit_status/match_audit_status/is_migrated/is_activated/has_profile/has_match_profile/status/visibility/zone_id/ids）",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserPrivacyListRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "隐私数据列表（含 watermark_id）",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserPrivacyListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/privacy/{id}": {
+            "post": {
+                "description": "查询单个 C 端用户隐私数据全量视图（含证件号码等敏感明文，含已注销用户）。需独立隐私权限 URN。每次读取写审计日志，响应携带数字水印 watermark_id。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-用户模块"
+                ],
+                "summary": "用户隐私数据详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "隐私数据详情（含 watermark_id）",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserPrivacyResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "路径参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "用户不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/user/{id}": {
             "get": {
                 "description": "查询指定用户的详细资料（基础资料 + 脱单档案 + 钱包积分金币），手机号脱敏返回，真实姓名返回完整值。隐私安全模式开启时敏感字段进一步脱敏（手机→138****1234, 姓名→张*, 邮箱→u***@example.com）。",
@@ -22205,6 +22349,367 @@
                 },
                 "wallet": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminWalletInfo"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserPrivacyListRequest": {
+            "type": "object",
+            "properties": {
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "has_match_profile": {
+                    "type": "boolean"
+                },
+                "has_profile": {
+                    "type": "boolean"
+                },
+                "ids": {
+                    "description": "指定用户 ID 数组（每个元素须为 UUID）",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "is_activated": {
+                    "type": "boolean"
+                },
+                "is_migrated": {
+                    "type": "boolean"
+                },
+                "keyword": {
+                    "description": "关键字模糊搜索（可选；业务上限 service 层二次甄别）",
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "match_audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
+                },
+                "max_age": {
+                    "type": "integer"
+                },
+                "min_age": {
+                    "type": "integer"
+                },
+                "page": {
+                    "description": "页码，1-based，默认 1",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "profile_audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
+                },
+                "size": {
+                    "description": "每页条数，默认 20，最大 100",
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserStatus"
+                },
+                "visibility": {
+                    "description": "脱单资料显示状态：1=全开放 2=仅专区 3=全隐藏",
+                    "enum": [
+                        1,
+                        2,
+                        3
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility"
+                        }
+                    ]
+                },
+                "zone_id": {
+                    "description": "专区筛选（v6_user_match_profile.zone_id）",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserPrivacyListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserPrivacyResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "watermark_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserPrivacyResponse": {
+            "type": "object",
+            "properties": {
+                "activated_at": {
+                    "type": "string"
+                },
+                "audited_at": {
+                    "type": "string"
+                },
+                "audited_by": {
+                    "type": "string"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "blood_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType"
+                },
+                "can_modify_at": {
+                    "type": "string"
+                },
+                "cn_zodiac": {
+                    "type": "string"
+                },
+                "credits": {
+                    "description": "总嗑学分",
+                    "type": "integer"
+                },
+                "credits_weekly": {
+                    "description": "周嗑学分",
+                    "type": "integer"
+                },
+                "credits_weekly_rank": {
+                    "type": "integer"
+                },
+                "current_city": {
+                    "type": "string"
+                },
+                "dislike_count": {
+                    "type": "integer"
+                },
+                "education": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
+                },
+                "ethnicity": {
+                    "type": "string"
+                },
+                "extra": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "gifts_received": {
+                    "type": "integer"
+                },
+                "graduate": {
+                    "type": "string"
+                },
+                "has_match_profile": {
+                    "type": "boolean"
+                },
+                "has_profile": {
+                    "type": "boolean"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "hobby_tags": {
+                    "type": "string"
+                },
+                "hometown": {
+                    "type": "string"
+                },
+                "household_registration": {
+                    "type": "string"
+                },
+                "id_card": {
+                    "description": "身份证号明文（解密）",
+                    "type": "string"
+                },
+                "id_card_hash": {
+                    "type": "string"
+                },
+                "id_card_tail": {
+                    "type": "string"
+                },
+                "income_range": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                },
+                "is_activated": {
+                    "type": "boolean"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "is_migrated": {
+                    "type": "boolean"
+                },
+                "is_org_certified": {
+                    "type": "boolean"
+                },
+                "is_real_verified": {
+                    "type": "boolean"
+                },
+                "last_active_at": {
+                    "type": "string"
+                },
+                "last_matched_at": {
+                    "type": "string"
+                },
+                "like_count": {
+                    "description": "── v6_user_match_stats（被操作统计） ──",
+                    "type": "integer"
+                },
+                "loves_count": {
+                    "type": "integer"
+                },
+                "loves_people_count": {
+                    "type": "integer"
+                },
+                "marital_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MaritalStatus"
+                },
+                "match_audit_reason": {
+                    "type": "string"
+                },
+                "match_audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchProfileAuditStatus"
+                },
+                "match_code": {
+                    "description": "── v6_user_match_profile（脱单档案，含敏感明文） ──",
+                    "type": "string"
+                },
+                "match_profile_created_at": {
+                    "type": "string"
+                },
+                "match_profile_updated_at": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "description": "── v6_user_profile（基础资料） ──",
+                    "type": "string"
+                },
+                "opinion_match_count": {
+                    "type": "integer"
+                },
+                "opinion_split_count": {
+                    "type": "integer"
+                },
+                "partner_demand": {
+                    "type": "string"
+                },
+                "phone": {
+                    "description": "手机号明文（解密）",
+                    "type": "string"
+                },
+                "phone_hash": {
+                    "description": "手机号 SHA-256 哈希（带 pepper）",
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "profession": {
+                    "type": "string"
+                },
+                "profile_audit_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus"
+                },
+                "reached_1314_count": {
+                    "type": "integer"
+                },
+                "real_name": {
+                    "description": "真实姓名明文（解密）",
+                    "type": "string"
+                },
+                "real_name_hash": {
+                    "type": "string"
+                },
+                "relatives_count": {
+                    "type": "integer"
+                },
+                "self_intro": {
+                    "type": "string"
+                },
+                "source_id": {
+                    "type": "string"
+                },
+                "specialties": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "0=正常 1=禁用",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserStatus"
+                        }
+                    ]
+                },
+                "updated_by": {
+                    "type": "string"
+                },
+                "user_created_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "── v6_user（用户主表） ──",
+                    "type": "string"
+                },
+                "user_updated_at": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserVisibility"
+                },
+                "wallet_coins": {
+                    "type": "integer"
+                },
+                "wallet_coins_earned": {
+                    "type": "integer"
+                },
+                "wallet_coins_spent": {
+                    "type": "integer"
+                },
+                "wallet_points": {
+                    "description": "── v6_user_wallet（钱包） ──",
+                    "type": "integer"
+                },
+                "wallet_points_earned": {
+                    "type": "integer"
+                },
+                "wallet_points_spent": {
+                    "type": "integer"
+                },
+                "wallet_version": {
+                    "type": "integer"
+                },
+                "watermark_id": {
+                    "description": "数字水印：本次访问唯一标识（反查审计日志）",
+                    "type": "string"
+                },
+                "wechat": {
+                    "description": "微信号明文（解密）",
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                },
+                "workplace": {
+                    "type": "string"
+                },
+                "zodiac": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "type": "string"
                 }
             }
         },

@@ -18,6 +18,7 @@ import type {
   CommunityMatchProfileSummary,
   CommunityWalletSummary,
 } from '@/api/types/user';
+import RealNameWithTag from '@/components/user/RealNameWithTag';
 
 const { Text } = Typography;
 
@@ -144,7 +145,19 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
     sections.push({
       title: <MatchCodeTitle code={matchProfile.match_code} />,
       items: [
-        { label: '姓名', value: matchProfile.real_name || '-', span: 1 },
+        {
+          label: '姓名',
+          value: (
+            <RealNameWithTag
+              name={matchProfile.real_name}
+              verified={matchProfile.is_real_verified}
+              userId={user.user_id}
+              clickable
+              full
+            />
+          ),
+          span: 1,
+        },
         { label: '婚姻状况', value: MaritalStatusLabels[matchProfile.marital_status] || '-', span: 1 },
         { label: '身高', value: matchProfile.height ? `${matchProfile.height} cm` : '-', span: 1 },
         { label: '体重', value: matchProfile.weight ? `${matchProfile.weight} kg` : '-', span: 1 },

@@ -6,6 +6,7 @@ import { getAvatarUrl } from '@/utils/imageUtils';
 import { zoneApi, Application, DBAttachment } from '@/api/services/zone';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
+import RealNameWithTag from '@/components/user/RealNameWithTag';
 
 const FILE_TYPE_LABELS: Record<number, string> = { 1: '图片', 2: '音频', 3: '视频' };
 
@@ -143,7 +144,9 @@ const ZoneApplicationReviewModal: React.FC<ZoneApplicationReviewModalProps> = ({
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 600 }}>{profile?.nickname || application.user_id}</div>
           <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>
-            {matchProfile?.real_name && <span>姓名：{matchProfile.real_name}　</span>}
+            {(matchProfile?.real_name || matchProfile?.is_real_verified) && (
+              <span>姓名：<RealNameWithTag name={matchProfile?.real_name} verified={matchProfile?.is_real_verified} />　</span>
+            )}
             {profile?.gender != null && <span>性别：{RegisterGenderLabels[profile.gender] ?? profile.gender}　</span>}
             {(((application.user_data as any)?.phone || matchProfile?.phone)) && <span>手机号：{(application.user_data as any)?.phone || matchProfile?.phone}</span>}
           </div>

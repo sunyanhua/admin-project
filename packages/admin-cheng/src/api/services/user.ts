@@ -1,6 +1,7 @@
 import request from '..';
 import type {
   AdminUserDetailResponse,
+  AdminUserPrivacyResponse,
   AuditMatchProfileRequest,
   AdminUpdateBasicProfileRequest,
   CommunityUserItem,
@@ -16,6 +17,11 @@ export const userApi = {
   /** 用户详情 — GET /admin/v1/bizops/user/:id */
   getUserDetail: (id: string | number): Promise<AdminUserDetailResponse> => {
     return request.get(`/admin/v1/bizops/user/${id}`);
+  },
+
+  /** 用户隐私数据 — POST /admin/v1/bizops/user/privacy/:id（脱敏身份证号，读取留痕；body 传空对象） */
+  getUserPrivacy: (id: string | number): Promise<AdminUserPrivacyResponse> => {
+    return request.post(`/admin/v1/bizops/user/privacy/${id}`, {});
   },
 
   /** 修改用户基础资料 — PUT /admin/v1/bizops/user/:id/profile */
