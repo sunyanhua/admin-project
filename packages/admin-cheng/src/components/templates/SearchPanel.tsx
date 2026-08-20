@@ -80,7 +80,14 @@ export const SearchPanel: React.FC<SearchPanelProps> = ({
               name={filter.name}
               placeholder={filter.placeholder}
               value={values[filter.name]}
-              onChange={(e) => onChange(filter.name, e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                onChange(filter.name, next);
+                // 点击 × 清空关键词时自动重新加载名单
+                if (next === '' && values[filter.name]) {
+                  onSearch({ ...values, [filter.name]: '' });
+                }
+              }}
               onKeyPress={handleKeyPress}
               allowClear
               style={{ width: inputWidth }}

@@ -19,6 +19,8 @@ import type {
   CommunityWalletSummary,
 } from '@/api/types/user';
 import RealNameWithTag from '@/components/user/RealNameWithTag';
+import IdCardViewButton from '@/components/user/IdCardViewButton';
+import MatchRecommendButton from '@/components/user/MatchRecommendButton';
 
 const { Text } = Typography;
 
@@ -32,6 +34,8 @@ export interface CommunityUserDetailProps {
   extraSections?: { title: ReactNode; items: { label: string; value: ReactNode; span?: number }[] }[];
   onEditProfile?: () => void;
   onAuditProfile?: () => void;
+  /** 推荐设置成功后回调（刷新详情数据） */
+  onRecommendSuccess?: () => void;
 }
 
 const BLOOD_MAP: Record<number, string> = { 1: 'A', 2: 'B', 3: 'AB', 4: 'O' };
@@ -99,7 +103,7 @@ function MatchCodeTitle({ code }: { code: string }) {
 }
 
 export function buildUserDetailSections(props: CommunityUserDetailProps) {
-  const { user, profile, matchProfile, wallet, extraSections, onEditProfile, onAuditProfile } = props;
+  const { user, profile, matchProfile, wallet, extraSections, onEditProfile, onAuditProfile, onRecommendSuccess } = props;
 
   const sections: { title: ReactNode; items: { label: string; value: ReactNode; span?: number }[] }[] = [
     // ====== 基础资料 ======
@@ -143,7 +147,16 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
   // ====== 脱单资料（有数据才显示） ======
   if (matchProfile) {
     sections.push({
-      title: <MatchCodeTitle code={matchProfile.match_code} />,
+      title: (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+          <MatchCodeTitle code={matchProfile.match_code} />
+          <MatchRecommendButton
+            userId={user.user_id}
+            recommendExpireAt={matchProfile.recommend_expire_at}
+            onSuccess={onRecommendSuccess}
+          />
+        </div>
+      ),
       items: [
         {
           label: '姓名',
@@ -151,8 +164,6 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
             <RealNameWithTag
               name={matchProfile.real_name}
               verified={matchProfile.is_real_verified}
-              userId={user.user_id}
-              clickable
               full
             />
           ),
@@ -170,6 +181,8 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '户籍', value: matchProfile.household_registration || '-', span: 1 },
         { label: '家乡', value: matchProfile.hometown || '-', span: 1 },
         { label: '工作单位', value: matchProfile.workplace || '-', span: 1 },
+        { label: '毕业学校', value: matchProfile.graduate || '-', span: 1 },
+        { label: '身份证号', value: <IdCardViewButton userId={user.user_id} />, span: 1 },
         { label: '收入范围', value: matchProfile.income_range != null ? INCOME_RANGE_MAP[matchProfile.income_range] : '-', span: 1 },
         { label: '照片', value: matchProfile.photos?.length ? (
           <Image.PreviewGroup>

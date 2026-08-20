@@ -142,7 +142,7 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
       title={isCreate ? '添加角色' : '编辑角色'}
       open={visible}
       onCancel={handleCancel}
-      width={560}
+      width={720}
       destroyOnHidden
       footer={
         <Space>

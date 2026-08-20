@@ -58,6 +58,10 @@ export interface CommunityMatchProfileSummary {
   id_card_tail: string | null;
   /** 是否实名认证 */
   is_real_verified?: boolean;
+  /** 毕业学校 */
+  graduate?: string;
+  /** 运营推荐截止时间（null=未推荐；过期保留展示，是否推荐中需与当前时间比较） */
+  recommend_expire_at?: string | null;
   blood_type: number;
   ethnicity: string;
   household_registration: string;
@@ -187,6 +191,14 @@ export interface AdminUserPrivacyListResponse {
   total: number;
   /** 本次读取水印 ID（审计日志关联） */
   watermark_id?: string;
+}
+
+/** 设置/取消脱单资料推荐请求 — PATCH /admin/v1/bizops/user/{id}/match-profile/recommend */
+export interface AdminSetMatchProfileRecommendRequest {
+  /** 变更原因（必填，写入审计日志） */
+  reason: string;
+  /** 推荐截止时间 RFC3339；null/省略 = 取消推荐 */
+  recommend_expire_at?: string | null;
 }
 
 /** 管理员修改 C 端用户基础资料请求 */

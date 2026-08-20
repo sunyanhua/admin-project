@@ -6358,7 +6358,7 @@
         },
         "/admin/v1/bizops/user": {
             "get": {
-                "description": "分页查询 C 端用户列表，支持性别、年龄、审核状态、迁移/激活/完善/状态/显示状态/专区等条件筛选，手机号脱敏返回。传入 visibility 或 zone_id 时结果集隐含收敛为已提交脱单档案的用户。",
+                "description": "分页查询 C 端用户列表，支持性别、年龄、审核状态、迁移/激活/完善/状态/显示状态/专区/运营推荐等条件筛选，手机号脱敏返回。传入 visibility、zone_id 或 is_recommended=true 时结果集隐含收敛为已提交脱单档案的用户（is_recommended=false 不收敛，未提交档案者亦属未推荐）。",
                 "produces": [
                     "application/json"
                 ],
@@ -6455,6 +6455,12 @@
                         "type": "string",
                         "description": "专区 ID（UUID）",
                         "name": "zone_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "运营推荐筛选：true=推荐生效中 false=未推荐或已过期",
+                        "name": "is_recommended",
                         "in": "query"
                     }
                 ],
@@ -6904,6 +6910,89 @@
                     },
                     "400": {
                         "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "脱单档案不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/{id}/match-profile/recommend": {
+            "patch": {
+                "description": "设置脱单资料的推荐有效截止时间。截止时间之前，该档案在 C 端 GET /api/v1/user/match-profile/random 中优先返回，且推荐档案之间按截止时间正序（先到期者排前），其余档案随机。recommend_expire_at 传 null 或省略即取消推荐；传入时间必须晚于当前时间。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-用户模块"
+                ],
+                "summary": "设置/取消脱单资料推荐",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "推荐设置请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminSetMatchProfileRecommendRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功，返回落库后的截止时间",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminSetMatchProfileRecommendResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误或截止时间早于当前时间",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -22023,6 +22112,10 @@
                 "real_name": {
                     "type": "string"
                 },
+                "recommend_expire_at": {
+                    "description": "RecommendExpireAt 运营推荐有效截止时间（null=未设置推荐）。\n该时间之前，本档案在 C 端随机接口优先展示；已过期的时间值会保留展示，\n是否仍在推荐期由调用方与当前时间比较判断。",
+                    "type": "string"
+                },
                 "self_intro": {
                     "type": "string"
                 },
@@ -22081,6 +22174,30 @@
                     "type": "string"
                 },
                 "zodiac": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminSetMatchProfileRecommendRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "description": "Reason 变更原因，写入数据变更日志（与同族的资料编辑/审核状态接口一致，必填）。",
+                    "type": "string"
+                },
+                "recommend_expire_at": {
+                    "description": "RecommendExpireAt 推荐有效截止时间，RFC3339 格式（如 \"2026-09-01T00:00:00Z\"）。\n\n三态语义：\n  - 合法时间串 → 推荐至该时刻，必须晚于当前时间（service 层校验）\n  - 显式 null   → 取消推荐（recommend_expire_at 置 NULL）\n  - 字段缺省    → 与 null 等价：本接口只承载「推荐」这一个语义，\n                 不存在「保持不变」态，缺省即表达取消\n\n*string 而非 *time.Time：与 AdminUpdateBasicProfileRequest.BirthDate 一致，\n由 service 层经 timeutil.ParseRFC3339 解析并给出可读的参数错误。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminSetMatchProfileRecommendResponse": {
+            "type": "object",
+            "properties": {
+                "recommend_expire_at": {
                     "type": "string"
                 }
             }
@@ -22375,6 +22492,10 @@
                     "type": "boolean"
                 },
                 "is_migrated": {
+                    "type": "boolean"
+                },
+                "is_recommended": {
+                    "description": "IsRecommended 运营推荐筛选：true=推荐生效中（recommend_expire_at > now），\nfalse=未推荐或已过期（含未提交脱单档案的用户，见 applyAdminUserListFilters 说明）。",
                     "type": "boolean"
                 },
                 "keyword": {

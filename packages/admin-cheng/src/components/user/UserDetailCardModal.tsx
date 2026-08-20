@@ -37,8 +37,9 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
   const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<CommunityUserItem | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  // 打开时按 userId 拉取最新数据
+  // 打开时按 userId 拉取最新数据（reloadKey 变化时重新拉取，如推荐设置成功）
   useEffect(() => {
     if (!visible || !userId) {
       setDetail(null);
@@ -60,7 +61,7 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
         showError(err?.response?.data?.message || '获取用户资料失败');
       })
       .finally(() => setLoading(false));
-  }, [visible, userId]);
+  }, [visible, userId, reloadKey]);
 
   return (
     <DetailModal
@@ -81,6 +82,7 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
           wallet: item.wallet,
           onEditProfile,
           onAuditProfile,
+          onRecommendSuccess: () => setReloadKey(k => k + 1),
         });
       }}
     />

@@ -1,5 +1,6 @@
 import request from '..';
 import type {
+  AdminSetMatchProfileRecommendRequest,
   AdminUserDetailResponse,
   AdminUserPrivacyResponse,
   AuditMatchProfileRequest,
@@ -59,6 +60,11 @@ export const userApi = {
   /** 审核脱单档案 — PUT /admin/v1/bizops/user/match-profile/:id/audit */
   auditMatchProfile: (id: string | number, data: AuditMatchProfileRequest) => {
     return request.put(`/admin/v1/bizops/user/match-profile/${id}/audit`, data);
+  },
+
+  /** 设置/取消脱单资料推荐 — PATCH /admin/v1/bizops/user/:id/match-profile/recommend */
+  setMatchProfileRecommend: (id: string | number, data: AdminSetMatchProfileRecommendRequest) => {
+    return request.patch(`/admin/v1/bizops/user/${id}/match-profile/recommend`, data);
   },
 
   /** 用户状态切换 — PATCH /admin/v1/bizops/user/:id/status（占位） */

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, Tag, Avatar } from 'antd';
-import { ExportOutlined } from '@ant-design/icons';
+import { ExportOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import { userApi } from '@/api/services/user';
@@ -223,6 +223,7 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
           <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
           <Space style={{ marginLeft: 12, flexShrink: 0 }}>
             <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+            <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
           </Space>
         </div>
         <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange}
