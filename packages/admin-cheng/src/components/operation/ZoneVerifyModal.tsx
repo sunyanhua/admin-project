@@ -105,7 +105,7 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
         const fc = typeof zoneData?.form_config === 'string' ? JSON.parse(zoneData.form_config) : zoneData?.form_config;
         if (Array.isArray(fc)) formFields = fc.map((f: any) => ({ id: f.id, label: f.label }));
       } catch { /* ignore */ }
-      const headers = ['用户名', '姓名', '性别', '手机号', '审核状态', '拒绝原因', '申请时间'];
+      const headers = ['用户名', '姓名', '性别', '手机号', '认证状态', '拒绝原因', '申请时间'];
       formFields.forEach(f => headers.push(f.label));
       const rows: string[][] = [];
       for (const item of allData) {
@@ -224,7 +224,7 @@ const ZoneVerifyModal: React.FC<ZoneVerifyModalProps> = ({ visible, zoneId, zone
         return phone || <span style={{ color: '#999' }}>-</span>;
       },
     },
-    statusTagColumn<Application>('status', STATUS_MAP, '审核状态', 100),
+    statusTagColumn<Application>('status', STATUS_MAP, '认证状态', 100),
     dateTimeColumn<Application>('created_at', '申请时间'),
     {
       title: '操作', key: 'action', width: 140, fixed: 'right' as const,

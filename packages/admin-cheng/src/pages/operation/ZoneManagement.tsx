@@ -148,7 +148,12 @@ const ZoneManagement = () => {
       dataIndex: 'member_count',
       key: 'member_count',
       width: 90,
-      render: (count?: number) => count ?? 0,
+      render: (count: number | undefined, record: Zone) => (
+        <Button type="link" size="small" icon={<TeamOutlined />} style={{ padding: 0, height: 'auto' }}
+          onClick={() => handleShowUsers(record)}>
+          {count ?? 0}
+        </Button>
+      ),
     },
     statusSwitchColumn<Zone>('status', ZoneStatus.ENABLED, ZoneStatus.DISABLED, handleStatusToggle, '启用', '停用', 100),
     dateTimeColumn<Zone>('created_at', '创建时间'),
@@ -156,9 +161,6 @@ const ZoneManagement = () => {
       onEdit: (record) => handleEdit(record),
       render: (record: Zone) => (
         <Space size="small" className="action-buttons">
-          <Button type="link" size="small" icon={<TeamOutlined />} onClick={() => handleShowUsers(record)}>
-            用户
-          </Button>
           <Button type="link" size="small" icon={<SafetyCertificateOutlined />} onClick={() => handleVerify(record)}>
             认证
           </Button>
