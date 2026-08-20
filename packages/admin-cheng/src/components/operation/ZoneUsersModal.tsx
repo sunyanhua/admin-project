@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, Tag, Avatar } from 'antd';
+import { ExportOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import * as XLSX from 'xlsx';
 import { userApi } from '@/api/services/user';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -37,9 +40,11 @@ interface ZoneUsersModalProps {
 }
 
 const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneName, onClose }) => {
+  const { success, error: showError } = useAppNotification();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const fetchUsers = useCallback(async (params: any) => {
     if (!zoneId) return { list: [], total: 0 };
@@ -76,6 +81,57 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
   const handleSearchChange = (name: string, value: any) => setSearchValues(p => ({ ...p, [name]: value }));
   const handleSearch = (vals: Record<string, any>) => search(vals);
   const handleReset = () => { setSearchValues({}); search({}); };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // 循环分页拉取全部专区用户
+      const allData: CommunityUserItem[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await userApi.getUsers({ page, size: 100, zone_id: zoneId, has_match_profile: true });
+        const list: CommunityUserItem[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        allData.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      // 批量拉取脱敏身份证号（隐私接口，读取留痕）
+      const userIds = allData.map(i => i.user.user_id).filter(Boolean);
+      const idCardMap = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
+
+      const headers = ['用户名', '姓名', '身份证号', '手机号', '性别', '年龄', '婚姻状况', '人气值', '审核状态', '脱单资料状态'];
+      const rows: string[][] = [];
+      for (const record of allData) {
+        const mp = record.match_profile;
+        const ds = getDisplayStatus(mp);
+        const audit = mp?.audit_status;
+        const a = AUDIT_MAP[audit ?? -1] || { color: 'default', text: '-' };
+        rows.push([
+          record.profile.nickname || '-',
+          mp?.real_name || '',
+          idCardMap[record.user.user_id] || '',
+          record.user.phone || '',
+          UserGenderLabels[record.profile.gender] || '',
+          String(record.profile.age ?? ''),
+          mp ? (MaritalStatusLabels[mp.marital_status] || '') : '',
+          String(mp?.popularity ?? ''),
+          a.text,
+          ds.text,
+        ]);
+      }
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = headers.map(() => ({ wch: 20 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '专区用户');
+      XLSX.writeFile(wb, `${zoneName}_用户名单.xlsx`);
+      success('导出成功');
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const filters: FilterConfig[] = [
     { name: 'keyword', placeholder: '搜索昵称、姓名或手机号', type: 'input' },
@@ -163,8 +219,11 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
         width={1050}
         footer={false}
       >
-        <div style={{ marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
+          <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+            <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+          </Space>
         </div>
         <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange}
           scroll={{ x: 900 }} rowKey={(r: CommunityUserItem) => r.user.user_id} />

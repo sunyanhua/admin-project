@@ -24,6 +24,33 @@ export const userApi = {
     return request.post(`/admin/v1/bizops/user/privacy/${id}`, {});
   },
 
+  /**
+   * 批量查询脱敏身份证号 — POST /admin/v1/bizops/user/privacy（ids 筛选）
+   * ids 分块请求（每块 50），块内按 size=100 分页，返回 userId → 身份证号 映射。
+   * 失败时抛错由调用方处理（避免静默缺失身份证号列）。
+   */
+  getUserPrivacyBatch: async (ids: (string | number)[]): Promise<Record<string, string>> => {
+    const map: Record<string, string> = {};
+    const CHUNK_SIZE = 50;
+    const PAGE_SIZE = 100;
+    for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + CHUNK_SIZE);
+      let page = 1;
+      while (true) {
+        const res: any = await request.post('/admin/v1/bizops/user/privacy', { ids: chunk, page, size: PAGE_SIZE });
+        const items: AdminUserPrivacyResponse[] = Array.isArray(res) ? res : (res?.items || []);
+        if (!items.length) break;
+        for (const it of items) {
+          if (it.user_id && it.id_card) map[it.user_id] = it.id_card;
+        }
+        const total: number = res?.total ?? 0;
+        if (items.length < PAGE_SIZE || (total > 0 && page * PAGE_SIZE >= total)) break;
+        page++;
+      }
+    }
+    return map;
+  },
+
   /** 修改用户基础资料 — PUT /admin/v1/bizops/user/:id/profile */
   updateBasicProfile: (id: string | number, data: AdminUpdateBasicProfileRequest) => {
     return request.put(`/admin/v1/bizops/user/${id}/profile`, data);

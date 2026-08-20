@@ -181,6 +181,14 @@ export interface AdminUserPrivacyResponse {
   watermark_id?: string;
 }
 
+/** 用户隐私数据列表 — POST /admin/v1/bizops/user/privacy */
+export interface AdminUserPrivacyListResponse {
+  items: AdminUserPrivacyResponse[];
+  total: number;
+  /** 本次读取水印 ID（审计日志关联） */
+  watermark_id?: string;
+}
+
 /** 管理员修改 C 端用户基础资料请求 */
 export interface AdminUpdateBasicProfileRequest {
   nickname?: string;

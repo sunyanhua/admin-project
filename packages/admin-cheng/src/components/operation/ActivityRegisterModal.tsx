@@ -14,6 +14,7 @@ import {
 import { MaritalStatusLabels, EducationLabels } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
+import { userApi } from '@/api/services/user';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
@@ -100,7 +101,11 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         if (list.length < 100) break;
         page++;
       }
-      const headers = ['用户名', '姓名', '性别', '年龄', '手机号', '婚姻状况', '学历', '户籍', '单位'];
+      // 批量拉取脱敏身份证号（隐私接口，读取留痕）
+      const userIds = allData.map(i => i.user_id).filter(Boolean);
+      const idCardMap = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
+
+      const headers = ['用户名', '姓名', '身份证号', '性别', '年龄', '手机号', '婚姻状况', '学历', '户籍', '单位'];
       if (isFreeFCFS) headers.push('报名状态');
       else if (isPaidFCFS) { headers.push('支付状态', '完成时间'); }
       else if (isFreeReview) { headers.push('审核状态', '拒绝原因', '报名时间'); }
@@ -130,7 +135,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           if (!attsByField[tag]) attsByField[tag] = [];
           attsByField[tag].push(att.url);
         }
-        const row = [nickname, name, genderLabel, String(age), phone, marital, edu, household, workplace];
+        const row = [nickname, name, idCardMap[item.user_id] || '', genderLabel, String(age), phone, marital, edu, household, workplace];
         if (isFreeFCFS) { row.push(FreeFCFSStatusLabels[item.pay_status] || String(item.pay_status)); }
         else if (isPaidFCFS) { row.push(RegisterPayStatusLabels[item.pay_status] || String(item.pay_status), completedAt); }
         else if (isFreeReview) { row.push(RegisterAuditStatusLabels[item.audit_status] || String(item.audit_status), item.audit_reason || '', createdAt); }
