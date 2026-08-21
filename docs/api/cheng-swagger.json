@@ -3569,6 +3569,50 @@
                 }
             }
         },
+        "/admin/v1/bizops/credits/weekly-rank/settle": {
+            "post": {
+                "description": "调度器未准确执行（周六 20:00 窗口错过/实例故障）时手动补发周排名结算。锚定最近一次已过去的周六 20:00 边界，与调度器同执行记录防重——本周期已成功结算过返回 42221。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-嗑学分"
+                ],
+                "summary": "补发执行周排名结算",
+                "responses": {
+                    "200": {
+                        "description": "补发执行成功（含空结算）",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_admin_model.CreditsSettleResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "422": {
+                        "description": "本周期已成功执行过周排名结算，不可重复补发",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/gift": {
             "get": {
                 "security": [
@@ -17920,6 +17964,31 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_admin_model.CreditsSettleResponse": {
+            "type": "object",
+            "properties": {
+                "divine_chances": {
+                    "description": "神助攻配发总次数",
+                    "type": "integer"
+                },
+                "divine_users": {
+                    "description": "神助攻配发命中人数",
+                    "type": "integer"
+                },
+                "exec_id": {
+                    "description": "执行记录主键（crypto.HashID 派生）",
+                    "type": "string"
+                },
+                "user_count": {
+                    "description": "结算上榜用户数（0 = 空结算）",
+                    "type": "integer"
+                },
+                "week_id": {
+                    "description": "结算周期 '2026-W34'（ISO 年-周）",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_admin_model.RoleAdminListItem": {
             "type": "object",
             "properties": {
@@ -24794,6 +24863,10 @@
                 "opinion_split_count": {
                     "type": "integer"
                 },
+                "reached_1314_count": {
+                    "description": "Reached1314Count 达到过 1314 的配对累计数（SET-ONCE 只增不减）。",
+                    "type": "integer"
+                },
                 "relatives_count": {
                     "type": "integer"
                 }
@@ -24936,6 +25009,10 @@
                     "type": "integer"
                 },
                 "workplace": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "description": "ZoneID 专区 ID（可空 UUID；未分配专区输出 null）。",
                     "type": "string"
                 }
             }
