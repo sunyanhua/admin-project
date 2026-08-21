@@ -48,21 +48,16 @@ export const wxaApi = {
   // 小程序码 & 短链
   // ========================
 
-  /** 生成小程序码 — POST /admin/v1/wxa/app/qrcode */
+  /** 生成小程序码 — POST /admin/v1/wxa/app/qrcode（scene 传原始数据 + encode=true 由服务端转码，返回 image_url 与 scene） */
   createQrcode: (data: {
     appid: string;
     page: string;
     scene: string;
-    encode?: boolean;
+    encode: boolean;
     width?: number;
     check_path?: boolean;
   }) => {
     return request.post('/admin/v1/wxa/app/qrcode', data);
-  },
-
-  /** 独立 scene 转码（返回 32 位短引用） — POST /admin/v1/wxa/app/scenes */
-  createScene: (data: { data: string; expiry?: string }) => {
-    return request.post('/admin/v1/wxa/app/scenes', data);
   },
 
   /** 生成小程序短链 — POST /admin/v1/wxa/app/shortlink */

@@ -49,35 +49,31 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
     setShortLink('');
     setQrLoading(true);
     try {
-      // 判断页面路径是否已有查询参数，决定 source 参数的连接方式
-      const hasQuery = basePage.includes('?');
-      const separator = hasQuery ? '&' : '?';
-      const fullData = sourceId === '' ? basePage : `${basePage}${separator}source=${sourceId}`;
+      // scene 参数：JSON 字符串（url 必带，source 选填）
+      const sceneData: { url: string; source?: string } = { url: basePage };
+      if (sourceId !== '') sceneData.source = sourceId;
 
-      // 1. 原始数据 → 32 位短引用（scene 落库）
-      const sceneRes: any = await wxaApi.createScene({ data: fullData });
-      const sceneRef = sceneRes?.id || '';
-      if (!sceneRef) throw new Error('scene 转码失败');
+      // 1. 直接生成小程序码：scene 传 JSON 字符串 + encode=true 转码（不再单独调用 scenes 接口）
+      const qrRes: any = await wxaApi.createQrcode({
+        appid: APPID,
+        page: RESOLVE_PAGE,
+        scene: JSON.stringify(sceneData),
+        encode: true,
+        width: 640,
+        check_path: false,
+      });
+      const sceneRef = qrRes?.scene || '';
+      if (!sceneRef) throw new Error('小程序码生成失败');
+      setQrcodeUrl(qrRes?.image_url || '');
 
       // 2. 展示统一解析页路径
       const path = `/${RESOLVE_PAGE}?scene=${sceneRef}`;
       setPagePath(path);
 
-      // 3. 小程序码：解析页 + 短引用（原生直传）
-      const qrRes: any = await wxaApi.createQrcode({
-        appid: APPID,
-        page: RESOLVE_PAGE,
-        scene: sceneRef,
-        encode: false,
-        width: 640,
-        check_path: false,
-      });
-      setQrcodeUrl(qrRes?.image_url || '');
-
-      // 4. 短链（page_url 需带 .html）
+      // 3. 短链（page_url 格式：/pages/source/index?scene={scene}）
       const linkRes: any = await wxaApi.createShortlink({
         appid: APPID,
-        page_url: `${RESOLVE_PAGE}.html?scene=${sceneRef}`,
+        page_url: `/${RESOLVE_PAGE}?scene=${sceneRef}`,
         is_permanent: false,
       });
       setShortLink(linkRes?.link || '');

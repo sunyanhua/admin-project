@@ -26,6 +26,10 @@ OldSun 自动同步会将外部代码同步到本仓库，可能覆盖本地未�
 
 ## 🔧 开发规范
 
+### 构建时机（强制遵守）
+
+**完成代码修改后禁止自动执行构建**（`npm run build:prod` / `build:test`）。只有用户明确要求"构建"时才执行构建。
+
 ### UI 消息提示（强制遵守，最高优先级）
 
 **禁止 `import { message } from 'antd'`。** 全站必须用 `useAppNotification` hook。这是反 Ant Design 官方文档习惯的硬约束——用错了不会报错，但消息静默不显示。

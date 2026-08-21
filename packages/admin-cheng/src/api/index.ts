@@ -73,7 +73,7 @@ export function clearCredentials() {
 
 let relayinTimer: ReturnType<typeof setTimeout> | null = null;
 
-async function doRelogin(): Promise<string | null> {
+async function tryReloginOnce(): Promise<string | null> {
   const creds = getStoredCredentials();
   if (!creds) return null;
   try {
@@ -93,7 +93,15 @@ async function doRelogin(): Promise<string | null> {
   return null;
 }
 
-function scheduleRelogin() {
+/** 重新登录：瞬时故障（网络抖动/限流）延迟 2s 重试一次 */
+async function doRelogin(): Promise<string | null> {
+  const token = await tryReloginOnce();
+  if (token) return token;
+  await new Promise((r) => setTimeout(r, 2000));
+  return tryReloginOnce();
+}
+
+export function scheduleRelogin() {
   if (relayinTimer) clearTimeout(relayinTimer);
   const expiry = getTokenExpiry();
   if (!expiry) return;
@@ -158,8 +166,15 @@ instance.interceptors.response.use(
     const originalRequest = error.config;
 
     // 401 → 用存储的凭据重新登录获取新 token（无 refresh 接口的替代方案）
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      if (!isRelogging) {
+    if (error.response?.status === 401) {
+      if (originalRequest._retry) {
+        // 已重试过一次仍 401（如多端登录互踢）→ 再完整重登一轮，成功则重试原请求
+        const secondToken = await doRelogin();
+        if (secondToken) {
+          originalRequest.headers.Authorization = `Bearer ${secondToken}`;
+          return instance(originalRequest);
+        }
+      } else if (!isRelogging) {
         originalRequest._retry = true;
         isRelogging = true;
         const newToken = await doRelogin();
@@ -189,16 +204,6 @@ instance.interceptors.response.use(
     }
 
     // 其他 HTTP 错误统一 reject
-    if (error.response) {
-      const { status } = error.response;
-      if (status === 401) {
-        cancelReloginScheduler();
-        clearTokens();
-        clearCredentials();
-        localStorage.removeItem(ADMIN_USER_KEY);
-        window.location.href = window.location.pathname + '#/login';
-      }
-    }
     return Promise.reject(error);
   },
 );

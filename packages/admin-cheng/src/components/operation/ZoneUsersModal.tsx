@@ -5,6 +5,7 @@ import { ExportOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import { userApi } from '@/api/services/user';
+import { zoneApi } from '@/api/services/zone';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
@@ -100,14 +101,39 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
       const userIds = allData.map(i => i.user.user_id).filter(Boolean);
       const idCardMap = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
 
-      const headers = ['用户名', '姓名', '身份证号', '手机号', '性别', '年龄', '婚姻状况', '人气值', '审核状态', '脱单资料状态'];
+      // 专区认证申请表单配置（form_config：id + label）
+      let formFields: Array<{ id: string; label: string }> = [];
+      try {
+        const zoneRes: any = await zoneApi.getDetail(zoneId);
+        const fc = typeof zoneRes?.form_config === 'string' ? JSON.parse(zoneRes.form_config) : zoneRes?.form_config;
+        if (Array.isArray(fc)) formFields = fc.map((f: any) => ({ id: f.id, label: f.label }));
+      } catch { /* ignore */ }
+
+      // 认证接口拉取申请数据（user_id → 申请，取每个用户第一条）
+      const appMap = new Map<string, any>();
+      if (formFields.length > 0) {
+        let ap = 1;
+        while (true) {
+          const ares: any = await zoneApi.getApplications(zoneId, { page: ap, size: 100 });
+          const alist: any[] = Array.isArray(ares) ? ares : (ares?.list || []);
+          if (!alist.length) break;
+          for (const app of alist) {
+            if (app?.user_id && !appMap.has(app.user_id)) appMap.set(app.user_id, app);
+          }
+          if (alist.length < 100) break;
+          ap++;
+        }
+      }
+
+      const headers = ['用户名', '姓名', '身份证号', '手机号', '性别', '年龄', '婚姻状况', '工作单位', '人气值', '审核状态', '脱单资料状态'];
+      formFields.forEach(f => headers.push(f.label));
       const rows: string[][] = [];
       for (const record of allData) {
         const mp = record.match_profile;
         const ds = getDisplayStatus(mp);
         const audit = mp?.audit_status;
         const a = AUDIT_MAP[audit ?? -1] || { color: 'default', text: '-' };
-        rows.push([
+        const row = [
           record.profile.nickname || '-',
           mp?.real_name || '',
           idCardMap[record.user.user_id] || '',
@@ -115,10 +141,32 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
           UserGenderLabels[record.profile.gender] || '',
           String(record.profile.age ?? ''),
           mp ? (MaritalStatusLabels[mp.marital_status] || '') : '',
+          mp?.workplace || '',
           String(mp?.popularity ?? ''),
           a.text,
           ds.text,
-        ]);
+        ];
+        // 认证表单字段：无认证信息或与申请表单配置不符 → 留空忽略
+        const app = appMap.get(record.user.user_id);
+        for (const f of formFields) {
+          let val = '';
+          if (app) {
+            let formDataMap: Record<string, any> = {};
+            try { formDataMap = JSON.parse(app.form_data || '{}'); } catch { /* ignore */ }
+            const attsByField: Record<string, string[]> = {};
+            for (const att of (app.attachments || [])) {
+              const tag = (att as any).tags || '';
+              if (!attsByField[tag]) attsByField[tag] = [];
+              attsByField[tag].push(att.url);
+            }
+            const parts: string[] = [];
+            if (formDataMap[f.id] != null) parts.push(String(formDataMap[f.id]));
+            parts.push(...(attsByField[f.id] || []));
+            val = parts.join(', ');
+          }
+          row.push(val);
+        }
+        rows.push(row);
       }
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
       ws['!cols'] = headers.map(() => ({ wch: 20 }));

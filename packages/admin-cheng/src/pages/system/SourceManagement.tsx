@@ -37,7 +37,7 @@ const STATS_COLORS = ['#1890ff', '#52c41a', '#722ed1', '#fa8c16', '#eb2f96', '#1
 
 interface SourceStatsModalProps {
   open: boolean;
-  sourceId: number;
+  sourceId: string;
   sourceName: string;
   onClose: () => void;
 }
@@ -172,7 +172,7 @@ const SourceManagement = () => {
   const { success, error: showError } = useAppNotification();
 
   // 单个来源统计弹窗
-  const [statsSourceId, setStatsSourceId] = useState(0);
+  const [statsSourceId, setStatsSourceId] = useState<string>('');
   const [statsSourceName, setStatsSourceName] = useState('');
   const [statsModalOpen, setStatsModalOpen] = useState(false);
 
@@ -219,7 +219,7 @@ const SourceManagement = () => {
       width: 90,
       render: (_: any, record: any) => (
         <Button type="link" size="small" onClick={() => openStats(record)}>
-          {record.report_total ?? record.reported_total ?? 0}
+          {record.report_count ?? 0}
         </Button>
       ),
     },
@@ -229,7 +229,7 @@ const SourceManagement = () => {
       width: 90,
       render: (_: any, record: any) => (
         <Button type="link" size="small" onClick={() => openStats(record)}>
-          {record.user_total ?? record.register_total ?? 0}
+          {record.registered_count ?? 0}
         </Button>
       ),
     },

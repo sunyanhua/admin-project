@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { authApi } from '@/api/services/auth';
-import { getAccessToken, setTokens, clearTokens, cancelReloginScheduler, storeCredentials, clearCredentials, ADMIN_USER_KEY } from '@/api';
+import { getAccessToken, setTokens, clearTokens, cancelReloginScheduler, scheduleRelogin, storeCredentials, clearCredentials, ADMIN_USER_KEY } from '@/api';
 
 interface MenuItem {
   name: string;
@@ -139,6 +139,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       ? Math.max(0, loginRes.expires_at - Math.floor(Date.now() / 1000))
       : 43200;
     setTokens(accessToken, '', expiresIn);
+    // 登录后立即启动到期前主动续期定时器（否则只能等请求 401 被动重登，容易跳登录页）
+    scheduleRelogin();
     storeCredentials(username, password);
 
     // 调用 profile 获取管理员完整信息
