@@ -70,10 +70,10 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
       const path = `/${RESOLVE_PAGE}?scene=${sceneRef}`;
       setPagePath(path);
 
-      // 3. 短链（page_url 格式：/pages/source/index?scene={scene}）
+      // 3. 短链（page_url 不带前导斜杠：pages/source/index?scene={scene}）
       const linkRes: any = await wxaApi.createShortlink({
         appid: APPID,
-        page_url: `/${RESOLVE_PAGE}?scene=${sceneRef}`,
+        page_url: `${RESOLVE_PAGE}?scene=${sceneRef}`,
         is_permanent: false,
       });
       setShortLink(linkRes?.link || '');

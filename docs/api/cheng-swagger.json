@@ -3569,6 +3569,46 @@
                 }
             }
         },
+        "/admin/v1/bizops/credits/weekly-rank/execs": {
+            "get": {
+                "description": "分页查看嗑学分周排名结算执行记录（含调度器自动执行与管理后台补发），按执行时间倒序。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-嗑学分"
+                ],
+                "summary": "周排名执行情况列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/credits/weekly-rank/settle": {
             "post": {
                 "description": "调度器未准确执行（周六 20:00 窗口错过/实例故障）时手动补发周排名结算。锚定最近一次已过去的周六 20:00 边界，与调度器同执行记录防重——本周期已成功结算过返回 42221。",
@@ -12778,7 +12818,7 @@
         },
         "/api/v1/wxa/auth/refresh": {
             "post": {
-                "description": "在令牌过期前 30 分钟窗口内刷新，返回全新 JWT。",
+                "description": "在令牌过期前 60 小时窗口内刷新（默认有效期 72 小时，签发 12 小时后可刷新），返回全新 JWT。",
                 "consumes": [
                     "application/json"
                 ],
@@ -15175,6 +15215,195 @@
                 }
             }
         },
+        "/api/v1/wxa/rank/gift": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "礼物榜 TOP N（period=week|total 默认 week；gender=male|female 可选；top_n 1-100 默认 100）。榜单数值=收礼人气；榜一卡片周榜实时聚合、总榜读上周六结算快照。发榜日期前返回空榜单。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "礼物榜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "周期 week=周榜 total=总榜（默认 week）",
+                        "name": "period",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "性别筛选 male|female（可选）",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "TOP N（1-100，默认 100）",
+                        "name": "top_n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.GiftRankResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/rank/matchmaking": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "牵线榜 TOP N（period=week|total 默认 week；sign=positive|negative 默认 positive；top_n 1-100 默认 100）。数值=嗑学分（撮合正分/拆散负分）；sign 仅为展示筛选，排序规则不随正负变化。发榜日期前返回空榜单。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "牵线榜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "周期 week=周榜 total=总榜（默认 week）",
+                        "name": "period",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "正榜 positive（>0）/负榜 negative（<0），默认 positive",
+                        "name": "sign",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "TOP N（1-100，默认 100）",
+                        "name": "top_n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.MatchmakingRankResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/rank/popularity": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "人气榜 TOP N（period=week|total 默认 week；gender=male|female 可选；top_n 1-100 默认 100）。发榜日期前返回空榜单。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "人气榜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "周期 week=周榜 total=总榜（默认 week）",
+                        "name": "period",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "性别筛选 male|female（可选）",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "TOP N（1-100，默认 100）",
+                        "name": "top_n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.PopularityRankResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/rec/help-select/:user_id": {
             "get": {
                 "security": [
@@ -16042,7 +16271,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "返回 TOP N 嗑学分周排行榜（按 credits_weekly DESC）+ 当前用户排名和上周排名。",
+                "description": "返回 TOP N 嗑学分周排行榜（三键排序，与结算同源）+ 当前用户排名和上周排名。",
                 "produces": [
                     "application/json"
                 ],
@@ -23133,6 +23362,55 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.GiftRankItem": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "gift_popularity": {
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "top_gifter": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.TopGifterCard"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.GiftRankResponse": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.GiftRankItem"
+                    }
+                },
+                "my_last_week_rank": {
+                    "description": "上次结算全量名次快照（仅 week 视图；total 恒 null）",
+                    "type": "integer"
+                },
+                "my_rank": {
+                    "description": "当前筛选视图内实时名次（未上榜 null）",
+                    "type": "integer"
+                },
+                "my_value": {
+                    "description": "本人数值（实时字段）",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_user_model.H5LoginRequest": {
             "type": "object",
             "required": [
@@ -23433,6 +23711,98 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.MatchmakingRankItem": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "credits": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.MatchmakingRankResponse": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.MatchmakingRankItem"
+                    }
+                },
+                "my_last_week_rank": {
+                    "description": "上次结算全量名次快照（仅 week 视图；total 恒 null）",
+                    "type": "integer"
+                },
+                "my_rank": {
+                    "description": "当前筛选视图内实时名次（未上榜 null）",
+                    "type": "integer"
+                },
+                "my_value": {
+                    "description": "本人数值（实时字段）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.PopularityRankItem": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "popularity": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.PopularityRankResponse": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.PopularityRankItem"
+                    }
+                },
+                "my_last_week_rank": {
+                    "description": "上次结算全量名次快照（仅 week 视图；total 恒 null）",
+                    "type": "integer"
+                },
+                "my_rank": {
+                    "description": "当前筛选视图内实时名次（未上榜 null）",
+                    "type": "integer"
+                },
+                "my_value": {
+                    "description": "本人数值（实时字段）",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_user_model.ProfileInfo": {
             "type": "object",
             "properties": {
@@ -23673,6 +24043,26 @@
                 },
                 "workplace": {
                     "description": "Workplace 工作单位。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.TopGifterCard": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
