@@ -153,6 +153,9 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
           <MatchRecommendButton
             userId={user.user_id}
             recommendExpireAt={matchProfile.recommend_expire_at}
+            auditStatus={matchProfile.audit_status}
+            isActive={matchProfile.is_active}
+            visibility={matchProfile.visibility}
             onSuccess={onRecommendSuccess}
           />
         </div>
@@ -180,7 +183,20 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '所在区县', value: matchProfile.current_city || '-', span: 1 },
         { label: '户籍', value: matchProfile.household_registration || '-', span: 1 },
         { label: '家乡', value: matchProfile.hometown || '-', span: 1 },
-        { label: '工作单位', value: matchProfile.workplace || '-', span: 1 },
+        {
+          label: '工作单位',
+          value: (
+            <Space size={4}>
+              <span>{matchProfile.workplace || '-'}</span>
+              {matchProfile.is_org_certified && (
+                <Tag color="green" icon={<SafetyCertificateOutlined />} title="单位已认证" style={{ marginInlineEnd: 0 }}>
+                  认证
+                </Tag>
+              )}
+            </Space>
+          ),
+          span: 1,
+        },
         { label: '毕业学校', value: matchProfile.graduate || '-', span: 1 },
         { label: '身份证号', value: <IdCardViewButton userId={user.user_id} />, span: 1 },
         { label: '收入范围', value: matchProfile.income_range != null ? INCOME_RANGE_MAP[matchProfile.income_range] : '-', span: 1 },

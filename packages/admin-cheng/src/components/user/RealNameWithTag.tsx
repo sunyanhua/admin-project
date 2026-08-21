@@ -11,10 +11,10 @@ interface RealNameWithTagProps {
 }
 
 /**
- * 姓名 + 实名认证标识（全站脱单用户列表统一组件）
+ * 姓名 + 认证标识（全站脱单用户列表统一组件）
  *
  * - is_real_verified 为 true 时在姓名同行后展示标识：列表为绿色认证图标，
- *   full 时（详情弹窗）显示完整"实名"文字标签。
+ *   full 时（详情弹窗）显示完整"认证"文字标签。
  */
 const RealNameWithTag: React.FC<RealNameWithTagProps> = ({ name, verified, full }) => {
   const nameNode = name ? <span>{name}</span> : <span style={{ color: '#999' }}>-</span>;
@@ -22,11 +22,11 @@ const RealNameWithTag: React.FC<RealNameWithTagProps> = ({ name, verified, full 
   if (!verified) return nameNode;
 
   const badge = full ? (
-    <Tag color="green" icon={<SafetyCertificateOutlined />} title="已实名" style={{ marginInlineEnd: 0 }}>
-      实名
+    <Tag color="green" icon={<SafetyCertificateOutlined />} title="已认证" style={{ marginInlineEnd: 0 }}>
+      认证
     </Tag>
   ) : (
-    <SafetyCertificateOutlined title="已实名" style={{ color: '#52c41a', fontSize: 14 }} />
+    <SafetyCertificateOutlined title="已认证" style={{ color: '#52c41a', fontSize: 14 }} />
   );
 
   return (

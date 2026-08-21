@@ -6,11 +6,18 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { userApi } from '@/api/services/user';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { dayjsToApi, parseApiTime } from '@/utils/format';
+import { MatchProfileAuditStatus, UserVisibility } from '@/api/types/status';
 
 interface MatchRecommendButtonProps {
   userId: string;
   /** 当前推荐截止时间（recommend_expire_at） */
   recommendExpireAt?: string | null;
+  /** 审核状态（MatchProfileAuditStatus） */
+  auditStatus?: number;
+  /** 是否在架（false=已退出） */
+  isActive?: boolean;
+  /** 可见范围（UserVisibility） */
+  visibility?: number;
   /** 设置成功后回调（用于刷新详情数据） */
   onSuccess?: () => void;
 }
@@ -19,7 +26,9 @@ interface MatchRecommendButtonProps {
  * 脱单资料推荐按钮：点击弹出推荐表单（推荐原因 + 推荐时间），
  * 提交 PATCH /admin/v1/bizops/user/{id}/match-profile/recommend 设置推荐截止时间。
  */
-const MatchRecommendButton: React.FC<MatchRecommendButtonProps> = ({ userId, recommendExpireAt, onSuccess }) => {
+const MatchRecommendButton: React.FC<MatchRecommendButtonProps> = ({
+  userId, recommendExpireAt, auditStatus, isActive, visibility, onSuccess,
+}) => {
   const { success, error: showError } = useAppNotification();
   const [visible, setVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -27,6 +36,16 @@ const MatchRecommendButton: React.FC<MatchRecommendButtonProps> = ({ userId, rec
 
   const activeExpire = parseApiTime(recommendExpireAt);
   const isRecommended = activeExpire ? activeExpire.isAfter(dayjs()) : false;
+
+  /** 不可推荐原因：待审核 / 仅专区可见或已隐藏 / 已退出 */
+  const getBlockReason = (): string | null => {
+    if (auditStatus === MatchProfileAuditStatus.PENDING) return '脱单资料待审核，无法推荐';
+    if (!isActive) return '用户已退出脱单资料，无法推荐';
+    if (visibility === UserVisibility.ZONE || visibility === UserVisibility.HIDE) {
+      return '脱单资料仅专区可见或已隐藏，无法推荐';
+    }
+    return null;
+  };
 
   // 不能选择早于当前时间的截止时间
   const disabledDate = (current: dayjs.Dayjs) => current && current < dayjs().startOf('day');
@@ -45,6 +64,11 @@ const MatchRecommendButton: React.FC<MatchRecommendButtonProps> = ({ userId, rec
   };
 
   const openModal = () => {
+    const blockReason = getBlockReason();
+    if (blockReason) {
+      showError(blockReason);
+      return;
+    }
     form.setFieldsValue({
       reason: '节目推荐',
       expire_at: isRecommended ? activeExpire : undefined,

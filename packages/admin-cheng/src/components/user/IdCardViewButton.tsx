@@ -50,7 +50,7 @@ const IdCardViewButton: React.FC<IdCardViewButtonProps> = ({ userId }) => {
         查看
       </Button>
       <ScrollableModal
-        title="实名认证信息"
+        title="身份证信息"
         open={visible}
         onCancel={() => setVisible(false)}
         width={460}

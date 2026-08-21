@@ -58,6 +58,8 @@ export interface CommunityMatchProfileSummary {
   id_card_tail: string | null;
   /** 是否实名认证 */
   is_real_verified?: boolean;
+  /** 是否单位/机构认证 */
+  is_org_certified?: boolean;
   /** 毕业学校 */
   graduate?: string;
   /** 运营推荐截止时间（null=未推荐；过期保留展示，是否推荐中需与当前时间比较） */
