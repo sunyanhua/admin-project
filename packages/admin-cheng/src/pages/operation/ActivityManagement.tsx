@@ -163,6 +163,10 @@ const ActivityManagement = () => {
       key: 'register',
       width: 120,
       render: (_: any, r: Activity) => {
+        // 审核模式：只显示报名总人数
+        if (r.activity_type === ActivityType.FREE_REVIEW) {
+          return r.registered_count ?? 0;
+        }
         if (r.gender_enabled) {
           return (
             <div>
