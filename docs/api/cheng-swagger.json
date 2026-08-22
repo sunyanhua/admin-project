@@ -3639,7 +3639,7 @@
                         }
                     },
                     "422": {
-                        "description": "本周期已成功执行过周排名结算，不可重复补发",
+                        "description": "周榜与总榜均未启用，无可结算内容",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -18196,6 +18196,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_admin_model.CreditsSettleResponse": {
             "type": "object",
             "properties": {
+                "credits_total_users": {
+                    "description": "嗑学分总排名计算人数（总榜未启用 0）",
+                    "type": "integer"
+                },
                 "divine_chances": {
                     "description": "神助攻配发总次数",
                     "type": "integer"
@@ -18208,12 +18212,32 @@
                     "description": "执行记录主键（crypto.HashID 派生）",
                     "type": "string"
                 },
+                "gift_total_users": {
+                    "description": "礼物总排名计算人数（总榜未启用 0）",
+                    "type": "integer"
+                },
+                "gift_weekly_users": {
+                    "description": "礼物周排名上榜人数（周榜未启用 0）",
+                    "type": "integer"
+                },
+                "popularity_total_users": {
+                    "description": "人气总排名计算人数（总榜未启用 0）",
+                    "type": "integer"
+                },
+                "popularity_weekly_users": {
+                    "description": "人气周排名上榜人数（周榜未启用 0）",
+                    "type": "integer"
+                },
+                "top_gifter_users": {
+                    "description": "总榜榜一计算人数（总榜未启用 0）",
+                    "type": "integer"
+                },
                 "user_count": {
-                    "description": "结算上榜用户数（0 = 空结算）",
+                    "description": "嗑学分周排名上榜人数（0 = 空结算）",
                     "type": "integer"
                 },
                 "week_id": {
-                    "description": "结算周期 '2026-W34'（ISO 年-周）",
+                    "description": "结算周期 '2026-W34'（日历年-周号，口径见 timeutil.WeekIDOf）",
                     "type": "string"
                 }
             }
@@ -23398,11 +23422,11 @@
                     }
                 },
                 "my_last_week_rank": {
-                    "description": "上次结算全量名次快照（仅 week 视图；total 恒 null）",
+                    "description": "上周结算名次快照（仅 week 视图；total 恒 null；结算范围=本周活跃用户）",
                     "type": "integer"
                 },
                 "my_rank": {
-                    "description": "当前筛选视图内实时名次（未上榜 null）",
+                    "description": "week=实时名次；total=结算总榜名次快照（未上榜 null，R12 修订）",
                     "type": "integer"
                 },
                 "my_value": {
@@ -23744,11 +23768,11 @@
                     }
                 },
                 "my_last_week_rank": {
-                    "description": "上次结算全量名次快照（仅 week 视图；total 恒 null）",
+                    "description": "上周结算名次快照（仅 week 视图；total 恒 null；结算范围=本周活跃用户）",
                     "type": "integer"
                 },
                 "my_rank": {
-                    "description": "当前筛选视图内实时名次（未上榜 null）",
+                    "description": "week=实时名次；total=结算总榜名次快照（未上榜 null，R12 修订）",
                     "type": "integer"
                 },
                 "my_value": {
@@ -23790,11 +23814,11 @@
                     }
                 },
                 "my_last_week_rank": {
-                    "description": "上次结算全量名次快照（仅 week 视图；total 恒 null）",
+                    "description": "上周结算名次快照（仅 week 视图；total 恒 null；结算范围=本周活跃用户）",
                     "type": "integer"
                 },
                 "my_rank": {
-                    "description": "当前筛选视图内实时名次（未上榜 null）",
+                    "description": "week=实时名次；total=结算总榜名次快照（未上榜 null，R12 修订）",
                     "type": "integer"
                 },
                 "my_value": {

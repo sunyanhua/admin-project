@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Tag, Avatar, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { EyeOutlined } from '@ant-design/icons';
+import { EyeOutlined, ReloadOutlined, TrophyOutlined } from '@ant-design/icons';
+import { useAppNotification } from '@/hooks/useAppNotification';
+import { useAuth } from '@/contexts/AuthContext';
 import { userApi } from '../../api/services/user';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
@@ -62,12 +64,16 @@ function getDisplayStatus(mp: CommunityUserItem['match_profile']): { text: strin
 }
 
 const MatchProfileManagement = () => {
+  const { success, error: showError } = useAppNotification();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.isRoot ?? false;
   const [values, setValues] = useState<Record<string, any>>({});
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailItem, setDetailItem] = useState<CommunityUserItem | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [auditProfileOpen, setAuditProfileOpen] = useState(false);
+  const [ranking, setRanking] = useState(false);
 
   const fetchUsers = useCallback(async (params: any) => {
     const displayFilter = params.display_status
@@ -96,6 +102,21 @@ const MatchProfileManagement = () => {
   const handleViewDetail = (record: CommunityUserItem) => {
     setDetailItem(record);
     setDetailModalOpen(true);
+  };
+
+  // 执行排名结算（嗑学分周榜）
+  const handleRank = async () => {
+    setRanking(true);
+    try {
+      const res: any = await userApi.settleWeeklyRank();
+      const weekId = res?.week_id ? `（${res.week_id}）` : '';
+      success(`排名结算成功${weekId}，上榜 ${res?.user_count ?? 0} 人`);
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '排名执行失败');
+    } finally {
+      setRanking(false);
+    }
   };
 
   const columns: ColumnsType<CommunityUserItem> = [
@@ -202,8 +223,6 @@ const MatchProfileManagement = () => {
       <StandardPage
         title="脱单资料管理"
         description="管理已提交脱单档案的用户，支持按审核状态和显示状态筛选，查看用户完整资料和脱单档案详情。"
-        showRefreshButton
-        onRefresh={refresh}
         searchArea={
           <SearchPanel
             filters={filters}
@@ -213,6 +232,14 @@ const MatchProfileManagement = () => {
             onReset={handleReset}
             inputWidth={240}
           />
+        }
+        extraActions={
+          <>
+            {isSuperAdmin && (
+              <Button icon={<TrophyOutlined />} loading={ranking} onClick={handleRank}>排名</Button>
+            )}
+            <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
+          </>
         }
         table={
           <StandardTable
