@@ -187,8 +187,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         status: statusEnabled ? ActivityV1Status.ENABLED : ActivityV1Status.DISABLED,
       };
 
-      // 所属专区：选择"无专区"时传 0
-      payload.zone_id = values.zone_id ?? 0;
+      // 所属专区：选择"无专区"时传空字符串
+      payload.zone_id = values.zone_id || '';
       if (values.gender_enabled != null) payload.gender_enabled = values.gender_enabled;
 
       if (needsSlots) {

@@ -15,7 +15,6 @@ interface AgreementTab {
 const AGREEMENT_TABS: AgreementTab[] = [
   { key: 'user', label: '用户协议', configKey: 'agreement_user', title: '用户协议' },
   { key: 'privacy', label: '隐私条款', configKey: 'agreement_privacy', title: '隐私条款' },
-  { key: 'safety', label: '安全提醒', configKey: 'agreement_safety', title: '安全提醒' },
 ];
 
 const AgreementManagement = () => {
