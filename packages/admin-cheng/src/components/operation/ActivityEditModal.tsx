@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Button, Space, Form, Input, Switch, Select, InputNumber, DatePicker } from 'antd';
+import { Button, Space, Form, Input, Switch, Select, InputNumber, DatePicker, Checkbox } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { ActivityV1Status, ActivityType, ActivityTypeLabels } from '@shared/constants';
 import { activityApi, Activity, CreateActivityRequest } from '@/api/services/activity-v1';
@@ -9,6 +9,14 @@ import MultiImageUpload from '@/components/common/MultiImageUpload';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
 import FormConfigEditor from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
+import { settingsApi, SettingItem } from '@/api/services/settings';
+import {
+  parseStoredValue,
+  parsePromiseIdsFromExtra,
+  EXTRA_PROMISE_KEY,
+  PROMISE_SETTING_KEY,
+  type PromiseTemplate,
+} from './promiseTemplate.utils';
 import dayjs, { Dayjs } from 'dayjs';
 import { dayjsToApi, safeDayjs } from '@/utils/format';
 
@@ -18,6 +26,8 @@ export interface ActivityEditModalProps {
   activity: Activity | null;
   onClose: () => void;
   onSuccess: () => void;
+  /** 打开「承诺书模版管理」弹窗的回调，用于子段「去配置」按钮 */
+  onOpenPromiseModal?: () => void;
 }
 
 const ACTIVITY_TYPE_OPTIONS = [
@@ -26,7 +36,7 @@ const ACTIVITY_TYPE_OPTIONS = [
   { label: ActivityTypeLabels[ActivityType.FREE_REVIEW], value: ActivityType.FREE_REVIEW },
 ];
 
-const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess }) => {
+const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess, onOpenPromiseModal }) => {
   const { success, error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [statusEnabled, setStatusEnabled] = useState(true);
@@ -34,12 +44,13 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const [activityType, setActivityType] = useState<number>(ActivityType.FREE_FCFS);
   const [genderEnabled, setGenderEnabled] = useState(false);
   const [zoneOptions, setZoneOptions] = useState<{ label: string; value: string }[]>([]);
+  const [promiseTemplates, setPromiseTemplates] = useState<PromiseTemplate[]>([]);
   const [form] = Form.useForm();
 
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: 0 };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: 0, promise_ids: [] };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -73,6 +84,18 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       setZoneOptions(list.map((z: Zone) => ({ label: z.name, value: z.id })));
     }).catch(() => setZoneOptions([]));
   }, []);
+
+  /** 加载 setting 接口中的承诺书模版列表（多选勾选的数据源） */
+  useEffect(() => {
+    if (!visible) return;
+    settingsApi.getSettings({ keyword: PROMISE_SETTING_KEY, size: 100 })
+      .then((res: any) => {
+        const list: SettingItem[] = res?.list ?? [];
+        const item = list.find((s) => s.key === PROMISE_SETTING_KEY);
+        setPromiseTemplates(item ? parseStoredValue(item.value) : []);
+      })
+      .catch(() => setPromiseTemplates([]));
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) return;
@@ -108,6 +131,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           female_slots: activity.female_slots ?? undefined,
           description: activity.description || '',
           form_config: activity.form_config || '',
+          promise_ids: parsePromiseIdsFromExtra(activity.extra_params),
           sort_order: activity.sort_order ?? 0,
         });
       }, 50);
@@ -117,6 +141,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       setStatusEnabled(true);
       setHidden(false);
       setGenderEnabled(false);
+      form.setFieldsValue({ promise_ids: [] });
     }
   }, [visible, mode, activity, form]);
 
@@ -135,6 +160,15 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
 
       const image = JSON.stringify(values.image || []);
 
+      // 承诺书：勾选的 id 查回完整模板对象，写入 extra_params.promise
+      const selectedIds: string[] = values.promise_ids || [];
+      const selectedTemplates = selectedIds
+        .map((id) => promiseTemplates.find((t) => t.id === id))
+        .filter((t): t is PromiseTemplate => !!t);
+      const extraParams = selectedTemplates.length > 0
+        ? JSON.stringify({ [EXTRA_PROMISE_KEY]: selectedTemplates })
+        : '{}';
+
       const payload: CreateActivityRequest = {
         title: values.title,
         cover: values.cover || '',
@@ -147,6 +181,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         register_end: dayjsToApi(registerEnd as Dayjs) || '',
         location,
         form_config: values.form_config || '',
+        extra_params: extraParams,
         require_match_profile: true,
         sort_order: values.sort_order ?? 0,
         status: statusEnabled ? ActivityV1Status.ENABLED : ActivityV1Status.DISABLED,
@@ -355,6 +390,39 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           </div>
           <Form.Item name="form_config" style={{ marginBottom: 0 }}>
             <FormConfigEditor />
+          </Form.Item>
+
+          <div style={{ height: 1, background: '#e8e8e8', margin: '16px 0' }} />
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>报名承诺书</div>
+          <div style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>
+            勾选后用户报名时需勾选对应承诺书才能提交，多选
+          </div>
+          <Form.Item name="promise_ids" style={{ marginBottom: 0 }}>
+            {promiseTemplates.length === 0 ? (
+              <div style={{ color: '#999', fontSize: 13 }}>
+                尚未配置任何承诺书模版
+                {onOpenPromiseModal && (
+                  <Button
+                    type="link"
+                    size="small"
+                    style={{ padding: '0 0 0 8px', height: 'auto' }}
+                    onClick={onOpenPromiseModal}
+                  >
+                    去配置
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <Checkbox.Group style={{ width: '100%' }}>
+                <Space direction="vertical" size={6} style={{ width: '100%' }}>
+                  {promiseTemplates.map((tpl) => (
+                    <Checkbox key={tpl.id} value={tpl.id}>
+                      {tpl.title}
+                    </Checkbox>
+                  ))}
+                </Space>
+              </Checkbox.Group>
+            )}
           </Form.Item>
         </div>
 

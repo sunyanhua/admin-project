@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EyeOutlined, EditOutlined, DeleteOutlined, FileTextOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
@@ -15,6 +15,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ActivityEditModal from '@/components/operation/ActivityEditModal';
 import ActivityRegisterModal from '@/components/operation/ActivityRegisterModal';
+import PromiseTemplateModal from '@/components/operation/PromiseTemplateModal';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 
 const STATUS_OPTIONS = [
@@ -37,6 +38,7 @@ const ActivityManagement = () => {
   const [registerActivityTitle, setRegisterActivityTitle] = useState('');
   const [registerActivityType, setRegisterActivityType] = useState<number>(0);
   const [registerFormConfig, setRegisterFormConfig] = useState<FormField[]>([]);
+  const [promiseModalVisible, setPromiseModalVisible] = useState(false);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchActivities = useCallback(async (params: any) => {
@@ -244,6 +246,11 @@ const ActivityManagement = () => {
         showAddButton
         onAdd={handleAdd}
         addButtonText="创建活动"
+        extraAddActions={
+          <Button icon={<FileTextOutlined />} onClick={() => setPromiseModalVisible(true)}>
+            承诺书模版管理
+          </Button>
+        }
         searchArea={
           <SearchPanel
             filters={filters}
@@ -270,6 +277,7 @@ const ActivityManagement = () => {
         activity={editingActivity}
         onClose={handleCloseModal}
         onSuccess={refresh}
+        onOpenPromiseModal={() => setPromiseModalVisible(true)}
       />
 
       <ActivityRegisterModal
@@ -279,6 +287,11 @@ const ActivityManagement = () => {
         activityType={registerActivityType}
         formConfig={registerFormConfig}
         onClose={() => setRegisterModalVisible(false)}
+      />
+
+      <PromiseTemplateModal
+        open={promiseModalVisible}
+        onClose={() => setPromiseModalVisible(false)}
       />
     </>
   );

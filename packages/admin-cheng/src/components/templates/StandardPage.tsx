@@ -14,6 +14,9 @@ export interface StandardPageProps {
   showAddButton?: boolean;
   onAdd?: () => void;
   addButtonText?: string;
+  /** 渲染在「创建」按钮右侧的额外操作（如「承诺书模版管理」等次级入口）。
+   *  仅在 `showAddButton && onAdd` 为 true 时才会渲染——若没有添加按钮，此槽位不显示。 */
+  extraAddActions?: ReactNode;
   showRefreshButton?: boolean;
   onRefresh?: () => void;
   refreshButtonText?: string;
@@ -28,6 +31,7 @@ export const StandardPage: React.FC<StandardPageProps> = ({
   showAddButton = false,
   onAdd,
   addButtonText = '添加',
+  extraAddActions,
   showRefreshButton = false,
   onRefresh,
   refreshButtonText = '刷新',
@@ -55,9 +59,12 @@ export const StandardPage: React.FC<StandardPageProps> = ({
     <Card>
       {showAddButton && onAdd && (
         <div style={{ marginBottom: 16 }}>
-          <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
-            {addButtonText}
-          </Button>
+          <Space>
+            <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+              {addButtonText}
+            </Button>
+            {extraAddActions}
+          </Space>
         </div>
       )}
       {table}
