@@ -13118,6 +13118,109 @@
                 }
             }
         },
+        "/api/v1/wxa/im/login": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取本人 IM 登录凭证（TIM SDK 登录三要素）。未开通时 login=false。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-IM"
+                ],
+                "summary": "IM 登录凭证",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.IMLoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/im/provision-status": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询自己所属配对的腾讯云 IM 开通状态；未开通且达标时自动触发开通（等待几秒后轮询本接口）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-IM"
+                ],
+                "summary": "IM 开通状态核实",
+                "parameters": [
+                    {
+                        "description": "couple_id：配对 ID（32 hex）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.ProvisionStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.ProvisionStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/login": {
             "post": {
                 "description": "通过 wx.login 返回的临时 code 换取 openid + session_key，签发 C 端 Wxa JWT。首次登录返回 is_new_user=true。",
@@ -15556,7 +15659,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "从 Redis 推荐缓存中分页获取当前用户的脱单候选用户列表。Cursor 由服务端 Redis 内部维护，前端无需传递分页游标。每次请求返回一页 RichCandidate（含完整公开画像 + 匹配度分数）。活跃用户缓存由定时调度器维护；非活跃用户首次访问时缓存可能不存在——此时自动触发按需异步构建，返回 40401 \"准备中，请稍后刷新\"。",
+                "description": "从 Redis 推荐缓存中分页获取当前用户的脱单候选用户列表。Cursor 由服务端 Redis 内部维护，前端无需传递分页游标。每次请求返回一页 RichCandidate（含完整公开画像 + 匹配度分数）。缓存由 API 触发按需异步构建（缓存未命中或翻页耗尽时自动触发）；构建隔离期（空白期）内不再重建，直接返回 40402。仅服务全开放（visibility=Full）且性别已设置的用户——专区用户与性别未设置用户同样返回 40402。",
                 "consumes": [
                     "application/json"
                 ],
@@ -15601,7 +15704,7 @@
                         }
                     },
                     "503": {
-                        "description": "推荐缓存构建中（code=40401）",
+                        "description": "推荐缓存构建中（code=40401）；构建隔离期内/无更多推荐/非全开放或性别未设置（code=40402）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -19874,6 +19977,52 @@
                 "user_id": {
                     "description": "他人 UUID",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.IMLoginResponse": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "description": "是否存在 v6_im_account 映射行",
+                    "type": "boolean"
+                },
+                "sdk_app_id": {
+                    "description": "SDKAppID（TIM SDK 登录参数）",
+                    "type": "string"
+                },
+                "user_id": {
+                    "description": "IM UserID（v6_im_account.im_user_id，32 hex）",
+                    "type": "string"
+                },
+                "user_sig": {
+                    "description": "端侧 UserSig（TLSSigAPIv2 签名）",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.ProvisionStatusRequest": {
+            "type": "object",
+            "required": [
+                "couple_id"
+            ],
+            "properties": {
+                "couple_id": {
+                    "description": "配对 ID（crypto.HashID(HashIDFormatCouple, ...) 32 hex）",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.ProvisionStatusResponse": {
+            "type": "object",
+            "properties": {
+                "partner_im_user_id": {
+                    "description": "对方 im_user_id（已开通时返回；未开通为 null）",
+                    "type": "string"
+                },
+                "provisioned": {
+                    "description": "双方映射行均存在（已开通）",
+                    "type": "boolean"
                 }
             }
         },
