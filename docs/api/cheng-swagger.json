@@ -13310,6 +13310,70 @@
                 }
             }
         },
+        "/api/v1/wxa/im/block/{user_id}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "设置当前用户与目标用户的 IM 关系状态（action：0=解除 1=屏蔽，覆盖更新）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-IM"
+                ],
+                "summary": "IM 屏蔽/解除",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID（UUID）",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "action：0=解除 1=屏蔽",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.BlockRelationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.BlockRelationResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/im/login": {
             "post": {
                 "security": [
@@ -13356,6 +13420,70 @@
                 }
             }
         },
+        "/api/v1/wxa/im/messages": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "通过对方 im_user_id 分页读取当前用户与对方的 IM 历史消息（最新在前）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-IM"
+                ],
+                "summary": "IM 消息列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "对方 im_user_id（32 hex）",
+                        "name": "peer",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.IMMessageListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/im/provision-status": {
             "post": {
                 "security": [
@@ -13363,7 +13491,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "查询自己所属配对的腾讯云 IM 开通状态；未开通且达标时自动触发开通（等待几秒后轮询本接口）。",
+                "description": "查询自己所属配对的腾讯云 IM 开通状态；未开通且达标时同步执行开通（失败提示重试，成功直接返回对方 im_user_id）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -13398,6 +13526,63 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.ProvisionStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/im/relations": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户的 IM 关系列表（含对方公开资料、im_user_id 与关系状态）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-IM"
+                ],
+                "summary": "IM 我的关系列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.IMRelationListResponse"
                                         }
                                     }
                                 }
@@ -13835,6 +14020,100 @@
                     },
                     "503": {
                         "description": "抽奖服务繁忙（code=40801）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/notice/count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "查询当前用户各场景未读计数（轨 B 计数场景：心动/关注/私信/礼物/1314/榜单）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "红点计数查询",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.NoticeCountResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/notice/read": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将指定场景未读计数清零（用户打开对应业务页面后调用）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "红点阅读重置",
+                "parameters": [
+                    {
+                        "description": "scene：计数场景（5-10）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.NoticeReadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -19940,6 +20219,36 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.BlockRelationRequest": {
+            "type": "object",
+            "required": [
+                "action"
+            ],
+            "properties": {
+                "action": {
+                    "description": "*int 指针而非 int 或 status.IMRelationAction：binding:\"required\" 对数值类型的\n零值 0 判为\"未提供\"（dto-typing 决策表），指针的 required 只检查 non-nil，\n允许 JSON 显式传入 0（=解除/允许）。",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.BlockRelationResponse": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IMRelationAction"
+                },
+                "blocked_at": {
+                    "type": "string"
+                },
+                "unblocked_at": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_im_model.IMLoginResponse": {
             "type": "object",
             "properties": {
@@ -19958,6 +20267,104 @@
                 "user_sig": {
                     "description": "端侧 UserSig（TLSSigAPIv2 签名）",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.IMMessageItem": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content 消息内容（文本直存；自定义消息为原始 JSON）。",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt 服务端落库时间（RFC3339，排序键）。",
+                    "type": "string"
+                },
+                "event_time": {
+                    "description": "EventTime 事件时间戳（Unix 秒，回调未携带时为 null，2026-08-24 老大需求）。",
+                    "type": "integer"
+                },
+                "from_im_user_id": {
+                    "description": "FromIMUserID 发送方 im_user_id（等于本人或对方的 im_user_id，前端据此判断方向）。",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID 消息主键（HashID(msg_key) 派生，32 hex）。",
+                    "type": "string"
+                },
+                "msg_id": {
+                    "description": "MsgID 腾讯侧消息 ID（回调未携带时为 null，2026-08-24 老大需求）。",
+                    "type": "string"
+                },
+                "msg_time": {
+                    "description": "MsgTime IM 侧发送时间戳（秒，无回调字段时为 null）。",
+                    "type": "integer"
+                },
+                "msg_type": {
+                    "description": "MsgType 消息类型（TIMTextElem 文本 / TIMCustomElem 自定义 / TIMTransElem 多段整体 JSON）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.IMMessageListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.IMMessageItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_pagination.OffsetPagination"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.IMRelationListItem": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "Action 关系状态（0=允许 1=屏蔽，状态式）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IMRelationAction"
+                        }
+                    ]
+                },
+                "blocked_at": {
+                    "description": "BlockedAt 最近屏蔽时间（从未屏蔽为 null）。",
+                    "type": "string"
+                },
+                "target_im_id": {
+                    "description": "TargetIMID 对方 im_user_id（开通建行时写入；屏蔽未开通目标时为 null）。",
+                    "type": "string"
+                },
+                "target_user_data": {
+                    "description": "TargetUserData 对方公开资料（pkg 共享 PublicProfile：user + profile 公开字段）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfile"
+                        }
+                    ]
+                },
+                "unblocked_at": {
+                    "description": "UnblockedAt 最近解除时间（从未解除为 null）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_im_model.IMRelationListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_im_model.IMRelationListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_pagination.OffsetPagination"
                 }
             }
         },
@@ -20917,6 +21324,54 @@
                 "status": {
                     "description": "可选同步更新状态",
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.NoticeCountItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "description": "Count 未读计数（无记录场景为 0）。",
+                    "type": "integer"
+                },
+                "scene": {
+                    "description": "Scene 通知场景（轨 B 计数场景类型化常量）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.NotificationScene"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.NoticeCountResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.NoticeCountItem"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.NoticeReadRequest": {
+            "type": "object",
+            "required": [
+                "scene"
+            ],
+            "properties": {
+                "scene": {
+                    "description": "Scene 通知场景（*int 指针——binding required 对数值零值判「未提供」，\n指针 required 只检查 non-nil；dto-typing 决策表）。\n合法值 5-10：Heartbeat/Follow/Message/Gift/Couple1314/RankAward。",
+                    "type": "integer",
+                    "enum": [
+                        5,
+                        6,
+                        7,
+                        8,
+                        9,
+                        10
+                    ]
                 }
             }
         },
@@ -25738,6 +26193,23 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_pagination.OffsetPagination": {
+            "type": "object",
+            "properties": {
+                "page": {
+                    "type": "integer"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_permission.PermissionNode": {
             "type": "object",
             "properties": {
@@ -26003,6 +26475,26 @@
                 "GiftTypeSpecial"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.IMRelationAction": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-comments": {
+                "IMRelationActionAllow": "允许（默认：开通时建立的关系行；解除=写回该值）",
+                "IMRelationActionBlock": "屏蔽"
+            },
+            "x-enum-descriptions": [
+                "允许（默认：开通时建立的关系行；解除=写回该值）",
+                "屏蔽"
+            ],
+            "x-enum-varnames": [
+                "IMRelationActionAllow",
+                "IMRelationActionBlock"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange": {
             "type": "integer",
             "format": "int32",
@@ -26217,6 +26709,62 @@
                 "MatchingChangeSourceOpinionHelpSelect",
                 "MatchingChangeSourceMigrated",
                 "MatchingChangeSourceDivine"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.NotificationScene": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10
+            ],
+            "x-enum-comments": {
+                "NotificationSceneActivityAudit": "活动报名审核",
+                "NotificationSceneCouple1314": "达成 1314",
+                "NotificationSceneFollow": "关注",
+                "NotificationSceneGift": "礼物",
+                "NotificationSceneHeartbeat": "心动",
+                "NotificationSceneMessage": "私信",
+                "NotificationSceneProfileAudit": "脱单资料审核",
+                "NotificationSceneRankAward": "榜单（获得神助攻）",
+                "NotificationSceneSubmissionAudit": "投稿审核",
+                "NotificationSceneZoneApplyAudit": "专区申请审核",
+                "NotificationSceneZoneCertAudit": "认证审核（专区认证）"
+            },
+            "x-enum-descriptions": [
+                "脱单资料审核",
+                "认证审核（专区认证）",
+                "投稿审核",
+                "专区申请审核",
+                "活动报名审核",
+                "心动",
+                "关注",
+                "私信",
+                "礼物",
+                "达成 1314",
+                "榜单（获得神助攻）"
+            ],
+            "x-enum-varnames": [
+                "NotificationSceneProfileAudit",
+                "NotificationSceneZoneCertAudit",
+                "NotificationSceneSubmissionAudit",
+                "NotificationSceneZoneApplyAudit",
+                "NotificationSceneActivityAudit",
+                "NotificationSceneHeartbeat",
+                "NotificationSceneFollow",
+                "NotificationSceneMessage",
+                "NotificationSceneGift",
+                "NotificationSceneCouple1314",
+                "NotificationSceneRankAward"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource": {
