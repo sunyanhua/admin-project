@@ -79,6 +79,23 @@ export function generateTemplateId(): string {
   return `tpl_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * 拖动排序：把 from 位置的元素移动到 to 位置，返回新数组（不可变）。
+ *
+ * 边界处理：
+ *   - from 与 to 相同 → 返回顺序相同的副本
+ *   - from / to 越界（含负数）→ 返回顺序相同的副本，不抛错
+ */
+export function reorderTemplates(templates: PromiseTemplate[], from: number, to: number): PromiseTemplate[] {
+  if (from === to || from < 0 || to < 0 || from >= templates.length || to >= templates.length) {
+    return [...templates];
+  }
+  const next = [...templates];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
 /** extra_params 字段中「承诺书」键名 */
 export const EXTRA_PROMISE_KEY = 'promise';
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, Empty, Input, Space, Spin, Typography } from 'antd';
-import { DeleteOutlined, EditOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditOutlined, HolderOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -10,6 +10,7 @@ import {
   parseStoredValue,
   serializeTemplates,
   generateTemplateId,
+  reorderTemplates,
   PROMISE_SETTING_KEY,
   PROMISE_SETTING_GROUP,
   type PromiseTemplate,
@@ -53,6 +54,25 @@ const PromiseTemplateModal: React.FC<PromiseTemplateModalProps> = ({ open, onClo
   // 编辑中的标题（受控，避免每次输入都触发列表 re-render）
   const [editingTitle, setEditingTitle] = useState('');
   const [editingContent, setEditingContent] = useState('');
+  // 拖动排序：dragIndex 为被拖动项索引，dragOverIndex 为当前悬停目标索引
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  /** 拖动结束（放下或取消）时清空拖拽状态 */
+  const resetDrag = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  /** 把被拖动项移动到目标卡片位置（drop 在卡片上 = 插入到该卡片位置） */
+  const handleDrop = (idx: number) => {
+    if (dragIndex === null || dragIndex === idx) {
+      resetDrag();
+      return;
+    }
+    setTemplates((prev) => reorderTemplates(prev, dragIndex, idx));
+    resetDrag();
+  };
 
   /** 拉取已保存的模板列表 */
   const fetchTemplates = useCallback(async () => {
@@ -244,16 +264,32 @@ const PromiseTemplateModal: React.FC<PromiseTemplateModalProps> = ({ open, onClo
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无模版，请添加" />
         ) : (
           <Space direction="vertical" size={12} style={{ width: '100%' }}>
+            <div style={{ fontSize: 12, color: '#999' }}>拖动卡片左侧手柄可调整模版排序</div>
             {templates.map((tpl, idx) => {
               const isEditing = editingId === tpl.id;
               return (
                 <div
                   key={tpl.id}
+                  onDragOver={(e) => {
+                    e.preventDefault(); // 允许放置
+                    e.dataTransfer.dropEffect = 'move';
+                    if (dragIndex !== null && dragIndex !== idx) setDragOverIndex(idx);
+                  }}
+                  onDragLeave={(e) => {
+                    // 离开卡片时清除悬停高亮（在子元素间移动不触发清除）
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setDragOverIndex((cur) => (cur === idx ? null : cur));
+                    }
+                  }}
+                  onDrop={() => handleDrop(idx)}
                   style={{
-                    border: '1px solid #e8e8e8',
+                    border: dragIndex === idx ? '1px dashed #1677ff' : '1px solid #e8e8e8',
                     borderRadius: 6,
                     background: isEditing ? '#fffbe6' : '#fafafa',
                     overflow: 'hidden',
+                    opacity: dragIndex === idx ? 0.5 : 1,
+                    // 整卡描边 = "落在该卡片位置"，方向无关（向上/向下拖语义一致）
+                    boxShadow: dragOverIndex === idx && dragIndex !== idx ? '0 0 0 2px #1677ff' : undefined,
                   }}
                 >
                   {/* 头部：标题 + 操作 */}
@@ -268,6 +304,26 @@ const PromiseTemplateModal: React.FC<PromiseTemplateModalProps> = ({ open, onClo
                     }}
                   >
                     <Space size={6}>
+                      <span
+                        draggable={!isEditing}
+                        onDragStart={(e) => {
+                          if (isEditing) return;
+                          // Firefox 需要 setData 才会触发拖拽
+                          e.dataTransfer.effectAllowed = 'move';
+                          e.dataTransfer.setData('text/plain', String(idx));
+                          setDragIndex(idx);
+                        }}
+                        onDragEnd={resetDrag}
+                        title={isEditing ? '编辑中不可拖动' : '拖动排序'}
+                        style={{
+                          cursor: isEditing ? 'not-allowed' : 'grab',
+                          color: isEditing ? '#d9d9d9' : '#999',
+                          display: 'inline-flex',
+                          padding: '4px 2px',
+                        }}
+                      >
+                        <HolderOutlined />
+                      </span>
                       <Text strong style={{ fontSize: 14 }}>
                         {tpl.title || `模版 ${idx + 1}`}
                       </Text>

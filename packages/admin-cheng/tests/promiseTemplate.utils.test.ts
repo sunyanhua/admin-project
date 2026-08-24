@@ -4,6 +4,7 @@ import {
   serializeTemplates,
   generateTemplateId,
   parsePromiseIdsFromExtra,
+  reorderTemplates,
   type PromiseTemplate,
 } from '@/components/operation/promiseTemplate.utils';
 
@@ -84,6 +85,55 @@ describe('generateTemplateId', () => {
 
   it('两次生成不同 id', () => {
     expect(generateTemplateId()).not.toBe(generateTemplateId());
+  });
+});
+
+describe('reorderTemplates', () => {
+  const list4 = (): PromiseTemplate[] => [
+    { id: 't1', title: '模版一', content: '内容一' },
+    { id: 't2', title: '模版二', content: '内容二' },
+    { id: 't3', title: '模版三', content: '内容三' },
+    { id: 't4', title: '模版四', content: '内容四' },
+  ];
+
+  it('从后往前拖动（from > to）', () => {
+    const result = reorderTemplates(list4(), 3, 1);
+    expect(result.map((t) => t.id)).toEqual(['t1', 't4', 't2', 't3']);
+  });
+
+  it('从前往后拖动（from < to）', () => {
+    const result = reorderTemplates(list4(), 0, 2);
+    expect(result.map((t) => t.id)).toEqual(['t2', 't3', 't1', 't4']);
+  });
+
+  it('拖到开头/末尾', () => {
+    expect(reorderTemplates(list4(), 2, 0).map((t) => t.id)).toEqual(['t3', 't1', 't2', 't4']);
+    expect(reorderTemplates(list4(), 1, 3).map((t) => t.id)).toEqual(['t1', 't3', 't4', 't2']);
+  });
+
+  it('from 与 to 相同时顺序不变', () => {
+    const list = list4();
+    const result = reorderTemplates(list, 1, 1);
+    expect(result).toEqual(list);
+    expect(result).not.toBe(list);
+  });
+
+  it('越界索引返回原顺序（不抛错）', () => {
+    expect(reorderTemplates(list4(), -1, 2)).toEqual(list4());
+    expect(reorderTemplates(list4(), 0, 99)).toEqual(list4());
+    expect(reorderTemplates(list4(), 99, 0)).toEqual(list4());
+  });
+
+  it('返回新数组，不修改原数组', () => {
+    const list = list4();
+    const result = reorderTemplates(list, 2, 0);
+    expect(result).not.toBe(list);
+    expect(list.map((t) => t.id)).toEqual(['t1', 't2', 't3', 't4']);
+  });
+
+  it('空数组/单元素数组安全', () => {
+    expect(reorderTemplates([], 0, 0)).toEqual([]);
+    expect(reorderTemplates([list4()[0]], 0, 0)).toEqual([list4()[0]]);
   });
 });
 
