@@ -200,6 +200,11 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         }
       }
 
+      // 审核模式：表单不展示人数限制，默认报名人数限制 999
+      if (activityType === ActivityType.FREE_REVIEW) {
+        payload.slots = 999;
+      }
+
       if (activityType === ActivityType.PAID_FCFS && values.fee != null) {
         payload.fee = Math.round(values.fee * 100);
       } else {

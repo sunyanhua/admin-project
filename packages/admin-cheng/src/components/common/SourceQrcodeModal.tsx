@@ -49,8 +49,8 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
     setShortLink('');
     setQrLoading(true);
     try {
-      // scene 参数：JSON 字符串（url 必带，source 选填）
-      const sceneData: { url: string; source?: string } = { url: basePage };
+      // scene 参数：JSON 字符串（url 必带，source 选填）；url 统一带前导斜杠（全站统一）
+      const sceneData: { url: string; source?: string } = { url: basePage.startsWith('/') ? basePage : `/${basePage}` };
       if (sourceId !== '') sceneData.source = sourceId;
 
       // 1. 直接生成小程序码：scene 传 JSON 字符串 + encode=true 转码（不再单独调用 scenes 接口）
