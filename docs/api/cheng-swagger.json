@@ -12032,6 +12032,62 @@
                 }
             }
         },
+        "/api/v1/pair/couple/{id}": {
+            "get": {
+                "description": "无需认证，按 couple ID 查询配对详情（含 couple 统计 + 男女双方完整公开画像 + 神助攻牵线人资料）。任一方画像不可公开（退出/隐藏/未审核/停用）时返回 404。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口"
+                ],
+                "summary": "公开配对详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "couple ID（VARCHAR(32) HashID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.CoupleResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "记录不存在（code=40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/pair/couples/random": {
             "get": {
                 "description": "无需认证，随机返回 N 条 matching > 0 的配对（含 couple 统计 + 男女双方完整公开画像）。双方中任一退出/隐藏/停用的配对自动过滤。",
@@ -21624,6 +21680,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_notification_model.NotificationListItem": {
             "type": "object",
             "properties": {
+                "biz_id": {
+                    "description": "BizID 业务关联 ID（与订阅消息页面地址参数一致，2026-08-25 老大定稿）：\n专区=zone_id（pages/zone/index?id=）/ 活动=activityID（pages/activity-detail/index?id=）；\n脱单/投稿页面无参数 → null。前端跳转直接用本值拼页面地址。",
+                    "type": "string"
+                },
                 "content": {
                     "description": "Content 内容。",
                     "type": "string"
