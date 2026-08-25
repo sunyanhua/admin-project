@@ -13427,7 +13427,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "通过对方 im_user_id 分页读取当前用户与对方的 IM 历史消息（最新在前）。",
+                "description": "通过对方 im_user_id 分页读取当前用户与对方的 IM 历史消息（msg_time/msg_seq/created_at 降序，最新在前；msg_time+msg_seq 成对作键集游标取更早消息）。",
                 "produces": [
                     "application/json"
                 ],
@@ -13445,7 +13445,19 @@
                     },
                     {
                         "type": "integer",
-                        "description": "页码（默认 1）",
+                        "description": "消息时间游标（Unix 秒，与 msg_seq 成对——取严格小于该游标的更早消息）",
+                        "name": "msg_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "消息序号游标（与 msg_time 成对）",
+                        "name": "msg_seq",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1；游标翻页时保持缺省）",
                         "name": "page",
                         "in": "query"
                     },
@@ -14034,7 +14046,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "查询当前用户各场景未读计数（轨 B 计数场景：心动/关注/私信/礼物/1314/榜单）。",
+                "description": "查询当前用户各场景未读计数（轨 B 计数场景 200-206：心动/关注/私信/礼物/1314/榜单 + 206 站内消息——v6_notification 明细统一计数；可选 scene_id 筛选）",
                 "produces": [
                     "application/json"
                 ],
@@ -14042,6 +14054,14 @@
                     "C端-通知"
                 ],
                 "summary": "红点计数查询",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "场景筛选：200 心动/201 关注/202 私信/203 礼物/204 1314/205 榜单/206 站内消息（不传=全部）",
+                        "name": "scene_id",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -14090,7 +14110,7 @@
                 "summary": "红点阅读重置",
                 "parameters": [
                     {
-                        "description": "scene：计数场景（5-10）",
+                        "description": "scene：计数场景（200-206，206=站内消息明细统一计数）",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -14114,6 +14134,189 @@
                     },
                     "401": {
                         "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/notification/list": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户站内消息（4 个审核场景 + 活动开始提醒；可选 scene 筛选，created_at 倒序）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "站内消息列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "场景筛选：100 脱单资料/101 投稿/102 专区申请/103 活动报名/104 活动开始提醒（不传=全部）",
+                        "name": "scene",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.NotificationListResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/notification/read-all": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将当前用户所有未读站内消息标记为已读",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "标记全部已读",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/notification/unread-count": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取当前用户站内消息未读总数（红点提示）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "未读消息数量",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.NotificationUnreadCountResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/notification/{id}/read": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "将一条站内消息标记为已读（不存在或不属于当前用户返回 40232）",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "标记单条已读",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "通知记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "消息不存在或不属于当前用户（40232）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -17963,6 +18166,11 @@
                     "description": "RFC3339（可选）",
                     "type": "string"
                 },
+                "remind_note": {
+                    "description": "RemindNote 活动审核通知备注（R10，2026-08-25 通知模块）：≤64 字；\n空串=发送时用代码常量「请您准时前来参加」兜底。",
+                    "type": "string",
+                    "maxLength": 64
+                },
                 "require_match_profile": {
                     "type": "boolean"
                 },
@@ -18036,6 +18244,14 @@
                 "pay_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.RegisterPayStatus"
                 },
+                "subscribed_audit": {
+                    "description": "SubscribedAudit 活动报名审核场景订阅状态（Available 额度，B9——LEFT JOIN quota 账本口径）。",
+                    "type": "boolean"
+                },
+                "subscribed_start": {
+                    "description": "SubscribedStart 活动开始提醒场景订阅状态（Available 额度，B9——活动报名两字段两条查询）。",
+                    "type": "boolean"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -18067,11 +18283,19 @@
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
                     }
                 },
+                "audit_template": {
+                    "description": "AuditTemplate 活动报名审核场景订阅授权（R12，2026-08-25 通知模块）：\ntrue=已接受该场景订阅授权；nil/false=未授权（reject/ban 同义），不落库。",
+                    "type": "boolean"
+                },
                 "extra_data": {
                     "type": "string"
                 },
                 "form_data": {
                     "type": "string"
+                },
+                "start_template": {
+                    "description": "StartTemplate 活动开始提醒场景订阅授权（R11+R12：一次弹窗授权 2 个场景，\n独立判定——用户只授权 start 只落 start 行；true=已接受，nil/false=不落库）。",
+                    "type": "boolean"
                 }
             }
         },
@@ -18186,6 +18410,11 @@
                 },
                 "register_start": {
                     "type": "string"
+                },
+                "remind_note": {
+                    "description": "RemindNote 活动审核通知备注（R10，2026-08-25 通知模块）：≤64 字；\n空串=发送时用代码常量「请您准时前来参加」兜底。",
+                    "type": "string",
+                    "maxLength": 64
                 },
                 "require_match_profile": {
                     "type": "boolean"
@@ -20297,6 +20526,18 @@
                     "description": "MsgID 腾讯侧消息 ID（回调未携带时为 null，2026-08-24 老大需求）。",
                     "type": "string"
                 },
+                "msg_key": {
+                    "description": "MsgKey IM 官方消息唯一标识（2026-08-25 老大需求）。",
+                    "type": "string"
+                },
+                "msg_random": {
+                    "description": "MsgRandom IM 消息随机数（无回调字段时为 null，2026-08-25 老大需求）。",
+                    "type": "integer"
+                },
+                "msg_seq": {
+                    "description": "MsgSeq IM 消息序列号（无回调字段时为 null；与 msg_time 共同构成键集游标，2026-08-25 老大需求）。",
+                    "type": "integer"
+                },
                 "msg_time": {
                     "description": "MsgTime IM 侧发送时间戳（秒，无回调字段时为 null）。",
                     "type": "integer"
@@ -20334,6 +20575,10 @@
                 },
                 "blocked_at": {
                     "description": "BlockedAt 最近屏蔽时间（从未屏蔽为 null）。",
+                    "type": "string"
+                },
+                "last_msg_at": {
+                    "description": "LastMsgAt 最后消息时间（2026-08-25 老大需求；从未有消息为 null）。",
                     "type": "string"
                 },
                 "target_im_id": {
@@ -21335,7 +21580,7 @@
                     "type": "integer"
                 },
                 "scene": {
-                    "description": "Scene 通知场景（轨 B 计数场景类型化常量）。",
+                    "description": "Scene 通知场景（类型化常量：轨 B 200-205 计数 + 206 站内消息——\nv6_notification 全部明细统一计数场景，2026-08-25 老大修正）。",
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.NotificationScene"
@@ -21362,16 +21607,73 @@
             ],
             "properties": {
                 "scene": {
-                    "description": "Scene 通知场景（*int 指针——binding required 对数值零值判「未提供」，\n指针 required 只检查 non-nil；dto-typing 决策表）。\n合法值 5-10：Heartbeat/Follow/Message/Gift/Couple1314/RankAward。",
+                    "description": "Scene 通知场景（*int 指针——binding required 对数值零值判「未提供」，\n指针 required 只检查 non-nil；dto-typing 决策表）。\n合法值 200-206（轨 B 计数场景，R13 三位数轨段；206=站内消息明细统一计数）。",
                     "type": "integer",
                     "enum": [
-                        5,
-                        6,
-                        7,
-                        8,
-                        9,
-                        10
+                        200,
+                        201,
+                        202,
+                        203,
+                        204,
+                        205,
+                        206
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.NotificationListItem": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "description": "Content 内容。",
+                    "type": "string"
+                },
+                "created_at": {
+                    "description": "CreatedAt 创建时间（RFC3339 字符串）。",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID 通知记录 ID（UUID）。",
+                    "type": "string"
+                },
+                "is_read": {
+                    "description": "IsRead 是否已读。",
+                    "type": "boolean"
+                },
+                "scene": {
+                    "description": "Scene 通知场景（轨 A 类型化常量 100-104）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.NotificationScene"
+                        }
+                    ]
+                },
+                "title": {
+                    "description": "Title 标题。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.NotificationListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.NotificationListItem"
+                    }
+                },
+                "pagination": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_pagination.OffsetPagination"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.NotificationUnreadCountResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "description": "Total 未读消息总数。",
+                    "type": "integer"
                 }
             }
         },
@@ -22631,6 +22933,10 @@
                 "sort_order": {
                     "type": "integer"
                 },
+                "subscribed_audit": {
+                    "description": "SubscribedAudit 投稿审核场景订阅状态（Available 额度，B9——LEFT JOIN quota 账本口径）。",
+                    "type": "boolean"
+                },
                 "type": {
                     "type": "integer"
                 },
@@ -22841,6 +23147,10 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
                     }
+                },
+                "audit_template": {
+                    "description": "AuditTemplate 投稿审核场景订阅授权（R12，2026-08-25 通知模块）：\ntrue=已接受该场景订阅授权；nil/false=未授权（reject/ban 同义），不落库。",
+                    "type": "boolean"
                 },
                 "content": {
                     "type": "string",
@@ -23346,6 +23656,10 @@
                 },
                 "profile": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminProfileInfo"
+                },
+                "subscribed_audit": {
+                    "description": "SubscribedAudit 脱单资料审核场景订阅状态（Available 额度，B9——\nLEFT JOIN quota 账本口径，2026-08-25 通知模块）。",
+                    "type": "boolean"
                 },
                 "user": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminUserInfo"
@@ -24483,6 +24797,10 @@
         "github_com_vbegin_tlnc_v6_internal_module_user_model.SubmitMatchProfileRequest": {
             "type": "object",
             "properties": {
+                "audit_template": {
+                    "description": "AuditTemplate 脱单资料审核场景订阅授权（R12，2026-08-25 通知模块）：\ntrue=用户已接受该场景订阅授权；nil/false=未授权（reject/ban 同义），不落库。\n模板 ID 不进入 API 契约——后端 TemplateFor(scene) 常量取。",
+                    "type": "boolean"
+                },
                 "blood_type": {
                     "description": "BloodType 血型，见 status.BloodType 枚举值（选填，nil 表示不更新）。",
                     "type": "integer",
@@ -25352,6 +25670,10 @@
                 "status": {
                     "type": "integer"
                 },
+                "subscribed_audit": {
+                    "description": "SubscribedAudit 专区申请审核场景订阅状态（Available 额度，B9——LEFT JOIN quota 账本口径）。",
+                    "type": "boolean"
+                },
                 "updated_at": {
                     "type": "string"
                 },
@@ -25423,6 +25745,10 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
                     }
+                },
+                "audit_template": {
+                    "description": "AuditTemplate 专区申请审核场景订阅授权（R12，2026-08-25 通知模块）：\ntrue=已接受该场景订阅授权；nil/false=未授权（reject/ban 同义），不落库。",
+                    "type": "boolean"
                 },
                 "form_data": {
                     "type": "string"
@@ -26716,55 +27042,65 @@
             "format": "int32",
             "enum": [
                 0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                10
+                100,
+                101,
+                102,
+                103,
+                104,
+                200,
+                201,
+                202,
+                203,
+                204,
+                205,
+                206,
+                300
             ],
             "x-enum-comments": {
                 "NotificationSceneActivityAudit": "活动报名审核",
+                "NotificationSceneActivityStartReminder": "活动开始提醒（调度器触发）",
                 "NotificationSceneCouple1314": "达成 1314",
                 "NotificationSceneFollow": "关注",
                 "NotificationSceneGift": "礼物",
                 "NotificationSceneHeartbeat": "心动",
                 "NotificationSceneMessage": "私信",
+                "NotificationSceneNotice": "站内消息（通知中心明细统一计数）",
                 "NotificationSceneProfileAudit": "脱单资料审核",
                 "NotificationSceneRankAward": "榜单（获得神助攻）",
                 "NotificationSceneSubmissionAudit": "投稿审核",
-                "NotificationSceneZoneApplyAudit": "专区申请审核",
-                "NotificationSceneZoneCertAudit": "认证审核（专区认证）"
+                "NotificationSceneZoneApplyAudit": "专区申请审核"
             },
             "x-enum-descriptions": [
+                "",
                 "脱单资料审核",
-                "认证审核（专区认证）",
                 "投稿审核",
                 "专区申请审核",
                 "活动报名审核",
+                "活动开始提醒（调度器触发）",
                 "心动",
                 "关注",
                 "私信",
                 "礼物",
                 "达成 1314",
-                "榜单（获得神助攻）"
+                "榜单（获得神助攻）",
+                "站内消息（通知中心明细统一计数）",
+                ""
             ],
             "x-enum-varnames": [
+                "NotificationSceneUnknown",
                 "NotificationSceneProfileAudit",
-                "NotificationSceneZoneCertAudit",
                 "NotificationSceneSubmissionAudit",
                 "NotificationSceneZoneApplyAudit",
                 "NotificationSceneActivityAudit",
+                "NotificationSceneActivityStartReminder",
                 "NotificationSceneHeartbeat",
                 "NotificationSceneFollow",
                 "NotificationSceneMessage",
                 "NotificationSceneGift",
                 "NotificationSceneCouple1314",
-                "NotificationSceneRankAward"
+                "NotificationSceneRankAward",
+                "NotificationSceneNotice",
+                "NotificationSceneTrackBEnd"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.OpinionSource": {
