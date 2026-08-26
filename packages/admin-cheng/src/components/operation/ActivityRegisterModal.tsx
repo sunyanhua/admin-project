@@ -11,7 +11,6 @@ import {
   FreeFCFSStatusLabels, FreeFCFSStatusColors,
   ActivityType,
 } from '@shared/constants';
-import { MaritalStatusLabels, EducationLabels } from '@/api/types/status';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
@@ -24,6 +23,7 @@ import RealNameWithTag from '@/components/user/RealNameWithTag';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
+import { buildRegisterExportSheet } from './activityRegisterExport.utils';
 
 interface ActivityRegisterModalProps {
   visible: boolean;
@@ -105,53 +105,28 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       const userIds = allData.map(i => i.user_id).filter(Boolean);
       const idCardMap = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
 
-      const headers = ['用户名', '姓名', '身份证号', '性别', '年龄', '手机号', '婚姻状况', '学历', '户籍', '单位'];
-      if (isFreeFCFS) headers.push('报名状态');
-      else if (isPaidFCFS) { headers.push('支付状态', '完成时间'); }
-      else if (isFreeReview) { headers.push('审核状态', '拒绝原因', '报名时间'); }
-      if (!isFreeReview) headers.push('报名时间');
-      formConfig.forEach(f => headers.push(f.label));
-      const rows: string[][] = [];
-      for (const item of allData) {
-        const up = item.user_profile;
-        const mp = item.user_match_profile as any;
-        const nickname = up?.nickname || item.nickname || item.user_id;
-        const name = mp?.real_name || '';
-        const gender = up?.gender ?? item.gender;
-        const genderLabel = gender != null ? (RegisterGenderLabels[gender] ?? String(gender)) : '';
-        const age = up?.age ?? item.age ?? '';
-        const phone = (item.user_data as any)?.phone || item.phone || '';
-        const marital = mp?.marital_status != null ? (MaritalStatusLabels[mp.marital_status] || String(mp.marital_status)) : '';
-        const edu = mp?.education != null ? (EducationLabels[mp.education] || String(mp.education)) : '';
-        const household = mp?.household_registration || '';
-        const workplace = mp?.workplace || '';
-        const createdAt = item.created_at ? item.created_at.replace('T', ' ').substring(0, 19) : '';
-        const completedAt = item.completed_at ? item.completed_at.replace('T', ' ').substring(0, 19) : '';
-        let formDataMap: Record<string, any> = {};
-        try { formDataMap = JSON.parse(item.form_data || '{}'); } catch { /* ignore */ }
-        const attsByField: Record<string, string[]> = {};
-        for (const att of (item.attachments || [])) {
-          const tag = (att as any).tags || '';
-          if (!attsByField[tag]) attsByField[tag] = [];
-          attsByField[tag].push(att.url);
-        }
-        const row = [nickname, name, idCardMap[item.user_id] || '', genderLabel, String(age), phone, marital, edu, household, workplace];
-        if (isFreeFCFS) { row.push(FreeFCFSStatusLabels[item.pay_status] || String(item.pay_status)); }
-        else if (isPaidFCFS) { row.push(RegisterPayStatusLabels[item.pay_status] || String(item.pay_status), completedAt); }
-        else if (isFreeReview) { row.push(RegisterAuditStatusLabels[item.audit_status] || String(item.audit_status), item.audit_reason || '', createdAt); }
-        if (!isFreeReview) row.push(createdAt);
-        formConfig.forEach(f => {
-          const val = formDataMap[f.id];
-          const urls = attsByField[f.id] || [];
-          const parts: string[] = [];
-          if (val != null) parts.push(String(val));
-          parts.push(...urls);
-          row.push(parts.join(', '));
-        });
-        rows.push(row);
-      }
+      // 组装导出数据：表头 + 数据行 + 照片列/个人主页列位置
+      const { headers, rows, photoColStart, photoColCount, profileCol } =
+        buildRegisterExportSheet(allData, { activityType, idCardMap, formConfig });
+
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      ws['!cols'] = headers.map(() => ({ wch: 20 }));
+      // 列宽：照片列 40、个人主页列 60，其余 20
+      ws['!cols'] = headers.map((h, idx) => {
+        if (idx >= photoColStart && idx < photoColStart + photoColCount) return { wch: 40 };
+        if (idx === profileCol) return { wch: 60 };
+        return { wch: 20 };
+      });
+      // 照片列与个人主页列设为可点击超链接
+      for (let r = 1; r <= rows.length; r++) {
+        for (let c = photoColStart; c < photoColStart + photoColCount; c++) {
+          const addr = XLSX.utils.encode_cell({ r, c });
+          const v = (ws[addr] as any)?.v;
+          if (typeof v === 'string' && v.trim()) ws[addr] = { t: 's', v, l: { Target: v } };
+        }
+        const pAddr = XLSX.utils.encode_cell({ r, c: profileCol });
+        const pv = (ws[pAddr] as any)?.v;
+        if (typeof pv === 'string' && pv.trim()) ws[pAddr] = { t: 's', v: pv, l: { Target: pv } };
+      }
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '报名名单');
       XLSX.writeFile(wb, `${activityTitle}_报名名单.xlsx`);

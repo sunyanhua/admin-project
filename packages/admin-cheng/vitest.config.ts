@@ -40,7 +40,7 @@ export default defineConfig({
       '@api': path.resolve(__dirname, './src/api'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@contexts': path.resolve(__dirname, './src/contexts'),
-      '@shared': path.resolve(__dirname, '../../src/shared'),
+      '@shared': path.resolve(__dirname, './src/shared'),
     }
   }
 })
