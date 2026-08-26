@@ -190,6 +190,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       // 所属专区：选择"无专区"时传空字符串
       payload.zone_id = values.zone_id || '';
       if (values.gender_enabled != null) payload.gender_enabled = values.gender_enabled;
+      // 显示状态（Switch checked = 显示）
+      payload.hidden = hidden;
 
       if (needsSlots) {
         if (genderEnabled) {

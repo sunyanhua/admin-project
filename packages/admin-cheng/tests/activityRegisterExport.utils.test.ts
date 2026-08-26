@@ -81,14 +81,14 @@ describe('splitPhotos', () => {
 
 describe('buildExportHeaders', () => {
   it('免费先到先得：照片列 + 报名状态 + 报名时间 + 表单列 + 个人主页', () => {
-    expect(buildExportHeaders(ActivityType.FREE_FCFS, sampleFormConfig, 2)).toEqual([
-      ...BASE_HEADERS, '照片1', '照片2', '报名状态', '报名时间', '健康承诺', '个人主页',
+    expect(buildExportHeaders(ActivityType.FREE_FCFS, sampleFormConfig, 1)).toEqual([
+      ...BASE_HEADERS, '照片', '报名状态', '报名时间', '健康承诺', '个人主页',
     ]);
   });
 
   it('收费先交费先得：支付状态 + 完成时间 + 报名时间', () => {
     expect(buildExportHeaders(ActivityType.PAID_FCFS, [], 1)).toEqual([
-      ...BASE_HEADERS, '照片1', '支付状态', '完成时间', '报名时间', '个人主页',
+      ...BASE_HEADERS, '照片', '支付状态', '完成时间', '报名时间', '个人主页',
     ]);
   });
 
@@ -98,7 +98,7 @@ describe('buildExportHeaders', () => {
     ]);
   });
 
-  it('maxPhotos 为 0 时不产生照片列', () => {
+  it('photoCount 为 0 时不产生照片列', () => {
     const headers = buildExportHeaders(ActivityType.FREE_FCFS, [], 0);
     expect(headers.some((h) => h.startsWith('照片'))).toBe(false);
   });
@@ -118,7 +118,7 @@ describe('buildRegisterExportSheet', () => {
     },
   );
 
-  it('照片列紧随单位之后，数量取全名单最大值，不足用空串补齐', () => {
+  it('照片列紧随单位之后，多张照片只导出第一张，无照片用空串补齐', () => {
     const withPhotos = sampleRecord({
       user_match_profile: { photos: ['https://cdn/p1.jpg', 'https://cdn/p2.jpg'] } as any,
     });
@@ -129,12 +129,11 @@ describe('buildRegisterExportSheet', () => {
       formConfig: [],
     });
     expect(sheet.photoColStart).toBe(BASE_HEADERS.length);
-    expect(sheet.photoColCount).toBe(2);
-    expect(sheet.rows[0].slice(sheet.photoColStart, sheet.photoColStart + 2)).toEqual([
+    expect(sheet.photoColCount).toBe(1);
+    expect(sheet.rows[0].slice(sheet.photoColStart, sheet.photoColStart + 1)).toEqual([
       'https://cdn/p1.jpg',
-      'https://cdn/p2.jpg',
     ]);
-    expect(sheet.rows[1].slice(sheet.photoColStart, sheet.photoColStart + 2)).toEqual(['', '']);
+    expect(sheet.rows[1].slice(sheet.photoColStart, sheet.photoColStart + 1)).toEqual(['']);
   });
 
   it('个人主页列在表末且值为约定格式 URL', () => {
@@ -156,7 +155,7 @@ describe('buildRegisterExportSheet', () => {
     expect(sheet.rows[0][sheet.profileCol]).toBe('');
   });
 
-  it('maxPhotos 为 0 时 photoColCount 为 0，行仍与表头等长', () => {
+  it('全名单无照片时 photoColCount 为 0，行仍与表头等长', () => {
     const sheet = buildRegisterExportSheet([sampleRecord()], {
       activityType: ActivityType.FREE_REVIEW,
       idCardMap: {},

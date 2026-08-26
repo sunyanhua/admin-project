@@ -15,6 +15,7 @@ import RealNameWithTag from '@/components/user/RealNameWithTag';
 import { getMediumUrl } from '@/utils/imageUtils';
 import { MatchProfileAuditStatus, UserGenderLabels, MaritalStatusLabels } from '@/api/types/status';
 import type { CommunityUserItem } from '@/api/types/user';
+import { buildProfileUrl, splitPhotos, applyLinkColumns } from './excelExport.utils';
 
 const AUDIT_MAP: Record<number, { color: string; text: string }> = {
   [MatchProfileAuditStatus.PENDING]: { color: 'processing', text: '待审核' },
@@ -126,7 +127,13 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
       }
 
       const headers = ['用户名', '姓名', '身份证号', '手机号', '性别', '年龄', '婚姻状况', '工作单位', '人气值', '审核状态', '脱单资料状态'];
+      // 照片列：全名单有照片时才有（只导出第一张）
+      const photoColStart = headers.length;
+      const photoColCount = allData.some((i) => splitPhotos(i.match_profile?.photos).length > 0) ? 1 : 0;
+      if (photoColCount) headers.push('照片');
       formFields.forEach(f => headers.push(f.label));
+      headers.push('个人主页');
+      const profileCol = headers.length - 1;
       const rows: string[][] = [];
       for (const record of allData) {
         const mp = record.match_profile;
@@ -146,6 +153,8 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
           a.text,
           ds.text,
         ];
+        // 照片：只导出第一张
+        if (photoColCount) row.push(splitPhotos(mp?.photos)[0] || '');
         // 认证表单字段：无认证信息或与申请表单配置不符 → 留空忽略
         const app = appMap.get(record.user.user_id);
         for (const f of formFields) {
@@ -166,10 +175,13 @@ const ZoneUsersModal: React.FC<ZoneUsersModalProps> = ({ visible, zoneId, zoneNa
           }
           row.push(val);
         }
+        // 个人主页：user_id 为空时不生成死链接
+        row.push(record.user.user_id ? buildProfileUrl(record.user.user_id) : '');
         rows.push(row);
       }
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      ws['!cols'] = headers.map(() => ({ wch: 20 }));
+      // 照片列/个人主页列：列宽 + 单元格链接（照片=超链接，个人主页=HYPERLINK 公式）
+      applyLinkColumns(ws, { headers, rowsCount: rows.length, photoColStart, photoColCount, profileCol });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '专区用户');
       XLSX.writeFile(wb, `${zoneName}_用户名单.xlsx`);

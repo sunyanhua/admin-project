@@ -24,6 +24,7 @@ import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
 import { buildRegisterExportSheet } from './activityRegisterExport.utils';
+import { applyLinkColumns } from './excelExport.utils';
 
 interface ActivityRegisterModalProps {
   visible: boolean;
@@ -110,23 +111,8 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         buildRegisterExportSheet(allData, { activityType, idCardMap, formConfig });
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      // 列宽：照片列 40、个人主页列 60，其余 20
-      ws['!cols'] = headers.map((h, idx) => {
-        if (idx >= photoColStart && idx < photoColStart + photoColCount) return { wch: 40 };
-        if (idx === profileCol) return { wch: 60 };
-        return { wch: 20 };
-      });
-      // 照片列与个人主页列设为可点击超链接
-      for (let r = 1; r <= rows.length; r++) {
-        for (let c = photoColStart; c < photoColStart + photoColCount; c++) {
-          const addr = XLSX.utils.encode_cell({ r, c });
-          const v = (ws[addr] as any)?.v;
-          if (typeof v === 'string' && v.trim()) ws[addr] = { t: 's', v, l: { Target: v } };
-        }
-        const pAddr = XLSX.utils.encode_cell({ r, c: profileCol });
-        const pv = (ws[pAddr] as any)?.v;
-        if (typeof pv === 'string' && pv.trim()) ws[pAddr] = { t: 's', v: pv, l: { Target: pv } };
-      }
+      // 照片列/个人主页列：列宽 + 单元格链接（照片=超链接，个人主页=HYPERLINK 公式）
+      applyLinkColumns(ws, { headers, rowsCount: rows.length, photoColStart, photoColCount, profileCol });
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, '报名名单');
       XLSX.writeFile(wb, `${activityTitle}_报名名单.xlsx`);
