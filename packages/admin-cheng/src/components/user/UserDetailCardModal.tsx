@@ -16,6 +16,8 @@ interface UserDetailCardModalProps {
   onEditProfile?: () => void;
   /** 审核脱单资料回调（与用户注册页一致，可省） */
   onAuditProfile?: () => void;
+  /** 外部刷新信号：变化时重新拉取最新数据（如脱单资料审核完成后 +1） */
+  reloadKey?: number;
   onClose: () => void;
 }
 
@@ -32,14 +34,14 @@ interface UserDetailCardModalProps {
  * 用法：<UserDetailCardModal visible={...} userId={record.user_id} onClose={...} />
  */
 const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
-  visible, userId, title = '用户详情', onEditProfile, onAuditProfile, onClose,
+  visible, userId, title = '用户详情', onEditProfile, onAuditProfile, reloadKey = 0, onClose,
 }) => {
   const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [detail, setDetail] = useState<CommunityUserItem | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
+  const [internalReloadKey, setInternalReloadKey] = useState(0);
 
-  // 打开时按 userId 拉取最新数据（reloadKey 变化时重新拉取，如推荐设置成功）
+  // 打开时按 userId 拉取最新数据（internalReloadKey 或外部 reloadKey 变化时重新拉取，如推荐设置成功/审核完成）
   useEffect(() => {
     if (!visible || !userId) {
       setDetail(null);
@@ -61,7 +63,7 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
         showError(err?.response?.data?.message || '获取用户资料失败');
       })
       .finally(() => setLoading(false));
-  }, [visible, userId, reloadKey]);
+  }, [visible, userId, internalReloadKey, reloadKey]);
 
   return (
     <DetailModal
@@ -82,7 +84,7 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
           wallet: item.wallet,
           onEditProfile,
           onAuditProfile,
-          onRecommendSuccess: () => setReloadKey(k => k + 1),
+          onRecommendSuccess: () => setInternalReloadKey(k => k + 1),
         });
       }}
     />

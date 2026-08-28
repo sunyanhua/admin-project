@@ -16,7 +16,9 @@ interface Props {
 const AuditMatchProfileModal: React.FC<Props> = ({ open, userId, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
-  const [action, setAction] = useState<1 | 2>(1);
+  // 审核操作从表单值派生（单一数据源）：重置表单后自动回到"通过"，避免拒绝状态串到下一个用户
+  const watchedAction = Form.useWatch('action', form);
+  const action: 1 | 2 = watchedAction === 2 ? 2 : 1;
   const { success, error } = useAppNotification();
 
   const handleSubmit = async () => {
@@ -55,7 +57,7 @@ const AuditMatchProfileModal: React.FC<Props> = ({ open, userId, onClose, onSucc
     >
       <Form form={form} layout="vertical" initialValues={{ action: 1, reason: '' }}>
         <Form.Item name="action" label="审核操作" rules={[{ required: true, message: '请选择审核操作' }]}>
-          <Radio.Group onChange={(e) => setAction(e.target.value)}>
+          <Radio.Group>
             <Radio value={1}>通过</Radio>
             <Radio value={2}>拒绝</Radio>
           </Radio.Group>

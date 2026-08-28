@@ -73,6 +73,8 @@ const MatchProfileManagement = () => {
   const [detailItem, setDetailItem] = useState<CommunityUserItem | null>(null);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [auditProfileOpen, setAuditProfileOpen] = useState(false);
+  // 审核完成后触发资料卡片重新拉取
+  const [auditReloadKey, setAuditReloadKey] = useState(0);
   const [ranking, setRanking] = useState(false);
 
   const fetchUsers = useCallback(async (params: any) => {
@@ -259,6 +261,7 @@ const MatchProfileManagement = () => {
         userId={detailItem?.user.user_id}
         onEditProfile={() => setEditProfileOpen(true)}
         onAuditProfile={() => setAuditProfileOpen(true)}
+        reloadKey={auditReloadKey}
         onClose={() => { setDetailModalOpen(false); setDetailItem(null); }}
       />
 
@@ -305,6 +308,7 @@ const MatchProfileManagement = () => {
               },
             } as CommunityUserItem;
           });
+          setAuditReloadKey((k) => k + 1);
           refresh();
         }}
       />
