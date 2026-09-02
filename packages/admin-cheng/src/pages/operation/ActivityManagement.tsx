@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, FileTextOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, FileTextOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
@@ -161,23 +162,35 @@ const ActivityManagement = () => {
       },
     },
     {
-      title: '报名',
+      title: '报名人数',
       key: 'register',
       width: 120,
       render: (_: any, r: Activity) => {
+        const count = r.registered_count ?? 0;
+        let content: ReactNode;
         // 审核模式：只显示报名总人数
         if (r.activity_type === ActivityType.FREE_REVIEW) {
-          return r.registered_count ?? 0;
-        }
-        if (r.gender_enabled) {
-          return (
+          content = count;
+        } else if (r.gender_enabled) {
+          content = (
             <div>
               <div>男 {r.male_registered_count ?? 0}/{r.male_slots ?? '-'}</div>
               <div>女 {r.female_registered_count ?? 0}/{r.female_slots ?? '-'}</div>
             </div>
           );
+        } else {
+          content = `${count}/${r.slots ?? '-'}`;
         }
-        return `${r.registered_count ?? 0}/${r.slots ?? '-'}`;
+        // 报名人数大于 0：整格内容成为链接，点击查看报名列表
+        if (count > 0) {
+          return (
+            <Button type="link" style={{ padding: 0, height: 'auto', whiteSpace: 'normal' }}
+              onClick={() => handleShowRegisters(r)}>
+              {content}
+            </Button>
+          );
+        }
+        return content;
       },
     },
     statusSwitchColumn<Activity>('status', ActivityV1Status.ENABLED, ActivityV1Status.DISABLED, handleStatusToggle, '上线', '下线', 100),
@@ -212,14 +225,10 @@ const ActivityManagement = () => {
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 120,
       fixed: 'right' as const,
       render: (_: any, r: Activity) => (
         <Space size="small" className="action-buttons">
-          <Button type="link" size="small" icon={<EyeOutlined />}
-            onClick={() => handleShowRegisters(r)}>
-            报名
-          </Button>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>
             编辑
           </Button>
