@@ -96,6 +96,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-03 | 专区管理后台（独立登录控制台）：/cheng-zone/ 新入口 + 独立构建产物 dist-zone，5 界面（专区信息 logo/banner/简介、申请审核、专区用户、活动发布 lockedZone、修改密码），ZoneGate 按 profile.zone_id 门槛校验，VITE_PROJECT_ID=cheng-zone 与主后台 token 隔离 | src/zone/* + vite/build.js/env + ActivityEditModal lockedZone | 9547e0b、ec3a99f、0ff17e1、ef31b2d |
 | 2026-09-02 | 专区编辑增加专区管理员账号/密码：无管理员自动创建（按角色标识 tag=100 识别角色取真实 ID + zone_id），已有仅更新密码并显示昵称；管理员查询按 zone_id 筛选；管理员类型补 zone_id、role_ids 改为字符串数组、强密码校验提取复用 | ZoneEditModal + admin types/service + password.ts | 041e8d3、55d6806、b8c7ea9、ecdb817 |
 | 2026-09-02 | 活动列表报名人数列改造：操作列移除「报名」按钮，报名人数 >0 时整格内容成为链接打开报名列表 | ActivityManagement | 97895b6 |
 | 2026-09-02 | 活动新增「仅本专区用户可报名」（zone_only）：类型对齐 swagger + 编辑弹窗开关（选择专区后才可操作） | activity-v1.ts + ActivityEditModal | b83179b |
@@ -139,4 +140,5 @@
 - 性能优化（代码分割、懒加载）
 - 部署配置（Docker、CI/CD）
 - **Linksy 服务器网关配置**（测试/正式 nginx `/linksy-api` 转发 + 各自密钥），完成后 `git revert 21075a7` 恢复网关模式，并删除 `.env.*.local` 中的临时密钥
+- **专区管理后台部署**：dist-zone 上传测试/正式 `/cheng-zone/` 目录；上线前确认专区管理员角色对 settings（承诺书模版）、隐私导出接口的授权
 - 排查 admin-template / admin-hsh1039 的 build.js 入口改名逻辑（同类 IIS 部署存在目录 403 隐患）
