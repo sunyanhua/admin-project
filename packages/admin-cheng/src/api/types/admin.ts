@@ -10,6 +10,8 @@ export interface AdminUserListItem {
   is_root: boolean;
   status: AdminUserStatus;
   need_change_password: boolean;
+  /** 所属专区 ID（专区管理员才有值） */
+  zone_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -97,6 +99,8 @@ export interface CreateAdminUserRequest {
   phone?: string;
   real_name?: string;
   is_root?: boolean;
+  /** 可选：设为专区管理员（所属专区 ID），nil=普通管理员 */
+  zone_id?: string;
 }
 
 /** POST /admin/v1/user 响应 data */
@@ -113,4 +117,6 @@ export interface UpdateAdminUserRequest {
   password?: string;
   role_ids?: number[];
   status?: AdminUserStatus;
+  /** null=不更新，""=清空（降为普通管理员），非空 UUID=更新专区归属 */
+  zone_id?: string;
 }

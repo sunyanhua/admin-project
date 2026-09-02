@@ -4,6 +4,7 @@ import { Form, Input, Select, Button, Space, Divider } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { adminApi } from '../../api/services/admin';
 import type { AdminRoleItem } from '@/api/types/admin';
+import { validateStrongPassword } from '@/utils/password';
 
 export interface AddAdminModalProps {
   visible: boolean;
@@ -11,29 +12,6 @@ export interface AddAdminModalProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
-
-// 强密码验证：至少8位，包含大写字母、小写字母、数字、特殊符号
-const validateStrongPassword = (_: any, value: string): Promise<void> => {
-  if (!value) return Promise.resolve(); // required 规则已处理空值
-
-  const hasUpperCase = /[A-Z]/.test(value);
-  const hasLowerCase = /[a-z]/.test(value);
-  const hasNumber = /\d/.test(value);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
-
-  if (!hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecialChar) {
-    const missingTypes = [];
-    if (!hasUpperCase) missingTypes.push('大写字母');
-    if (!hasLowerCase) missingTypes.push('小写字母');
-    if (!hasNumber) missingTypes.push('数字');
-    if (!hasSpecialChar) missingTypes.push('特殊符号');
-    return Promise.reject(
-      new Error(`密码必须包含大写字母、小写字母、数字、特殊符号。当前缺少: ${missingTypes.join('、')}`)
-    );
-  }
-
-  return Promise.resolve();
-};
 
 const AddAdminModal: React.FC<AddAdminModalProps> = ({ visible, roles = [], onClose, onSuccess }) => {
   const [form] = Form.useForm();
