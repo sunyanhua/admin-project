@@ -79,20 +79,31 @@ function userTypeLabel(user: CommunityUserSummary): string {
   return '老用户未激活';
 }
 
-/** 能成ID + 复制按钮 — 小内嵌组件以使用 hook */
+/** 能成ID + 复制按钮 — 小内嵌组件以使用 hook；标题行不换行，ID 超长省略 */
 function MatchCodeTitle({ code }: { code: string }) {
   const { success } = useAppNotification();
   return (
-    <Space size={8}>
-      <IdcardOutlined style={{ fontSize: 18, color: '#1890ff' }} />
-      <span>脱单资料</span>
-      <Text type="secondary" style={{ fontSize: 13, marginLeft: 8 }}>
+    <Space size={8} style={{ whiteSpace: 'nowrap', minWidth: 0 }}>
+      <IdcardOutlined style={{ fontSize: 18, color: '#1890ff', flexShrink: 0 }} />
+      <span style={{ flexShrink: 0 }}>脱单资料</span>
+      <Text
+        type="secondary"
+        style={{
+          fontSize: 13,
+          marginLeft: 8,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          maxWidth: 240,
+        }}
+      >
         能成ID：{code || '-'}
       </Text>
       <Button
         type="text"
         size="small"
         icon={<CopyOutlined />}
+        style={{ flexShrink: 0 }}
         onClick={() => {
           navigator.clipboard.writeText(code).then(
             () => success('已复制能成ID'),
@@ -153,14 +164,16 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <MatchCodeTitle code={matchProfile.match_code} />
           {showRecommend !== false && (
-            <MatchRecommendButton
-              userId={user.user_id}
-              recommendExpireAt={matchProfile.recommend_expire_at}
-              auditStatus={matchProfile.audit_status}
-              isActive={matchProfile.is_active}
-              visibility={matchProfile.visibility}
-              onSuccess={onRecommendSuccess}
-            />
+            <span style={{ flexShrink: 0, marginLeft: 8 }}>
+              <MatchRecommendButton
+                userId={user.user_id}
+                recommendExpireAt={matchProfile.recommend_expire_at}
+                auditStatus={matchProfile.audit_status}
+                isActive={matchProfile.is_active}
+                visibility={matchProfile.visibility}
+                onSuccess={onRecommendSuccess}
+              />
+            </span>
           )}
         </div>
       ),
