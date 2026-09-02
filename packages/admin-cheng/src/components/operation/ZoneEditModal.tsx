@@ -4,7 +4,7 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { ZoneStatus } from '@shared/constants';
 import { zoneApi, Zone, CreateZoneRequest } from '@/api/services/zone';
 import { adminApi } from '@/api/services/admin';
-import type { AdminUserListItem } from '@/api/types/admin';
+import type { AdminUserListItem, RoleListItem } from '@/api/types/admin';
 import { validateStrongPassword } from '@/utils/password';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
 import ImageUpload from '@/components/common/ImageUpload';
@@ -21,8 +21,8 @@ export interface ZoneEditModalProps {
   onSuccess: () => void;
 }
 
-/** 专区管理员角色标识（后端约定：role_ids 传 100 即专区管理员） */
-const ZONE_ADMIN_ROLE_ID = 100;
+/** 专区管理员角色的标识（tag）值（后端约定）；从角色列表识别该角色后取其真实 ID，不硬编码 role_ids */
+const ZONE_ADMIN_ROLE_TAG = 100;
 
 const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onClose, onSuccess }) => {
   const { success, error: showError } = useAppNotification();
@@ -30,11 +30,21 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
   const [statusEnabled, setStatusEnabled] = useState(true);
   /** 该专区已有的管理员（无则 null；创建模式恒为 null） */
   const [existingAdmin, setExistingAdmin] = useState<AdminUserListItem | null>(null);
+  /** 标识（tag）=100 的专区管理员角色（从角色列表识别） */
+  const [zoneAdminRole, setZoneAdminRole] = useState<RoleListItem | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
     if (!visible) return;
     setExistingAdmin(null);
+    // 识别标识（tag）=100 的专区管理员角色（角色 ID 不硬编码，取列表返回的真实 ID）
+    adminApi.getRoles({ page: 1, size: 100 })
+      .then((res: any) => {
+        const list = Array.isArray(res) ? res : (res?.list || []);
+        const role = list.find((r: RoleListItem) => Number(r.tag) === ZONE_ADMIN_ROLE_TAG) || null;
+        setZoneAdminRole(role);
+      })
+      .catch(() => setZoneAdminRole(null));
     if (mode === 'edit' && zone) {
       setStatusEnabled(zone.status === ZoneStatus.ENABLED);
       // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
@@ -97,10 +107,13 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
             await adminApi.updateAdmin(existingAdmin.id, { password: values.admin_password });
           }
         } else if (zoneId) {
+          if (!zoneAdminRole) {
+            throw new Error(`未找到标识为 ${ZONE_ADMIN_ROLE_TAG} 的专区管理员角色，请先在角色管理中创建该角色`);
+          }
           await adminApi.createAdmin({
             username: values.admin_username,
             password: values.admin_password,
-            role_ids: [ZONE_ADMIN_ROLE_ID],
+            role_ids: [Number(zoneAdminRole.id)],
             zone_id: zoneId,
           });
         }
