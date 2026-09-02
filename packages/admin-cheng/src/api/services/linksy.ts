@@ -6,11 +6,17 @@ import axios from 'axios';
  *
  * 流程：POST 提交图片+目标宽高 → 秒回 job_id → 轮询 GET → 完成后响应体即图片字节
  *
- * 鉴权说明：前端不持有密钥。请求统一走网关/开发代理的同域路径 `/linksy-api`，
- * 由网关注入 `X-API-Key` 请求头后转发到 Linksy（密钥不暴露给浏览器）。
+ * 鉴权说明（两种模式，由环境变量切换）：
+ * - 网关模式（目标态）：VITE_LINKSY_BASE_URL=/linksy-api，同域请求由网关注入 X-API-Key，
+ *   前端不持有密钥
+ * - 直连模式（临时回退）：VITE_LINKSY_BASE_URL 为完整 Linksy 地址并配置 VITE_LINKSY_API_KEY，
+ *   前端携带密钥直接请求（密钥暴露于浏览器）；服务器网关配置好后恢复网关模式
  */
 
 const BASE_URL = (import.meta.env.VITE_LINKSY_BASE_URL || '/linksy-api').replace(/\/+$/, '');
+/** 直连模式时前端携带的密钥；网关模式下为空，不携带 */
+const API_KEY = import.meta.env.VITE_LINKSY_API_KEY || '';
+const authHeaders = API_KEY ? { 'X-API-Key': API_KEY } : undefined;
 
 /** 轮询间隔（毫秒），文档建议 5-10 秒 */
 const POLL_INTERVAL_MS = 5000;
@@ -59,7 +65,9 @@ export const linksyResizeImage = async (
 
   let jobId: string;
   try {
-    const submitRes = await axios.post(`${BASE_URL}/open/v1/image-resize`, formData);
+    const submitRes = await axios.post(`${BASE_URL}/open/v1/image-resize`, formData, {
+      headers: authHeaders,
+    });
     jobId = submitRes.data?.job_id;
     if (!jobId) {
       throw new Error('AI 接口未返回任务 ID');
@@ -80,6 +88,7 @@ export const linksyResizeImage = async (
     try {
       res = await axios.get(`${BASE_URL}/open/v1/image-resize/${jobId}`, {
         responseType: 'arraybuffer',
+        headers: authHeaders,
       });
     } catch (err: any) {
       const status = err?.response?.status;
