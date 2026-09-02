@@ -46,11 +46,13 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const [zoneOptions, setZoneOptions] = useState<{ label: string; value: string }[]>([]);
   const [promiseTemplates, setPromiseTemplates] = useState<PromiseTemplate[]>([]);
   const [form] = Form.useForm();
+  /** 当前选择的所属专区（用于控制"仅本专区用户可报名"开关可用性） */
+  const zoneId = Form.useWatch('zone_id', form);
 
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: 0, promise_ids: [] };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: 0, zone_only: false, promise_ids: [] };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -61,6 +63,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       title: activity.title || '',
       cover: activity.cover || '',
       zone_id: activity.zone_id || 0,
+      zone_only: activity.zone_only ?? false,
       gender_enabled: activity.gender_enabled ?? false,
       image: imageUrls,
       time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
@@ -119,6 +122,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           title: activity.title || '',
           cover: activity.cover || '',
           zone_id: activity.zone_id || 0,
+          zone_only: activity.zone_only ?? false,
           gender_enabled: activity.gender_enabled ?? false,
           image: imageUrls,
           time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
@@ -143,6 +147,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         title: '',
         cover: '',
         zone_id: 0,
+        zone_only: false,
         gender_enabled: false,
         image: [],
         time_range: undefined,
@@ -210,6 +215,9 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
 
       // 所属专区：选择"无专区"时传空字符串
       payload.zone_id = values.zone_id || '';
+      // 仅本专区用户可报名：显式传值（服务端缺省口径为"传 zone_id → true"，显式传值以传值为准）；
+      // 未选择专区时强制 false
+      payload.zone_only = values.zone_id ? (values.zone_only ?? false) : false;
       if (values.gender_enabled != null) payload.gender_enabled = values.gender_enabled;
       // 显示状态（Switch checked = 显示）
       payload.hidden = hidden;
@@ -299,7 +307,21 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           <Select
             placeholder="请选择所属专区"
             options={[{ label: '无专区', value: 0 }, ...zoneOptions]}
+            onChange={(v) => {
+              // 切回"无专区"时同步关闭"仅本专区用户可报名"
+              if (!v) form.setFieldsValue({ zone_only: false });
+            }}
           />
+        </Form.Item>
+
+        {/* ====== 3.5 仅本专区用户可报名（选择专区后才可操作） ====== */}
+        <Form.Item
+          label="仅本专区用户可报名"
+          name="zone_only"
+          valuePropName="checked"
+          extra={zoneId ? '开启后仅所选专区的用户可报名' : '请先选择所属专区'}
+        >
+          <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled={!zoneId} />
         </Form.Item>
 
         {/* ====== 4 & 5. 活动时间 + 报名时间 ====== */}

@@ -23,6 +23,7 @@ export interface Activity {
   agreement: string;
   require_match_profile: boolean;
   zone_id?: string;
+  zone_only?: boolean; // 是否只允许专区用户报名
   gender_enabled?: boolean;
   male_slots?: number;
   female_slots?: number;
@@ -58,6 +59,7 @@ export interface CreateActivityRequest {
   agreement?: string;
   require_match_profile?: boolean;
   zone_id?: string | number;
+  zone_only?: boolean; // 是否只允许专区用户报名（显式传值，缺省由服务端按 zone_id 落默认口径）
   gender_enabled?: boolean;
   sort_order?: number;
   status?: number;
@@ -84,6 +86,7 @@ export interface UpdateActivityRequest {
   agreement?: string;
   require_match_profile?: boolean;
   zone_id?: string | number;
+  zone_only?: boolean; // 是否只允许专区用户报名（PATCH 指针语义：缺省不更新）
   gender_enabled?: boolean;
   sort_order?: number;
   status?: number;
