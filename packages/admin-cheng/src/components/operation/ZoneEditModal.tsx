@@ -60,11 +60,11 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
           admin_password: '',
         });
       }, 50);
-      // 查询该专区已有的管理员（管理员列表接口无 zone_id 筛选，前端按 zone_id 匹配）
-      adminApi.getAdmins({ page: 1, size: 100 })
+      // 查询该专区已有的管理员（接口支持按 zone_id 筛选）
+      adminApi.getAdmins({ page: 1, size: 100, zone_id: zone.id })
         .then((res: any) => {
           const list = Array.isArray(res) ? res : (res?.list || []);
-          const found = list.find((a: AdminUserListItem) => a.zone_id && String(a.zone_id) === String(zone.id)) || null;
+          const found = list[0] || null;
           setExistingAdmin(found);
           if (found) form.setFieldsValue({ admin_username: found.username || '' });
         })
@@ -223,7 +223,9 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
               { min: 2, message: '账号至少2个字符' },
               { max: 32, message: '账号最多32个字符' },
             ]}
-            extra={existingAdmin ? '该专区已有管理员，账号不可修改' : '该专区暂无管理员，保存后将自动创建专区管理员'}
+            extra={existingAdmin
+              ? `该专区已有管理员：${existingAdmin.real_name || existingAdmin.username}，账号不可修改`
+              : '该专区暂无管理员，保存后将自动创建专区管理员'}
           >
             <Input placeholder="请输入管理员账号" maxLength={32} disabled={!!existingAdmin} />
           </Form.Item>

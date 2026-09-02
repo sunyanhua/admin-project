@@ -95,7 +95,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "专区 ID（可选，筛选指定专区下的活动）",
+                        "description": "专区 ID（可选，筛选指定专区下的活动；空串或缺省=不筛选）",
                         "name": "zone_id",
                         "in": "query"
                     },
@@ -6537,7 +6537,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "专区 ID（UUID）",
+                        "description": "专区 ID（UUID；空串或缺省=不筛选）",
                         "name": "zone_id",
                         "in": "query"
                     },
@@ -9803,7 +9803,7 @@
         },
         "/admin/v1/user": {
             "get": {
-                "description": "分页查询管理员账户列表，支持按状态筛选和关键词搜索（用户名或真实姓名）。",
+                "description": "分页查询管理员账户列表，支持按状态、专区（zone_id）筛选和关键词搜索（用户名或真实姓名）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -9831,6 +9831,12 @@
                         "type": "integer",
                         "description": "状态筛选：1=启用 2=停用",
                         "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "专区筛选（专区管理员所属专区 UUID；空串或缺省=不筛选）",
+                        "name": "zone_id",
                         "in": "query"
                     },
                     {
@@ -9889,7 +9895,7 @@
                 }
             },
             "post": {
-                "description": "创建新的管理员账户，支持多角色分配。密码需满足强度要求（8 位以上含大小写字母和数字），创建后强制修改密码。可选 zone_id 将其设为专区管理员（非空即限定为专区管理员）。",
+                "description": "创建新的管理员账户，支持多角色分配。密码需满足强度要求（8 位以上含大小写字母和数字），创建后强制修改密码。可选 zone_id 将其设为专区管理员（null/缺省/空串=普通管理员，非空 UUID=专区管理员）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -11325,7 +11331,7 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "专区 ID（可选，筛选指定专区下的活动）",
+                        "description": "专区 ID（可选，筛选指定专区下的活动；空串或缺省=不筛选）",
                         "name": "zone_id",
                         "in": "query"
                     },
@@ -18790,6 +18796,7 @@
                     "type": "string"
                 },
                 "role_ids": {
+                    "description": "每个元素必须为合法 UUID——空串元素会直达 PG UUID 列触发 22P02（2026-09-02 线上修复）",
                     "type": "array",
                     "minItems": 1,
                     "items": {
@@ -18800,7 +18807,7 @@
                     "type": "string"
                 },
                 "zone_id": {
-                    "description": "可选：设为专区管理员（所属专区 ID），nil=普通管理员",
+                    "description": "可选：设为专区管理员（所属专区 ID）；null/缺省/\"\"=普通管理员（uuid|eq= 允许空串穿透校验，与编辑三态口径一致）",
                     "type": "string"
                 }
             }
@@ -23839,7 +23846,7 @@
                     ]
                 },
                 "zone_id": {
-                    "description": "专区筛选（v6_user_match_profile.zone_id）",
+                    "description": "专区筛选（v6_user_match_profile.zone_id）；\"\"=不筛选（uuid|eq= 允许空串穿透校验，与缺省等价）",
                     "type": "string"
                 }
             }

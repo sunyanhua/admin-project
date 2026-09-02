@@ -20,7 +20,7 @@ import type { PagedResponse } from '../types/common';
  */
 export const adminApi = {
   // 管理员列表 — GET /admin/v1/user
-  getAdmins: async (params?: { page?: number; size?: number; status?: number; keyword?: string }): Promise<AdminUserListItem[]> => {
+  getAdmins: async (params?: { page?: number; size?: number; status?: number; keyword?: string; zone_id?: string }): Promise<AdminUserListItem[]> => {
     return request.get('/admin/v1/user', { params });
   },
 
