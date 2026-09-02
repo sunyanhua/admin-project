@@ -25,6 +25,8 @@ export interface AdminProfileRole {
   id: string;
   name: string;
   description: string;
+  /** 管理后台可见标记（专区管理员角色约定为 100） */
+  tag?: number;
 }
 
 /** GET /admin/v1/login/profile 响应 data */
@@ -39,6 +41,10 @@ export interface AdminProfileResponse {
   permissions: string[];
   status: number;
   need_change_password: boolean;
+  /** 所属专区 ID（专区管理员才有值，普通管理员为空串） */
+  zone_id: string;
+  /** 所属专区名称 */
+  zone_name: string;
   created_at: string;
   updated_at: string;
 }

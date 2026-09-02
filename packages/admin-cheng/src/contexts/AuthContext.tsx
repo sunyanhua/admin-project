@@ -29,6 +29,10 @@ interface User {
   permissions: string[];
   status: number;
   needChangePassword: boolean;
+  /** 所属专区 ID（专区管理员才有值，普通管理员为空串） */
+  zoneId: string;
+  /** 所属专区名称 */
+  zoneName: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,6 +87,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         permissions: profile.permissions || [],
         status: profile.status,
         needChangePassword: profile.need_change_password,
+        zoneId: profile.zone_id || '',
+        zoneName: profile.zone_name || '',
         createdAt: profile.created_at || '',
         updatedAt: profile.updated_at || '',
       };

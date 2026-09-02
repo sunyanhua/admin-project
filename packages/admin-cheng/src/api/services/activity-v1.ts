@@ -169,7 +169,7 @@ export interface RegisterRecord {
 
 export const activityApi = {
   /** 分页查询活动列表 */
-  getList: (params?: { status?: number; keyword?: string; page?: number; size?: number }) => {
+  getList: (params?: { status?: number; keyword?: string; zone_id?: string; page?: number; size?: number }) => {
     return request.get('/admin/v1/bizops/activity', { params });
   },
 
