@@ -82,6 +82,9 @@ export const DetailModal: React.FC<DetailModalProps> = ({
           size="small"
           title={section.title}
           style={{ marginBottom: idx < sections.length - 1 ? 16 : 0 }}
+          // 标签列不换行（防止被超长值挤压成一行一个字）；值列允许折行
+          labelStyle={{ whiteSpace: 'nowrap' }}
+          contentStyle={{ wordBreak: 'break-word', minWidth: 0 }}
         >
           {section.items.map((item, itemIdx) => (
             <Descriptions.Item
