@@ -1,34 +1,20 @@
-import { useState } from 'react';
-import { Button, Card } from 'antd';
-import { AuditOutlined } from '@ant-design/icons';
+import { Card } from 'antd';
 import { useAuth } from '@/contexts/AuthContext';
-import ZoneVerifyModal from '@/components/operation/ZoneVerifyModal';
+import ZoneVerifyList from '@/components/operation/ZoneVerifyList';
 
 /**
- * 申请审核：审核用户提交的加入本专区申请（复用主后台 ZoneVerifyModal，仅绑定本专区）。
+ * 申请审核：审核用户提交的加入本专区申请，列表直接展示在页面中。
  */
 const ZoneApplications = () => {
   const { user } = useAuth();
-  const [visible, setVisible] = useState(false);
 
   return (
-    <div>
-      <Card title="申请审核">
-        <p style={{ color: '#666', marginBottom: 16 }}>
-          审核用户提交的加入本专区申请，支持通过、拒绝和撤销审核操作。
-        </p>
-        <Button type="primary" icon={<AuditOutlined />} onClick={() => setVisible(true)}>
-          打开审核列表
-        </Button>
-      </Card>
-
-      <ZoneVerifyModal
-        visible={visible}
-        zoneId={user?.zoneId || ''}
-        zoneName={user?.zoneName || ''}
-        onClose={() => setVisible(false)}
-      />
-    </div>
+    <Card title="申请审核">
+      <p style={{ color: '#666', marginBottom: 16 }}>
+        审核用户提交的加入本专区申请，支持通过、拒绝和撤销审核操作。
+      </p>
+      <ZoneVerifyList zoneId={user?.zoneId || ''} zoneName={user?.zoneName || ''} active />
+    </Card>
   );
 };
 

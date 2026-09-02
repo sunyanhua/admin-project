@@ -6,6 +6,7 @@ import {
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import logo from '@/styles/logo.png';
+import '@/components/layout/MainLayout.css';
 
 const { Sider, Header, Content } = Layout;
 
@@ -32,8 +33,9 @@ const ZoneLayout = () => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider theme="dark" width={200} collapsible>
-        <div style={{ padding: '16px 8px', textAlign: 'center' }}>
-          <img src={logo} alt="logo" style={{ height: 40, borderRadius: 8 }} />
+        {/* 与主管理后台一致的 LOGO 样式（.logo 容器 64px + .logo-image 40px） */}
+        <div className="logo">
+          <img src={logo} alt="他俩能成" className="logo-image" />
         </div>
         <Menu
           theme="dark"
