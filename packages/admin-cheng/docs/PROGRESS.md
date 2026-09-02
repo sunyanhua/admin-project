@@ -96,7 +96,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
-| 2026-09-02 | 专区编辑增加专区管理员账号/密码：无管理员自动创建（按角色标识 tag=100 识别角色取真实 ID + zone_id），已有仅更新密码；管理员类型补 zone_id、强密码校验提取复用 | ZoneEditModal + admin types/service + password.ts | 041e8d3、55d6806 |
+| 2026-09-02 | 专区编辑增加专区管理员账号/密码：无管理员自动创建（按角色标识 tag=100 识别角色取真实 ID + zone_id），已有仅更新密码；管理员类型补 zone_id、role_ids 改为字符串数组、强密码校验提取复用 | ZoneEditModal + admin types/service + password.ts | 041e8d3、55d6806、b8c7ea9 |
 | 2026-09-02 | 活动列表报名人数列改造：操作列移除「报名」按钮，报名人数 >0 时整格内容成为链接打开报名列表 | ActivityManagement | 97895b6 |
 | 2026-09-02 | 活动新增「仅本专区用户可报名」（zone_only）：类型对齐 swagger + 编辑弹窗开关（选择专区后才可操作） | activity-v1.ts + ActivityEditModal | b83179b |
 | 2026-09-02 | 图片编辑：手动裁切 + Linksy AI 调整尺寸（网关代理基线 → 临时直连模式） | ImageEditModal + linksy.ts + MultiImageUpload + CropperImageUpload + vite.config + 部署文档 | 2fc4bc4、21075a7、293f2b8 |
