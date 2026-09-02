@@ -154,7 +154,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "创建新的活动。支持免费/收费/需审核三种类型，可选关联专区、区分性别报名。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动计算），false=不区分（仅传 slots）",
+                "description": "创建新的活动。支持免费/收费/需审核三种类型，可选关联专区、区分性别报名。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动计算），false=不区分（仅传 slots）；\nzone_only: 是否只允许专区用户报名——传 zone_id 未传该参数默认为 true，未传 zone_id 默认为 false，显式传值（含 false）以传值为准",
                 "consumes": [
                     "application/json"
                 ],
@@ -273,7 +273,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "编辑活动信息（PATCH 指针语义——仅传需要修改的字段）。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动重算），false=不区分（直接传 slots）\nzone_id: null=不更新，\"\"=清空关联专区，非空 UUID=更新关联",
+                "description": "编辑活动信息（PATCH 指针语义——仅传需要修改的字段）。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动重算），false=不区分（直接传 slots）\nzone_id: null=不更新，\"\"=清空关联专区，非空 UUID=更新关联；\nzone_only: 是否只允许专区用户报名（PATCH 指针语义，缺省不更新）",
                 "consumes": [
                     "application/json"
                 ],
@@ -9889,7 +9889,7 @@
                 }
             },
             "post": {
-                "description": "创建新的管理员账户，支持多角色分配。密码需满足强度要求（8 位以上含大小写字母和数字），创建后强制修改密码。",
+                "description": "创建新的管理员账户，支持多角色分配。密码需满足强度要求（8 位以上含大小写字母和数字），创建后强制修改密码。可选 zone_id 将其设为专区管理员（非空即限定为专区管理员）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -10037,7 +10037,7 @@
                 }
             },
             "put": {
-                "description": "更新管理员的真实姓名、手机号、邮箱、角色、状态或重置密码。不可修改根管理员或其角色。修改手机号/邮箱时同步更新加密列和哈希。",
+                "description": "更新管理员的真实姓名、手机号、邮箱、角色、状态、zone_id（三态：null=不更新/\"\"=清空为普通管理员/uuid=更新专区归属）或重置密码。不可修改根管理员或其角色，根管理员不可设 zone_id。修改手机号/邮箱时同步更新加密列和哈希。",
                 "consumes": [
                     "application/json"
                 ],
@@ -12942,7 +12942,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "报名参加指定活动（需 C 端 JWT 鉴权）",
+                "description": "报名参加指定活动（需 C 端 JWT 鉴权）。活动 zone_only=true 时仅活动关联专区的用户可报名（40507）",
                 "consumes": [
                     "application/json"
                 ],
@@ -18012,6 +18012,10 @@
                 "zone_id": {
                     "description": "关联专区 ID",
                     "type": "string"
+                },
+                "zone_only": {
+                    "description": "是否只允许专区用户报名",
+                    "type": "boolean"
                 }
             }
         },
@@ -18106,6 +18110,10 @@
                 "zone_id": {
                     "description": "关联专区 ID",
                     "type": "string"
+                },
+                "zone_only": {
+                    "description": "是否只允许专区用户报名",
+                    "type": "boolean"
                 }
             }
         },
@@ -18256,6 +18264,10 @@
                 "zone_id": {
                     "description": "可选，关联专区",
                     "type": "string"
+                },
+                "zone_only": {
+                    "description": "ZoneOnly 是否只允许专区用户报名。缺省时由服务端按默认口径落值：\n传 zone_id → true；未传 zone_id → false；显式传值（含 false）以传值为准。",
+                    "type": "boolean"
                 }
             }
         },
@@ -18498,6 +18510,10 @@
                 "zone_id": {
                     "description": "null=不更新，\"\"=清空关联专区，非空 UUID=更新关联（uuid|eq= 允许空串穿透校验）",
                     "type": "string"
+                },
+                "zone_only": {
+                    "description": "是否只允许专区用户报名（PATCH 指针语义，缺省不更新）",
+                    "type": "boolean"
                 }
             }
         },
@@ -18592,6 +18608,12 @@
                 },
                 "username": {
                     "type": "string"
+                },
+                "zone_id": {
+                    "type": "string"
+                },
+                "zone_name": {
+                    "type": "string"
                 }
             }
         },
@@ -18682,6 +18704,9 @@
                 },
                 "username": {
                     "type": "string"
+                },
+                "zone_id": {
+                    "type": "string"
                 }
             }
         },
@@ -18722,6 +18747,9 @@
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                },
+                "zone_id": {
                     "type": "string"
                 }
             }
@@ -18769,6 +18797,10 @@
                     }
                 },
                 "username": {
+                    "type": "string"
+                },
+                "zone_id": {
+                    "description": "可选：设为专区管理员（所属专区 ID），nil=普通管理员",
                     "type": "string"
                 }
             }
@@ -18995,6 +19027,10 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.AdminUserStatus"
+                },
+                "zone_id": {
+                    "description": "null=不更新，\"\"=清空（降为普通管理员），非空 UUID=更新专区归属（uuid|eq= 允许空串穿透校验）",
+                    "type": "string"
                 }
             }
         },
