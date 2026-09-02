@@ -94,7 +94,8 @@ export interface UpdateStatusRequest {
 export interface CreateAdminUserRequest {
   username: string;
   password: string;
-  role_ids: number[];
+  /** 角色 ID 列表（swagger：string[]，角色 id 为 UUID） */
+  role_ids: (string | number)[];
   email?: string;
   phone?: string;
   real_name?: string;
@@ -115,7 +116,8 @@ export interface UpdateAdminUserRequest {
   phone?: string;
   real_name?: string;
   password?: string;
-  role_ids?: number[];
+  /** 角色 ID 列表（swagger：string[]） */
+  role_ids?: (string | number)[];
   status?: AdminUserStatus;
   /** null=不更新，""=清空（降为普通管理员），非空 UUID=更新专区归属 */
   zone_id?: string;

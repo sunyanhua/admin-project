@@ -113,7 +113,7 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
           await adminApi.createAdmin({
             username: values.admin_username,
             password: values.admin_password,
-            role_ids: [Number(zoneAdminRole.id)],
+            role_ids: [zoneAdminRole.id],
             zone_id: zoneId,
           });
         }
