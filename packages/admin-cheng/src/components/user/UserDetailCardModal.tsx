@@ -18,6 +18,8 @@ interface UserDetailCardModalProps {
   onAuditProfile?: () => void;
   /** 外部刷新信号：变化时重新拉取最新数据（如脱单资料审核完成后 +1） */
   reloadKey?: number;
+  /** 是否显示推荐操作按钮（默认显示；专区管理场景传 false 仅看资料） */
+  showRecommend?: boolean;
   onClose: () => void;
 }
 
@@ -34,7 +36,7 @@ interface UserDetailCardModalProps {
  * 用法：<UserDetailCardModal visible={...} userId={record.user_id} onClose={...} />
  */
 const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
-  visible, userId, title = '用户详情', onEditProfile, onAuditProfile, reloadKey = 0, onClose,
+  visible, userId, title = '用户详情', onEditProfile, onAuditProfile, reloadKey = 0, showRecommend, onClose,
 }) => {
   const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
@@ -84,6 +86,7 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
           wallet: item.wallet,
           onEditProfile,
           onAuditProfile,
+          showRecommend,
           onRecommendSuccess: () => setInternalReloadKey(k => k + 1),
         });
       }}

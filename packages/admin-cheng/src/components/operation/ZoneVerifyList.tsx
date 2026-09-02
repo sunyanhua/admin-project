@@ -274,6 +274,7 @@ const ZoneVerifyList: React.FC<ZoneVerifyListProps> = ({ zoneId, zoneName, activ
       <UserDetailCardModal
         visible={userDetailVisible}
         userId={userDetailUserId}
+        showRecommend={false}
         onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
       />
     </>

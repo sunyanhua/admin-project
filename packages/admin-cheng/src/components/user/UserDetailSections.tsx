@@ -36,6 +36,8 @@ export interface CommunityUserDetailProps {
   onAuditProfile?: () => void;
   /** 推荐设置成功后回调（刷新详情数据） */
   onRecommendSuccess?: () => void;
+  /** 是否显示推荐操作按钮（默认显示；专区管理场景传 false 仅看资料） */
+  showRecommend?: boolean;
 }
 
 const BLOOD_MAP: Record<number, string> = { 1: 'A', 2: 'B', 3: 'AB', 4: 'O' };
@@ -103,7 +105,7 @@ function MatchCodeTitle({ code }: { code: string }) {
 }
 
 export function buildUserDetailSections(props: CommunityUserDetailProps) {
-  const { user, profile, matchProfile, wallet, extraSections, onEditProfile, onAuditProfile, onRecommendSuccess } = props;
+  const { user, profile, matchProfile, wallet, extraSections, onEditProfile, onAuditProfile, onRecommendSuccess, showRecommend } = props;
 
   const sections: { title: ReactNode; items: { label: string; value: ReactNode; span?: number }[] }[] = [
     // ====== 基础资料 ======
@@ -150,14 +152,16 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
       title: (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           <MatchCodeTitle code={matchProfile.match_code} />
-          <MatchRecommendButton
-            userId={user.user_id}
-            recommendExpireAt={matchProfile.recommend_expire_at}
-            auditStatus={matchProfile.audit_status}
-            isActive={matchProfile.is_active}
-            visibility={matchProfile.visibility}
-            onSuccess={onRecommendSuccess}
-          />
+          {showRecommend !== false && (
+            <MatchRecommendButton
+              userId={user.user_id}
+              recommendExpireAt={matchProfile.recommend_expire_at}
+              auditStatus={matchProfile.audit_status}
+              isActive={matchProfile.is_active}
+              visibility={matchProfile.visibility}
+              onSuccess={onRecommendSuccess}
+            />
+          )}
         </div>
       ),
       items: [

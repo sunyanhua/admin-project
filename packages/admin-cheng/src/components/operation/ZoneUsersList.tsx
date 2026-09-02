@@ -287,6 +287,7 @@ const ZoneUsersList: React.FC<ZoneUsersListProps> = ({ zoneId, zoneName, active 
       <UserDetailCardModal
         visible={userDetailVisible}
         userId={userDetailUserId}
+        showRecommend={false}
         onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
       />
     </>
