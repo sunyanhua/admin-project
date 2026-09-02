@@ -6,13 +6,15 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   // 加载环境变量
   const env = loadEnv(mode, process.cwd())
+  // 专区管理后台模式（zone-*）：独立入口 zone.html、独立产物目录 dist-zone
+  const isZone = mode.startsWith('zone-')
 
   return {
     plugins: [react()],
     base: './', // 使用相对路径，支持部署到任意目录
     server: {
       port: Number(env.VITE_PORT) || 3100,
-      open: true,
+      open: isZone ? '/zone.html' : true,
       proxy: {
         // 代理 API 请求到测试服务器
         '/admin': {
@@ -35,14 +37,18 @@ export default defineConfig(({ mode }) => {
       logOverride: { 'this-is-undefined-in-esm': 'silent' }
     },
     build: {
-      // 根据环境变量设置不同的输出目录
-      outDir: env.VITE_APP_ENV === 'test' ? 'dist-test' : 'dist',
+      // 根据环境变量设置不同的输出目录（专区管理后台独立 dist-zone）
+      outDir: isZone ? 'dist-zone' : (env.VITE_APP_ENV === 'test' ? 'dist-test' : 'dist'),
       sourcemap: true,
       // 静态资源使用相对路径
       assetsDir: 'assets',
       // 跳过后续的 TypeScript 类型检查（由 Vite 插件处理）
       minify: true,
       rollupOptions: {
+        // 按模式构建单入口：zone 模式只出 zone.html，主后台模式只出 index.html
+        input: isZone
+          ? { zone: path.resolve(__dirname, 'zone.html') }
+          : { admin: path.resolve(__dirname, 'index.html') },
         output: {
           manualChunks: {
             // 将第三方库单独打包，优化加载

@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:zone": "vite --mode zone-development",
     "build": "node scripts/build.js",
     "build:test": "node scripts/build.js --test",
     "build:prod": "node scripts/build.js --prod",
+    "build:zone-test": "node scripts/build.js --zone-test",
+    "build:zone-prod": "node scripts/build.js --zone-prod",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "test": "vitest",

@@ -13,6 +13,8 @@ dist/
 **/dist/
 dist-test/
 **/dist-test/
+dist-zone/
+**/dist-zone/
 build/
 out/
 .next/
@@ -27,6 +29,9 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.zone-development.local
+.env.zone-test.local
+.env.zone-production.local
 
 # ====== 4. IDE / 编辑器 ======
 .vscode/

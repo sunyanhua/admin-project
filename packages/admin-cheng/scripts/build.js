@@ -1,4 +1,4 @@
-import { existsSync, copyFileSync, unlinkSync, rmSync } from 'fs';
+import { existsSync, copyFileSync, unlinkSync, renameSync, rmSync } from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,11 +9,14 @@ function getArgs() {
   const args = process.argv.slice(2);
   const isTest = args.includes('--test');
   const isProd = args.includes('--prod');
-  return { isTest, isProd };
+  const isZoneTest = args.includes('--zone-test');
+  const isZoneProd = args.includes('--zone-prod');
+  return { isTest, isProd, isZoneTest, isZoneProd };
 }
 
 function getOutDir() {
-  const { isTest } = getArgs();
+  const { isTest, isZoneTest, isZoneProd } = getArgs();
+  if (isZoneTest || isZoneProd) return 'dist-zone';
   return isTest ? 'dist-test' : 'dist';
 }
 
@@ -37,10 +40,19 @@ function preserveWebConfig(action = 'backup') {
 }
 
 function build() {
-  const { isTest, isProd } = getArgs();
+  const { isTest, isProd, isZoneTest, isZoneProd } = getArgs();
+  const flags = [isTest, isProd, isZoneTest, isZoneProd].filter(Boolean);
+  if (flags.length > 1) {
+    console.error('[build] --test / --prod / --zone-test / --zone-prod 互斥，请只指定一个');
+    process.exit(1);
+  }
+  const isZone = isZoneTest || isZoneProd;
+
   let mode = 'development';
   if (isTest) mode = 'test';
   if (isProd) mode = 'production';
+  if (isZoneTest) mode = 'zone-test';
+  if (isZoneProd) mode = 'zone-production';
 
   const outDir = getOutDir();
 
@@ -55,13 +67,24 @@ function build() {
 
     execSync(`npx vite build --mode ${mode}`, { stdio: 'inherit' });
 
-    const indexPath = path.join(__dirname, '..', outDir, 'index.html');
-    const adminPath = path.join(__dirname, '..', outDir, 'admin.html');
-    if (existsSync(indexPath)) {
-      // IIS 默认文档认 index.html（服务器 web.config 不含 admin.html），
-      // 保留 index.html 作为默认文档入口，另复制 admin.html 兼容既有访问路径
-      copyFileSync(indexPath, adminPath);
-      console.log(`[build] Copied index.html -> admin.html`);
+    if (isZone) {
+      // 专区管理后台：zone.html 是唯一入口，改名为 index.html（IIS 默认文档）
+      const zonePath = path.join(__dirname, '..', outDir, 'zone.html');
+      const indexPath = path.join(__dirname, '..', outDir, 'index.html');
+      if (existsSync(zonePath)) {
+        if (existsSync(indexPath)) unlinkSync(indexPath);
+        renameSync(zonePath, indexPath);
+        console.log(`[build] Renamed zone.html -> index.html`);
+      }
+    } else {
+      const indexPath = path.join(__dirname, '..', outDir, 'index.html');
+      const adminPath = path.join(__dirname, '..', outDir, 'admin.html');
+      if (existsSync(indexPath)) {
+        // IIS 默认文档认 index.html（服务器 web.config 不含 admin.html），
+        // 保留 index.html 作为默认文档入口，另复制 admin.html 兼容既有访问路径
+        copyFileSync(indexPath, adminPath);
+        console.log(`[build] Copied index.html -> admin.html`);
+      }
     }
   } finally {
     preserveWebConfig('restore');
