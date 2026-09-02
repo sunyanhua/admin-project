@@ -96,6 +96,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-02 | 活动新增「仅本专区用户可报名」（zone_only）：类型对齐 swagger + 编辑弹窗开关（选择专区后才可操作） | activity-v1.ts + ActivityEditModal | b83179b |
 | 2026-09-02 | 图片编辑：手动裁切 + Linksy AI 调整尺寸（网关代理基线 → 临时直连模式） | ImageEditModal + linksy.ts + MultiImageUpload + CropperImageUpload + vite.config + 部署文档 | 2fc4bc4、21075a7、293f2b8 |
 | 2026-09-02 | 正式环境首次发布：构建保留 index.html 入口 + 部署要点文档 | scripts/build.js + docs/deployment/admin-cheng-production-deploy.md | b2fd1a3、014fd6d |
 | 2026-07-27 | 上传增强：非分片上传扩展音频/视频/压缩包 + 分片上传工具 uploadUtils | upload.ts + uploadUtils.ts | 4d4edb6 |
