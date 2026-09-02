@@ -1,4 +1,4 @@
-import { existsSync, copyFileSync, unlinkSync, renameSync, rmSync } from 'fs';
+import { existsSync, copyFileSync, unlinkSync, rmSync } from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -58,8 +58,10 @@ function build() {
     const indexPath = path.join(__dirname, '..', outDir, 'index.html');
     const adminPath = path.join(__dirname, '..', outDir, 'admin.html');
     if (existsSync(indexPath)) {
-      renameSync(indexPath, adminPath);
-      console.log(`[build] Renamed index.html -> admin.html`);
+      // IIS 默认文档认 index.html（服务器 web.config 不含 admin.html），
+      // 保留 index.html 作为默认文档入口，另复制 admin.html 兼容既有访问路径
+      copyFileSync(indexPath, adminPath);
+      console.log(`[build] Copied index.html -> admin.html`);
     }
   } finally {
     preserveWebConfig('restore');
