@@ -28,6 +28,13 @@ export interface ActivityEditModalProps {
   onSuccess: () => void;
   /** 打开「承诺书模版管理」弹窗的回调，用于子段「去配置」按钮 */
   onOpenPromiseModal?: () => void;
+  /** 锁定专区模式（专区管理后台使用）：隐藏专区下拉、强制 zone_id、创建默认 zone_only=true */
+  lockedZone?: ActivityLockedZone;
+}
+
+export interface ActivityLockedZone {
+  id: string;
+  name: string;
 }
 
 const ACTIVITY_TYPE_OPTIONS = [
@@ -36,7 +43,7 @@ const ACTIVITY_TYPE_OPTIONS = [
   { label: ActivityTypeLabels[ActivityType.FREE_REVIEW], value: ActivityType.FREE_REVIEW },
 ];
 
-const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess, onOpenPromiseModal }) => {
+const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess, onOpenPromiseModal, lockedZone }) => {
   const { success, error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [statusEnabled, setStatusEnabled] = useState(true);
@@ -52,7 +59,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: 0, zone_only: false, promise_ids: [] };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [] };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -62,8 +69,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
     return {
       title: activity.title || '',
       cover: activity.cover || '',
-      zone_id: activity.zone_id || 0,
-      zone_only: activity.zone_only ?? false,
+      zone_id: lockedZone?.id ?? (activity.zone_id || 0),
+      zone_only: activity.zone_only ?? !!lockedZone,
       gender_enabled: activity.gender_enabled ?? false,
       image: imageUrls,
       time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
@@ -79,14 +86,16 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       form_config: activity.form_config || '',
       sort_order: activity.sort_order ?? 0,
     };
-  }, [activity]);
+  }, [activity, lockedZone]);
 
   useEffect(() => {
+    // 锁定模式下专区固定，无需拉取专区选项
+    if (lockedZone) return;
     zoneApi.getList({ page: 1, size: 100 }).then((res: any) => {
       const list = Array.isArray(res) ? res : (res?.list || []);
       setZoneOptions(list.map((z: Zone) => ({ label: z.name, value: z.id })));
     }).catch(() => setZoneOptions([]));
-  }, []);
+  }, [lockedZone]);
 
   /** 加载 setting 接口中的承诺书模版列表（多选勾选的数据源） */
   useEffect(() => {
@@ -121,8 +130,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         form.setFieldsValue({
           title: activity.title || '',
           cover: activity.cover || '',
-          zone_id: activity.zone_id || 0,
-          zone_only: activity.zone_only ?? false,
+          zone_id: lockedZone?.id ?? (activity.zone_id || 0),
+          zone_only: activity.zone_only ?? !!lockedZone,
           gender_enabled: activity.gender_enabled ?? false,
           image: imageUrls,
           time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
@@ -146,8 +155,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       form.setFieldsValue({
         title: '',
         cover: '',
-        zone_id: 0,
-        zone_only: false,
+        zone_id: lockedZone?.id ?? 0,
+        zone_only: !!lockedZone,
         gender_enabled: false,
         image: [],
         time_range: undefined,
@@ -169,7 +178,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       setHidden(false);
       setGenderEnabled(false);
     }
-  }, [visible, mode, activity, form]);
+  }, [visible, mode, activity, form, lockedZone]);
 
   const handleSubmit = async () => {
     try {
@@ -213,11 +222,13 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         status: statusEnabled ? ActivityV1Status.ENABLED : ActivityV1Status.DISABLED,
       };
 
-      // 所属专区：选择"无专区"时传空字符串
-      payload.zone_id = values.zone_id || '';
-      // 仅本专区用户可报名：显式传值（服务端缺省口径为"传 zone_id → true"，显式传值以传值为准）；
-      // 未选择专区时强制 false
-      payload.zone_only = values.zone_id ? (values.zone_only ?? false) : false;
+      // 所属专区：锁定模式强制锁定值；否则选择"无专区"时传空字符串
+      payload.zone_id = lockedZone?.id ?? (values.zone_id || '');
+      // 仅本专区用户可报名：显式传值（服务端缺省口径为"传 zone_id → true"）；
+      // 锁定模式缺省 true，普通模式未选择专区时强制 false
+      payload.zone_only = lockedZone
+        ? (values.zone_only ?? true)
+        : (values.zone_id ? (values.zone_only ?? false) : false);
       if (values.gender_enabled != null) payload.gender_enabled = values.gender_enabled;
       // 显示状态（Switch checked = 显示）
       payload.hidden = hidden;
@@ -302,17 +313,29 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           <CropperImageUpload aspect={600 / 300} sizeHint="建议尺寸：600 × 300 像素" />
         </Form.Item>
 
-        {/* ====== 3. 所属专区 ====== */}
-        <Form.Item label="所属专区" name="zone_id">
-          <Select
-            placeholder="请选择所属专区"
-            options={[{ label: '无专区', value: 0 }, ...zoneOptions]}
-            onChange={(v) => {
-              // 切回"无专区"时同步关闭"仅本专区用户可报名"
-              if (!v) form.setFieldsValue({ zone_only: false });
-            }}
-          />
-        </Form.Item>
+        {/* ====== 3. 所属专区（锁定模式下固定显示、不可选） ====== */}
+        {lockedZone ? (
+          <>
+            <Form.Item label="所属专区">
+              <Input value={lockedZone.name} disabled />
+            </Form.Item>
+            {/* 隐藏字段保证 Form.useWatch('zone_id') 拿到锁定值（驱动 zone_only 开关可用性） */}
+            <Form.Item name="zone_id" hidden>
+              <Input />
+            </Form.Item>
+          </>
+        ) : (
+          <Form.Item label="所属专区" name="zone_id">
+            <Select
+              placeholder="请选择所属专区"
+              options={[{ label: '无专区', value: 0 }, ...zoneOptions]}
+              onChange={(v) => {
+                // 切回"无专区"时同步关闭"仅本专区用户可报名"
+                if (!v) form.setFieldsValue({ zone_only: false });
+              }}
+            />
+          </Form.Item>
+        )}
 
         {/* ====== 3.5 仅本专区用户可报名（选择专区后才可操作） ====== */}
         <Form.Item
