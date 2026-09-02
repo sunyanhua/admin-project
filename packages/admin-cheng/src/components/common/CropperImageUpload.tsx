@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Upload, Button, Space } from 'antd';
-import { UploadOutlined, ScissorOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
-import ImgCrop from 'antd-img-crop';
-import { uploadApi } from '@/api/services/upload';
-import { useAppNotification } from '@/hooks/useAppNotification';
+import { Button, Space, Upload } from 'antd';
+import { UploadOutlined, DeleteOutlined, EyeOutlined, EditOutlined } from '@ant-design/icons';
 import ImagePreviewModal from './ImagePreviewModal';
+import ImageEditModal from './ImageEditModal';
 
 export interface CropperImageUploadProps {
   value?: string;
@@ -14,7 +12,11 @@ export interface CropperImageUploadProps {
   aspect?: number;
   /** 建议尺寸文案 */
   sizeHint?: string;
+  /** AI 调整的目标尺寸（像素），不传则按 aspect 折算（宽 1024 基准） */
+  aiTargetSize?: { width: number; height: number };
 }
+
+const ACCEPT = '.jpg,.jpeg,.png,.gif,.webp,.bmp';
 
 const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
   value = '',
@@ -22,30 +24,28 @@ const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
   disabled = false,
   aspect = 640 / 480,
   sizeHint = '建议尺寸：640 × 480 像素',
+  aiTargetSize,
 }) => {
-  const [uploading, setUploading] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [url, setUrl] = useState<string>(value);
-  const { success, error: showError } = useAppNotification();
 
   // 同步外部 value 变化（表单回填/重置时）
   useEffect(() => {
     setUrl(value || '');
   }, [value]);
 
-  const handleUpload = async (file: File) => {
-    setUploading(true);
-    try {
-      const res: any = await uploadApi.uploadImage(file);
-      const uploadedUrl = res?.file_url || res?.url || '';
-      setUrl(uploadedUrl);
-      onChange?.(uploadedUrl);
-      success('图片上传成功');
-    } catch {
-      showError('图片上传失败');
-    } finally {
-      setUploading(false);
-    }
+  // AI 目标尺寸：优先用传入值，否则按裁切比例折算（宽 1024 基准，限 64-10000）
+  const aiSize = aiTargetSize ?? {
+    width: 1024,
+    height: Math.min(10000, Math.max(64, Math.round(1024 / aspect))),
+  };
+
+  // 点上传 → 直接调起文件选择 → 选完打开处理弹窗（裁切 / AI 二选一）
+  const handlePickFile = (file: File) => {
+    setPendingFile(file);
+    setEditModalOpen(true);
     return false; // 阻止默认上传
   };
 
@@ -54,18 +54,10 @@ const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
     onChange?.('');
   };
 
-  const uploadButton = (
-    <div style={{
-      width: 200, height: 150,
-      display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      border: '1px dashed #d9d9d9', borderRadius: 4,
-      cursor: 'pointer', background: '#fafafa',
-    }}>
-      <UploadOutlined style={{ fontSize: 32 }} />
-      <div style={{ marginTop: 8 }}>点击上传并裁剪</div>
-    </div>
-  );
+  const handleDone = (newUrl: string) => {
+    setUrl(newUrl);
+    onChange?.(newUrl);
+  };
 
   return (
     <div>
@@ -85,12 +77,9 @@ const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
             <Button size="small" icon={<EyeOutlined />} onClick={() => setPreviewVisible(true)}>预览</Button>
             {!disabled && (
               <>
-                <ImgCrop aspect={aspect} quality={0.9} zoomSlider rotationSlider showReset
-                  modalTitle="裁剪图片" modalOk="确定" modalCancel="取消">
-                  <Upload showUploadList={false} beforeUpload={handleUpload} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp">
-                    <Button size="small" icon={<ScissorOutlined />} loading={uploading}>重新裁剪上传</Button>
-                  </Upload>
-                </ImgCrop>
+                <Upload showUploadList={false} beforeUpload={handlePickFile} accept={ACCEPT}>
+                  <Button size="small" icon={<EditOutlined />}>重新上传</Button>
+                </Upload>
                 <Button size="small" danger icon={<DeleteOutlined />} onClick={handleDelete}>删除</Button>
               </>
             )}
@@ -98,15 +87,30 @@ const CropperImageUpload: React.FC<CropperImageUploadProps> = ({
         </div>
       ) : (
         !disabled && (
-          <ImgCrop aspect={aspect} quality={0.9} zoomSlider rotationSlider showReset
-            modalTitle="裁剪图片" modalOk="确定" modalCancel="取消">
-            <Upload showUploadList={false} beforeUpload={handleUpload} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp">
-              {uploadButton}
-            </Upload>
-          </ImgCrop>
+          <Upload showUploadList={false} beforeUpload={handlePickFile} accept={ACCEPT}>
+            <div style={{
+              width: 200, height: 150,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              border: '1px dashed #d9d9d9', borderRadius: 4,
+              cursor: 'pointer', background: '#fafafa',
+            }}>
+              <UploadOutlined style={{ fontSize: 32 }} />
+              <div style={{ marginTop: 8 }}>点击上传图片</div>
+            </div>
+          </Upload>
         )
       )}
       <ImagePreviewModal visible={previewVisible} imageUrl={url} onClose={() => setPreviewVisible(false)} />
+      <ImageEditModal
+        open={editModalOpen}
+        file={pendingFile}
+        aspect={aspect}
+        targetWidth={aiSize.width}
+        targetHeight={aiSize.height}
+        onClose={() => setEditModalOpen(false)}
+        onDone={handleDone}
+      />
     </div>
   );
 };

@@ -20,6 +20,14 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false, // 允许自签名证书
         },
+        // 代理 Linksy AI 图片改尺寸接口到本地调试服务（避免浏览器跨域；
+        // 密钥由代理注入请求头，前端不持有、不打包）
+        '/linksy-api': {
+          target: 'http://127.0.0.1:8081',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/linksy-api/, ''),
+          headers: { 'X-API-Key': env.VITE_LINKSY_API_KEY || '' },
+        },
       },
     },
     esbuild: {

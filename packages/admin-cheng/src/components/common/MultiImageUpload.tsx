@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Upload, Button, Image } from 'antd';
 import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
-import ImgCrop from 'antd-img-crop';
 import { uploadApi } from '@/api/services/upload';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ImagePreviewModal from './ImagePreviewModal';
+import ImageEditModal from './ImageEditModal';
 
 export interface MultiImageUploadProps {
   value?: string[];
@@ -18,6 +18,8 @@ export interface MultiImageUploadProps {
   cropAspect?: number;
   /** 裁切尺寸提示 */
   cropSizeHint?: string;
+  /** AI 调整的目标尺寸（像素），不传则按 cropAspect 折算（宽 1024 基准） */
+  aiTargetSize?: { width: number; height: number };
 }
 
 const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
@@ -28,12 +30,21 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   maxSize = 5,
   cropAspect,
   cropSizeHint,
+  aiTargetSize,
 }) => {
   const [urls, setUrls] = useState<string[]>(value);
   const [uploading, setUploading] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const { error: showError } = useAppNotification();
+
+  // AI 目标尺寸：优先用传入值，否则按裁切比例折算（宽 1024 基准，限 64-10000）
+  const aiSize = aiTargetSize ?? (cropAspect ? {
+    width: 1024,
+    height: Math.min(10000, Math.max(64, Math.round(1024 / cropAspect))),
+  } : { width: 1024, height: 1024 });
 
   // 同步外部 value 变化（表单回填/重置时）
   // 用 JSON.stringify 比较避免 Form 每次渲染传新引用导致的死循环
@@ -69,6 +80,13 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
   };
 
   const canUpload = !disabled && urls.length < maxCount;
+
+  // 点上传 → 直接调起文件选择 → 选完打开处理弹窗（裁切 / AI 二选一）
+  const handlePickFile = (file: File) => {
+    setPendingFile(file);
+    setEditModalOpen(true);
+    return false; // 阻止默认上传
+  };
 
   const uploadButton = (
     <div style={{
@@ -113,15 +131,28 @@ const MultiImageUpload: React.FC<MultiImageUploadProps> = ({
           </div>
         ))}
         {canUpload && cropAspect ? (
-          <ImgCrop aspect={cropAspect} quality={0.9} zoomSlider rotationSlider showReset
-            modalTitle="裁剪图片" modalOk="确定" modalCancel="取消">
-            <Upload showUploadList={false} beforeUpload={handleUpload} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" multiple={false}>
-              {uploadButton}
-            </Upload>
-          </ImgCrop>
+          <Upload showUploadList={false} beforeUpload={handlePickFile} accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" multiple={false}>
+            {uploadButton}
+          </Upload>
         ) : (canUpload && uploadArea)}
       </div>
       <ImagePreviewModal visible={previewVisible} imageUrl={previewUrl} onClose={() => setPreviewVisible(false)} />
+      <ImageEditModal
+        open={editModalOpen}
+        file={pendingFile}
+        aspect={cropAspect}
+        targetWidth={aiSize.width}
+        targetHeight={aiSize.height}
+        onClose={() => setEditModalOpen(false)}
+        onDone={(newUrl) => {
+          setUrls((prev) => {
+            if (prev.length >= maxCount) return prev;
+            const next = [...prev, newUrl];
+            onChange?.(next);
+            return next;
+          });
+        }}
+      />
     </div>
   );
 };
