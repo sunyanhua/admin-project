@@ -154,7 +154,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "创建新的活动。支持免费/收费/需审核三种类型，可选关联专区、区分性别报名。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动计算），false=不区分（仅传 slots）；\nzone_only: 是否只允许专区用户报名——传 zone_id 未传该参数默认为 true，未传 zone_id 默认为 false，显式传值（含 false）以传值为准",
+                "description": "创建新的活动。支持免费/收费/需审核三种类型，可选关联专区、区分性别报名。\nactivity_type: 0=免费 1=收费 2=需审核；status: 0=启用 1=禁用；\ngender_enabled: true=区分性别报名（传 male_slots+female_slots，slots 自动计算），false=不区分（仅传 slots）；\nzone_id: 缺省/null/空串=不关联专区，非空 UUID=关联专区；\nzone_only: 是否只允许专区用户报名——传 zone_id 未传该参数默认为 true，未传 zone_id 默认为 false，显式传值（含 false）以传值为准",
                 "consumes": [
                     "application/json"
                 ],
@@ -18262,7 +18262,7 @@
                     "maxLength": 256
                 },
                 "zone_id": {
-                    "description": "可选，关联专区",
+                    "description": "可选，关联专区；\"\"=不关联（与编辑三态口径一致，uuid|eq= 允许空串穿透校验）",
                     "type": "string"
                 },
                 "zone_only": {
