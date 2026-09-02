@@ -49,6 +49,7 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
       setStatusEnabled(zone.status === ZoneStatus.ENABLED);
       // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
       const timer = setTimeout(() => {
+        // 注意：管理员账号只由管理员查询结果回填，此处不能覆盖（存在先回填后定时器清空的竞态）
         form.setFieldsValue({
           name: zone.name || '',
           logo: zone.logo || '',
@@ -56,8 +57,6 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
           description: zone.description || '',
           form_config: zone.form_config || '',
           agreement: zone.agreement || '',
-          admin_username: '',
-          admin_password: '',
         });
       }, 50);
       // 查询该专区已有的管理员（接口支持按 zone_id 筛选）
@@ -219,7 +218,8 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
             label="管理员账号"
             name="admin_username"
             rules={[
-              { required: true, message: '请输入管理员账号' },
+              // 已有管理员时账号禁用且提交不携带，不参与必填校验
+              { required: !existingAdmin, message: '请输入管理员账号' },
               { min: 2, message: '账号至少2个字符' },
               { max: 32, message: '账号最多32个字符' },
             ]}
