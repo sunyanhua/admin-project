@@ -4,7 +4,7 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { PrizeType } from '@shared/constants';
 import { lotteryApi, Prize } from '@/api/services/lottery';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import { safeDayjs, dayjsToApi } from '@/utils/format';
+import { parseApiTime, dayjsToApi } from '@/utils/format';
 
 const { TextArea } = Input;
 
@@ -23,18 +23,25 @@ const PrizeDeployModal: React.FC<PrizeDeployModalProps> = ({ visible, prize, poo
   const [form] = Form.useForm();
 
   const isVoucher = prize?.prize_type === PrizeType.VOUCHER;
-  const poolStart = safeDayjs(poolStartTime);
-  const poolEnd = safeDayjs(poolEndTime);
+  const poolStart = parseApiTime(poolStartTime);
+  const poolEnd = parseApiTime(poolEndTime);
   const [voucherCount, setVoucherCount] = useState(0);
 
   useEffect(() => {
-    if (visible) {
-      setVoucherCount(0);
-      if (poolStart && poolEnd) {
-        setTimeout(() => form.setFieldsValue({ time_range: [poolStart, poolEnd] }), 50);
-      }
+    if (!visible) return;
+    // 打开时先清空表单，防止上次投放的数量/券码残留
+    form.resetFields();
+    setVoucherCount(0);
+    if (poolStart && poolEnd) {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
+        form.setFieldsValue({ time_range: [poolStart, poolEnd] });
+      }, 50);
+      return () => clearTimeout(timer);
     }
-  }, [visible, poolStart, poolEnd, form]);
+    // 依赖原始字符串而非每次渲染新建的 Dayjs 实例，避免父组件重渲染时清掉已填内容
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, poolStartTime, poolEndTime, form]);
 
   const handleSubmit = async () => {
     try {

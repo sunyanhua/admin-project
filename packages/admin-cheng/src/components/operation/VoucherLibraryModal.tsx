@@ -30,12 +30,15 @@ const VoucherLibraryModal: React.FC<VoucherLibraryModalProps> = ({ visible, mode
   const [newCount, setNewCount] = useState(0);
 
   useEffect(() => {
-    if (visible && mode === 'create') {
+    if (!visible) return;
+    if (mode === 'create') {
       form.resetFields();
       form.setFieldsValue({ icon: DEFAULT_VOUCHER_ICON });
       setNewCount(0);
-    } else if (visible && mode === 'edit' && library) {
-      setTimeout(() => {
+    } else if (mode === 'edit' && library) {
+      form.resetFields();
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           name: library.name,
           icon: library.icon || '',
@@ -45,6 +48,7 @@ const VoucherLibraryModal: React.FC<VoucherLibraryModalProps> = ({ visible, mode
         });
         setNewCount(0);
       }, 50);
+      return () => clearTimeout(timer);
     }
   }, [visible, mode, library, form]);
 

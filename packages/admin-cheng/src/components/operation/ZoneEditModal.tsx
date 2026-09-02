@@ -25,23 +25,24 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
   const [form] = Form.useForm();
 
   useEffect(() => {
-    if (visible) {
-      if (mode === 'edit' && zone) {
-        setStatusEnabled(zone.status === ZoneStatus.ENABLED);
-        setTimeout(() => {
-          form.setFieldsValue({
-            name: zone.name || '',
-            logo: zone.logo || '',
-            banner: zone.banner || '',
-            description: zone.description || '',
-            form_config: zone.form_config || '',
-            agreement: zone.agreement || '',
-          });
-        }, 50);
-      } else {
-        setStatusEnabled(true);
-        setTimeout(() => form.resetFields(), 0);
-      }
+    if (!visible) return;
+    if (mode === 'edit' && zone) {
+      setStatusEnabled(zone.status === ZoneStatus.ENABLED);
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
+        form.setFieldsValue({
+          name: zone.name || '',
+          logo: zone.logo || '',
+          banner: zone.banner || '',
+          description: zone.description || '',
+          form_config: zone.form_config || '',
+          agreement: zone.agreement || '',
+        });
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      setStatusEnabled(true);
+      form.resetFields();
     }
   }, [visible, mode, zone, form]);
 

@@ -25,14 +25,18 @@ const UserPrizeShipModal: React.FC<UserPrizeShipModalProps> = ({ visible, record
 
   useEffect(() => {
     if (!visible) return;
+    // 打开时先清空，防止上一条中奖记录的单号残留
+    form.resetFields();
     if (record) {
-      setTimeout(() => {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           ship_status: record.ship_status ?? ShipStatus.UNREGISTERED,
           carrier: record.carrier || '',
           tracking_number: record.tracking_number || '',
         });
       }, 50);
+      return () => clearTimeout(timer);
     }
   }, [visible, record, form]);
 

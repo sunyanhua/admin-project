@@ -143,6 +143,8 @@ const CouponManagement = () => {
   // ---- 编辑 ----
   const handleEdit = (record: CouponRecord) => {
     setEditRecord(record);
+    // 先清空再写入，防止上一次编辑的记录残留在表单中
+    editForm.resetFields();
     editForm.setFieldsValue({
       name: record.name,
       discount_amount: record.discount_amount / 100,

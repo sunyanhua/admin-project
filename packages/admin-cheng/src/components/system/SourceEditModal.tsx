@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, Input, DatePicker, Switch, Button, Space } from 'antd';
-import dayjs from 'dayjs';
-import { dayjsToApi } from '@/utils/format';
+import { dayjsToApi, parseApiTime } from '@/utils/format';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { Source, sourceApi } from '@/api/services/source';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -21,12 +20,16 @@ const SourceEditModal: React.FC<SourceEditModalProps> = ({ visible, onClose, sou
 
   const initialValues = source ? {
     name: source.name,
-    start_time: source.start_time ? dayjs(source.start_time) : undefined,
-    end_time: source.end_time ? dayjs(source.end_time) : undefined,
+    start_time: source.start_time ? parseApiTime(source.start_time) : undefined,
+    end_time: source.end_time ? parseApiTime(source.end_time) : undefined,
   } : undefined;
 
-  // Sync status when source changes
-  const prevSourceId = source?.id;
+  // 打开不同来源时同步状态开关（原实现中 prevSourceId 与 source?.id 同帧取值恒相等，导致开关永不刷新）
+  useEffect(() => {
+    if (visible && source) {
+      setStatusEnabled(source.status === 0);
+    }
+  }, [visible, source?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (values: any) => {
     if (!source) return;
@@ -50,11 +53,6 @@ const SourceEditModal: React.FC<SourceEditModalProps> = ({ visible, onClose, sou
     }
   };
 
-  // Reset status when source changes
-  if (source && source.id !== prevSourceId) {
-    setStatusEnabled(source.status === 0);
-  }
-
   return (
     <ScrollableModal
       title="编辑来源"
@@ -70,7 +68,7 @@ const SourceEditModal: React.FC<SourceEditModalProps> = ({ visible, onClose, sou
         </Space>
       }
     >
-      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" scrollToFirstError={{ behavior: 'smooth', block: 'center' }} initialValues={initialValues} key={source?.id}>
+      <Form form={form} layout="vertical" onFinish={handleSubmit} autoComplete="off" clearOnDestroy scrollToFirstError={{ behavior: 'smooth', block: 'center' }} initialValues={initialValues} key={source?.id}>
         <Form.Item label="来源名称" name="name" rules={[{ required: true, message: '请输入来源名称' }]}>
           <Input placeholder="请输入来源名称" maxLength={64} />
         </Form.Item>

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Radio, Select, Button, DatePicker, TimePicker, Table, InputNumber, Input, Space, Form, Alert } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
-import { dayjsToApi } from '@/utils/format';
+import { dayjsToApi, parseApiTime } from '@/utils/format';
 import { refundRuleApi, RefundRule, RefundRuleStage } from '../../api/services/refundRule';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -315,7 +315,7 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ fontSize: 12, whiteSpace: 'nowrap', color: '#666' }}>截止时间</span>
               <DatePicker showTime
-                value={value.unifiedDeadline ? dayjs(value.unifiedDeadline) : null}
+                value={value.unifiedDeadline ? parseApiTime(value.unifiedDeadline) : null}
                 placeholder="请选择"
                 onChange={(v) => onChange({ ...value, unifiedDeadline: v ? (dayjsToApi(v) ?? null) : null })}
               />
@@ -403,7 +403,7 @@ const RefundSettings: React.FC<RefundSettingsProps> = ({ value, onChange, step2S
                     { title: '截止时间', key: 'deadline', width: 200,
                       render: (_: any, r: any) => (
                         <DatePicker showTime
-                          value={value.skuDeadlines[r.spec_indices] ? dayjs(value.skuDeadlines[r.spec_indices]) : null}
+                          value={value.skuDeadlines[r.spec_indices] ? parseApiTime(value.skuDeadlines[r.spec_indices]) : null}
                           placeholder="请选择" style={{ width: '100%' }}
                           onChange={(v) => onChange({ ...value, skuDeadlines: { ...value.skuDeadlines, [r.spec_indices]: v ? (dayjsToApi(v) ?? null) : '' } })} />
                       ),

@@ -166,15 +166,15 @@ const RefundRuleManagement = () => {
     ActionColumn({
       onEdit: (record: RefundRule) => {
         setEditingRule(record);
+        // 同步写入即可（打开后 Form 已挂载），setTimeout 会在关闭弹窗后仍写回旧数据
+        form.resetFields();
+        form.setFieldsValue({
+          name: record.name,
+          description: record.description || '',
+          stages: record.stages && record.stages.length > 0 ? record.stages : [{ days_before: 0, refund_type: 'rate' as const, refund_value: 0 }],
+          is_system: record.is_system ?? false,
+        });
         setModalVisible(true);
-        setTimeout(() => {
-          form.setFieldsValue({
-            name: record.name,
-            description: record.description || '',
-            stages: record.stages && record.stages.length > 0 ? record.stages : [{ days_before: 0, refund_type: 'rate' as const, refund_value: 0 }],
-            is_system: record.is_system ?? false,
-          });
-        }, 0);
       },
       onDelete: (record: RefundRule) => confirmDelete({
         name: record.name,
@@ -189,11 +189,10 @@ const RefundRuleManagement = () => {
 
   const handleAdd = () => {
     setEditingRule(null);
+    // 同步重置，防止上次编辑的规则残留
+    form.resetFields();
+    if (hasSuper) form.setFieldsValue({ is_system: false });
     setModalVisible(true);
-    setTimeout(() => {
-      form.resetFields();
-      if (hasSuper) form.setFieldsValue({ is_system: false });
-    }, 0);
   };
 
   const handleModalSubmit = async () => {

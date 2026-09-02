@@ -47,10 +47,12 @@ const UserEditProfileModal: React.FC<Props> = ({ open, user, onClose, onSuccess 
       onCancel={() => { form.resetFields(); onClose(); }}
       onOk={handleSubmit}
       okText="确认修改"
+      destroyOnHidden
     >
       <Form
         form={form}
         layout="vertical"
+        clearOnDestroy
         initialValues={{
           real_name: user?.real_name || '',
           gender: user?.gender,

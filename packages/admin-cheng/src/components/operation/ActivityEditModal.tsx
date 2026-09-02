@@ -17,8 +17,8 @@ import {
   PROMISE_SETTING_KEY,
   type PromiseTemplate,
 } from './promiseTemplate.utils';
-import dayjs, { Dayjs } from 'dayjs';
-import { dayjsToApi, safeDayjs } from '@/utils/format';
+import type { Dayjs } from 'dayjs';
+import { dayjsToApi, parseApiTime } from '@/utils/format';
 
 export interface ActivityEditModalProps {
   visible: boolean;
@@ -63,8 +63,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       zone_id: activity.zone_id || 0,
       gender_enabled: activity.gender_enabled ?? false,
       image: imageUrls,
-      time_range: activity.start_time && activity.end_time ? [safeDayjs(activity.start_time), safeDayjs(activity.end_time)] : undefined,
-      register_range: activity.register_start && activity.register_end ? [safeDayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
+      time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
+      register_range: activity.register_start && activity.register_end ? [parseApiTime(activity.register_start)!, parseApiTime(activity.register_end)!] : undefined,
       location_name: locName,
       location_coordinate: locCoord || '',
       activity_type: type,
@@ -113,15 +113,16 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       let imageUrls: string[] = [];
       try { const img = JSON.parse(activity.image || '[]'); imageUrls = Array.isArray(img) ? img : []; } catch { /* ignore */ }
 
-      setTimeout(() => {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           title: activity.title || '',
           cover: activity.cover || '',
           zone_id: activity.zone_id || 0,
           gender_enabled: activity.gender_enabled ?? false,
           image: imageUrls,
-          time_range: activity.start_time && activity.end_time ? [safeDayjs(activity.start_time), safeDayjs(activity.end_time)] : undefined,
-          register_range: activity.register_start && activity.register_end ? [safeDayjs(activity.register_start), dayjs(activity.register_end)] : undefined,
+          time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
+          register_range: activity.register_start && activity.register_end ? [parseApiTime(activity.register_start)!, parseApiTime(activity.register_end)!] : undefined,
           location_name: locName,
           location_coordinate: locCoord || '',
           activity_type: type,
@@ -135,13 +136,33 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           sort_order: activity.sort_order ?? 0,
         });
       }, 50);
+      return () => clearTimeout(timer);
     } else {
-      form.resetFields();
+      // 创建模式：显式全量覆盖所有字段为默认值（resetFields 会回退到上次会话的旧 initialValues，导致残留）
+      form.setFieldsValue({
+        title: '',
+        cover: '',
+        zone_id: 0,
+        gender_enabled: false,
+        image: [],
+        time_range: undefined,
+        register_range: undefined,
+        location_name: '',
+        location_coordinate: '',
+        activity_type: ActivityType.FREE_FCFS,
+        fee: undefined,
+        slots: undefined,
+        male_slots: undefined,
+        female_slots: undefined,
+        description: '',
+        form_config: '',
+        promise_ids: [],
+        sort_order: 0,
+      });
       setActivityType(ActivityType.FREE_FCFS);
       setStatusEnabled(true);
       setHidden(false);
       setGenderEnabled(false);
-      form.setFieldsValue({ promise_ids: [] });
     }
   }, [visible, mode, activity, form]);
 

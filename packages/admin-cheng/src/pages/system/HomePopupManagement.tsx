@@ -4,8 +4,8 @@ import { Card, Form, Button, Input, Typography, Spin, DatePicker, Space } from '
 import { SaveOutlined, ClearOutlined } from '@ant-design/icons';
 import { settingsApi, SettingType } from '@/api/services/settings';
 import ImageUpload from '@/components/common/ImageUpload';
-import { safeDayjs, dayjsToApi } from '@/utils/format';
-import dayjs, { Dayjs } from 'dayjs';
+import { parseApiTime, dayjsToApi } from '@/utils/format';
+import type { Dayjs } from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
@@ -49,8 +49,9 @@ const HomePopupManagement: React.FC = () => {
           };
           setData(d);
           if (d.start_time && d.end_time) {
-            const s = safeDayjs(d.start_time);
-            const e = safeDayjs(d.end_time);
+            // 时间统一 RFC3339，用 parseApiTime 正确处理 Z/+08:00 后缀（safeDayjs 会差 8 小时）
+            const s = parseApiTime(d.start_time);
+            const e = parseApiTime(d.end_time);
             if (s && e) setTimeRange([s, e]);
           }
         } catch {

@@ -34,16 +34,18 @@ export const AddEditModal: React.FC<AddEditModalProps> = ({
   const isEditing = !!entity;
 
   useEffect(() => {
-    if (entity && open) {
-      form.setFieldsValue(entity);
-    }
-  }, [entity, open, form]);
-
-  useEffect(() => {
     if (!open) {
+      // 关闭时清空表单，防止下次打开残留上次内容
+      form.resetFields();
+      return;
+    }
+    if (entity) {
+      form.setFieldsValue(entity);
+    } else {
+      // 创建模式打开时强制重置，防止残留上次编辑的内容
       form.resetFields();
     }
-  }, [open, form]);
+  }, [entity, open, form]);
 
   const handleCancel = () => {
     form.resetFields();

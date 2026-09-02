@@ -24,7 +24,8 @@ const GiftEditModal: React.FC<GiftEditModalProps> = ({ visible, mode, gift, onCl
     if (!visible) return;
     if (mode === 'edit' && gift) {
       setStatusEnabled((gift as any).status === GiftStatus.ENABLED);
-      setTimeout(() => {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           name: gift.name || '',
           icon: gift.icon || '',
@@ -34,6 +35,7 @@ const GiftEditModal: React.FC<GiftEditModalProps> = ({ visible, mode, gift, onCl
           sort_order: gift.sort_order ?? 0,
         });
       }, 50);
+      return () => clearTimeout(timer);
     } else {
       setStatusEnabled(true);
       form.resetFields();

@@ -124,7 +124,7 @@ const WinnerListModal: React.FC<WinnerListModalProps> = ({ visible, poolId, pool
       </ScrollableModal>
 
       <UserPrizeShipModal visible={shipModalVisible} record={shipRecord}
-        onClose={() => setShipModalVisible(false)} onSuccess={refresh} />
+        onClose={() => { setShipModalVisible(false); setShipRecord(null); }} onSuccess={refresh} />
 
       <UserDetailCardModal
         visible={userDetailVisible}

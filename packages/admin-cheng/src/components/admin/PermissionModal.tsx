@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Tree, Button, Space, Spin, Empty } from 'antd';
 import type { TreeDataNode } from 'antd';
@@ -25,10 +25,12 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, roleId, onCl
   const [checkedUrns, setCheckedUrns] = useState<string[]>([]);
   const [roleName, setRoleName] = useState('');
   const { success, error: showError } = useAppNotification();
+  const requestSeq = useRef(0);
 
   // 弹窗打开时加载权限树和角色已有权限
   useEffect(() => {
     if (visible && roleId) {
+      const seq = ++requestSeq.current;
       setLoading(true);
       setCheckedUrns([]);
 
@@ -37,6 +39,8 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, roleId, onCl
         adminApi.getRoleDetail(roleId),
       ])
         .then(([allPerms, roleDetail]) => {
+          // 弹窗已关闭或切换了角色，丢弃迟到响应，防止角色 A 的权限串到角色 B
+          if (seq !== requestSeq.current) return;
           const nodes: PermissionNode[] = Array.isArray(allPerms) ? allPerms : [];
           setAllNodes(nodes);
 
@@ -46,6 +50,7 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, roleId, onCl
           setTreeData(buildPermissionTreeData(nodes, new Set(urns), false));
         })
         .catch((err: any) => {
+          if (seq !== requestSeq.current) return;
           showError(err?.response?.data?.message || err?.message || '加载权限数据失败');
         })
         .finally(() => setLoading(false));
@@ -78,9 +83,17 @@ const PermissionModal: React.FC<PermissionModalProps> = ({ visible, roleId, onCl
   };
 
   const handleCancel = () => {
+    requestSeq.current++; // 失效未完成的加载请求
     setCheckedUrns([]);
     onClose();
   };
+
+  // 关闭时失效未完成的加载请求（含外部关闭路径），防止角色 A 的权限迟到写回角色 B
+  useEffect(() => {
+    if (!visible) {
+      requestSeq.current++;
+    }
+  }, [visible]);
 
   return (
     <ScrollableModal

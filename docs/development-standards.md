@@ -892,6 +892,40 @@ import ScrollableModal from '@/components/templates/ScrollableModal';
 
 **禁止**：`import { Modal } from 'antd'` 做表单弹窗；按钮放 `<Form>` 内部做 `<Form.Item>`；覆盖 `.sm-*` CSS；手动 `styles={{ body: ... }}`。
 
+### 表单弹窗重置规范（强制，2026-09-02）
+
+**背景**：`Form.useForm()` 的 store 存活在常驻的父组件中，`destroyOnHidden` 只卸载 Form DOM、不清 store；Form 重挂载时 rc-field-form 执行 `merge(initialValues, 旧store)`，旧记录的值会残留。因此"编辑弹窗关闭后再打开创建弹窗"必须显式重置，否则创建表单会预置上次编辑的内容。
+
+```tsx
+// 1. 编辑回填：必须延迟写入（setTimeout ~50ms），等弹窗 Form 挂载完成；
+//    effect 返回 cleanup 清除定时器，防止关闭/切换模式后旧数据写回。
+useEffect(() => {
+  if (!visible) return;
+  if (mode === 'edit' && record) {
+    const timer = setTimeout(() => {
+      form.setFieldsValue({ name: record.name, ... });
+    }, 50);
+    return () => clearTimeout(timer);
+  }
+  // 2. 创建模式：显式全量覆盖所有字段为默认值。
+  //    禁止 resetFields()：它会回退到上一次会话的旧 initialValues，正是残留 bug 的根源。
+  form.setFieldsValue({ name: '', sort_order: 0, ...全部字段... });
+}, [visible, mode, record, form]);
+
+// 3. 异步 fetch 详情后写表单，必须请求序号守卫，防止迟到响应写回：
+const seq = ++requestSeq.current;
+api.getDetail(id).then((res) => {
+  if (seq !== requestSeq.current) return; // 弹窗已关闭或切换了记录
+  form.setFieldsValue(...);
+});
+// 关闭弹窗/切换模式时 requestSeq.current++ 使旧请求失效
+```
+
+**禁止**：
+- `clearOnDestroy`：与 destroyOnHidden 组合在部分场景会导致编辑打开时数据不加载（已验证，勿用）
+- 同步 `form.setFieldsValue()` 回填编辑数据（Form 未挂载时写入不可靠，会导致编辑表单空白）
+- 创建分支只 `form.setFieldsValue({})`（空操作，无法清除残留）
+
 ---
 
 ## 99. 构建与部署规范

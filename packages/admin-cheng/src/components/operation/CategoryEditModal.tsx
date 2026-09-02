@@ -26,8 +26,12 @@ const CategoryEditModal: React.FC<CategoryEditModalProps> = ({
   const isCreate = mode === 'create';
 
   useEffect(() => {
-    if (visible) {
-      form.setFieldsValue(category && !isCreate ? { name: category.name || '' } : {});
+    if (!visible) return;
+    if (category && !isCreate) {
+      form.setFieldsValue({ name: category.name || '' });
+    } else {
+      // 创建模式打开时强制重置，防止残留上次编辑的分类名
+      form.resetFields();
     }
   }, [visible, category, isCreate, form]);
 

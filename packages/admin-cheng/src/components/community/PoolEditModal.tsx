@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button, Space, Form, Input, Switch, DatePicker } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { PoolType } from '@shared/constants';
-import { safeDayjs, dayjsToApi } from '@/utils/format';
+import { parseApiTime, dayjsToApi } from '@/utils/format';
 import { lotteryApi, Pool, CreatePoolRequest } from '@/api/services/lottery';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 
@@ -24,16 +24,18 @@ const PoolEditModal: React.FC<PoolEditModalProps> = ({ visible, mode, pool, onCl
     if (!visible) return;
     if (mode === 'edit' && pool) {
       setStatusEnabled(pool.status === 0);
-      setTimeout(() => {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           name: pool.name || '',
           pool_type: pool.pool_type ?? PoolType.ONCE,
           description: pool.description || '',
           icon: pool.icon || '',
           image: pool.image || '',
-          time_range: pool.start_time && pool.end_time ? [safeDayjs(pool.start_time), safeDayjs(pool.end_time)] : undefined,
+          time_range: pool.start_time && pool.end_time ? [parseApiTime(pool.start_time)!, parseApiTime(pool.end_time)!] : undefined,
         });
       }, 50);
+      return () => clearTimeout(timer);
     } else {
       setStatusEnabled(true);
       form.resetFields();

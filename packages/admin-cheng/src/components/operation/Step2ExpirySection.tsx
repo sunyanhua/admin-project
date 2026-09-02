@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Button, Radio, Select, DatePicker, TimePicker, InputNumber, Table } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import dayjs, { Dayjs } from 'dayjs';
-import { dayjsToApi } from '@/utils/format';
+import type { Dayjs } from 'dayjs';
+import { dayjsToApi, parseApiTime } from '@/utils/format';
 
 interface SkuRow {
   key: string;
@@ -59,14 +59,14 @@ const Step2ExpirySection: React.FC<Step2ExpirySectionProps> = ({
     {
       title: '开始时间', dataIndex: 'usable' as const, key: 'usable', width: 200,
       render: (v: string | undefined, r: SkuRow) => (
-        <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
+        <DatePicker showTime value={v ? parseApiTime(v) : null} placeholder="不限" style={{ width: '100%' }}
           onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'usable', typeof dateStr === 'string' ? dateStr : null)} />
       ),
     },
     {
       title: '截止时间', dataIndex: 'expiry' as const, key: 'expiry', width: 200,
       render: (v: string | undefined, r: SkuRow) => (
-        <DatePicker showTime value={v ? dayjs(v) : null} placeholder="不限" style={{ width: '100%' }}
+        <DatePicker showTime value={v ? parseApiTime(v) : null} placeholder="不限" style={{ width: '100%' }}
           onChange={(_, dateStr) => updateStep2Sku(r.spec_indices, 'expiry', typeof dateStr === 'string' ? dateStr : '')} />
       ),
     },

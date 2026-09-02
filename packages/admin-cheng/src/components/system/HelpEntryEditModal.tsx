@@ -24,7 +24,8 @@ const HelpEntryEditModal: React.FC<HelpEntryEditModalProps> = ({
   useEffect(() => {
     if (!visible) return;
     if (mode === 'edit' && entry) {
-      setTimeout(() => {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           question: entry.question || '',
           answer: entry.answer || '',
@@ -32,6 +33,7 @@ const HelpEntryEditModal: React.FC<HelpEntryEditModalProps> = ({
           sort_order: entry.sort_order ?? 0,
         });
       }, 50);
+      return () => clearTimeout(timer);
     } else {
       form.resetFields();
     }

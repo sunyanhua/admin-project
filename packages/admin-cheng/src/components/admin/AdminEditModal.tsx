@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Form, Input, Select, Button, Space, Divider } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -44,38 +44,44 @@ const AdminEditModal: React.FC<AdminEditModalProps> = ({ visible, onClose, admin
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [roles, setRoles] = useState<AdminRoleItem[]>([]);
+  const requestSeq = useRef(0);
 
   useEffect(() => {
-    if (admin && visible) {
-      adminApi.getRoles().then((res: any) => {
-        const roleList: AdminRoleItem[] = res?.list || (Array.isArray(res) ? res : []);
-        setRoles(roleList);
+    if (!admin || !visible) return;
+    // 打开时先清空表单，防止上次编辑的内容（含新密码）残留
+    form.resetFields();
+    // 请求序号守卫：关闭弹窗或切换管理员后，迟到的响应不再写回表单
+    const seq = ++requestSeq.current;
+    adminApi.getRoles().then((res: any) => {
+      if (seq !== requestSeq.current) return;
+      const roleList: AdminRoleItem[] = res?.list || (Array.isArray(res) ? res : []);
+      setRoles(roleList);
 
-        // admin.roles 返回的是中文名称数组，如 ['全站管理员']
-        const roleNames: string[] = (admin.roles || []).map((r: any) =>
-          typeof r === 'string' ? r : r?.name
-        ).filter(Boolean);
+      // admin.roles 返回的是中文名称数组，如 ['全站管理员']
+      const roleNames: string[] = (admin.roles || []).map((r: any) =>
+        typeof r === 'string' ? r : r?.name
+      ).filter(Boolean);
 
-        // 优先按 name 匹配，兜底按 code 匹配
-        const matchedRole = roleNames.length
-          ? roleList.find((r) => roleNames.includes(r.name) || roleNames.includes((r as any).code))
-          : null;
+      // 优先按 name 匹配，兜底按 code 匹配
+      const matchedRole = roleNames.length
+        ? roleList.find((r) => roleNames.includes(r.name) || roleNames.includes((r as any).code))
+        : null;
 
-        form.setFieldsValue({
-          real_name: admin.real_name || '',
-          phone: admin.phone || '',
-          role_id: matchedRole?.id ?? undefined,
-          status: admin.status ?? 0,
-        });
-      }).catch(() => {
-        setRoles([]);
-        form.setFieldsValue({
-          real_name: admin.real_name || '',
-          phone: admin.phone || '',
-          status: admin.status ?? 0,
-        });
+      form.setFieldsValue({
+        real_name: admin.real_name || '',
+        phone: admin.phone || '',
+        role_id: matchedRole?.id ?? undefined,
+        status: admin.status ?? 0,
       });
-    }
+    }).catch(() => {
+      if (seq !== requestSeq.current) return;
+      setRoles([]);
+      form.setFieldsValue({
+        real_name: admin.real_name || '',
+        phone: admin.phone || '',
+        status: admin.status ?? 0,
+      });
+    });
   }, [admin, visible, form]);
 
   const handleSubmit = async (values: any) => {

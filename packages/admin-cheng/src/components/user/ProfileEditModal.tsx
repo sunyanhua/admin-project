@@ -91,6 +91,7 @@ const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, bir
       <Form
         form={form}
         layout="vertical"
+        clearOnDestroy
         initialValues={{
           nickname: nickname || '',
           gender,

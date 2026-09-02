@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Switch, InputNumber, Space, Form, Input, DatePicker, Image } from 'antd';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
@@ -15,7 +15,7 @@ import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import dayjs, { Dayjs } from 'dayjs';
-import { dayjsToApi } from '@/utils/format';
+import { dayjsToApi, parseApiTime } from '@/utils/format';
 
 const STATUS_OPTIONS = [
   { label: '上线', value: BannerStatus.ONLINE },
@@ -35,6 +35,7 @@ const BannerManagement = () => {
   const [statusEnabled, setStatusEnabled] = useState(true);
   const [form] = Form.useForm();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const editRequestSeq = useRef(0);
 
   const fetchBanners = useCallback(async (params: any) => {
     return bannerApi.getBanners({
@@ -98,35 +99,50 @@ const BannerManagement = () => {
   };
 
   const handleAdd = () => {
+    editRequestSeq.current++; // 使未完成的编辑详情请求失效
     setEditingBanner(null);
     setStatusEnabled(true);
+    form.resetFields();
     setModalVisible(true);
-    setTimeout(() => form.resetFields(), 0);
+  };
+
+  const handleCloseModal = () => {
+    editRequestSeq.current++; // 失效未完成的详情请求，防止迟到响应重新打开弹窗并写回旧数据
+    form.resetFields();
+    setModalVisible(false);
+    setEditingBanner(null);
   };
 
   const handleEdit = async (record: Banner) => {
+    const seq = ++editRequestSeq.current;
     setEditingBanner(record);
     setLoadingDetail(true);
     try {
       const detail: any = await bannerApi.getBannerDetail(record.id);
+      // 请求期间用户已关闭弹窗或切换到添加模式，丢弃迟到响应
+      if (seq !== editRequestSeq.current) return;
       const bannerData = detail || record;
       setEditingBanner(bannerData);
       setStatusEnabled(bannerData.status === BannerStatus.ONLINE);
       setModalVisible(true);
       setTimeout(() => {
+        // 写入前再校验一次，弹窗关闭或切换模式后丢弃
+        if (seq !== editRequestSeq.current) return;
         form.setFieldsValue({
           title: bannerData.title || '',
           cover: bannerData.cover || '',
           link_data: bannerData.link_data || '',
-          start_at: bannerData.start_at ? dayjs(bannerData.start_at) : null,
-          end_at: bannerData.end_at ? dayjs(bannerData.end_at) : null,
+          start_at: bannerData.start_at ? parseApiTime(bannerData.start_at) : null,
+          end_at: bannerData.end_at ? parseApiTime(bannerData.end_at) : null,
           sort_order: bannerData.sort_order,
         });
       }, 0);
     } catch {
+      if (seq !== editRequestSeq.current) return;
       setStatusEnabled(record.status === BannerStatus.ONLINE);
       setModalVisible(true);
       setTimeout(() => {
+        if (seq !== editRequestSeq.current) return;
         form.setFieldsValue({
           title: record.title || '',
           cover: record.cover || '',
@@ -166,7 +182,7 @@ const BannerManagement = () => {
         await bannerApi.createBanner(payload);
         success('添加成功');
       }
-      setModalVisible(false);
+      handleCloseModal();
       refresh();
     } catch (err: any) {
       if (err?.errorFields) return;
@@ -260,12 +276,12 @@ const BannerManagement = () => {
       <ScrollableModal
         title={editingBanner ? '编辑轮播图' : '添加轮播图'}
         open={modalVisible}
-        onCancel={() => { form.resetFields(); setModalVisible(false); }}
+        onCancel={handleCloseModal}
         width={720}
         destroyOnHidden
         footer={
           <Space>
-            <Button onClick={() => { form.resetFields(); setModalVisible(false); }}>取消</Button>
+            <Button onClick={handleCloseModal}>取消</Button>
             <Button type="primary" loading={loading} onClick={() => form.submit()}>
               {editingBanner ? '保存' : '创建'}
             </Button>

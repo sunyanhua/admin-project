@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { Tag, Space, Spin, Form, Input, Select, Modal } from 'antd';
+import { useState, useCallback, useRef } from 'react';
+import { Tag, Space, Spin, Form, Input, Select, Modal, Button } from 'antd';
 import { useListPage } from '@/hooks/useListPage';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { StandardPage } from '@/components/templates/StandardPage';
@@ -28,6 +28,7 @@ const WxaAppManagement: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [form] = Form.useForm();
+  const editRequestSeq = useRef(0);
 
   const { success, error: showError } = useAppNotification();
 
@@ -60,21 +61,34 @@ const WxaAppManagement: React.FC = () => {
   };
 
   const handleCreate = () => {
+    editRequestSeq.current++; // 使未完成的编辑详情请求失效
     setEditingRecord(null);
+    form.resetFields();
     setModalOpen(true);
-    setTimeout(() => form.resetFields(), 0);
+  };
+
+  const handleCloseModal = () => {
+    editRequestSeq.current++; // 失效未完成的详情请求，防止迟到响应重新打开弹窗并写回旧数据
+    form.resetFields();
+    setModalOpen(false);
+    setEditingRecord(null);
   };
 
   const handleEdit = async (record: any) => {
+    const seq = ++editRequestSeq.current;
     setEditingRecord(record);
     setLoadingDetail(true);
     try {
       const res: any = await wxaApi.getAppDetail(record.id);
+      // 请求期间用户已关闭弹窗或切换到新增模式，丢弃迟到响应
+      if (seq !== editRequestSeq.current) return;
       const detail = res?.data || res || {};
       const merged = { ...record, ...detail };
       setEditingRecord(merged);
       setModalOpen(true);
       setTimeout(() => {
+        // 写入前再校验一次，弹窗关闭或切换模式后丢弃
+        if (seq !== editRequestSeq.current) return;
         form.setFieldsValue({
           app_id: merged.app_id || '',
           app_name: merged.app_name || '',
@@ -83,9 +97,11 @@ const WxaAppManagement: React.FC = () => {
         });
       }, 0);
     } catch {
+      if (seq !== editRequestSeq.current) return;
       showError('加载小程序配置详情失败，使用列表数据编辑');
       setModalOpen(true);
       setTimeout(() => {
+        if (seq !== editRequestSeq.current) return;
         form.setFieldsValue({
           app_id: record.app_id || '',
           app_name: record.app_name || '',
@@ -267,11 +283,17 @@ const WxaAppManagement: React.FC = () => {
       <ScrollableModal
         title={editingRecord?.id ? '编辑小程序配置' : '新增小程序配置'}
         open={modalOpen}
-        onCancel={() => { form.resetFields(); setModalOpen(false); setEditingRecord(null); }}
-        onOk={handleSubmit}
-        okText={editingRecord?.id ? '保存' : '创建'}
-        confirmLoading={submitting}
+        onCancel={handleCloseModal}
         width={600}
+        destroyOnHidden
+        footer={
+          <Space>
+            <Button onClick={handleCloseModal}>取消</Button>
+            <Button type="primary" loading={submitting} disabled={loadingDetail} onClick={handleSubmit}>
+              {editingRecord?.id ? '保存' : '创建'}
+            </Button>
+          </Space>
+        }
       >
         <Spin spinning={loadingDetail}>
           <Form form={form} layout="vertical">

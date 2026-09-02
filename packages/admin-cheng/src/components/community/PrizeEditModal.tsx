@@ -42,7 +42,8 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
       const pt = prize.prize_type ?? PrizeType.PHYSICAL;
       setStatusEnabled(prize.status === 0);
       setPrizeType(pt);
-      setTimeout(() => {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           name: prize.name || '',
           icon: prize.icon || '',
@@ -51,11 +52,12 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
           description: prize.description || '',
         });
       }, 50);
+      return () => clearTimeout(timer);
     } else {
       setStatusEnabled(true);
       setPrizeType(0);
       form.resetFields();
-      setTimeout(() => form.setFieldsValue({ prize_type: 0 }), 0);
+      form.setFieldsValue({ prize_type: 0 });
     }
   }, [visible, mode, prize, form]);
 

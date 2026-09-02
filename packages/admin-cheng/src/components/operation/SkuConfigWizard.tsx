@@ -6,7 +6,7 @@ import RefundSettings, { RefundSettingsData, RefundMode, REFUND_TYPE_MAP } from 
 import BookingSlotManager, { BookingSlotManagerHandle } from './BookingSlotManager';
 import Step2ExpirySection from './Step2ExpirySection';
 import dayjs, { Dayjs } from 'dayjs';
-import { dayjsToApi } from '@/utils/format';
+import { dayjsToApi, parseApiTime } from '@/utils/format';
 import SkuConfigPanel, {
   SkuConfigPanelHandle, SpecGroup, SkuRow, cartesian,
 } from './SkuConfigPanel';
@@ -134,9 +134,9 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
       productApi.getProductDetail(productId).then((detail: any) => {
         setIsListed(detail?.is_listed === true);
         if (!ticketMode && !productMode) {
-          if (detail?.usable) setUnifiedUsable(dayjs(detail.usable));
+          if (detail?.usable) setUnifiedUsable(parseApiTime(detail.usable) ?? null);
           else setUnifiedUsable(null);
-          if (detail?.expiry) setUnifiedExpiry(dayjs(detail.expiry));
+          if (detail?.expiry) setUnifiedExpiry(parseApiTime(detail.expiry) ?? null);
           else setUnifiedExpiry(null);
         }
         // 还原已保存的报名信息模板
@@ -262,8 +262,8 @@ const SkuConfigWizard = forwardRef<SkuConfigWizardHandle, SkuConfigWizardProps>(
           const productHasDates = !!(productDetail?.usable || productDetail?.expiry);
           if (productHasDates) {
             setExpiryMode('unified');
-            setUnifiedUsable(productDetail?.usable ? dayjs(productDetail.usable) : null);
-            setUnifiedExpiry(productDetail?.expiry ? dayjs(productDetail.expiry) : null);
+            setUnifiedUsable(productDetail?.usable ? (parseApiTime(productDetail.usable) ?? null) : null);
+            setUnifiedExpiry(productDetail?.expiry ? (parseApiTime(productDetail.expiry) ?? null) : null);
           } else if (hasSkuDates) {
             setExpiryMode('individual');
             setUnifiedUsable(null);

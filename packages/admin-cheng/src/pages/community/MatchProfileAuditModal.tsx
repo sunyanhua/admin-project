@@ -43,8 +43,9 @@ const MatchProfileAuditModal: React.FC<Props> = ({ open, user, onClose, onSucces
       onCancel={() => { form.resetFields(); onClose(); }}
       onOk={handleSubmit}
       okText="确认提交"
+      destroyOnHidden
     >
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" clearOnDestroy>
         <Form.Item name="action" label="审核结果" rules={[{ required: true, message: '请选择审核结果' }]}>
           <Radio.Group>
             <Space direction="vertical">

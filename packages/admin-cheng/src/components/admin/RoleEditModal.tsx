@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Form, Input, InputNumber, Button, Space, Tree, Spin, Empty } from 'antd';
 import type { TreeDataNode } from 'antd';
@@ -34,6 +34,7 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
   const [permTree, setPermTree] = useState<TreeDataNode[]>([]);
   const [permLoading, setPermLoading] = useState(false);
   const [checkedUrns, setCheckedUrns] = useState<string[]>([]);
+  const detailSeq = useRef(0);
 
   // 加载权限树（仅创建时需要）
   useEffect(() => {
@@ -53,10 +54,13 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
   // 编辑模式：加载单条角色详情
   useEffect(() => {
     if (visible && !isCreate && roleId) {
+      const seq = ++detailSeq.current;
       setDetailLoading(true);
       setRoleDetail(null);
       adminApi.getRoleDetail(roleId)
         .then((detail) => {
+          // 弹窗已关闭或切换到创建模式，丢弃迟到响应，防止旧角色数据写回表单
+          if (seq !== detailSeq.current) return;
           setRoleDetail(detail);
           form.setFieldsValue({
             name: detail.name || '',
@@ -65,6 +69,7 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
           });
         })
         .catch((err) => {
+          if (seq !== detailSeq.current) return;
           showError(err?.response?.data?.message || err?.message || '获取角色详情失败');
           onClose();
         })
@@ -77,9 +82,12 @@ const RoleEditModal: React.FC<RoleEditModalProps> = ({ visible, mode, roleId, on
     if (visible) {
       setCheckedUrns([]);
       if (isCreate) {
+        // 创建模式打开：失效未完成的编辑详情请求（编辑打开时由加载 effect 自行失效）
+        detailSeq.current++;
         form.resetFields();
       }
     } else {
+      detailSeq.current++;
       setRoleDetail(null);
     }
   }, [visible, isCreate, form]);

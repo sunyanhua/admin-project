@@ -22,12 +22,14 @@ const HelpCategoryEditModal: React.FC<HelpCategoryEditModalProps> = ({
   useEffect(() => {
     if (!visible) return;
     if (mode === 'edit' && category) {
-      setTimeout(() => {
+      // 延迟回填：等弹窗 Form 挂载后再写入；关闭/切换模式时清除定时器，防止旧数据写回
+      const timer = setTimeout(() => {
         form.setFieldsValue({
           name: category.name || '',
           sort_order: category.sort_order ?? 0,
         });
       }, 50);
+      return () => clearTimeout(timer);
     } else {
       form.resetFields();
     }
