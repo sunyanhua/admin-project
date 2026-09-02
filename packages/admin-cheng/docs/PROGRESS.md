@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-07-27**
+**2026-09-02**
 
 ---
 
@@ -42,6 +42,7 @@
 - 活动报名（订单管理，v1 重构为共享组件 OrderListPage）
 - 购票信息（TicketOrders，v1 重构为共享组件）
 - 购买信息（ProductOrders，v1 重构为共享组件）
+- 图片编辑（手动裁切 + Linksy AI 调整尺寸；当前为临时直连模式，网关配置后恢复代理）
 
 ### 财务管理
 - 优惠券管理（v1 完整 CRUD + 兑换规则 + 发放功能）
@@ -95,10 +96,12 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
-| 2026-07-27 | 上传增强：非分片上传扩展音频/视频/压缩包 + 分片上传工具 uploadUtils | upload.ts + uploadUtils.ts | （待提交） |
-| 2026-07-27 | 小程序配置管理：wxa service + 管理页面 + 路由/菜单注册 | wxa.ts + WxaAppManagement.tsx + router + menuConfig | （待提交） |
-| 2026-07-27 | auth/admin/user service 路径/类型对齐 Swagger + C端用户管理重构 | auth.ts + admin.ts + user.ts + UserList + UserDetailModal + UserEditProfileModal + MatchProfileAuditModal | （待提交） |
-| 2026-07-25 | useAppNotification + console 清理 | 11 文件，修复 5 个违规 + 10+ 处控制台语句 | （待提交） |
+| 2026-09-02 | 图片编辑：手动裁切 + Linksy AI 调整尺寸（网关代理基线 → 临时直连模式） | ImageEditModal + linksy.ts + MultiImageUpload + CropperImageUpload + vite.config + 部署文档 | 2fc4bc4、21075a7、293f2b8 |
+| 2026-09-02 | 正式环境首次发布：构建保留 index.html 入口 + 部署要点文档 | scripts/build.js + docs/deployment/admin-cheng-production-deploy.md | b2fd1a3、014fd6d |
+| 2026-07-27 | 上传增强：非分片上传扩展音频/视频/压缩包 + 分片上传工具 uploadUtils | upload.ts + uploadUtils.ts | 4d4edb6 |
+| 2026-07-27 | 小程序配置管理：wxa service + 管理页面 + 路由/菜单注册 | wxa.ts + WxaAppManagement.tsx + router + menuConfig | 9d57afd |
+| 2026-07-27 | auth/admin/user service 路径/类型对齐 Swagger + C端用户管理重构 | auth.ts + admin.ts + user.ts + UserList + UserDetailModal + UserEditProfileModal + MatchProfileAuditModal | f60b01b |
+| 2026-07-25 | useAppNotification + console 清理 | 11 文件，修复 5 个违规 + 10+ 处控制台语句 | 3ec6256 |
 | 2026-07-25 | CLAUDE.md 文档路径修正 + 发票管理菜单链接 | CLAUDE.md + MainLayout.tsx | （待提交） |
 | 2026-07-25 | 文档同步更新（PROGRESS + SITEMAP） | docs/ | （待提交） |
 | 2026-07-21 | 优惠券管理 v1 完整重构 | CouponManagement + coupon API（CRUD + 兑换规则 + 发放） | 72d269d |
@@ -132,3 +135,5 @@
 - 测试覆盖（Vitest + React Testing Library）
 - 性能优化（代码分割、懒加载）
 - 部署配置（Docker、CI/CD）
+- **Linksy 服务器网关配置**（测试/正式 nginx `/linksy-api` 转发 + 各自密钥），完成后 `git revert 21075a7` 恢复网关模式，并删除 `.env.*.local` 中的临时密钥
+- 排查 admin-template / admin-hsh1039 的 build.js 入口改名逻辑（同类 IIS 部署存在目录 403 隐患）
