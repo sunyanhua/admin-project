@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Form, Radio, Input, Button, Space } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -20,6 +20,13 @@ const AuditMatchProfileModal: React.FC<Props> = ({ open, userId, onClose, onSucc
   const watchedAction = Form.useWatch('action', form);
   const action: 1 | 2 = watchedAction === 2 ? 2 : 1;
   const { success, error } = useAppNotification();
+
+  // 每次打开都显式重置表单（销毁重开后 initialValues/useWatch 可能滞后，显式重置保证状态干净）
+  useEffect(() => {
+    if (open) {
+      form.resetFields();
+    }
+  }, [open, form]);
 
   const handleSubmit = async () => {
     try {
@@ -67,8 +74,14 @@ const AuditMatchProfileModal: React.FC<Props> = ({ open, userId, onClose, onSucc
           label="审核意见"
           rules={[
             {
-              required: action === 2,
-              message: '拒绝时必须填写审核意见',
+              // 校验时实时读取表单值（不依赖渲染期派生值，避免销毁重开后派生值滞后）
+              validator: (_, value) => {
+                const currentAction = form.getFieldValue('action');
+                if (currentAction === 2 && !value) {
+                  return Promise.reject(new Error('拒绝时必须填写审核意见'));
+                }
+                return Promise.resolve();
+              },
             },
           ]}
         >
