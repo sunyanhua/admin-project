@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Card, Descriptions, Form, Spin, Tag, Button } from 'antd';
+import { Card, Form, Spin, Input, Button } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useAuth } from '@/contexts/AuthContext';
 import { zoneApi, Zone } from '@/api/services/zone';
-import { ZoneStatus } from '@shared/constants';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
 import ImageUpload from '@/components/common/ImageUpload';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
@@ -65,21 +64,13 @@ const ZoneInfo = () => {
 
   return (
     <div>
-      <Card title="专区信息" style={{ marginBottom: 16 }}>
-        <Descriptions column={2}>
-          <Descriptions.Item label="专区名称">{zone?.name || '-'}</Descriptions.Item>
-          <Descriptions.Item label="状态">
-            <Tag color={zone?.status === ZoneStatus.ENABLED ? 'success' : 'default'}>
-              {zone?.status === ZoneStatus.ENABLED ? '启用' : '禁用'}
-            </Tag>
-          </Descriptions.Item>
-          <Descriptions.Item label="成员数">{zone?.member_count ?? 0}</Descriptions.Item>
-        </Descriptions>
-      </Card>
-
-      <Card title="编辑专区信息" extra="仅可修改图标、Banner 和简介">
+      <Card title="专区信息管理" extra="仅可修改图标、Banner 和简介">
         <Spin spinning={loading}>
           <Form form={form} layout="vertical" style={{ maxWidth: 720 }} onFinish={handleSave}>
+            <Form.Item label="专区名称">
+              <Input value={zone?.name || ''} disabled placeholder="专区名称" />
+            </Form.Item>
+
             <Form.Item
               label="专区图标（Logo）"
               name="logo"
