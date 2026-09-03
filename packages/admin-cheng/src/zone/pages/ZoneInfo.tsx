@@ -24,7 +24,7 @@ const ZoneInfo = () => {
     if (!user?.zoneId) return;
     setLoading(true);
     try {
-      const detail: any = await zoneApi.getDetail(user.zoneId);
+      const detail: any = await zoneApi.getProfile(user.zoneId);
       setZone(detail);
       form.setFieldsValue({
         logo: detail?.logo || '',
@@ -47,8 +47,8 @@ const ZoneInfo = () => {
     try {
       const values = await form.validateFields();
       setSaving(true);
-      // 指针语义：仅传可编辑的三项，空串为主动清空
-      await zoneApi.update(user!.zoneId, {
+      // 指针语义：仅传可编辑的三项，空串为主动清空（专区管理员专用 profile 路由）
+      await zoneApi.updateProfile(user!.zoneId, {
         logo: values.logo || '',
         banner: values.banner || '',
         description: values.description || '',

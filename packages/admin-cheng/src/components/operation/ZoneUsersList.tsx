@@ -107,7 +107,7 @@ const ZoneUsersList: React.FC<ZoneUsersListProps> = ({ zoneId, zoneName, active 
       // 专区认证申请表单配置（form_config：id + label）
       let formFields: Array<{ id: string; label: string }> = [];
       try {
-        const zoneRes: any = await zoneApi.getDetail(zoneId);
+        const zoneRes: any = await zoneApi.getProfile(zoneId);
         const fc = typeof zoneRes?.form_config === 'string' ? JSON.parse(zoneRes.form_config) : zoneRes?.form_config;
         if (Array.isArray(fc)) formFields = fc.map((f: any) => ({ id: f.id, label: f.label }));
       } catch { /* ignore */ }

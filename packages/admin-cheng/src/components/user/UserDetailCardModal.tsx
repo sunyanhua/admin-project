@@ -20,6 +20,10 @@ interface UserDetailCardModalProps {
   reloadKey?: number;
   /** 是否显示推荐操作按钮（默认显示；专区管理场景传 false 仅看资料） */
   showRecommend?: boolean;
+  /** 自定义详情拉取（专区申请/活动报名的专用接口），缺省用通用 userApi.getUserDetail */
+  fetchDetail?: (userId: string) => Promise<any>;
+  /** 自定义隐私拉取（专区申请/活动报名的专用隐私接口），缺省用通用接口 */
+  fetchPrivacy?: (userId: string) => Promise<any>;
   onClose: () => void;
 }
 
@@ -36,7 +40,8 @@ interface UserDetailCardModalProps {
  * 用法：<UserDetailCardModal visible={...} userId={record.user_id} onClose={...} />
  */
 const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
-  visible, userId, title = '用户详情', onEditProfile, onAuditProfile, reloadKey = 0, showRecommend, onClose,
+  visible, userId, title = '用户详情', onEditProfile, onAuditProfile, reloadKey = 0, showRecommend,
+  fetchDetail, fetchPrivacy, onClose,
 }) => {
   const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
@@ -51,7 +56,7 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
     }
     setLoading(true);
     setDetail(null);
-    userApi.getUserDetail(userId)
+    (fetchDetail || userApi.getUserDetail)(userId)
       .then((res: any) => {
         // 拦截器已解包 → { user, profile, match_profile, wallet }
         setDetail({
@@ -87,6 +92,7 @@ const UserDetailCardModal: React.FC<UserDetailCardModalProps> = ({
           onEditProfile,
           onAuditProfile,
           showRecommend,
+          fetchPrivacy,
           onRecommendSuccess: () => setInternalReloadKey(k => k + 1),
         });
       }}

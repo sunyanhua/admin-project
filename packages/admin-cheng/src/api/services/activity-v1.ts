@@ -173,6 +173,16 @@ export const activityApi = {
     return request.get('/admin/v1/bizops/activity', { params });
   },
 
+  /** 活动报名用户基本资料（基础资料+脱单档案+钱包积分金币） */
+  getRegisterUser: (activityId: string, registerId: string) => {
+    return request.get(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/user`);
+  },
+
+  /** 活动报名用户隐私资料（脱敏身份证等，读取留痕） */
+  getRegisterUserPrivacy: (activityId: string, registerId: string) => {
+    return request.post(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/user/privacy`);
+  },
+
   /** 活动详情 */
   getDetail: (id: string) => {
     return request.get(`/admin/v1/bizops/activity/${id}`);

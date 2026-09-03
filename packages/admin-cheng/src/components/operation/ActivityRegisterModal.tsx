@@ -46,6 +46,8 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const [detailReadonly, setDetailReadonly] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState<string>('');
+  /** 当前查看用户对应的报名记录 ID（专区专用资料接口按报名记录读取） */
+  const [userDetailRegisterId, setUserDetailRegisterId] = useState<string>('');
   const [exporting, setExporting] = useState(false);
 
   const isFreeFCFS = activityType === ActivityType.FREE_FCFS;
@@ -174,7 +176,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         const avatar = up?.avatar || r.avatar || '';
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }}
-            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
+            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailRegisterId(r.id); setUserDetailVisible(true); }}>
             <Space size={4}>
               <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
@@ -297,7 +299,10 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       <UserDetailCardModal
         visible={userDetailVisible}
         userId={userDetailUserId}
-        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+        // 专区专用资料接口（按报名记录读取，权限对专区管理员友好）
+        fetchDetail={() => activityApi.getRegisterUser(activityId, userDetailRegisterId)}
+        fetchPrivacy={() => activityApi.getRegisterUserPrivacy(activityId, userDetailRegisterId)}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); setUserDetailRegisterId(''); }}
       />
     </>
   );

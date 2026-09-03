@@ -139,6 +139,26 @@ export const zoneApi = {
     return request.put(`/admin/v1/bizops/zone/${id}`, data);
   },
 
+  /** 专区基本资料（专区管理员专用路由，权限对 zone admin 友好） */
+  getProfile: (id: string) => {
+    return request.get(`/admin/v1/bizops/zone/${id}/profile`);
+  },
+
+  /** 编辑专区基本资料（专区管理员专用路由） */
+  updateProfile: (id: string, data: UpdateZoneRequest) => {
+    return request.put(`/admin/v1/bizops/zone/${id}/profile`, data);
+  },
+
+  /** 专区申请用户基本资料（基础资料+脱单档案+钱包积分金币） */
+  getApplicationUser: (zoneId: string, applicationId: string) => {
+    return request.get(`/admin/v1/bizops/zone/${zoneId}/application/${applicationId}/user`);
+  },
+
+  /** 专区申请用户隐私资料（脱敏身份证等，读取留痕） */
+  getApplicationUserPrivacy: (zoneId: string, applicationId: string) => {
+    return request.post(`/admin/v1/bizops/zone/${zoneId}/application/${applicationId}/user/privacy`);
+  },
+
   /** 删除专区（软删除） */
   delete: (id: string) => {
     return request.delete(`/admin/v1/bizops/zone/${id}`);

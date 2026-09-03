@@ -38,6 +38,8 @@ export interface CommunityUserDetailProps {
   onRecommendSuccess?: () => void;
   /** 是否显示推荐操作按钮（默认显示；专区管理场景传 false 仅看资料） */
   showRecommend?: boolean;
+  /** 自定义隐私拉取（专区申请/活动报名的专用隐私接口），缺省用通用接口 */
+  fetchPrivacy?: (userId: string) => Promise<any>;
 }
 
 const BLOOD_MAP: Record<number, string> = { 1: 'A', 2: 'B', 3: 'AB', 4: 'O' };
@@ -116,7 +118,7 @@ function MatchCodeTitle({ code }: { code: string }) {
 }
 
 export function buildUserDetailSections(props: CommunityUserDetailProps) {
-  const { user, profile, matchProfile, wallet, extraSections, onEditProfile, onAuditProfile, onRecommendSuccess, showRecommend } = props;
+  const { user, profile, matchProfile, wallet, extraSections, onEditProfile, onAuditProfile, onRecommendSuccess, showRecommend, fetchPrivacy } = props;
 
   const sections: { title: ReactNode; items: { label: string; value: ReactNode; span?: number }[] }[] = [
     // ====== 基础资料 ======
@@ -215,7 +217,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
           span: 1,
         },
         { label: '毕业学校', value: matchProfile.graduate || '-', span: 1 },
-        { label: '身份证号', value: <IdCardViewButton userId={user.user_id} />, span: 1 },
+        { label: '身份证号', value: <IdCardViewButton userId={user.user_id} fetchPrivacy={fetchPrivacy} />, span: 1 },
         { label: '收入范围', value: matchProfile.income_range != null ? INCOME_RANGE_MAP[matchProfile.income_range] : '-', span: 1 },
         { label: '照片', value: matchProfile.photos?.length ? (
           <Image.PreviewGroup>

@@ -51,6 +51,8 @@ const ZoneVerifyList: React.FC<ZoneVerifyListProps> = ({ zoneId, zoneName, activ
   const [selectedApp, setSelectedApp] = useState<Application | null>(null);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState<string>('');
+  /** 当前查看用户对应的申请记录 ID（专区专用资料接口按申请记录读取） */
+  const [userDetailAppId, setUserDetailAppId] = useState<string>('');
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [exporting, setExporting] = useState(false);
 
@@ -100,7 +102,7 @@ const ZoneVerifyList: React.FC<ZoneVerifyListProps> = ({ zoneId, zoneName, activ
         if (list.length < 100) break;
         page++;
       }
-      const zoneRes: any = await zoneApi.getDetail(zoneId);
+      const zoneRes: any = await zoneApi.getProfile(zoneId);
       const zoneData = zoneRes as any;
       let formFields: Array<{ id: string; label: string }> = [];
       try {
@@ -190,7 +192,7 @@ const ZoneVerifyList: React.FC<ZoneVerifyListProps> = ({ zoneId, zoneName, activ
         const avatar = profile?.avatar || '';
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }}
-            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
+            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailAppId(r.id); setUserDetailVisible(true); }}>
             <Space size={4}>
               <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
@@ -275,7 +277,10 @@ const ZoneVerifyList: React.FC<ZoneVerifyListProps> = ({ zoneId, zoneName, activ
         visible={userDetailVisible}
         userId={userDetailUserId}
         showRecommend={false}
-        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+        // 专区专用资料接口（按申请记录读取，权限对专区管理员友好）
+        fetchDetail={() => zoneApi.getApplicationUser(zoneId, userDetailAppId)}
+        fetchPrivacy={() => zoneApi.getApplicationUserPrivacy(zoneId, userDetailAppId)}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); setUserDetailAppId(''); }}
       />
     </>
   );

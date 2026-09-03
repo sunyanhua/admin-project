@@ -11,12 +11,14 @@ const { Text } = Typography;
 interface IdCardViewButtonProps {
   /** 用户 ID —— 点击后通过 POST /admin/v1/bizops/user/privacy/{id} 拉取脱敏身份证号 */
   userId?: string;
+  /** 自定义隐私拉取（专区申请/活动报名的专用隐私接口），缺省用通用 userApi.getUserPrivacy */
+  fetchPrivacy?: (userId: string) => Promise<any>;
 }
 
 /**
  * 身份证号"查看"按钮：点击后拉取隐私接口，弹窗展示脱敏身份证号（接口带水印审计，每次读取均留痕）。
  */
-const IdCardViewButton: React.FC<IdCardViewButtonProps> = ({ userId }) => {
+const IdCardViewButton: React.FC<IdCardViewButtonProps> = ({ userId, fetchPrivacy }) => {
   const { success, error: showError } = useAppNotification();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,7 @@ const IdCardViewButton: React.FC<IdCardViewButtonProps> = ({ userId }) => {
     setLoading(true);
     setPrivacy(null);
     try {
-      const res: any = await userApi.getUserPrivacy(userId);
+      const res: any = await (fetchPrivacy || userApi.getUserPrivacy)(userId);
       setPrivacy(res || null);
     } catch (err: any) {
       showError(err?.response?.data?.message || '获取身份信息失败');
