@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Space, Form, Input, Switch } from 'antd';
+import { CopyOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { ZoneStatus } from '@shared/constants';
 import { zoneApi, Zone, CreateZoneRequest } from '@/api/services/zone';
@@ -23,6 +24,14 @@ export interface ZoneEditModalProps {
 
 /** 专区管理员角色的标识（tag）值（后端约定）；从角色列表识别该角色后取其真实 ID，不硬编码 role_ids */
 const ZONE_ADMIN_ROLE_TAG = 100;
+
+/** 专区管理后台地址（按当前构建环境对应正式/测试/本地开发） */
+const ZONE_CONSOLE_URL = (() => {
+  const env = import.meta.env.VITE_APP_ENV;
+  if (env === 'production') return 'https://admin.vbegin.com.cn/cheng/zone.html';
+  if (env === 'test') return 'https://admin-test.vbegin.com.cn/cheng/zone.html';
+  return 'http://localhost:3103/zone.html'; // 本地开发（npm run dev:zone）
+})();
 
 const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onClose, onSuccess }) => {
   const { success, error: showError } = useAppNotification();
@@ -214,6 +223,26 @@ const ZoneEditModal: React.FC<ZoneEditModalProps> = ({ visible, mode, zone, onCl
         {/* ====== 专区管理员 ====== */}
         <div style={{ background: '#fafafa', borderLeft: '3px solid #722ed1', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#722ed1' }}>专区管理员</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 13, color: '#666', flexWrap: 'wrap' }}>
+            <span>专区管理后台地址：</span>
+            <span style={{ fontFamily: 'monospace', background: '#fff', border: '1px solid #e8e8e8', padding: '2px 8px', borderRadius: 4 }}>
+              {ZONE_CONSOLE_URL}
+            </span>
+            <Button
+              type="link"
+              size="small"
+              icon={<CopyOutlined />}
+              style={{ padding: 0, height: 'auto' }}
+              onClick={() => {
+                navigator.clipboard.writeText(ZONE_CONSOLE_URL).then(
+                  () => success('已复制专区管理后台地址'),
+                  () => {/* ignore */}
+                );
+              }}
+            >
+              复制
+            </Button>
+          </div>
           <Form.Item
             label="管理员账号"
             name="admin_username"
