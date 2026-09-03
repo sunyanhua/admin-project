@@ -21,6 +21,7 @@ import type {
 import RealNameWithTag from '@/components/user/RealNameWithTag';
 import IdCardViewButton from '@/components/user/IdCardViewButton';
 import MatchRecommendButton from '@/components/user/MatchRecommendButton';
+import DivineChanceAdjustButton from '@/components/user/DivineChanceAdjustButton';
 
 const { Text } = Typography;
 
@@ -273,6 +274,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
       { label: '钱包余额', value: user.wallet_balance != null ? `¥${(user.wallet_balance / 100).toFixed(2)}` : '¥0.00', span: 1 },
       { label: '嗑学分', value: user.credits ?? 0, span: 1 },
       { label: '本周嗑学分', value: user.credits_weekly ?? 0, span: 1 },
+      { label: '神助攻次数', value: <DivineChanceAdjustButton userId={user.user_id} />, span: 1 },
     ],
   });
 

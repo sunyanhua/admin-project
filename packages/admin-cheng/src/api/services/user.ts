@@ -67,6 +67,11 @@ export const userApi = {
     return request.patch(`/admin/v1/bizops/user/${id}/match-profile/recommend`, data);
   },
 
+  /** 调整神助攻次数 — PATCH /admin/v1/bizops/user/:id/divine-chance（delta 正=发放，负=回收） */
+  adjustDivineChance: (id: string | number, delta: number) => {
+    return request.patch(`/admin/v1/bizops/user/${id}/divine-chance`, { delta });
+  },
+
   /** 手动执行嗑学分周榜排名结算 — POST /admin/v1/bizops/credits/weekly-rank/settle（幂等，已结算返回错误 42221） */
   settleWeeklyRank: () => {
     return request.post('/admin/v1/bizops/credits/weekly-rank/settle', {});
