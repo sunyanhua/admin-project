@@ -96,6 +96,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-03 | **正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台，含神助攻调整入口、专区后台地址展示） | dist | 构建产物（未提交） |
 | 2026-09-03 | **正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台，含审核弹窗校验修复） | dist | 构建产物（未提交） |
 | 2026-09-03 | **测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物：主后台 + 专区管理后台） | dist-test / dist | 构建产物（未提交） |
 | 2026-09-03 | 专区专用资料接口接入：申请用户基本/隐私资料（zone/{id}/application/{aid}/user[/privacy]）、报名用户基本/隐私资料（activity/{id}/register/{rid}/user[/privacy]）、专区基本资料读写（zone/{id}/profile）；用户卡片支持自定义拉取（fetchDetail/fetchPrivacy 透传至身份证查看） | zone.ts + activity-v1 + UserDetailCardModal/Sections/IdCardViewButton + ZoneVerifyList/ZoneUsersList/ActivityRegisterModal + ZoneInfo | f31b9e0 |
