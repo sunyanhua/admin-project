@@ -44,3 +44,15 @@
   inset: 0;
   background: linear-gradient(45deg, #fff 45%, #f00 45%, #f00 55%, #fff 55%);
 }
+
+/* 背景色选择器「无背景色」清除项（红斜线桶） */
+.ql-snow .ql-picker.ql-background .ql-picker-item[data-value=""] {
+  position: relative;
+  background: #fff;
+}
+.ql-snow .ql-picker.ql-background .ql-picker-item[data-value=""]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, #fff 45%, #f00 45%, #f00 55%, #fff 55%);
+}
