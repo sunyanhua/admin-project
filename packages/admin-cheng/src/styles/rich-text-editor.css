@@ -32,3 +32,15 @@
 .rich-text-editor-short .ql-editor {
   height: 280px;
 }
+
+/* 颜色选择器「无颜色」清除项（红斜线桶，官方样式） */
+.ql-snow .ql-picker.ql-color .ql-picker-item[data-value=""] {
+  position: relative;
+  background: #fff;
+}
+.ql-snow .ql-picker.ql-color .ql-picker-item[data-value=""]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, #fff 45%, #f00 45%, #f00 55%, #fff 55%);
+}

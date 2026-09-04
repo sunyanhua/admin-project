@@ -19,13 +19,28 @@ export interface RichTextEditorProps {
   className?: string;
 }
 
+/**
+ * 文字颜色色板：
+ * - 黑色用 CSS 关键字 'black'（Quill 默认值 '#000000' 会被当作"无格式"移除，选黑色等于没选）
+ * - 末尾 '' 为「无颜色」清除项（红斜线桶图标）
+ */
+const COLOR_PALETTE = [
+  'black',
+  '#e60000', '#ff9900', '#ffff00', '#008a00', '#0066cc', '#9933ff', '#ffffff',
+  '#facccc', '#ffebcc', '#ffffcc', '#cce8cc', '#cce0f5', '#ebd6ff', '#bbbbbb',
+  '#f06666', '#ffc266', '#ffff66', '#66b966', '#66a3e0', '#c285ff', '#888888',
+  '#a10000', '#b26b00', '#b2b300', '#006100', '#0047b2', '#6b24b2', '#444444',
+  '#5c0000', '#663d00', '#666600', '#003700', '#002966', '#3d1466',
+  '',
+];
+
 const modules = {
   toolbar: {
     container: [
       [{ header: [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike'],
       [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ color: [] }, { background: [] }],
+      [{ color: COLOR_PALETTE }, { background: [] }],
       [{ align: [] }],
       ['clean'],
     ],
