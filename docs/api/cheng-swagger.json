@@ -17615,7 +17615,7 @@
         },
         "/api/v1/wxa/user/register": {
             "post": {
-                "description": "注册或激活迁移用户（微信与 H5 共用，按 JWT 渠道区分）。微信渠道提交手机号+验证码；H5 渠道登录时已验证，使用会话数据直接注册（请求仅需可选 source_id）。",
+                "description": "注册/激活迁移用户/微信换绑（微信与 H5 共用，按 JWT 渠道区分）。微信渠道提交手机号+验证码——手机号已存在时允许换绑微信（解除旧登录绑定）；H5 渠道登录时已验证，使用会话数据直接注册（请求仅需可选 source_id）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -17669,7 +17669,48 @@
                         }
                     },
                     "422": {
-                        "description": "验证码错误(40206)或手机号已绑定(42202)",
+                        "description": "验证码错误(40206)、账号已禁用(40308)或登录会话已绑定(42202)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/user/unbind": {
+            "post": {
+                "description": "解除微信与当前用户的关联——v6_wxa_login.user_id 与 v6_user.openid_hash 置 NULL，不删除任何数据。解绑后微信端会话回到未注册状态。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "用户模块"
+                ],
+                "summary": "解除微信绑定",
+                "responses": {
+                    "200": {
+                        "description": "解绑成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或未注册",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "仅微信渠道会话可解绑(42223)",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
