@@ -30,9 +30,9 @@ export interface UserTotalResponse {
   match_profile_total: number;
   match_profile_by_audit: MatchProfileAuditCounts;
   exited_match_count: number;
-  /** 窗口内新注册（is_migrated=false） */
+  /** 新注册用户数（is_migrated=false 全量，不受窗口限制） */
   new_registered_count: number;
-  /** 窗口内新注册且提交脱单档案 */
+  /** 新注册且提交脱单档案数（同上全量口径） */
   new_matched_count: number;
   migrated_total: number;
   migrated_activated: number;
@@ -147,6 +147,7 @@ export const USER_SERIES_LABELS: Record<string, string> = {
   wxa_login: '微信授权',
   new_registered: '新注册',
   activated: '老用户激活',
+  activated_matched: '老脱单用户激活',
   match_profile: '提交脱单档案',
 };
 

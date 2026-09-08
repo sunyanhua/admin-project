@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Statistic, DatePicker, Typography, Empty } from 'antd';
+import { useState, useEffect } from 'react';
+import { Card, Row, Col, Statistic, Typography, Empty } from 'antd';
 import {
   UserOutlined, HeartOutlined, TeamOutlined, ThunderboltOutlined,
 } from '@ant-design/icons';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import dayjs, { Dayjs } from 'dayjs';
 import {
   platformDatacubeApi,
   UserTotalResponse,
@@ -17,10 +16,7 @@ import {
 } from '@/api/services/platformDatacube';
 import { useAppNotification } from '@/hooks/useAppNotification';
 
-const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
-
-const toDateStr = (d: Dayjs) => d.format('YYYYMMDD');
 
 /** 分布维度配置：key → 标题（顺序即展示顺序） */
 const MATCH_DIMS: Array<{ key: keyof MatchDistributionResponse; title: string }> = [
@@ -89,16 +85,17 @@ const PlatformStats = () => {
   const [interaction, setInteraction] = useState<InteractionTotalResponse | null>(null);
   const [matchDist, setMatchDist] = useState<MatchDistributionResponse | null>(null);
   const [userDist, setUserDist] = useState<UserDistributionResponse | null>(null);
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(30, 'day'), dayjs()]);
 
-  // 无参数接口：挂载时拉一次（showError 不入依赖，避免引用不稳定导致无限循环请求）
+  // 全部为无参数总数接口：挂载时拉一次（showError 不入依赖，避免引用不稳定导致无限循环请求）
   useEffect(() => {
     setLoading(true);
     Promise.all([
+      platformDatacubeApi.getUserTotal(),
       platformDatacubeApi.getInteraction(),
       platformDatacubeApi.getMatchDistribution(),
       platformDatacubeApi.getUserDistribution(),
-    ]).then(([itRes, mdRes, udRes]: any[]) => {
+    ]).then(([utRes, itRes, mdRes, udRes]: any[]) => {
+      setUserTotal(utRes || null);
       setInteraction(itRes || null);
       setMatchDist(mdRes || null);
       setUserDist(udRes || null);
@@ -107,23 +104,6 @@ const PlatformStats = () => {
     }).finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // 用户总览：随日期范围变化（仅窗口卡响应）
-  const fetchUserTotal = useCallback(async () => {
-    try {
-      const res: any = await platformDatacubeApi.getUserTotal({
-        from_date: toDateStr(dateRange[0]),
-        to_date: toDateStr(dateRange[1]),
-      });
-      setUserTotal(res || null);
-    } catch (e: any) {
-      showError(e?.response?.data?.message || '获取用户总数失败');
-    }
-    // 只随日期范围变化触发
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateRange]);
-
-  useEffect(() => { fetchUserTotal(); }, [fetchUserTotal]);
 
   const audit = userTotal?.match_profile_by_audit;
 
@@ -139,18 +119,9 @@ const PlatformStats = () => {
       <Text type="secondary">平台用户总数、互动操作与用户分布统计</Text>
 
       {/* ====== 1. 用户总览 ====== */}
-      <Card
-        title="用户总览"
-        style={{ marginTop: 24, marginBottom: 24 }}
-        extra={
-          <RangePicker
-            value={dateRange}
-            onChange={(d) => { if (d?.[0] && d?.[1]) setDateRange([d[0], d[1]]); }}
-          />
-        }
-      >
+      <Card title="用户总览" style={{ marginTop: 24, marginBottom: 24 }}>
         <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-          窗口新注册 / 窗口新脱单随日期范围变化（默认近 30 天），其余为全量累计
+          以下均为全量总数统计
         </Text>
         <Row gutter={[16, 16]}>
           {[
@@ -183,12 +154,12 @@ const PlatformStats = () => {
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
-              title={`窗口新注册（${toDateStr(dateRange[0])}~${toDateStr(dateRange[1])}）`}
+              title="新注册"
               value={userTotal?.new_registered_count ?? '-'} valueStyle={{ color: '#1890ff' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
-              title={`窗口新脱单（${toDateStr(dateRange[0])}~${toDateStr(dateRange[1])}）`}
+              title="新脱单"
               value={userTotal?.new_matched_count ?? '-'} valueStyle={{ color: '#eb2f96' }} /></Card>
           </Col>
         </Row>

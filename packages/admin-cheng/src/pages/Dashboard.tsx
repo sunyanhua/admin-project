@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Col, Row, Statistic, Typography, Table, Empty, Button, Space, Descriptions } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { UserOutlined, CopyOutlined, HeartOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
 import { px } from '@/styles/constants';
 import { platformDatacubeApi } from '@/api/services/platformDatacube';
 import { authApi } from '@/api/services/auth';
@@ -26,11 +25,8 @@ const Dashboard = () => {
   const [logsLoading, setLogsLoading] = useState(false);
 
   useEffect(() => {
-    // v1 平台用户数据（用户总数/脱单/新注册/旧平台激活）
-    platformDatacubeApi.getUserTotal({
-      from_date: dayjs().subtract(30, 'day').format('YYYYMMDD'),
-      to_date: dayjs().format('YYYYMMDD'),
-    }).then((res: any) => {
+    // v1 平台用户数据（用户总数/脱单/新注册/旧平台激活；无参数，全量口径）
+    platformDatacubeApi.getUserTotal().then((res: any) => {
       const d = res || {};
       setStats((prev) => prev.map((s) => {
         if (s.title === '用户总数') return { ...s, value: d.registered_total ?? '-' };
