@@ -49,7 +49,7 @@ const toRows = (dates: string[], series: Array<UserTrendSeries | UserCumulativeS
   return (dates ?? []).map((date, i) => {
     const row: Record<string, number | string> = { date };
     (series ?? []).forEach((s) => {
-      row[USER_SERIES_LABELS[s.key] ?? s.key] = s[valueKey]?.[i] ?? 0;
+      row[USER_SERIES_LABELS[s.key] ?? s.key] = (s as any)[valueKey]?.[i] ?? 0;
     });
     return row;
   });

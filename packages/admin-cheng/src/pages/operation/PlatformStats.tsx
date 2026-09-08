@@ -125,7 +125,7 @@ const PlatformStats = () => {
   const audit = userTotal?.match_profile_by_audit;
 
   const statCards = (
-    title: string, value: React.ReactNode, icon: React.ReactNode, color: string,
+    title: string, value: string | number, icon: React.ReactNode, color: string,
   ) => (
     <Card><Statistic title={title} value={value} prefix={icon} valueStyle={{ color }} /></Card>
   );
