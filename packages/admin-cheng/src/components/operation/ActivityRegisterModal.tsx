@@ -33,11 +33,13 @@ interface ActivityRegisterModalProps {
   activityType: number;
   formConfig: FormField[];
   onClose: () => void;
+  /** 自定义批量隐私拉取（专区管理员无批量隐私接口数据权限，逐条走报名专用隐私接口）；缺省用通用批量接口 */
+  privacyBatchFetcher?: (records: RegisterRecord[], activityId: string) => Promise<Record<string, string>>;
 }
 
 
 const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
-  visible, activityId, activityTitle, activityType, formConfig, onClose,
+  visible, activityId, activityTitle, activityType, formConfig, onClose, privacyBatchFetcher,
 }) => {
   const { success, error: showError } = useAppNotification();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -104,9 +106,11 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         if (list.length < 100) break;
         page++;
       }
-      // 批量拉取脱敏身份证号（隐私接口，读取留痕）
+      // 批量拉取脱敏身份证号（隐私接口，读取留痕）；专区场景走自定义逐条专用接口
       const userIds = allData.map(i => i.user_id).filter(Boolean);
-      const idCardMap = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
+      const idCardMap = privacyBatchFetcher
+        ? await privacyBatchFetcher(allData, activityId)
+        : (userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {});
 
       // 组装导出数据：表头 + 数据行 + 照片列/个人主页列位置
       const { headers, rows, photoColStart, photoColCount, profileCol } =

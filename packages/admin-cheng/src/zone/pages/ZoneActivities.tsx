@@ -232,6 +232,25 @@ const ZoneActivities = () => {
           activityType={registerActivity.activity_type}
           formConfig={registerFormConfig}
           onClose={() => setRegisterVisible(false)}
+          // 专区管理员无批量隐私接口的数据权限：逐条调用报名专用隐私接口（并发分块 10）
+          privacyBatchFetcher={async (records, actId) => {
+            const map: Record<string, string> = {};
+            const BATCH = 10;
+            for (let i = 0; i < records.length; i += BATCH) {
+              const chunk = records.slice(i, i + BATCH);
+              const results = await Promise.allSettled(chunk.map(async (r) => {
+                if (!r.id || !r.user_id) return null;
+                const p: any = await activityApi.getRegisterUserPrivacy(actId, r.id);
+                return { userId: r.user_id, idCard: p?.id_card || '' };
+              }));
+              results.forEach((res) => {
+                if (res.status === 'fulfilled' && res.value?.idCard) {
+                  map[res.value.userId] = res.value.idCard;
+                }
+              });
+            }
+            return map;
+          }}
         />
       )}
     </>
