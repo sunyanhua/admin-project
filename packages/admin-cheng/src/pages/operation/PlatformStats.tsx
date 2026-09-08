@@ -84,10 +84,15 @@ const PlatformStats = () => {
 
   const audit = userTotal?.match_profile_by_audit;
 
+  /** 数值单位（小灰色字体，放在数值后面） */
+  const unitSuffix = (unit: string) => (
+    <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>{unit}</span>
+  );
+
   const statCards = (
     title: string, value: string | number, icon: React.ReactNode, color: string,
   ) => (
-    <Card><Statistic title={title} value={value} prefix={icon} valueStyle={{ color }} /></Card>
+    <Card><Statistic title={title} value={value} prefix={icon} suffix={unitSuffix('人')} valueStyle={{ color }} /></Card>
   );
 
   return (
@@ -118,7 +123,7 @@ const PlatformStats = () => {
             ['脱单档案已撤销', audit?.revoked ?? '-', '#8c8c8c'],
           ].map(([t, v, c]: any, idx) => (
             <Col xs={24} sm={12} md={6} key={idx}>
-              <Card><Statistic title={t} value={v} valueStyle={{ color: c }} /></Card>
+              <Card><Statistic title={t} value={v} suffix={unitSuffix('人')} valueStyle={{ color: c }} /></Card>
             </Col>
           ))}
         </Row>
@@ -128,23 +133,29 @@ const PlatformStats = () => {
             <Card><Statistic
               title="老用户人数（总数/激活）"
               value={`${userTotal?.migrated_total ?? '-'}/${userTotal?.migrated_activated ?? '-'}`}
+              suffix={unitSuffix('人')}
               valueStyle={{ color: '#fa8c16' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
               title="老用户脱单人数（总数/激活）"
               value={`${userTotal?.migrated_matched_count ?? '-'}/${userTotal?.migrated_activated_matched ?? '-'}`}
+              suffix={unitSuffix('人')}
               valueStyle={{ color: '#faad14' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
               title="新注册人数"
-              value={userTotal?.new_registered_count ?? '-'} valueStyle={{ color: '#1890ff' }} /></Card>
+              value={userTotal?.new_registered_count ?? '-'}
+              suffix={unitSuffix('人')}
+              valueStyle={{ color: '#1890ff' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
               title="新注册脱单人数"
-              value={userTotal?.new_matched_count ?? '-'} valueStyle={{ color: '#eb2f96' }} /></Card>
+              value={userTotal?.new_matched_count ?? '-'}
+              suffix={unitSuffix('人')}
+              valueStyle={{ color: '#eb2f96' }} /></Card>
           </Col>
         </Row>
       </Card>
@@ -159,7 +170,7 @@ const PlatformStats = () => {
             ['撤销无感', interaction?.feeling?.undo ?? '-', '#bfbfbf'],
           ].map(([t, v, c]: any, idx) => (
             <Col xs={24} sm={12} md={6} key={idx}>
-              <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} valueStyle={{ color: c }} /></Card>
+              <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} suffix={unitSuffix('次')} valueStyle={{ color: c }} /></Card>
             </Col>
           ))}
         </Row>
@@ -167,11 +178,11 @@ const PlatformStats = () => {
           {[
             ['撮合', interaction?.opinion?.match ?? '-', '#f5222d'],
             ['拆散', interaction?.opinion?.split ?? '-', '#722ed1'],
-            ['送礼', interaction?.gift ?? '-', '#52c41a'],
+            ['送礼物', interaction?.gift ?? '-', '#52c41a'],
             ['神助攻', interaction?.divine ?? '-', '#faad14'],
           ].map(([t, v, c]: any, idx) => (
             <Col xs={24} sm={12} md={6} key={idx}>
-              <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} valueStyle={{ color: c }} /></Card>
+              <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} suffix={unitSuffix('次')} valueStyle={{ color: c }} /></Card>
             </Col>
           ))}
         </Row>
