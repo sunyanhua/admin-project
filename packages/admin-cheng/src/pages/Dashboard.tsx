@@ -18,8 +18,8 @@ const Dashboard = () => {
   const [stats, setStats] = useState([
     { title: '用户总数', value: '-', icon: <UserOutlined />, color: '#1890ff', bg: '#e6f7ff', path: '/operation/users' },
     { title: '脱单人数', value: '-', icon: <HeartOutlined />, color: '#eb2f96', bg: '#fff0f6', path: '/operation/match-profiles' },
-    { title: '新注册', value: '-', icon: <UserOutlined />, color: '#13c2c2', bg: '#e6fffb', path: '/operation/users' },
-    { title: '旧平台已激活', value: '-', icon: <UserOutlined />, color: '#52c41a', bg: '#f6ffed', path: '/operation/users' },
+    { title: '新注册（总数/脱单人数）', value: '-', icon: <UserOutlined />, color: '#13c2c2', bg: '#e6fffb', path: '/operation/users' },
+    { title: '旧平台已激活（总数/脱单人数）', value: '-', icon: <UserOutlined />, color: '#52c41a', bg: '#f6ffed', path: '/operation/users' },
   ]);
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -31,8 +31,8 @@ const Dashboard = () => {
       setStats((prev) => prev.map((s) => {
         if (s.title === '用户总数') return { ...s, value: d.registered_total ?? '-' };
         if (s.title === '脱单人数') return { ...s, value: d.match_profile_total ?? '-' };
-        if (s.title === '新注册') return { ...s, value: d.new_registered_count ?? '-' };
-        if (s.title === '旧平台已激活') return { ...s, value: d.migrated_activated ?? '-' };
+        if (s.title === '新注册（总数/脱单人数）') return { ...s, value: `${d.new_registered_count ?? '-'}/${d.new_matched_count ?? '-'}` };
+        if (s.title === '旧平台已激活（总数/脱单人数）') return { ...s, value: `${d.migrated_activated ?? '-'}/${d.migrated_activated_matched ?? '-'}` };
         return s;
       }));
     }).catch((err: any) => {
