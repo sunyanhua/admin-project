@@ -43,7 +43,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 /** 用户趋势展示系列（其余系列不展示：迁移提交档案/累计注册/迁移用户） */
-const USER_SERIES_VISIBLE = ['wxa_login', 'new_registered', 'activated', 'activated_matched', 'match_profile'];
+const USER_SERIES_VISIBLE = ['wxa_login', 'new_registered', 'match_profile', 'activated', 'activated_matched'];
 
 /**
  * dates + series → recharts 行数据（以 dates 为源迭代，缺值补 0；
