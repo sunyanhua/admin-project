@@ -149,5 +149,6 @@
 - 性能优化（代码分割、懒加载）
 - 部署配置（Docker、CI/CD）
 - **Linksy 服务器网关配置**（测试/正式 nginx `/linksy-api` 转发 + 各自密钥），完成后 `git revert 21075a7` 恢复网关模式，并删除 `.env.*.local` 中的临时密钥
+- **登录态长期化待办**：refresh 接口要求"刷新时 Token 未过期"——长时间不用的标签页（跨过整个 token 有效期）仍会掉线，需要的话请后端在 refresh 加宽限窗口（过期后 N 天内可刷）
 - **专区管理后台部署**：构建产物与主后台合并（dist/dist-test 内含 zone.html），上传测试/正式 `/cheng/` 目录，入口 `https://admin.vbegin.com.cn/cheng/zone.html`；上线前确认专区管理员角色对 settings（承诺书模版）、隐私导出接口的授权
 - 排查 admin-template / admin-hsh1039 的 build.js 入口改名逻辑（同类 IIS 部署存在目录 403 隐患）
