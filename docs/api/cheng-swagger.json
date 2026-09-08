@@ -8283,6 +8283,504 @@
                 }
             }
         },
+        "/admin/v1/datacube/interaction": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "互动操作卡片（裁决 M：含迁移量，取 phase4/phase5 重算的含迁移聚合表）：feeling（关注/无感/撤销无感）、opinion（撮合/拆散，男女双方各 +1 已除 2）、loves 心动、礼物赠送、神助攻——仅各操作总次数。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "互动操作统计",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.InteractionTotalResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/datacube/interaction-trend": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "互动操作统计·按日（原第 6 块「互动趋势」并入）：feeling（关注/无感/撤销无感）、opinion（撮合/拆散，按 matching_delta 正负区分）、loves、礼物、神助攻——裁决 J 按日含 loves/礼物/神助攻三系列；裁决 A1 matching log 以 source_id<>'' 隔离迁移行；裁决 A2 礼物按日含迁移明细。缺失日补 0。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "互动操作按日趋势",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（默认 30 天前）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.InteractionTrendItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/datacube/match-distribution": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "脱单分布统计（群体=有脱单档案的用户，10 维度）：性别/年龄段（≤17、18-23、24-29、30-35、36-39、≥40、未知）/学历/婚姻状况/专区/身高/收入/血型/审核状态/脱单状态。裁决 N：current_city 等 varchar 自由文本一律不汇总。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "脱单分布统计",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.MatchDistributionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/datacube/register-trend": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按日统计新注册用户数与脱单资料提交数（均仅新系统——裁决 #4/A3：is_migrated=false 隔离迁移集中导入与迁移档案行）。两序列按日合并，缺失日补 0。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "注册趋势+资料填写趋势",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（默认 30 天前）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.RegisterTrendItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/datacube/user-cumulative": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户总数统计·按日累计（裁决 M：含迁移量，7 系列）= 增量 5 系列 + registered/migrated；累计值为全历史前缀和，不受窗口影响（传窗口仅截取输出区间）；exited_match_count 为退出脱单当前值（独立字段）。from_date/to_date 可选：缺省全历史；显式传入时窗口 ≤366 天。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "用户按日累计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（缺省全历史）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserCumulativeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/datacube/user-distribution": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "注册用户分布统计（群体=全体 v6_user 含 robot，9 维度）：渠道（双渠道/仅微信/仅H5/无会话）/迁移类型/激活状态/用户状态/基础资料填写/脱单档案提交/性别/年龄段/来源（受控字典 TOP 30+其他+未归因）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "注册用户分布统计",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserDistributionResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/datacube/user-total": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户总数卡片：总授权人数（v6_user / v6_wxa_login 两维度不去重）、注册总人数/脱单人数（含审核状态细分）/退出脱单人数、窗口内新注册用户数/新脱单数、旧平台用户数/已激活人数/激活脱单人数。from_date/to_date（YYYYMMDD，可选，默认近 30 天）仅作用于新注册/新脱单两张卡。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "用户总数统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（默认 30 天前）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserTotalResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/datacube/user-trend": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "用户总数统计·按日增量（裁决 M：仅新系统，5 系列）：wxa_login（微信会话创建）/new_registered（新注册）/activated（迁移用户激活）/match_profile（档案提交，JOIN is_migrated=false）/match_profile_migrated（迁移档案）。响应 dates+series 结构，缺失日补 0。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-社区统计"
+                ],
+                "summary": "用户按日增量",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（默认 30 天前）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserTrendResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/login": {
             "post": {
                 "description": "使用用户名和密码登录管理后台，成功返回 Admin JWT Token。免鉴权接口（AdminAuthMiddleware 白名单放行）。",
@@ -20354,6 +20852,400 @@
                 },
                 "sort_order": {
                     "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.FeelingCounts": {
+            "type": "object",
+            "properties": {
+                "dislike": {
+                    "description": "无感次数",
+                    "type": "integer"
+                },
+                "like": {
+                    "description": "关注次数",
+                    "type": "integer"
+                },
+                "undo": {
+                    "description": "撤销无感次数",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.InteractionTotalResponse": {
+            "type": "object",
+            "properties": {
+                "divine": {
+                    "description": "神助攻总次数",
+                    "type": "integer"
+                },
+                "feeling": {
+                    "description": "like/dislike/undo",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.FeelingCounts"
+                        }
+                    ]
+                },
+                "gift": {
+                    "description": "礼物赠送总次数",
+                    "type": "integer"
+                },
+                "loves": {
+                    "description": "心动总次数",
+                    "type": "integer"
+                },
+                "opinion": {
+                    "description": "match/split",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.OpinionCounts"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.InteractionTrendItem": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "YYYYMMDD",
+                    "type": "string"
+                },
+                "divine": {
+                    "type": "integer"
+                },
+                "feeling_dislike": {
+                    "type": "integer"
+                },
+                "feeling_like": {
+                    "type": "integer"
+                },
+                "feeling_undo": {
+                    "type": "integer"
+                },
+                "gift": {
+                    "type": "integer"
+                },
+                "loves": {
+                    "type": "integer"
+                },
+                "opinion_match": {
+                    "type": "integer"
+                },
+                "opinion_split": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.MatchDistributionResponse": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "audit_status": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "blood_type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "education": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "gender": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "height": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "income_range": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "is_active": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "marital_status": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "zone": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.MatchProfileAuditCounts": {
+            "type": "object",
+            "properties": {
+                "approved": {
+                    "description": "审核通过",
+                    "type": "integer"
+                },
+                "pending": {
+                    "description": "待审核",
+                    "type": "integer"
+                },
+                "rejected": {
+                    "description": "审核拒绝",
+                    "type": "integer"
+                },
+                "revoked": {
+                    "description": "已撤销",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.OpinionCounts": {
+            "type": "object",
+            "properties": {
+                "match": {
+                    "description": "撮合次数（男女双方各 +1，SUM 已除 2）",
+                    "type": "integer"
+                },
+                "split": {
+                    "description": "拆散次数（同上）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.RegisterTrendItem": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "YYYYMMDD",
+                    "type": "string"
+                },
+                "match_profile_count": {
+                    "description": "脱单资料提交数（仅新系统）",
+                    "type": "integer"
+                },
+                "register_count": {
+                    "description": "新注册数（is_migrated=false）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserCumulativeResponse": {
+            "type": "object",
+            "properties": {
+                "dates": {
+                    "description": "YYYYMMDD 升序，缺失日补 0",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "exited_match_count": {
+                    "description": "退出脱单当前值（独立字段，老大改判：只 count is_active=false）",
+                    "type": "integer"
+                },
+                "series": {
+                    "description": "7 系列（增量 5 系列 + registered/migrated）",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserCumulativeSeries"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserCumulativeSeries": {
+            "type": "object",
+            "properties": {
+                "cumulatives": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "key": {
+                    "description": "user-trend 五系列 + registered/migrated",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserDistributionResponse": {
+            "type": "object",
+            "properties": {
+                "activated": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "age": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "channel": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "gender": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "has_match_profile": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "has_profile": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "migration": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "source": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                },
+                "status": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.DistributionItem"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserTotalResponse": {
+            "type": "object",
+            "properties": {
+                "authorized_user_count": {
+                    "description": "总授权人数（v6_user 维度，含 robot，不含软删）",
+                    "type": "integer"
+                },
+                "authorized_wxa_login_count": {
+                    "description": "总授权人数（v6_wxa_login 维度，全表行数不去重）",
+                    "type": "integer"
+                },
+                "exited_match_count": {
+                    "description": "退出脱单人数（is_active=false）",
+                    "type": "integer"
+                },
+                "match_profile_by_audit": {
+                    "description": "脱单档案按审核状态细分",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.MatchProfileAuditCounts"
+                        }
+                    ]
+                },
+                "match_profile_total": {
+                    "description": "脱单人数（提交脱单档案总数）",
+                    "type": "integer"
+                },
+                "migrated_activated": {
+                    "description": "旧平台已激活人数",
+                    "type": "integer"
+                },
+                "migrated_activated_matched": {
+                    "description": "旧平台已激活且提交脱单档案数",
+                    "type": "integer"
+                },
+                "migrated_total": {
+                    "description": "旧平台用户数（is_migrated=true）",
+                    "type": "integer"
+                },
+                "new_matched_count": {
+                    "description": "窗口内新注册且提交脱单档案数",
+                    "type": "integer"
+                },
+                "new_registered_count": {
+                    "description": "窗口内新注册用户数（is_migrated=false）",
+                    "type": "integer"
+                },
+                "registered_total": {
+                    "description": "注册总人数（= authorized_user_count）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserTrendResponse": {
+            "type": "object",
+            "properties": {
+                "dates": {
+                    "description": "YYYYMMDD 升序，缺失日补 0",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "series": {
+                    "description": "5 系列",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserTrendSeries"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_community_stats_model.UserTrendSeries": {
+            "type": "object",
+            "properties": {
+                "increments": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "key": {
+                    "description": "wxa_login/new_registered/activated/match_profile/match_profile_migrated",
+                    "type": "string"
                 }
             }
         },
