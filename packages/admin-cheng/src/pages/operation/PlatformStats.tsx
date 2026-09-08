@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Row, Col, Statistic, Typography, Empty } from 'antd';
 import {
-  UserOutlined, HeartOutlined, TeamOutlined, ThunderboltOutlined,
+  UserOutlined, HeartOutlined, ThunderboltOutlined,
 } from '@ant-design/icons';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -28,43 +28,20 @@ const MATCH_DIMS: Array<{ key: keyof MatchDistributionResponse; title: string }>
   { key: 'height', title: '身高' },
   { key: 'income_range', title: '收入区间' },
   { key: 'blood_type', title: '血型' },
-  { key: 'audit_status', title: '审核状态' },
-  { key: 'is_active', title: '脱单状态' },
 ];
 
 const USER_DIMS: Array<{ key: keyof UserDistributionResponse; title: string }> = [
-  { key: 'channel', title: '渠道' },
-  { key: 'migration', title: '迁移类型' },
-  { key: 'activated', title: '激活状态' },
-  { key: 'status', title: '用户状态' },
-  { key: 'has_profile', title: '基础资料填写' },
-  { key: 'has_match_profile', title: '脱单档案提交' },
   { key: 'gender', title: '性别' },
   { key: 'age', title: '年龄段' },
   { key: 'source', title: '来源' },
 ];
 
-/** 布尔/编码维度的 label 兜底美化（后端返回原始值时） */
-const BOOL_LABELS: Record<string, Record<string, string>> = {
-  is_active: { true: '在脱单', false: '已退出' },
-  activated: { true: '已激活', false: '未激活' },
-  has_profile: { true: '已填写', false: '未填写' },
-  has_match_profile: { true: '已提交', false: '未提交' },
-  status: { '0': '正常', '1': '禁用' },
-  audit_status: { '0': '待审核', '1': '已通过', '2': '已拒绝', '3': '已撤销' },
-};
-
-const prettyLabel = (dimKey: string, raw: string): string => {
-  const map = BOOL_LABELS[dimKey];
-  return (map && map[raw] != null) ? map[raw] : raw;
-};
-
 /** 横向分布小图（label 作 Y 轴） */
-const DistributionChart: React.FC<{ items: DistributionItem[]; dimKey: string }> = ({ items, dimKey }) => {
+const DistributionChart: React.FC<{ items: DistributionItem[] }> = ({ items }) => {
   if (!items.length) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" />;
   }
-  const data = items.map((i) => ({ name: prettyLabel(dimKey, i.label), count: i.count }));
+  const data = items.map((i) => ({ name: i.label, count: i.count }));
   return (
     <ResponsiveContainer width="100%" height={240}>
       <BarChart data={data} layout="vertical" margin={{ left: 8, right: 16 }}>
@@ -120,46 +97,53 @@ const PlatformStats = () => {
 
       {/* ====== 1. 用户总览 ====== */}
       <Card title="用户总览" style={{ marginTop: 24, marginBottom: 24 }}>
-        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
-          以下均为全量总数统计
-        </Text>
+        {/* 第一行：总授权/总注册/总脱单 */}
         <Row gutter={[16, 16]}>
           {[
             ['总授权人数', userTotal?.authorized_user_count ?? '-', <UserOutlined />, '#1890ff'],
-            ['授权会话数', userTotal?.authorized_wxa_login_count ?? '-', <TeamOutlined />, '#13c2c2'],
-            ['注册总人数', userTotal?.registered_total ?? '-', <UserOutlined />, '#722ed1'],
-            ['脱单人数', userTotal?.match_profile_total ?? '-', <HeartOutlined />, '#eb2f96'],
-            ['退出脱单人数', userTotal?.exited_match_count ?? '-', <HeartOutlined />, '#f5222d'],
-            ['旧平台用户数', userTotal?.migrated_total ?? '-', <UserOutlined />, '#fa8c16'],
-            ['旧平台已激活', userTotal?.migrated_activated ?? '-', <UserOutlined />, '#52c41a'],
-            ['激活脱单人数', userTotal?.migrated_activated_matched ?? '-', <HeartOutlined />, '#faad14'],
+            ['总注册人数', userTotal?.registered_total ?? '-', <UserOutlined />, '#722ed1'],
+            ['总脱单人数', userTotal?.match_profile_total ?? '-', <HeartOutlined />, '#eb2f96'],
           ].map(([t, v, i, c]: any, idx) => (
-            <Col xs={24} sm={12} md={8} lg={3} key={idx}>
+            <Col xs={24} sm={12} md={8} key={idx}>
               {statCards(t, v, i, c)}
             </Col>
           ))}
         </Row>
+        {/* 第二行：脱单档案审核细分 */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           {[
-            ['待审核', audit?.pending ?? '-', '#faad14'],
-            ['审核通过', audit?.approved ?? '-', '#52c41a'],
-            ['审核拒绝', audit?.rejected ?? '-', '#f5222d'],
-            ['已撤销', audit?.revoked ?? '-', '#8c8c8c'],
+            ['脱单档案通过', audit?.approved ?? '-', '#52c41a'],
+            ['脱单档案拒绝', audit?.rejected ?? '-', '#f5222d'],
+            ['脱单档案待审核', audit?.pending ?? '-', '#faad14'],
+            ['脱单档案已撤销', audit?.revoked ?? '-', '#8c8c8c'],
           ].map(([t, v, c]: any, idx) => (
             <Col xs={24} sm={12} md={6} key={idx}>
-              <Card><Statistic title={`脱单档案·${t}`} value={v} valueStyle={{ color: c }} /></Card>
+              <Card><Statistic title={t} value={v} valueStyle={{ color: c }} /></Card>
             </Col>
           ))}
         </Row>
+        {/* 第三行：老用户/新注册 */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
-              title="新注册"
+              title="老用户人数（总数/激活）"
+              value={`${userTotal?.migrated_total ?? '-'}/${userTotal?.migrated_activated ?? '-'}`}
+              valueStyle={{ color: '#fa8c16' }} /></Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card><Statistic
+              title="老用户脱单人数（总数/激活）"
+              value={`-/${userTotal?.migrated_activated_matched ?? '-'}`}
+              valueStyle={{ color: '#faad14' }} /></Card>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Card><Statistic
+              title="新注册人数"
               value={userTotal?.new_registered_count ?? '-'} valueStyle={{ color: '#1890ff' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
-              title="新脱单"
+              title="新注册脱单人数"
               value={userTotal?.new_matched_count ?? '-'} valueStyle={{ color: '#eb2f96' }} /></Card>
           </Col>
         </Row>
@@ -169,16 +153,24 @@ const PlatformStats = () => {
       <Card title="互动统计" style={{ marginBottom: 24 }} loading={loading}>
         <Row gutter={[16, 16]}>
           {[
-            ['心动', interaction?.loves ?? '-', '#eb2f96'],
             ['关注', interaction?.feeling?.like ?? '-', '#1890ff'],
+            ['心动', interaction?.loves ?? '-', '#eb2f96'],
             ['无感', interaction?.feeling?.dislike ?? '-', '#8c8c8c'],
             ['撤销无感', interaction?.feeling?.undo ?? '-', '#bfbfbf'],
+          ].map(([t, v, c]: any, idx) => (
+            <Col xs={24} sm={12} md={6} key={idx}>
+              <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} valueStyle={{ color: c }} /></Card>
+            </Col>
+          ))}
+        </Row>
+        <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+          {[
             ['撮合', interaction?.opinion?.match ?? '-', '#f5222d'],
             ['拆散', interaction?.opinion?.split ?? '-', '#722ed1'],
-            ['礼物赠送', interaction?.gift ?? '-', '#52c41a'],
+            ['送礼', interaction?.gift ?? '-', '#52c41a'],
             ['神助攻', interaction?.divine ?? '-', '#faad14'],
           ].map(([t, v, c]: any, idx) => (
-            <Col xs={24} sm={12} md={8} lg={3} key={idx}>
+            <Col xs={24} sm={12} md={6} key={idx}>
               <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} valueStyle={{ color: c }} /></Card>
             </Col>
           ))}
@@ -191,7 +183,7 @@ const PlatformStats = () => {
           {MATCH_DIMS.map(({ key, title }) => (
             <Col xs={24} sm={12} xl={8} key={key}>
               <Card size="small" title={title}>
-                <DistributionChart items={matchDist?.[key] || []} dimKey={key} />
+                <DistributionChart items={matchDist?.[key] || []} />
               </Card>
             </Col>
           ))}
@@ -204,7 +196,7 @@ const PlatformStats = () => {
           {USER_DIMS.map(({ key, title }) => (
             <Col xs={24} sm={12} xl={8} key={key}>
               <Card size="small" title={title}>
-                <DistributionChart items={userDist?.[key] || []} dimKey={key} />
+                <DistributionChart items={userDist?.[key] || []} />
               </Card>
             </Col>
           ))}
