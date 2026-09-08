@@ -36,6 +36,8 @@ export interface UserTotalResponse {
   new_matched_count: number;
   migrated_total: number;
   migrated_activated: number;
+  /** 旧平台脱单人数总数（is_migrated 且 has_profile 且 has_match_profile） */
+  migrated_matched_count: number;
   migrated_activated_matched: number;
 }
 

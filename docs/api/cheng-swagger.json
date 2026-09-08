@@ -21316,8 +21316,12 @@
                     "description": "旧平台已激活且提交脱单档案数",
                     "type": "integer"
                 },
+                "migrated_matched_count": {
+                    "description": "旧平台脱单人数（is_migrated=true 且 has_profile=true 且 has_match_profile=true，2026-09-08 老大新增）",
+                    "type": "integer"
+                },
                 "migrated_total": {
-                    "description": "旧平台用户数（is_migrated=true）",
+                    "description": "旧平台用户数（is_migrated=true 且 has_profile=true，2026-09-08 老大改判）",
                     "type": "integer"
                 },
                 "new_matched_count": {
@@ -21329,7 +21333,7 @@
                     "type": "integer"
                 },
                 "registered_total": {
-                    "description": "注册总人数（= authorized_user_count）",
+                    "description": "注册总人数（v6_user.has_profile=true，2026-09-08 老大改判）",
                     "type": "integer"
                 }
             }

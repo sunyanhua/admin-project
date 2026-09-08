@@ -133,7 +133,7 @@ const PlatformStats = () => {
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic
               title="老用户脱单人数（总数/激活）"
-              value={`-/${userTotal?.migrated_activated_matched ?? '-'}`}
+              value={`${userTotal?.migrated_matched_count ?? '-'}/${userTotal?.migrated_activated_matched ?? '-'}`}
               valueStyle={{ color: '#faad14' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
