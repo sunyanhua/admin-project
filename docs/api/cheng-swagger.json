@@ -9041,6 +9041,47 @@
                 }
             }
         },
+        "/admin/v1/login/refresh": {
+            "post": {
+                "description": "在令牌过期前的任意时刻刷新（无刷新窗口限制），返回全新 Admin JWT。需有效未过期 Token 鉴权。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-认证"
+                ],
+                "summary": "刷新管理后台访问令牌",
+                "responses": {
+                    "200": {
+                        "description": "刷新成功，返回新 JWT Token",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminLoginResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/mach": {
             "get": {
                 "security": [
@@ -26931,26 +26972,20 @@
                     "type": "integer"
                 },
                 "value": {
-                    "type": "number"
+                    "type": "integer"
                 }
             }
         },
         "github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.RetainJSON": {
             "type": "object",
             "properties": {
-                "daily": {
+                "visit_uv": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.RetainItem"
                     }
                 },
-                "monthly": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.RetainItem"
-                    }
-                },
-                "weekly": {
+                "visit_uv_new": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.RetainItem"

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { authApi } from '@/api/services/auth';
-import { getAccessToken, setTokens, clearTokens, cancelReloginScheduler, scheduleRelogin, storeCredentials, clearCredentials, ADMIN_USER_KEY } from '@/api';
+import { getAccessToken, setTokens, clearTokens, cancelTokenRefreshScheduler, scheduleTokenRefresh, ADMIN_USER_KEY } from '@/api';
 
 interface MenuItem {
   name: string;
@@ -145,9 +145,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       ? Math.max(0, loginRes.expires_at - Math.floor(Date.now() / 1000))
       : 43200;
     setTokens(accessToken, '', expiresIn);
-    // 登录后立即启动到期前主动续期定时器（否则只能等请求 401 被动重登，容易跳登录页）
-    scheduleRelogin();
-    storeCredentials(username, password);
+    // 登录后立即启动到期前主动刷新定时器（不再存储密码，凭 Token 走 /admin/v1/login/refresh 续期）
+    scheduleTokenRefresh();
 
     // 调用 profile 获取管理员完整信息
     await fetchProfile();
@@ -158,9 +157,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await authApi.logout();
     } finally {
-      cancelReloginScheduler();
+      cancelTokenRefreshScheduler();
       clearTokens();
-      clearCredentials();
       localStorage.removeItem(ADMIN_USER_KEY);
       setUser(null);
       setMenu([]);

@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { authApi } from '@/api/services/auth';
 import { validateStrongPassword } from '@/utils/password';
-import { cancelReloginScheduler, clearTokens, clearCredentials, ADMIN_USER_KEY } from '@/api';
+import { cancelTokenRefreshScheduler, clearTokens, ADMIN_USER_KEY } from '@/api';
 
 const { Title } = Typography;
 
@@ -26,10 +26,9 @@ const ChangePassword = () => {
         old_password: values.old_password,
         new_password: values.new_password,
       });
-      // 旧 JWT 已失效：本地彻底清会话（不调 logout API，避免 401 触发自动重登）
-      cancelReloginScheduler();
+      // 旧 JWT 已失效：本地彻底清会话（不调 logout API，避免 401 触发自动刷新）
+      cancelTokenRefreshScheduler();
       clearTokens();
-      clearCredentials();
       localStorage.removeItem(ADMIN_USER_KEY);
       success('密码修改成功，请使用新密码重新登录');
       navigate('/login');

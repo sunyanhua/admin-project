@@ -18,9 +18,9 @@ export const authApi = {
     return request.put('/admin/v1/login/change-password', data);
   },
 
-  // 管理员 Token 续期 — POST /admin/v1/login/refresh
-  refreshToken: (data: { refresh_token: string }) => {
-    return request.post('/admin/v1/login/refresh', data);
+  // 管理员 Token 刷新 — POST /admin/v1/login/refresh（无请求体，用当前 Bearer Token 换新 Token）
+  refreshToken: () => {
+    return request.post('/admin/v1/login/refresh');
   },
 
   // 我的操作日志 — GET /admin/v1/login/logs

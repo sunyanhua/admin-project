@@ -20,7 +20,6 @@ export const ADMIN_USER_KEY = prefixed('admin_user');
 // Token 存储 key
 const ACCESS_TOKEN_KEY = prefixed('admin_access_token');
 const TOKEN_EXPIRY_KEY = prefixed('admin_token_expiry');
-const CREDENTIALS_KEY = prefixed('admin_credentials');
 
 export const getAccessToken = (): string | null => localStorage.getItem(ACCESS_TOKEN_KEY);
 export const getTokenExpiry = (): number => {
@@ -41,82 +40,60 @@ export const clearTokens = () => {
   localStorage.removeItem(TOKEN_EXPIRY_KEY);
 };
 
-// ====== 凭据存储（用于无 refresh 接口时自动重新登录） ======
+// ====== Token 自动刷新（POST /admin/v1/login/refresh：用当前有效 Token 换全新 Token） ======
 
-function encodeCredentials(username: string, password: string): string {
-  return btoa(`${username}:${password}`);
-}
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-function decodeCredentials(encoded: string): { username: string; password: string } | null {
-  try {
-    const decoded = atob(encoded);
-    const idx = decoded.indexOf(':');
-    if (idx <= 0) return null;
-    return { username: decoded.substring(0, idx), password: decoded.substring(idx + 1) };
-  } catch { return null; }
-}
-
-export function storeCredentials(username: string, password: string) {
-  localStorage.setItem(CREDENTIALS_KEY, encodeCredentials(username, password));
-}
-
-export function getStoredCredentials(): { username: string; password: string } | null {
-  const encoded = localStorage.getItem(CREDENTIALS_KEY);
-  return encoded ? decodeCredentials(encoded) : null;
-}
-
-export function clearCredentials() {
-  localStorage.removeItem(CREDENTIALS_KEY);
-}
-
-// ====== 自动重新登录（替代不存在的 refresh 接口） ======
-
-let relayinTimer: ReturnType<typeof setTimeout> | null = null;
-
-async function tryReloginOnce(): Promise<string | null> {
-  const creds = getStoredCredentials();
-  if (!creds) return null;
+/** 单次刷新：当前 Bearer Token → 新 Token；失败返回 null */
+async function tryRefreshOnce(): Promise<string | null> {
+  const current = getAccessToken();
+  if (!current) return null;
   try {
     const res = await axios.post(
-      `${import.meta.env.VITE_API_BASE_URL || ''}/admin/v1/login`,
-      { username: creds.username, password: creds.password },
-      { headers: { 'Content-Type': 'application/json' } },
+      `${import.meta.env.VITE_API_BASE_URL || ''}/admin/v1/login/refresh`,
+      null,
+      { headers: { Authorization: `Bearer ${current}` } },
     );
     if (res.data?.code === 0 && res.data?.data?.access_token) {
       const { access_token, expires_at } = res.data.data;
       const expiresIn = expires_at ? Math.max(0, expires_at - Math.floor(Date.now() / 1000)) : 43200;
       setTokens(access_token, '', expiresIn);
-      scheduleRelogin();
+      scheduleTokenRefresh();
       return access_token;
     }
   } catch { /* ignore */ }
   return null;
 }
 
-/** 重新登录：瞬时故障（网络抖动/限流）延迟 2s 重试一次 */
-async function doRelogin(): Promise<string | null> {
-  const token = await tryReloginOnce();
+/** 刷新：瞬时故障（网络抖动/限流）延迟 2s 重试一次 */
+async function doRefresh(): Promise<string | null> {
+  const token = await tryRefreshOnce();
   if (token) return token;
   await new Promise((r) => setTimeout(r, 2000));
-  return tryReloginOnce();
+  return tryRefreshOnce();
 }
 
-export function scheduleRelogin() {
-  if (relayinTimer) clearTimeout(relayinTimer);
+/** 到期前自动刷新（存储的到期时间已提前 5 分钟），保证活跃会话永不掉线 */
+export function scheduleTokenRefresh() {
+  if (refreshTimer) clearTimeout(refreshTimer);
   const expiry = getTokenExpiry();
   if (!expiry) return;
   const delay = Math.max(0, expiry - Date.now());
-  if (delay <= 0) return;
-  relayinTimer = setTimeout(() => doRelogin(), delay);
+  if (delay <= 0) {
+    // 已到提前刷新点：立即刷新兜底（失败交由 401 拦截器处理）
+    doRefresh();
+    return;
+  }
+  refreshTimer = setTimeout(() => doRefresh(), delay);
 }
 
-export function cancelReloginScheduler() {
-  if (relayinTimer) { clearTimeout(relayinTimer); relayinTimer = null; }
+export function cancelTokenRefreshScheduler() {
+  if (refreshTimer) { clearTimeout(refreshTimer); refreshTimer = null; }
 }
 
 // 初始化时恢复调度
 (function () {
-  if (getAccessToken()) scheduleRelogin();
+  if (getAccessToken()) scheduleTokenRefresh();
 })();
 
 const instance = axios.create({
@@ -125,16 +102,16 @@ const instance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-let isRelogging = false;
-let reloginSubscribers: ((token: string) => void)[] = [];
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
 
-function onReloginSuccess(token: string) {
-  reloginSubscribers.forEach(cb => cb(token));
-  reloginSubscribers = [];
+function onRefreshSuccess(token: string) {
+  refreshSubscribers.forEach(cb => cb(token));
+  refreshSubscribers = [];
 }
 
-function addReloginSubscriber(cb: (token: string) => void) {
-  reloginSubscribers.push(cb);
+function addRefreshSubscriber(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
 }
 
 instance.interceptors.request.use(
@@ -165,39 +142,38 @@ instance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // 401 → 用存储的凭据重新登录获取新 token（无 refresh 接口的替代方案）
+    // 401 → 用当前 Token 调 refresh 换新 Token 后重试（多客户端互不影响）
     if (error.response?.status === 401) {
       if (originalRequest._retry) {
-        // 已重试过一次仍 401（如多端登录互踢）→ 再完整重登一轮，成功则重试原请求
-        const secondToken = await doRelogin();
+        // 已重试过一次仍 401 → 再完整刷新一轮，成功则重试原请求
+        const secondToken = await doRefresh();
         if (secondToken) {
           originalRequest.headers.Authorization = `Bearer ${secondToken}`;
           return instance(originalRequest);
         }
-      } else if (!isRelogging) {
+      } else if (!isRefreshing) {
         originalRequest._retry = true;
-        isRelogging = true;
-        const newToken = await doRelogin();
-        isRelogging = false;
+        isRefreshing = true;
+        const newToken = await doRefresh();
+        isRefreshing = false;
         if (newToken) {
-          onReloginSuccess(newToken);
+          onRefreshSuccess(newToken);
           originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return instance(originalRequest);
         }
-        reloginSubscribers = [];
+        refreshSubscribers = [];
       } else {
         return new Promise((resolve) => {
-          addReloginSubscriber((token: string) => {
+          addRefreshSubscriber((token: string) => {
             originalRequest.headers.Authorization = `Bearer ${token}`;
             resolve(instance(originalRequest));
           });
         });
       }
 
-      // 重新登录失败 → 退回登录页
-      cancelReloginScheduler();
+      // 刷新失败（Token 已过期或账号停用/改密）→ 会话失效，退回登录页
+      cancelTokenRefreshScheduler();
       clearTokens();
-      clearCredentials();
       localStorage.removeItem(ADMIN_USER_KEY);
       window.location.href = window.location.pathname + '#/login';
       return Promise.reject(error);
