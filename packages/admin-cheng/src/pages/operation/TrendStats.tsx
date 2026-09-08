@@ -89,7 +89,9 @@ const TrendStats = () => {
     } finally {
       setLoading(false);
     }
-  }, [dateRange, showError]);
+    // 只随日期范围变化触发（showError 不入依赖，避免引用不稳定导致无限循环请求）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 

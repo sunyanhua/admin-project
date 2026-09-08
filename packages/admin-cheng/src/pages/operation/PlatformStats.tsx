@@ -91,7 +91,7 @@ const PlatformStats = () => {
   const [userDist, setUserDist] = useState<UserDistributionResponse | null>(null);
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(30, 'day'), dayjs()]);
 
-  // 无参数接口：挂载时拉一次
+  // 无参数接口：挂载时拉一次（showError 不入依赖，避免引用不稳定导致无限循环请求）
   useEffect(() => {
     setLoading(true);
     Promise.all([
@@ -105,7 +105,8 @@ const PlatformStats = () => {
     }).catch((e: any) => {
       showError(e?.response?.data?.message || '获取统计数据失败');
     }).finally(() => setLoading(false));
-  }, [showError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // 用户总览：随日期范围变化（仅窗口卡响应）
   const fetchUserTotal = useCallback(async () => {
@@ -118,7 +119,9 @@ const PlatformStats = () => {
     } catch (e: any) {
       showError(e?.response?.data?.message || '获取用户总数失败');
     }
-  }, [dateRange, showError]);
+    // 只随日期范围变化触发
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange]);
 
   useEffect(() => { fetchUserTotal(); }, [fetchUserTotal]);
 
