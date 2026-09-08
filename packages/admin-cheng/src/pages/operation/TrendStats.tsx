@@ -42,13 +42,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+/** 用户趋势展示系列（其余系列不展示：迁移提交档案/累计注册/迁移用户） */
+const USER_SERIES_VISIBLE = ['wxa_login', 'new_registered', 'activated', 'match_profile'];
+
 /**
- * dates + series → recharts 行数据（以 dates 为源迭代，缺值补 0，未知 key 回退原文）
+ * dates + series → recharts 行数据（以 dates 为源迭代，缺值补 0；
+ * 只展示 USER_SERIES_VISIBLE 中的系列，未知 key 回退原文）
  */
 const toRows = (dates: string[], series: Array<UserTrendSeries | UserCumulativeSeries>, valueKey: 'increments' | 'cumulatives') => {
+  const visible = (series ?? []).filter((s) => USER_SERIES_VISIBLE.includes(s.key));
   return (dates ?? []).map((date, i) => {
     const row: Record<string, number | string> = { date };
-    (series ?? []).forEach((s) => {
+    visible.forEach((s) => {
       row[USER_SERIES_LABELS[s.key] ?? s.key] = (s as any)[valueKey]?.[i] ?? 0;
     });
     return row;
@@ -95,15 +100,20 @@ const TrendStats = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const interactionRows = [...interactionTrend].sort((a, b) => a.date.localeCompare(b.date)).map((d) => ({
+  const sortedInteraction = [...interactionTrend].sort((a, b) => a.date.localeCompare(b.date));
+  /** 互选操作：关注、无感、心动、礼物 */
+  const mutualRows = sortedInteraction.map((d) => ({
     date: d.date,
     关注: d.feeling_like,
     无感: d.feeling_dislike,
-    撤销无感: d.feeling_undo,
-    撮合: d.opinion_match,
-    拆散: d.opinion_split,
     心动: d.loves,
     礼物: d.gift,
+  }));
+  /** 牵线操作：撮合、拆散、神助攻 */
+  const matchRows = sortedInteraction.map((d) => ({
+    date: d.date,
+    撮合: d.opinion_match,
+    拆散: d.opinion_split,
     神助攻: d.divine,
   }));
 
@@ -115,8 +125,8 @@ const TrendStats = () => {
 
   const userTrendRows = toRows(userTrend?.dates || [], userTrend?.series || [], 'increments');
   const cumulativeRows = toRows(userCumulative?.dates || [], userCumulative?.series || [], 'cumulatives');
-  const userTrendSeriesKeys = (userTrend?.series || []).map((s) => USER_SERIES_LABELS[s.key] ?? s.key);
-  const cumulativeSeriesKeys = (userCumulative?.series || []).map((s) => USER_SERIES_LABELS[s.key] ?? s.key);
+  const userTrendSeriesKeys = USER_SERIES_VISIBLE.map((key) => USER_SERIES_LABELS[key] ?? key);
+  const cumulativeSeriesKeys = USER_SERIES_VISIBLE.map((key) => USER_SERIES_LABELS[key] ?? key);
 
   return (
     <div>
@@ -129,34 +139,7 @@ const TrendStats = () => {
         />
       </div>
 
-      {/* ====== 1. 互动趋势 ====== */}
-      <Card title="互动操作趋势" loading={loading} style={{ marginBottom: 24 }}>
-        {interactionRows.length ? (
-          <>
-            <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={interactionRows}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line type="monotone" dataKey="关注" stroke="#1890ff" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="无感" stroke="#8c8c8c" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="撤销无感" stroke="#bfbfbf" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="撮合" stroke="#f5222d" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="拆散" stroke="#722ed1" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="心动" stroke="#eb2f96" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="礼物" stroke="#52c41a" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="神助攻" stroke="#faad14" strokeWidth={2} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </>
-        ) : (
-          <NoData />
-        )}
-      </Card>
-
-      {/* ====== 2. 注册趋势 ====== */}
+      {/* ====== 1. 注册趋势 ====== */}
       <Card title="注册与脱单档案趋势" loading={loading} style={{ marginBottom: 24 }}>
         {registerRows.length ? (
           <ResponsiveContainer width="100%" height={300}>
@@ -175,7 +158,7 @@ const TrendStats = () => {
         )}
       </Card>
 
-      {/* ====== 3. 用户增量趋势 ====== */}
+      {/* ====== 2. 用户增量趋势 ====== */}
       <Card title="用户按日增量" loading={loading} style={{ marginBottom: 24 }}>
         {userTrendRows.length ? (
           <ResponsiveContainer width="100%" height={300}>
@@ -195,7 +178,7 @@ const TrendStats = () => {
         )}
       </Card>
 
-      {/* ====== 4. 用户累计趋势 ====== */}
+      {/* ====== 3. 用户累计趋势 ====== */}
       <Card
         title="用户按日累计"
         loading={loading}
@@ -218,6 +201,46 @@ const TrendStats = () => {
               {cumulativeSeriesKeys.map((key, i) => (
                 <Line key={key} type="monotone" dataKey={key} stroke={SERIES_COLORS_7[i % SERIES_COLORS_7.length]} strokeWidth={2} dot={false} />
               ))}
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          <NoData />
+        )}
+      </Card>
+
+      {/* ====== 4. 互动操作趋势（互选操作 + 牵线操作） ====== */}
+      <Card title="互选操作趋势" loading={loading} style={{ marginBottom: 24 }}>
+        {mutualRows.length ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={mutualRows}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="关注" stroke="#1890ff" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="无感" stroke="#8c8c8c" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="心动" stroke="#eb2f96" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="礼物" stroke="#52c41a" strokeWidth={2} dot={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          <NoData />
+        )}
+      </Card>
+
+      <Card title="牵线操作趋势" loading={loading}>
+        {matchRows.length ? (
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={matchRows}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
+              <Line type="monotone" dataKey="撮合" stroke="#f5222d" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="拆散" stroke="#722ed1" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="神助攻" stroke="#faad14" strokeWidth={2} dot={false} />
             </ComposedChart>
           </ResponsiveContainer>
         ) : (

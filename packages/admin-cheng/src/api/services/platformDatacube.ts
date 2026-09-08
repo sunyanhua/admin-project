@@ -144,13 +144,10 @@ export interface UserCumulativeResponse {
 
 /** series key → 中文名（未知 key 回退原文） */
 export const USER_SERIES_LABELS: Record<string, string> = {
-  wxa_login: '微信会话',
+  wxa_login: '微信授权',
   new_registered: '新注册',
-  activated: '迁移激活',
+  activated: '老用户激活',
   match_profile: '提交脱单档案',
-  match_profile_migrated: '迁移提交档案',
-  registered: '累计注册',
-  migrated: '迁移用户',
 };
 
 export const platformDatacubeApi = {
