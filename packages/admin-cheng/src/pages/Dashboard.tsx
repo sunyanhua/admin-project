@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Col, Row, Statistic, Typography, Table, Empty, Button, Space, Descriptions } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { UserOutlined, ShopOutlined, FileTextOutlined, DollarOutlined, CopyOutlined, HeartOutlined } from '@ant-design/icons';
+import { UserOutlined, CopyOutlined, HeartOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { px } from '@/styles/constants';
-import { statisticsApi } from '@/api/services/statistics';
 import { platformDatacubeApi } from '@/api/services/platformDatacube';
 import { authApi } from '@/api/services/auth';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
@@ -20,18 +19,14 @@ const Dashboard = () => {
   const [stats, setStats] = useState([
     { title: '用户总数', value: '-', icon: <UserOutlined />, color: '#1890ff', bg: '#e6f7ff', path: '/operation/users' },
     { title: '脱单人数', value: '-', icon: <HeartOutlined />, color: '#eb2f96', bg: '#fff0f6', path: '/operation/match-profiles' },
-    { title: '退出脱单', value: '-', icon: <HeartOutlined />, color: '#f5222d', bg: '#fff1f0', path: '/operation/match-profiles' },
-    { title: '窗口新注册(30天)', value: '-', icon: <UserOutlined />, color: '#13c2c2', bg: '#e6fffb', path: '/operation/users' },
+    { title: '新注册', value: '-', icon: <UserOutlined />, color: '#13c2c2', bg: '#e6fffb', path: '/operation/users' },
     { title: '旧平台已激活', value: '-', icon: <UserOutlined />, color: '#52c41a', bg: '#f6ffed', path: '/operation/users' },
-    { title: '动态总数', value: '-', icon: <FileTextOutlined />, color: '#faad14', bg: '#fff7e6', path: '/community/feeds' },
-    { title: '活动总数', value: '-', icon: <ShopOutlined />, color: '#52c41a', bg: '#f6ffed', path: '/events/list' },
-    { title: '收入总额', value: '-', icon: <DollarOutlined />, color: '#722ed1', bg: '#f9f0ff', path: '/events/finance/payments' },
   ]);
   const [logs, setLogs] = useState<any[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
   useEffect(() => {
-    // v1 平台用户数据（用户总数/脱单/退出脱单/窗口新注册/旧平台激活）
+    // v1 平台用户数据（用户总数/脱单/新注册/旧平台激活）
     platformDatacubeApi.getUserTotal({
       from_date: dayjs().subtract(30, 'day').format('YYYYMMDD'),
       to_date: dayjs().format('YYYYMMDD'),
@@ -40,26 +35,12 @@ const Dashboard = () => {
       setStats((prev) => prev.map((s) => {
         if (s.title === '用户总数') return { ...s, value: d.registered_total ?? '-' };
         if (s.title === '脱单人数') return { ...s, value: d.match_profile_total ?? '-' };
-        if (s.title === '退出脱单') return { ...s, value: d.exited_match_count ?? '-' };
-        if (s.title === '窗口新注册(30天)') return { ...s, value: d.new_registered_count ?? '-' };
+        if (s.title === '新注册') return { ...s, value: d.new_registered_count ?? '-' };
         if (s.title === '旧平台已激活') return { ...s, value: d.migrated_activated ?? '-' };
         return s;
       }));
     }).catch((err: any) => {
       showError(err?.response?.data?.message || '获取平台用户数据失败');
-    });
-
-    // v6 动态/活动/收入（v1 datacube 暂无对应接口，保留）
-    statisticsApi.getDatacube().then((res: any) => {
-      const d = res?.data || res || {};
-      setStats((prev) => prev.map((s) => {
-        if (s.title === '动态总数') return { ...s, value: d.feeds_total ?? d.feed_total ?? '-' };
-        if (s.title === '活动总数') return { ...s, value: d.events_total ?? d.event_total ?? '-' };
-        if (s.title === '收入总额') return { ...s, value: d.event_order_payable != null ? `¥${(d.event_order_payable / 100).toFixed(2)}` : '-' };
-        return s;
-      }));
-    }).catch((err: any) => {
-      showError(err?.response?.data?.message || '获取数据看板失败');
     });
 
     setLogsLoading(true);
