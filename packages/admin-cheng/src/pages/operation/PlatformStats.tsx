@@ -89,10 +89,26 @@ const PlatformStats = () => {
     <span style={{ fontSize: 12, color: '#999', marginLeft: 4 }}>{unit}</span>
   );
 
+  /** 主色 → 淡背景色（卡片淡背景） */
+  const COLOR_BG: Record<string, string> = {
+    '#1890ff': '#e6f7ff',
+    '#722ed1': '#f9f0ff',
+    '#eb2f96': '#fff0f6',
+    '#faad14': '#fff7e6',
+    '#52c41a': '#f6ffed',
+    '#f5222d': '#fff1f0',
+    '#8c8c8c': '#fafafa',
+    '#fa8c16': '#fff7e6',
+    '#13c2c2': '#e6fffb',
+  };
+  const statCardBg = (color: string) => COLOR_BG[color] || '#fafafa';
+
   const statCards = (
     title: string, value: string | number, icon: React.ReactNode, color: string,
   ) => (
-    <Card><Statistic title={title} value={value} prefix={icon} suffix={unitSuffix('人')} valueStyle={{ color }} /></Card>
+    <Card bodyStyle={{ backgroundColor: statCardBg(color) }}>
+      <Statistic title={title} value={value} prefix={icon} suffix={unitSuffix('人')} valueStyle={{ color }} />
+    </Card>
   );
 
   return (
@@ -123,39 +139,49 @@ const PlatformStats = () => {
             ['脱单档案已撤销', audit?.revoked ?? '-', '#8c8c8c'],
           ].map(([t, v, c]: any, idx) => (
             <Col xs={24} sm={12} md={6} key={idx}>
-              <Card><Statistic title={t} value={v} suffix={unitSuffix('人')} valueStyle={{ color: c }} /></Card>
+              <Card bodyStyle={{ backgroundColor: statCardBg(c) }}>
+                <Statistic title={t} value={v} suffix={unitSuffix('人')} valueStyle={{ color: c }} />
+              </Card>
             </Col>
           ))}
         </Row>
         {/* 第三行：老用户/新注册 */}
         <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
           <Col xs={24} sm={12} md={6}>
-            <Card><Statistic
-              title="老用户人数（总数/激活）"
-              value={`${userTotal?.migrated_total ?? '-'}/${userTotal?.migrated_activated ?? '-'}`}
-              suffix={unitSuffix('人')}
-              valueStyle={{ color: '#fa8c16' }} /></Card>
+            <Card bodyStyle={{ backgroundColor: statCardBg('#fa8c16') }}>
+              <Statistic
+                title="老用户人数（总数/激活）"
+                value={`${userTotal?.migrated_total ?? '-'}/${userTotal?.migrated_activated ?? '-'}`}
+                suffix={unitSuffix('人')}
+                valueStyle={{ color: '#fa8c16' }} />
+            </Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
-            <Card><Statistic
-              title="老用户脱单人数（总数/激活）"
-              value={`${userTotal?.migrated_matched_count ?? '-'}/${userTotal?.migrated_activated_matched ?? '-'}`}
-              suffix={unitSuffix('人')}
-              valueStyle={{ color: '#faad14' }} /></Card>
+            <Card bodyStyle={{ backgroundColor: statCardBg('#faad14') }}>
+              <Statistic
+                title="老用户脱单人数（总数/激活）"
+                value={`${userTotal?.migrated_matched_count ?? '-'}/${userTotal?.migrated_activated_matched ?? '-'}`}
+                suffix={unitSuffix('人')}
+                valueStyle={{ color: '#faad14' }} />
+            </Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
-            <Card><Statistic
-              title="新注册人数"
-              value={userTotal?.new_registered_count ?? '-'}
-              suffix={unitSuffix('人')}
-              valueStyle={{ color: '#1890ff' }} /></Card>
+            <Card bodyStyle={{ backgroundColor: statCardBg('#1890ff') }}>
+              <Statistic
+                title="新注册人数"
+                value={userTotal?.new_registered_count ?? '-'}
+                suffix={unitSuffix('人')}
+                valueStyle={{ color: '#1890ff' }} />
+            </Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
-            <Card><Statistic
-              title="新注册脱单人数"
-              value={userTotal?.new_matched_count ?? '-'}
-              suffix={unitSuffix('人')}
-              valueStyle={{ color: '#eb2f96' }} /></Card>
+            <Card bodyStyle={{ backgroundColor: statCardBg('#eb2f96') }}>
+              <Statistic
+                title="新注册脱单人数"
+                value={userTotal?.new_matched_count ?? '-'}
+                suffix={unitSuffix('人')}
+                valueStyle={{ color: '#eb2f96' }} />
+            </Card>
           </Col>
         </Row>
       </Card>
@@ -170,7 +196,9 @@ const PlatformStats = () => {
             ['撤销无感', interaction?.feeling?.undo ?? '-', '#bfbfbf'],
           ].map(([t, v, c]: any, idx) => (
             <Col xs={24} sm={12} md={6} key={idx}>
-              <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} suffix={unitSuffix('次')} valueStyle={{ color: c }} /></Card>
+              <Card bodyStyle={{ backgroundColor: statCardBg(c) }}>
+                <Statistic title={t} value={v} prefix={<ThunderboltOutlined />} suffix={unitSuffix('次')} valueStyle={{ color: c }} />
+              </Card>
             </Col>
           ))}
         </Row>
@@ -182,7 +210,9 @@ const PlatformStats = () => {
             ['神助攻', interaction?.divine ?? '-', '#faad14'],
           ].map(([t, v, c]: any, idx) => (
             <Col xs={24} sm={12} md={6} key={idx}>
-              <Card><Statistic title={t} value={v} prefix={<ThunderboltOutlined />} suffix={unitSuffix('次')} valueStyle={{ color: c }} /></Card>
+              <Card bodyStyle={{ backgroundColor: statCardBg(c) }}>
+                <Statistic title={t} value={v} prefix={<ThunderboltOutlined />} suffix={unitSuffix('次')} valueStyle={{ color: c }} />
+              </Card>
             </Col>
           ))}
         </Row>
