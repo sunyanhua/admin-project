@@ -84,9 +84,8 @@
 
 | 模块 | 路径前缀 | 原因 |
 |------|---------|------|
-| 访问统计 | `/admin/v6/wxa/app/datacube/daily/visit/*` | v1 无对应接口 |
-| 访问用户统计 | `/admin/v6/wxa/app/datacube/daily/retain/*`、`summary/*` | v1 无对应接口 |
-| 用户统计 | `/admin/v6/user/datacube/*` | v1 无对应接口 |
+| 工作台动态/活动/收入 | `/admin/v6/datacube` | v1 datacube 暂无对应指标 |
+| 用户统计（旧页面，未路由） | `/admin/v6/user/datacube/*` | 平台用户统计已迁 v1（/admin/v1/datacube），v6 遗留死代码待清理 |
 | 支付管理 | `/admin/v6/event/order/payment` | 支付记录查询（v1 订单接口已含支付信息） |
 | 动态/评论/话题 | `/admin/v6/feed/*`、`/admin/v6/comment/*`、`/admin/v6/topic/*` | v1 无对应接口（相关管理页面已移除） |
 
@@ -96,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-08 | 数据统计：platformDatacube 服务（8 个 v1 接口）；平台数据统计页（用户总览/互动/脱单分布/注册分布）与趋势统计页（互动/注册/增量/累计）替换占位页；工作台 v1 用户数据卡；访问统计对齐 hsh1039（双轴/卡片/日期） | platformDatacube.ts + PlatformStats/TrendStats + Dashboard + VisitStatistics/VisitUserStats + router | 7aab129、7d4b8dd、c8103bc、dda10fa、0d77e5a |
 | 2026-09-04 | **正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台，含富文本颜色/背景色修复） | dist | 构建产物（未提交） |
 | 2026-09-03 | **正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台，含神助攻调整入口、专区后台地址展示） | dist | 构建产物（未提交） |
 | 2026-09-03 | **正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台，含审核弹窗校验修复） | dist | 构建产物（未提交） |
@@ -138,7 +138,8 @@
 
 ## 待办
 
-- 财务统计、工作台整体统计（需后端提供 v1 接口）
+- 财务统计页（/operation/finance-stats 占位中，需后端提供 v1 财务接口）
+- 工作台动态/活动/收入迁移 v1（当前 v6，等后端 v1 指标接口）
 - 支付管理独立页面（目前支付信息内嵌在订单中）
 - 代码拆分：SkuConfigWizard（1012行→拆分）等大文件
 - 提取通用 Columns 渲染器（StatusColumn、DateTimeColumn 等）
