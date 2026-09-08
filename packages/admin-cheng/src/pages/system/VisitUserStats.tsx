@@ -23,7 +23,7 @@ const VisitUserStats = () => {
   const [retain, setRetain] = useState<RetainResponse | null>(null);
   const [portrait, setPortrait] = useState<PortraitItem[]>([]);
   const [portraitTab, setPortraitTab] = useState('1');
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs()]);
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs().subtract(1, 'day')]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -115,6 +115,7 @@ const VisitUserStats = () => {
           title="用户画像"
           extra={
             <RangePicker value={dateRange} size="small"
+              disabledDate={(current) => current != null && current.isAfter(dayjs().subtract(1, 'day'), 'day')}
               onChange={d => { if (d?.[0] && d?.[1]) setDateRange([d[0], d[1]]); }} />
           }
         >

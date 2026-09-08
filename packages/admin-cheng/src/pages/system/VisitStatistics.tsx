@@ -44,7 +44,7 @@ const VisitStatistics = () => {
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [trend, setTrend] = useState<VisitTrendItem[]>([]);
   const [pages, setPages] = useState<PageRankingItem[]>([]);
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs()]);
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs().subtract(1, 'day')]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -89,23 +89,29 @@ const VisitStatistics = () => {
       <Text type="secondary">小程序访问数据概览与趋势</Text>
 
       <Row gutter={[16, 16]} style={{ marginTop: 24, marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={8} lg={4}>
+        <Col xs={24} sm={12} md={8} lg={3}>
           <Card loading={loading}><Statistic title="访问次数 PV" value={overview?.visit_pv ?? '-'} prefix={<EyeOutlined />} valueStyle={{ color: '#1890ff' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
+        <Col xs={24} sm={12} md={8} lg={3}>
           <Card loading={loading}><Statistic title="访问人数 UV" value={overview?.visit_uv ?? '-'} prefix={<UserAddOutlined />} valueStyle={{ color: '#52c41a' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
+        <Col xs={24} sm={12} md={8} lg={3}>
           <Card loading={loading}><Statistic title="新用户数" value={overview?.visit_uv_new ?? '-'} prefix={<UserAddOutlined />} valueStyle={{ color: '#722ed1' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
+        <Col xs={24} sm={12} md={8} lg={3}>
           <Card loading={loading}><Statistic title="人均停留" value={fmtDuration(overview?.avg_stay_time_uv ?? 0)} prefix={<ClockCircleOutlined />} valueStyle={{ color: '#fa8c16' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
+        <Col xs={24} sm={12} md={8} lg={3}>
+          <Card loading={loading}><Statistic title="次均停留" value={fmtDuration(overview?.avg_stay_time_session ?? 0)} prefix={<ClockCircleOutlined />} valueStyle={{ color: '#eb2f96' }} /></Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={3}>
           <Card loading={loading}><Statistic title="平均深度" value={overview?.avg_visit_depth?.toFixed(1) ?? '-'} suffix="页" prefix={<BarChartOutlined />} valueStyle={{ color: '#13c2c2' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card loading={loading}><Statistic title="分享次数" value={overview?.share_pv ?? '-'} prefix={<ShareAltOutlined />} valueStyle={{ color: '#eb2f96' }} /></Card>
+        <Col xs={24} sm={12} md={8} lg={3}>
+          <Card loading={loading}><Statistic title="转发次数" value={overview?.share_pv ?? '-'} prefix={<ShareAltOutlined />} valueStyle={{ color: '#722ed1' }} /></Card>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={3}>
+          <Card loading={loading}><Statistic title="转发人数" value={overview?.share_uv ?? '-'} prefix={<ShareAltOutlined />} valueStyle={{ color: '#fa8c16' }} /></Card>
         </Col>
       </Row>
 
@@ -113,6 +119,7 @@ const VisitStatistics = () => {
         title="访问趋势"
         extra={
           <RangePicker value={dateRange}
+            disabledDate={(current) => current != null && current.isAfter(dayjs().subtract(1, 'day'), 'day')}
             onChange={d => { if (d?.[0] && d?.[1]) setDateRange([d[0], d[1]]); }} />
         }
         style={{ marginBottom: 24 }}
@@ -121,12 +128,13 @@ const VisitStatistics = () => {
           <ComposedChart data={chartData} barSize={40}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
+            <YAxis yAxisId="left" tick={{ fontSize: 12 }} label={{ value: '次数', angle: -90, position: 'insideLeft', fontSize: 12 }} />
+            <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} label={{ value: '人数', angle: 90, position: 'insideRight', fontSize: 12 }} />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="访问次数" fill="#1890ff" name="PV" />
-            <Line type="monotone" dataKey="访问人数" stroke="#52c41a" strokeWidth={2} dot={false} name="UV" />
-            <Line type="monotone" dataKey="新用户数" stroke="#722ed1" strokeWidth={2} dot={false} name="新用户" />
+            <Bar yAxisId="left" dataKey="访问次数" fill="#1890ff" name="PV" />
+            <Line yAxisId="right" type="monotone" dataKey="访问人数" stroke="#52c41a" strokeWidth={2} dot={false} name="UV" />
+            <Line yAxisId="right" type="monotone" dataKey="新用户数" stroke="#722ed1" strokeWidth={2} dot={false} name="新用户" />
           </ComposedChart>
         </ResponsiveContainer>
         <Table dataSource={chartData} rowKey="date" pagination={false} size="small" style={{ marginTop: 16 }}
