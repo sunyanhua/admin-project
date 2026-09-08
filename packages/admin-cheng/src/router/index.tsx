@@ -45,6 +45,10 @@ import LotteryManagement from '@/pages/community/LotteryManagement';
 import ProgramSubmission from '@/pages/operation/ProgramSubmission';
 // 广播节目管理
 import ProgramManagement from '@/pages/operation/ProgramManagement';
+// 平台数据统计
+import PlatformStats from '@/pages/operation/PlatformStats';
+// 趋势统计
+import TrendStats from '@/pages/operation/TrendStats';
 
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
@@ -102,8 +106,8 @@ const router = createHashRouter([
           { path: 'gifts', element: <GiftManagement /> },
           { path: 'lottery', element: <LotteryManagement /> },
           // 社区统计（原社区管理）
-          { path: 'stats', element: <PlaceholderPage title="平台数据统计" /> },
-          { path: 'trends', element: <PlaceholderPage title="趋势统计" /> },
+          { path: 'stats', element: <PlatformStats /> },
+          { path: 'trends', element: <TrendStats /> },
           // 节目管理
           { path: 'programs', element: <ProgramManagement /> },
           { path: 'program-submissions', element: <ProgramSubmission /> },
