@@ -12260,6 +12260,84 @@
                 }
             }
         },
+        "/admin/v1/wxa/datacube/visit-distribution": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "按分布类型分组返回访问分布：来源（各入口场景 PV/UV）、时长（各时长桶）、深度（各页数桶），含各桶 PV 占比。无数据时返回空数组。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-微信数据分析"
+                ],
+                "summary": "访问分布",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "小程序 AppID（不传返回所有小程序合计）",
+                        "name": "appid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（默认 30 天前）",
+                        "name": "start_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "end_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.VisitDistributionGroup"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/wxa/datacube/visit-trend": {
             "get": {
                 "security": [
@@ -27006,6 +27084,42 @@
                     "type": "integer"
                 },
                 "visit_uv_new": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.VisitDistributionGroup": {
+            "type": "object",
+            "properties": {
+                "index": {
+                    "description": "access_source_session_cnt 访问来源 / access_staytime_info 访问时长 / access_depth_info 访问深度",
+                    "type": "string"
+                },
+                "item_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.VisitDistributionItem"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_wxa_datacube_model.VisitDistributionItem": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "场景/桶 id",
+                    "type": "integer"
+                },
+                "percentage": {
+                    "description": "该桶占本分布类型 PV 的比例",
+                    "type": "number"
+                },
+                "value": {
+                    "description": "该桶 PV",
+                    "type": "integer"
+                },
+                "visit_uv": {
+                    "description": "该桶 UV",
                     "type": "integer"
                 }
             }
