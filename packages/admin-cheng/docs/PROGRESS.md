@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-09-03**
+**2026-09-10**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-10 | 专区活动发布/专区首页新增查看小程序码（SourceQrcodeModal 支持 showSource/showShortlink 关闭来源渠道与短链）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | SourceQrcodeModal + ZoneActivities + ZoneInfo | 685a5a7（构建产物未提交） |
 | 2026-09-08 | 数据统计：platformDatacube 服务（8 个 v1 接口）；平台数据统计页（用户总览/互动/脱单分布/注册分布）与趋势统计页（互动/注册/增量/累计）替换占位页；工作台 v1 用户数据卡；访问统计对齐 hsh1039（双轴/卡片/日期） | platformDatacube.ts + PlatformStats/TrendStats + Dashboard + VisitStatistics/VisitUserStats + router | 7aab129、7d4b8dd、c8103bc、dda10fa、0d77e5a |
 | 2026-09-09 | **正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台，含登录 Token 刷新机制） | dist | 构建产物（未提交） |
 | 2026-09-08 | **测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物：主后台 + 专区管理后台，含统计口径更新、排版调整、单位后缀、卡片淡背景、工作台组合卡） | dist-test / dist | 构建产物（未提交） |
