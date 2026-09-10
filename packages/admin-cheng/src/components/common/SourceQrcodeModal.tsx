@@ -15,10 +15,14 @@ const RESOLVE_PAGE = 'pages/source/index';
 export interface SourceQrcodeModalProps {
   /** 目标页面路径（如 pages/activity/detail?id=xxx） */
   basePage: string;
+  /** 是否显示来源渠道选择，默认 true */
+  showSource?: boolean;
+  /** 是否生成小程序短链接，默认 true */
+  showShortlink?: boolean;
   children?: React.ReactNode;
 }
 
-const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, children }) => {
+const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSource = true, showShortlink = true, children }) => {
   const { success, error: showError } = useAppNotification();
   const [modalVisible, setModalVisible] = useState(false);
   const [sources, setSources] = useState<any[]>([]);
@@ -30,6 +34,11 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
 
   useEffect(() => {
     if (!modalVisible) return;
+    if (!showSource) {
+      // 不显示来源渠道时直接生成小程序码
+      handleSourceChange('');
+      return;
+    }
     sourceApi.getSources({ page: 1, size: 100, status: 0 })
       .then((res: any) => {
         const list = Array.isArray(res) ? res : (res?.list || []);
@@ -71,12 +80,14 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
       setPagePath(path);
 
       // 3. 短链（page_url 不带前导斜杠：pages/source/index?scene={scene}）
-      const linkRes: any = await wxaApi.createShortlink({
-        appid: APPID,
-        page_url: `${RESOLVE_PAGE}?scene=${sceneRef}`,
-        is_permanent: false,
-      });
-      setShortLink(linkRes?.link || '');
+      if (showShortlink) {
+        const linkRes: any = await wxaApi.createShortlink({
+          appid: APPID,
+          page_url: `${RESOLVE_PAGE}?scene=${sceneRef}`,
+          is_permanent: false,
+        });
+        setShortLink(linkRes?.link || '');
+      }
     } catch (err: any) {
       showError(err?.response?.data?.message || '生成失败');
     } finally {
@@ -109,20 +120,22 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
             </Space>
           </div>
           <Divider style={{ margin: '16px 0' }} />
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>来源渠道：</label>
-            <Select
-              placeholder="请选择来源渠道"
-              style={{ width: '100%' }}
-              value={selectedSource}
-              onChange={handleSourceChange}
-            >
-              <Select.Option value="">无来源</Select.Option>
-              {sources.map((s: any) => (
-                <Select.Option key={s.id} value={String(s.id)}>{s.name}</Select.Option>
-              ))}
-            </Select>
-          </div>
+          {showSource && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>来源渠道：</label>
+              <Select
+                placeholder="请选择来源渠道"
+                style={{ width: '100%' }}
+                value={selectedSource}
+                onChange={handleSourceChange}
+              >
+                <Select.Option value="">无来源</Select.Option>
+                {sources.map((s: any) => (
+                  <Select.Option key={s.id} value={String(s.id)}>{s.name}</Select.Option>
+                ))}
+              </Select>
+            </div>
+          )}
           {pagePath && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>页面路径：</label>
@@ -132,7 +145,7 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, childre
               </Space>
             </div>
           )}
-          {shortLink && (
+          {showShortlink && shortLink && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>小程序短链接（30天内有效）：</label>
               <Space size={4}>

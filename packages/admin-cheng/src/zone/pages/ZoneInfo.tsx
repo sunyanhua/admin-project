@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Card, Form, Spin, Input, Button } from 'antd';
+import { Card, Form, Spin, Input, Button, Space } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useAuth } from '@/contexts/AuthContext';
 import { zoneApi, Zone } from '@/api/services/zone';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
 import ImageUpload from '@/components/common/ImageUpload';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
 
 /**
@@ -68,7 +69,10 @@ const ZoneInfo = () => {
         <Spin spinning={loading}>
           <Form form={form} layout="vertical" style={{ maxWidth: 720 }} onFinish={handleSave}>
             <Form.Item label="专区名称">
-              <Input value={zone?.name || ''} disabled placeholder="专区名称" />
+              <Space size={4}>
+                <Input value={zone?.name || ''} disabled placeholder="专区名称" style={{ width: 320 }} />
+                <SourceQrcodeModal basePage={`/pages/zone/index?id=${zone?.id || user?.zoneId || ''}`} showSource={false} showShortlink={false} />
+              </Space>
             </Form.Item>
 
             <Form.Item

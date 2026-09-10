@@ -14,6 +14,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ActivityEditModal from '@/components/operation/ActivityEditModal';
 import ActivityRegisterModal from '@/components/operation/ActivityRegisterModal';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { useAuth } from '@/contexts/AuthContext';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 
@@ -131,10 +132,13 @@ const ZoneActivities = () => {
       render: (text: string, r: Activity) => {
         const tag = TYPE_TAGS[r.activity_type];
         return (
-          <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', textAlign: 'left' }}>
-            {tag && <Tag color={tag.color} style={{ marginRight: 4 }}>{tag.label}</Tag>}
-            {text}
-          </span>
+          <Space size={4}>
+            <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', textAlign: 'left' }}>
+              {tag && <Tag color={tag.color} style={{ marginRight: 4 }}>{tag.label}</Tag>}
+              {text}
+            </span>
+            <SourceQrcodeModal basePage={`pages/activity-detail/index?id=${r.id}`} showSource={false} showShortlink={false} />
+          </Space>
         );
       },
     },
