@@ -6304,6 +6304,12 @@
                         "description": "关键字搜索（内容模糊匹配）",
                         "name": "keyword",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "展示渠道筛选（空/null=不筛选）",
+                        "name": "display_channel",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -17434,7 +17440,7 @@
         },
         "/api/v1/wxa/session-storage": {
             "get": {
-                "description": "返回当前用户全部存储记录（updated_at DESC，最多 10 条）",
+                "description": "返回当前用户全部存储记录（updated_at DESC，条数不限）",
                 "consumes": [
                     "application/json"
                 ],
@@ -17547,7 +17553,7 @@
                 }
             },
             "put": {
-                "description": "UPSERT 语义：key 已存在则覆盖 data，不存在则新增（需配额）",
+                "description": "UPSERT 语义：key 已存在则全量覆盖 data 与 expires_at，不存在则新增（条数不限）",
                 "consumes": [
                     "application/json"
                 ],
@@ -17584,7 +17590,7 @@
                         }
                     },
                     "400": {
-                        "description": "参数错误（40001）",
+                        "description": "参数错误（40001，含 expires_at 格式非法）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -17596,7 +17602,7 @@
                         }
                     },
                     "422": {
-                        "description": "未注册用户（42203）/ 配额超限（42219）",
+                        "description": "未注册用户（42203）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -17604,7 +17610,7 @@
                 }
             },
             "delete": {
-                "description": "删除单条记录并释放配额（storage_count -1）",
+                "description": "物理删除单条记录",
                 "consumes": [
                     "application/json"
                 ],
@@ -17682,6 +17688,12 @@
                         "type": "integer",
                         "description": "每页条数（默认 20，最大 100）",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "展示渠道筛选（空/null=不筛选）",
+                        "name": "display_channel",
                         "in": "query"
                     }
                 ],
@@ -19256,6 +19268,14 @@
                     "description": "用户协议",
                     "type": "string"
                 },
+                "checkin_enabled": {
+                    "description": "是否启用现场签到",
+                    "type": "boolean"
+                },
+                "checkin_start": {
+                    "description": "现场签到开始时间",
+                    "type": "string"
+                },
                 "cover": {
                     "type": "string"
                 },
@@ -19313,6 +19333,10 @@
                     "description": "男性名额（gender_enabled=true 时有值）",
                     "type": "integer"
                 },
+                "onsite_loves_chances": {
+                    "description": "现场心动机会数（与用户每日心动次数独立）",
+                    "type": "integer"
+                },
                 "register_end": {
                     "type": "string"
                 },
@@ -19346,6 +19370,14 @@
                 "updated_by": {
                     "type": "string"
                 },
+                "warm_up_config": {
+                    "description": "预热配置",
+                    "type": "string"
+                },
+                "warm_up_enabled": {
+                    "description": "是否启用预热",
+                    "type": "boolean"
+                },
                 "zone_id": {
                     "description": "关联专区 ID",
                     "type": "string"
@@ -19364,6 +19396,14 @@
                 },
                 "agreement": {
                     "description": "用户协议",
+                    "type": "string"
+                },
+                "checkin_enabled": {
+                    "description": "是否启用现场签到",
+                    "type": "boolean"
+                },
+                "checkin_start": {
+                    "description": "现场签到开始时间",
                     "type": "string"
                 },
                 "cover": {
@@ -19417,6 +19457,10 @@
                     "description": "男性名额（gender_enabled=true 时有值）",
                     "type": "integer"
                 },
+                "onsite_loves_chances": {
+                    "description": "现场心动机会数（与用户每日心动次数独立）",
+                    "type": "integer"
+                },
                 "register_end": {
                     "type": "string"
                 },
@@ -19443,6 +19487,14 @@
                 },
                 "title": {
                     "type": "string"
+                },
+                "warm_up_config": {
+                    "description": "预热配置（前端自主控制内容）",
+                    "type": "string"
+                },
+                "warm_up_enabled": {
+                    "description": "是否启用预热",
+                    "type": "boolean"
                 },
                 "zone_id": {
                     "description": "关联专区 ID",
@@ -19515,6 +19567,14 @@
                     "description": "用户协议（前端自主控制内容，服务端透明存储）",
                     "type": "string"
                 },
+                "checkin_enabled": {
+                    "description": "是否启用现场签到（默认 false）",
+                    "type": "boolean"
+                },
+                "checkin_start": {
+                    "description": "现场签到开始时间（RFC3339，可选）",
+                    "type": "string"
+                },
                 "cover": {
                     "type": "string",
                     "maxLength": 512
@@ -19559,6 +19619,10 @@
                     "description": "男性名额（gender_enabled=true 时必填）",
                     "type": "integer"
                 },
+                "onsite_loves_chances": {
+                    "description": "现场心动机会数（默认 0，与用户每日心动次数独立）",
+                    "type": "integer"
+                },
                 "register_end": {
                     "description": "RFC3339（可选）",
                     "type": "string"
@@ -19597,6 +19661,14 @@
                 "title": {
                     "type": "string",
                     "maxLength": 256
+                },
+                "warm_up_config": {
+                    "description": "预热配置",
+                    "type": "string"
+                },
+                "warm_up_enabled": {
+                    "description": "预热与现场签到（2026-09-11）：均为前端自主配置内容，服务端透明存储。",
+                    "type": "boolean"
                 },
                 "zone_id": {
                     "description": "可选，关联专区；\"\"=不关联（与编辑三态口径一致，uuid|eq= 允许空串穿透校验）",
@@ -19768,6 +19840,14 @@
                     "description": "用户协议（前端自主控制内容，服务端透明存储）",
                     "type": "string"
                 },
+                "checkin_enabled": {
+                    "description": "是否启用现场签到",
+                    "type": "boolean"
+                },
+                "checkin_start": {
+                    "description": "现场签到开始时间（RFC3339）",
+                    "type": "string"
+                },
                 "cover": {
                     "type": "string",
                     "maxLength": 512
@@ -19810,6 +19890,10 @@
                     "description": "男性名额",
                     "type": "integer"
                 },
+                "onsite_loves_chances": {
+                    "description": "现场心动机会数（与用户每日心动次数独立）",
+                    "type": "integer"
+                },
                 "register_end": {
                     "type": "string"
                 },
@@ -19843,6 +19927,14 @@
                 "title": {
                     "type": "string",
                     "maxLength": 256
+                },
+                "warm_up_config": {
+                    "description": "预热配置",
+                    "type": "string"
+                },
+                "warm_up_enabled": {
+                    "description": "预热与现场签到（2026-09-11）：PATCH 指针语义，缺省不更新。",
+                    "type": "boolean"
                 },
                 "zone_id": {
                     "description": "null=不更新，\"\"=清空关联专区，非空 UUID=更新关联（uuid|eq= 允许空串穿透校验）",
@@ -24412,6 +24504,10 @@
                     "description": "可 null",
                     "type": "string"
                 },
+                "expires_at": {
+                    "description": "有效期（RFC3339 UTC）；null = 永久有效",
+                    "type": "string"
+                },
                 "key": {
                     "description": "归一化小写 key",
                     "type": "string"
@@ -24438,6 +24534,10 @@
             "properties": {
                 "data": {
                     "description": "存储内容，可 null；非 null 时 ≤1024 字符",
+                    "type": "string"
+                },
+                "expires_at": {
+                    "description": "可选有效期（RFC3339 UTC）；null/缺省 = 永久有效",
                     "type": "string"
                 }
             }
@@ -24801,6 +24901,9 @@
                 "delete_files": {
                     "type": "boolean"
                 },
+                "display_channel": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -24867,6 +24970,9 @@
                 },
                 "delete_files": {
                     "type": "boolean"
+                },
+                "display_channel": {
+                    "type": "string"
                 },
                 "id": {
                     "type": "string"
@@ -24949,6 +25055,9 @@
                 "created_at": {
                     "type": "string"
                 },
+                "display_channel": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -24982,6 +25091,9 @@
                     "type": "string"
                 },
                 "created_at": {
+                    "type": "string"
+                },
+                "display_channel": {
                     "type": "string"
                 },
                 "id": {
@@ -25103,6 +25215,11 @@
                     "type": "string",
                     "maxLength": 2000,
                     "minLength": 1
+                },
+                "display_channel": {
+                    "description": "DisplayChannel 展示渠道（前端自主控制，服务端透明存储；null/缺省=未指定）。",
+                    "type": "string",
+                    "maxLength": 100
                 },
                 "is_public": {
                     "type": "boolean"
