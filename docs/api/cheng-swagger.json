@@ -9479,6 +9479,75 @@
                 }
             }
         },
+        "/admin/v1/notification/service-template/broadcast": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "自定义报名项目（≤20 字）与报名编号（≤32 字）两项内容，向全体已绑定服务号的用户异步广播；可选指定跳转小程序页面。创建批次后由异步推送服务独立发送，批次表记录成功/失败计数，逐条推送详情仅日志。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-通知管理"
+                ],
+                "summary": "发布服务号模板消息广播",
+                "parameters": [
+                    {
+                        "description": "广播内容",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.CreateTemplateBroadcastRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.TemplateBroadcastResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "402": {
+                        "description": "服务号模板消息未配置（code=40238）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/permission/tree": {
             "get": {
                 "description": "返回管理后台全部权限的树形结构，供前端渲染权限分配界面。",
@@ -17759,6 +17828,123 @@
                 }
             }
         },
+        "/api/v1/wxa/subscribe/bind-qrcode": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "生成 2h 有效的带参数二维码（scene_str=回调地址），用户扫码关注服务号后旧平台回调绑定 openid，用于模板消息推送",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "创建服务号关注二维码",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.BindQrcodeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/subscribe/bind-status": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "当前状态只看 bound 行存在性（pending 行不影响）；时间字段未绑定时为 null",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "服务号绑定状态查询",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.BindStatusResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/subscribe/unbind": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "解绑后不再接收模板消息（不限制是否关注服务号），可扫码重新绑定；无绑定记录同样成功",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-通知"
+                ],
+                "summary": "服务号订阅解绑",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/upload/image": {
             "post": {
                 "security": [
@@ -23234,6 +23420,72 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.BindQrcodeResponse": {
+            "type": "object",
+            "properties": {
+                "expire_seconds": {
+                    "description": "ExpireSeconds 旧平台回读的有效期秒数。",
+                    "type": "integer"
+                },
+                "expires_at": {
+                    "description": "ExpiresAt 绑定记录过期时刻（RFC3339）。",
+                    "type": "string"
+                },
+                "ticket": {
+                    "description": "Ticket 二维码 ticket（前端拼 showqrcode URL 渲染，裁决 A6=B——只返回 ticket）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.BindStatusResponse": {
+            "type": "object",
+            "properties": {
+                "first_bound_at": {
+                    "description": "FirstBoundAt 首次绑定时间 = MIN(bound_at)（从未绑定 null）。",
+                    "type": "string"
+                },
+                "last_bound_at": {
+                    "description": "LastBoundAt 最后绑定时间 = MAX(bound_at)（从未绑定 null）。",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Status 当前绑定状态——只看 bound 行存在性（pending 行不影响）：\n有 bound 行 → bound；无 bound 行但有 unbound 行 → unbound；否则 pending。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.SubscribeBindStatus"
+                        }
+                    ]
+                },
+                "unbound_at": {
+                    "description": "UnboundAt 取消绑定时间 = 最新 unbound_at（从未解绑 null）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.CreateTemplateBroadcastRequest": {
+            "type": "object",
+            "required": [
+                "content_character",
+                "content_thing5"
+            ],
+            "properties": {
+                "content_character": {
+                    "description": "报名编号",
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "content_thing5": {
+                    "description": "报名项目",
+                    "type": "string",
+                    "maxLength": 20
+                },
+                "page_path": {
+                    "description": "跳转小程序页面（可选）",
+                    "type": "string",
+                    "maxLength": 128
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_notification_model.NoticeCountItem": {
             "type": "object",
             "properties": {
@@ -23339,6 +23591,35 @@
             "properties": {
                 "total": {
                     "description": "Total 未读消息总数。",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.TemplateBroadcastResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "fail_count": {
+                    "type": "integer"
+                },
+                "finished_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "started_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.TemplateBroadcastStatus"
+                },
+                "success_count": {
+                    "type": "integer"
+                },
+                "total_count": {
                     "type": "integer"
                 }
             }
@@ -29020,6 +29301,54 @@
                 "SubmissionAuditPending",
                 "SubmissionAuditApproved",
                 "SubmissionAuditRejected"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.SubscribeBindStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "SubscribeBindBound": "已绑定（bound，回调写入 openid）",
+                "SubscribeBindPending": "待扫码（pending，QR 2h 有效期内）",
+                "SubscribeBindUnbound": "已解绑（unbound，用户主动取消/换绑置换，终态）"
+            },
+            "x-enum-descriptions": [
+                "待扫码（pending，QR 2h 有效期内）",
+                "已绑定（bound，回调写入 openid）",
+                "已解绑（unbound，用户主动取消/换绑置换，终态）"
+            ],
+            "x-enum-varnames": [
+                "SubscribeBindPending",
+                "SubscribeBindBound",
+                "SubscribeBindUnbound"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.TemplateBroadcastStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "TemplateBroadcastDone": "已完成（终态，计数定稿）",
+                "TemplateBroadcastPending": "待发送（端点创建初态）",
+                "TemplateBroadcastProcessing": "发送中（worker 抢单持有）"
+            },
+            "x-enum-descriptions": [
+                "待发送（端点创建初态）",
+                "发送中（worker 抢单持有）",
+                "已完成（终态，计数定稿）"
+            ],
+            "x-enum-varnames": [
+                "TemplateBroadcastPending",
+                "TemplateBroadcastProcessing",
+                "TemplateBroadcastDone"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.UploadFileType": {
