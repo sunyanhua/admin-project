@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react';
-import FormConfigEditor, { FormField } from './FormConfigEditor';
+import FormConfigEditor, { FormField, WARM_UP_FIELD_TYPE_OPTIONS } from './FormConfigEditor';
 
 interface WarmUpConfigEditorProps {
   value?: string;
@@ -8,8 +8,10 @@ interface WarmUpConfigEditorProps {
 
 /**
  * 活动预热配置编辑器。
- * 交互同 FormConfigEditor（添加字段进行配置），但存储格式不同：
- * 所有字段合为一个数组，存入外层 JSON 的 "config" 键，即 {"config": [...]}。
+ * 交互同 FormConfigEditor（添加字段进行配置），但存储格式与行为不同：
+ * - 所有字段合为一个数组，存入外层 JSON 的 "config" 键，即 {"config": [...]}
+ * - 字段 id 手填（小程序端按固定 id 读取），新增字段默认必填
+ * - 类型在多行输入框下加「编辑器」、图片上传下加「视频上传」
  */
 const WarmUpConfigEditor: React.FC<WarmUpConfigEditorProps> = ({ value = '', onChange }) => {
   // 从外层 {"config": [...]} 中取出字段数组交给 FormConfigEditor（兼容历史纯数组格式）
@@ -36,7 +38,7 @@ const WarmUpConfigEditor: React.FC<WarmUpConfigEditorProps> = ({ value = '', onC
     onChange?.(JSON.stringify({ config: fields }));
   }, [onChange]);
 
-  return <FormConfigEditor value={innerValue} onChange={handleChange} />;
+  return <FormConfigEditor value={innerValue} onChange={handleChange} manualId defaultRequired fieldTypes={WARM_UP_FIELD_TYPE_OPTIONS} />;
 };
 
 export default WarmUpConfigEditor;

@@ -4,7 +4,12 @@ import { PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons'
 
 // ==================== Types ====================
 
-type FieldType = 'text' | 'textarea' | 'select' | 'multi_select' | 'image';
+export type FieldType = 'text' | 'textarea' | 'editor' | 'select' | 'multi_select' | 'image' | 'video';
+
+export interface FieldTypeOption {
+  label: string;
+  value: FieldType;
+}
 
 export interface FormField {
   id: string;
@@ -17,14 +22,32 @@ export interface FormField {
 interface FormConfigEditorProps {
   value?: string;
   onChange?: (json: string) => void;
+  /** 字段 id 手填（预热配置：小程序端按固定 id 读取），缺省自动生成 */
+  manualId?: boolean;
+  /** 新增字段默认必填，缺省 false */
+  defaultRequired?: boolean;
+  /** 字段类型选项，缺省报名信息类型列表 */
+  fieldTypes?: FieldTypeOption[];
 }
 
-const FIELD_TYPE_OPTIONS = [
-  { label: '输入框', value: 'text' as const },
-  { label: '多行输入框', value: 'textarea' as const },
-  { label: '单选', value: 'select' as const },
-  { label: '多选', value: 'multi_select' as const },
-  { label: '图片上传', value: 'image' as const },
+/** 报名信息默认类型列表 */
+const FIELD_TYPE_OPTIONS: FieldTypeOption[] = [
+  { label: '输入框', value: 'text' },
+  { label: '多行输入框', value: 'textarea' },
+  { label: '单选', value: 'select' },
+  { label: '多选', value: 'multi_select' },
+  { label: '图片上传', value: 'image' },
+];
+
+/** 预热配置类型列表：多行输入框下加「编辑器」，图片上传下加「视频上传」 */
+export const WARM_UP_FIELD_TYPE_OPTIONS: FieldTypeOption[] = [
+  { label: '输入框', value: 'text' },
+  { label: '多行输入框', value: 'textarea' },
+  { label: '编辑器', value: 'editor' },
+  { label: '单选', value: 'select' },
+  { label: '多选', value: 'multi_select' },
+  { label: '图片上传', value: 'image' },
+  { label: '视频上传', value: 'video' },
 ];
 
 function generateFieldId(): string {
@@ -33,7 +56,7 @@ function generateFieldId(): string {
 
 // ==================== Component ====================
 
-const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChange }) => {
+const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChange, manualId = false, defaultRequired = false, fieldTypes = FIELD_TYPE_OPTIONS }) => {
   const [fields, setFields] = useState<FormField[]>([]);
 
   // 解析 JSON 字符串为字段数组
@@ -46,7 +69,8 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
         const withIds = parsed.map((f: any) => {
           if (!f.id) hasNewId = true;
           return {
-            id: f.id || generateFieldId(),
+            // 手填 id 模式不自动生成（小程序端按固定 id 读取，留空由管理员填写）
+            id: f.id || (manualId ? '' : generateFieldId()),
             label: f.label || '',
             type: f.type || 'text',
             required: f.required === true,
@@ -54,8 +78,8 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
           };
         });
         setFields(withIds);
-        // 旧数据补齐 id 后回写表单，确保提交时值也带 id
-        if (hasNewId) {
+        // 旧数据补齐 id 后回写表单，确保提交时值也带 id（手填 id 模式不回写）
+        if (hasNewId && !manualId) {
           const clean = withIds.filter((f) => f.label.trim()).map(f => ({
             id: f.id, label: f.label, type: f.type, required: f.required,
             options: f.options?.length ? f.options : undefined,
@@ -81,9 +105,9 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
   }, [onChange]);
 
   const addField = useCallback(() => {
-    const f: FormField = { id: generateFieldId(), label: '', type: 'text', required: false };
+    const f: FormField = { id: manualId ? '' : generateFieldId(), label: '', type: 'text', required: defaultRequired };
     emit([...fields, f]);
-  }, [fields, emit]);
+  }, [fields, emit, manualId, defaultRequired]);
 
   const updateField = useCallback((idx: number, patch: Partial<FormField>) => {
     const next = fields.map((f, i) => i === idx ? { ...f, ...patch } : f);
@@ -134,8 +158,17 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
               <HolderOutlined style={{ color: '#999', cursor: 'grab' }} />
             </div>
 
-            {/* 第一行：字段名 + 类型 + 必填 */}
+            {/* 第一行：字段ID（手填模式）+ 字段名 + 类型 + 必填 */}
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: isSelect ? 8 : 0, paddingRight: 48 }}>
+              {manualId && (
+                <Input
+                  size="small"
+                  placeholder="字段ID"
+                  value={field.id}
+                  style={{ width: 100 }}
+                  onChange={(e) => updateField(idx, { id: e.target.value })}
+                />
+              )}
               <Input
                 size="small"
                 placeholder="字段名"
@@ -147,7 +180,7 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
                 size="small"
                 value={field.type}
                 style={{ width: 110 }}
-                options={FIELD_TYPE_OPTIONS}
+                options={fieldTypes}
                 onChange={(v) => updateField(idx, {
                   type: v as FieldType,
                   options: (v === 'select' || v === 'multi_select') ? (field.options || []) : undefined,
