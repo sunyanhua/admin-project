@@ -22,16 +22,29 @@ interface WarmUpContent {
   data: Record<string, any[]>;
 }
 
+/** 数据记录随机唯一 id（与二级字段随机 id 同一生成方式） */
+const generateRecordId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+
 /** 解析 warm_up_config：{"config":[定义], "values":{字段id:值}, "data":{数据字段id:[记录]}} */
 const parseWarmUp = (raw?: string): { obj: Record<string, any>; content: WarmUpContent } => {
   try {
     const obj = JSON.parse(raw || '{}');
+    // 数据记录缺失 id 时补随机唯一 id（随下次保存落库），保证所有记录都有唯一 id
+    const data: Record<string, any[]> = {};
+    if (obj.data && typeof obj.data === 'object') {
+      Object.keys(obj.data).forEach((key) => {
+        const arr = obj.data[key];
+        data[key] = Array.isArray(arr)
+          ? arr.map((r: any) => (r && typeof r === 'object' ? { id: r.id ?? generateRecordId(), ...r } : r))
+          : [];
+      });
+    }
     return {
       obj,
       content: {
         config: Array.isArray(obj.config) ? obj.config : [],
         values: obj.values && typeof obj.values === 'object' ? obj.values : {},
-        data: obj.data && typeof obj.data === 'object' ? obj.data : {},
+        data,
       },
     };
   } catch {
@@ -238,9 +251,10 @@ const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity
     await saveWarmUp({ values: fromFormValues(nonDataFields, formValues) });
   };
 
-  /** 数据记录添加：追加到该字段的记录数组末尾 */
+  /** 数据记录添加：每条记录分配随机唯一 id 后追加到该字段的记录数组末尾 */
   const handleAddRecord = async (fieldId: string, values: Record<string, any>): Promise<boolean> => {
-    const next = [...(content.data[fieldId] ?? []), values];
+    const record = { ...values, id: generateRecordId() };
+    const next = [...(content.data[fieldId] ?? []), record];
     return saveWarmUp({ data: { ...content.data, [fieldId]: next } });
   };
 
