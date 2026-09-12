@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Tag, Space, Avatar } from 'antd';
-import { CheckOutlined, ReloadOutlined, EyeOutlined, ExportOutlined } from '@ant-design/icons';
+import { UserAddOutlined, ReloadOutlined, EyeOutlined, ExportOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -273,7 +273,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       render: (_: any, r: RegisterRecord) => {
         if (r.audit_status === RegisterAuditStatus.PENDING) {
           return (
-            <Button type="link" size="small" icon={<CheckOutlined />} loading={approvingIds.has(r.id)}
+            <Button type="link" size="small" icon={<UserAddOutlined />} loading={approvingIds.has(r.id)}
               onClick={() => handleApprove(r)}>入选</Button>
           );
         }
