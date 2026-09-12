@@ -386,6 +386,140 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/onsite-couples": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "双方均为本活动入选+签到人员的全部配对，默认按匹配度倒序（需求 3，2026-09-12）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "现场配对信息列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteCoupleAdminItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/activity/{id}/onsite-loves-couples": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "有现场心动的配对（loves_count>0），按现场心动次数倒序；无现场心动不在列表（需求 4，2026-09-12）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "心动配对信息列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteCoupleAdminItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/register": {
             "get": {
                 "security": [
@@ -483,6 +617,58 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/register/assign-numbers": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "对活动入选名单按性别各自 1..N 分配现场编号（组内按审核通过时间正序）。\n覆盖式幂等——重复分配结果一致，新通过者追加在组尾。响应返回各性别编号人数。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "现场编号一键分配",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.AssignOnsiteNumbersResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/register/{rid}/audit": {
             "put": {
                 "security": [
@@ -490,7 +676,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "审核指定活动的报名申请（通过/拒绝）。审核通过仅变更状态；审核拒绝则变更状态并释放名额。\naudit_status 枚举：0=待审核 1=通过 2=拒绝",
+                "description": "审核指定活动的报名申请（通过/拒绝）。审核通过仅变更状态；审核拒绝则变更状态并释放名额。\naudit_status 枚举：0=待审核 1=通过 2=拒绝；未设置性别的报名禁止通过（40511，2026-09-12 老大裁决）",
                 "consumes": [
                     "application/json"
                 ],
@@ -14599,6 +14785,46 @@
                 }
             }
         },
+        "/api/v1/wxa/activity/register/{id}/checkin": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "通过报名记录 ID 现场签到（需 C 端 JWT 鉴权，仅限本人已入选的报名）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "现场签到",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报名记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/activity/{id}": {
             "get": {
                 "security": [
@@ -14651,6 +14877,131 @@
                 }
             }
         },
+        "/api/v1/wxa/activity/{id}/onsite-loves": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "对现场人员执行心动（需 C 端 JWT，操作者与目标均须本活动入选+签到）。\n与常规心动语义完整一致（配对/匹配度/互心等），次数限制为活动 onsite_loves_chances\n（已用=报名 onsite_loves_count）；40512/40514 门禁、40513 次数用完。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "现场心动",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "现场心动请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteLoveRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/activity/{id}/onsite-users": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "查看本活动现场用户（仅入选+签到人员可见，需 C 端 JWT）。只展示入选+签到人员，\n可按性别筛选（1=男 2=女）；条目为基础公开资料+现场编号+签到时间。未入选/未签到报 40512。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "现场活动用户列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "性别筛选（1=男 2=女，缺省=全部）",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteUserItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/activity/{id}/register": {
             "post": {
                 "security": [
@@ -14658,7 +15009,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "报名参加指定活动（需 C 端 JWT 鉴权）。活动 zone_only=true 时仅活动关联专区的用户可报名（40507）",
+                "description": "报名参加指定活动（需 C 端 JWT 鉴权）。活动 zone_only=true 时仅活动关联专区的用户可报名（40507）；\n未设置性别的用户禁止报名（40511，2026-09-12 老大裁决）",
                 "consumes": [
                     "application/json"
                 ],
@@ -20382,6 +20733,23 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.AssignOnsiteNumbersResponse": {
+            "type": "object",
+            "properties": {
+                "female_count": {
+                    "description": "女性编号人数",
+                    "type": "integer"
+                },
+                "male_count": {
+                    "description": "男性编号人数",
+                    "type": "integer"
+                },
+                "unset_count": {
+                    "description": "未设置性别编号人数",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.AuditRegistrationRequest": {
             "type": "object",
             "required": [
@@ -20530,10 +20898,104 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteCoupleAdminItem": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "type": "string"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteCoupleUserAdmin"
+                },
+                "female_loves_count": {
+                    "description": "女士心动次数（女方发起）",
+                    "type": "integer"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteCoupleUserAdmin"
+                },
+                "male_loves_count": {
+                    "description": "男士心动次数（男方发起）",
+                    "type": "integer"
+                },
+                "matching": {
+                    "description": "配对匹配度",
+                    "type": "integer"
+                },
+                "onsite_loves_count": {
+                    "description": "现场心动次数（双向合计，无现场心动为 0）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteCoupleUserAdmin": {
+            "type": "object",
+            "properties": {
+                "checkin_at": {
+                    "description": "现场签到时间",
+                    "type": "string"
+                },
+                "onsite_number": {
+                    "description": "现场活动编号（未分配为 null）",
+                    "type": "integer"
+                },
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteLoveRequest": {
+            "type": "object",
+            "required": [
+                "target_user_id"
+            ],
+            "properties": {
+                "target_user_id": {
+                    "description": "心动目标用户 ID",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteUserItem": {
+            "type": "object",
+            "properties": {
+                "checkin_at": {
+                    "description": "报名数据：现场签到时间（未签到不会出现在列表，恒非空）",
+                    "type": "string"
+                },
+                "match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo"
+                },
+                "match_stats": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.MatchStatsInfo"
+                },
+                "onsite_loves_count": {
+                    "description": "报名数据：现场心动已用次数",
+                    "type": "integer"
+                },
+                "onsite_number": {
+                    "description": "报名数据：现场活动编号（未分配为 null）",
+                    "type": "integer"
+                },
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.RegisterAdminResponse": {
             "type": "object",
             "properties": {
                 "activity_id": {
+                    "type": "string"
+                },
+                "approved_at": {
+                    "description": "ApprovedAt 审核通过时间（自动通过=创建时间；未入选为 null）。",
                     "type": "string"
                 },
                 "attachments": {
@@ -20567,6 +21029,14 @@
                 },
                 "id": {
                     "type": "string"
+                },
+                "onsite_loves_count": {
+                    "description": "OnsiteLovesCount 现场心动已用次数（与活动级 onsite_loves_chances 机会数配合）。",
+                    "type": "integer"
+                },
+                "onsite_number": {
+                    "description": "OnsiteNumber 现场活动编号（一键分配后按性别 1..N；未分配为 null）。",
+                    "type": "integer"
                 },
                 "pay_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.RegisterPayStatus"
@@ -20663,6 +21133,14 @@
                 },
                 "id": {
                     "type": "string"
+                },
+                "onsite_loves_count": {
+                    "description": "OnsiteLovesCount 现场心动已用次数（与活动级 onsite_loves_chances 机会数配合）。",
+                    "type": "integer"
+                },
+                "onsite_number": {
+                    "description": "OnsiteNumber 现场活动编号（管理后台按性别 1..N 分配；未分配为 null）。",
+                    "type": "integer"
                 },
                 "pay_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.RegisterPayStatus"
