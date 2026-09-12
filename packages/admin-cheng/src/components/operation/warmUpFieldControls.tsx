@@ -48,28 +48,36 @@ const VideoUpload: React.FC<{ value?: string; onChange?: (url: string) => void }
   );
 };
 
+export interface WarmUpFieldControlProps {
+  field: FormField;
+  /** Form.Item 注入的表单值（必须转发给具体控件，否则字段处于非受控状态） */
+  value?: any;
+  /** Form.Item 注入的回调（必须转发，否则输入/上传不会更新表单值） */
+  onChange?: (value: any) => void;
+}
+
 /** 预热字段类型 → 表单控件（「数据」类型不在表单渲染，由专属 TAB 管理） */
-export const WarmUpFieldControl: React.FC<{ field: FormField }> = ({ field }) => {
+export const WarmUpFieldControl: React.FC<WarmUpFieldControlProps> = ({ field, value, onChange }) => {
   switch (field.type) {
     case 'text':
-      return <Input placeholder={`请输入${field.label || ''}`} />;
+      return <Input placeholder={`请输入${field.label || ''}`} value={value} onChange={(e) => onChange?.(e.target.value)} />;
     case 'number':
-      return <InputNumber style={{ width: '100%' }} placeholder={`请输入${field.label || ''}`} />;
+      return <InputNumber style={{ width: '100%' }} placeholder={`请输入${field.label || ''}`} value={value} onChange={(v) => onChange?.(v)} />;
     case 'datetime':
-      return <DatePicker showTime format="YYYY/MM/DD HH:mm" style={{ width: '100%' }} />;
+      return <DatePicker showTime format="YYYY/MM/DD HH:mm" style={{ width: '100%' }} value={value} onChange={(v) => onChange?.(v)} />;
     case 'textarea':
-      return <Input.TextArea rows={4} placeholder={`请输入${field.label || ''}`} />;
+      return <Input.TextArea rows={4} placeholder={`请输入${field.label || ''}`} value={value} onChange={(e) => onChange?.(e.target.value)} />;
     case 'editor':
-      return <RichTextEditor placeholder={`请输入${field.label || ''}`} showImageUpload={false} />;
+      return <RichTextEditor placeholder={`请输入${field.label || ''}`} showImageUpload={false} value={value} onChange={onChange} />;
     case 'select':
-      return <Select placeholder="请选择" options={(field.options || []).map((o) => ({ label: o, value: o }))} />;
+      return <Select placeholder="请选择" options={(field.options || []).map((o) => ({ label: o, value: o }))} value={value} onChange={onChange} />;
     case 'multi_select':
-      return <Select mode="multiple" placeholder="请选择" options={(field.options || []).map((o) => ({ label: o, value: o }))} />;
+      return <Select mode="multiple" placeholder="请选择" options={(field.options || []).map((o) => ({ label: o, value: o }))} value={value} onChange={onChange} />;
     case 'image':
       // 普通图片上传：不强制裁切比例、不显示建议尺寸
-      return <ImageUpload />;
+      return <ImageUpload value={value} onChange={onChange} />;
     case 'video':
-      return <VideoUpload />;
+      return <VideoUpload value={value} onChange={onChange} />;
     default:
       return null;
   }
