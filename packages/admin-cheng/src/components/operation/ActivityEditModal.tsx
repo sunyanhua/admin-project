@@ -8,8 +8,10 @@ import CropperImageUpload from '@/components/common/CropperImageUpload';
 import MultiImageUpload from '@/components/common/MultiImageUpload';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
 import FormConfigEditor from '@/components/operation/FormConfigEditor';
+import WarmUpConfigEditor from '@/components/operation/WarmUpConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { settingsApi, SettingItem } from '@/api/services/settings';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   parseStoredValue,
   parsePromiseIdsFromExtra,
@@ -43,19 +45,11 @@ const ACTIVITY_TYPE_OPTIONS = [
   { label: ActivityTypeLabels[ActivityType.FREE_REVIEW], value: ActivityType.FREE_REVIEW },
 ];
 
-/** 预热配置 JSON 合法性校验（小程序端自主内容，管理后台透传存储） */
-const validateWarmUpConfig = (_: any, value: any) => {
-  if (typeof value !== 'string' || !value) return Promise.resolve();
-  try {
-    JSON.parse(value);
-    return Promise.resolve();
-  } catch {
-    return Promise.reject(new Error('预热配置必须是合法的 JSON'));
-  }
-};
-
 const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess, onOpenPromiseModal, lockedZone }) => {
   const { success, error: showError } = useAppNotification();
+  const { user } = useAuth();
+  /** 预热配置仅超级管理员（isRoot）可见可编辑，其他管理员提交时不更新该字段 */
+  const isSuperAdmin = user?.isRoot ?? false;
   const [loading, setLoading] = useState(false);
   const [statusEnabled, setStatusEnabled] = useState(true);
   const [hidden, setHidden] = useState(false);
@@ -267,9 +261,11 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
 
       // 预热与现场签到：专区模式不管理，不提交（PATCH 缺省不更新，避免覆盖小程序端配置）
       if (!lockedZone) {
-        // 活动预热：warm_up_config 为小程序端自主配置内容，编辑回填保证原样透传
+        // 活动预热：warm_up_config 仅超级管理员编辑提交（其他管理员缺省不更新该字段）
         payload.warm_up_enabled = !!values.warm_up_enabled;
-        payload.warm_up_config = values.warm_up_config ?? '';
+        if (isSuperAdmin) {
+          payload.warm_up_config = values.warm_up_config ?? '';
+        }
         // 现场签到：默认关闭；开启且填写了开始时间才上传（RFC3339 可选，PATCH 缺省不更新）
         payload.checkin_enabled = !!values.checkin_enabled;
         if (values.checkin_enabled) {
@@ -556,15 +552,17 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
               <Switch checkedChildren="开启" unCheckedChildren="关闭" />
             </Form.Item>
 
-            {warmUpEnabled && (
+            {warmUpEnabled && isSuperAdmin && (
               <Form.Item
                 label="预热配置"
                 name="warm_up_config"
-                rules={[{ validator: validateWarmUpConfig }]}
-                extra="JSON 格式配置，保存时校验合法性"
+                extra="配置小程序端预热展示的信息字段"
               >
-                <Input.TextArea rows={6} style={{ fontFamily: 'monospace', fontSize: 13 }} placeholder={'{\n  "xxx": "..."\n}'} />
+                <WarmUpConfigEditor />
               </Form.Item>
+            )}
+            {warmUpEnabled && !isSuperAdmin && (
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>预热配置内容仅超级管理员可编辑</div>
             )}
 
             <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
