@@ -99,6 +99,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           // 返回 UploadFileResult 对象: { file_id, file_url }
           url = res.file_url;
         } else if (res.url && typeof res.url === 'string') {
+          // 返回 { url } 对象（uploadImage 实际返回结构）
+          url = res.url;
         } else if (res.data?.url && typeof res.data.url === 'string') {
           // 嵌套结构
           url = res.data.url;
