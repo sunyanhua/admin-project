@@ -12,20 +12,12 @@ import type { FormField } from './FormConfigEditor';
 
 // ==================== 表单控件（按字段类型） ====================
 
-/** 视频上传控件：上传到 /admin/v1/upload/video，值为视频 URL 字符串 */
+/** 视频上传控件：上传到 /admin/v1/upload/video，值为视频 URL 字符串，上传完成即在表单内预览播放 */
 const VideoUpload: React.FC<{ value?: string; onChange?: (url: string) => void }> = ({ value = '', onChange }) => {
   const { error: showError } = useAppNotification();
   const [uploading, setUploading] = useState(false);
 
-  if (value) {
-    return (
-      <Space>
-        <a href={value} target="_blank" rel="noopener noreferrer">查看视频</a>
-        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => onChange?.('')}>删除</Button>
-      </Space>
-    );
-  }
-  return (
+  const uploadButton = (
     <Upload
       accept="video/*"
       showUploadList={false}
@@ -43,8 +35,24 @@ const VideoUpload: React.FC<{ value?: string; onChange?: (url: string) => void }
         }
       }}
     >
-      <Button icon={<UploadOutlined />} loading={uploading}>上传视频</Button>
+      <Button icon={<UploadOutlined />} loading={uploading}>{value ? '重新上传' : '上传视频'}</Button>
     </Upload>
+  );
+
+  if (!value) return uploadButton;
+
+  return (
+    <div>
+      <video
+        src={value}
+        controls
+        style={{ width: 320, maxWidth: '100%', borderRadius: 4, background: '#000', display: 'block', marginBottom: 8 }}
+      />
+      <Space>
+        {uploadButton}
+        <Button size="small" danger icon={<DeleteOutlined />} onClick={() => onChange?.('')}>删除</Button>
+      </Space>
+    </div>
   );
 };
 
