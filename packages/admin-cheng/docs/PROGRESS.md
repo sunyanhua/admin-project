@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-09-10**
+**2026-09-12**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-12 | 活动管理接入现场签到与预热（swagger 2026-09-11 更新 5 字段）；预热配置字段式编辑（id 手填、类型含编辑器/视频/数据、数据可嵌套一层、二级字段自动 id、新字段默认必填）；预热管理弹窗（配置管理 TAB 统一赋值 + 数据字段多 TAB 记录增删、记录随机唯一 id、图片/视频上传表单内预览）；专区模式隐藏签到预热与权重管理；**测试版构建发布**（build:zone-test 合并产物：主后台 + 专区管理后台，待上传测试服务器 /cheng/ 目录） | activity-v1 + ActivityEditModal + WarmUpConfigEditor + WarmUpManageModal + warmUpFieldControls + FormConfigEditor + ActivityManagement + ImageUpload | a310378、83ff36d、908330d、8b8370d、5845ada、daf34b9、1f8a299、17733ed、b6ab862、5829fd7、ff799ec、0780db9、cec0ff6、756e6a7、e75669f、6686ae1（构建产物未提交） |
 | 2026-09-10 | 专区活动发布/专区首页新增查看小程序码（SourceQrcodeModal 支持 showSource/showShortlink 关闭来源渠道与短链）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | SourceQrcodeModal + ZoneActivities + ZoneInfo | 685a5a7（构建产物未提交） |
 | 2026-09-08 | 数据统计：platformDatacube 服务（8 个 v1 接口）；平台数据统计页（用户总览/互动/脱单分布/注册分布）与趋势统计页（互动/注册/增量/累计）替换占位页；工作台 v1 用户数据卡；访问统计对齐 hsh1039（双轴/卡片/日期） | platformDatacube.ts + PlatformStats/TrendStats + Dashboard + VisitStatistics/VisitUserStats + router | 7aab129、7d4b8dd、c8103bc、dda10fa、0d77e5a |
 | 2026-09-09 | **正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台，含登录 Token 刷新机制） | dist | 构建产物（未提交） |
