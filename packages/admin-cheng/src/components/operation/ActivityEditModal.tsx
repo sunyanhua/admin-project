@@ -265,18 +265,20 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       // 权重：专区模式不管理权重，不提交（PATCH 缺省不更新，创建走服务端默认）
       if (!lockedZone) payload.sort_order = values.sort_order ?? 0;
 
-      // 现场签到与预热：专区模式不管理，不提交（PATCH 缺省不更新，避免覆盖小程序端配置）
+      // 预热与现场签到：专区模式不管理，不提交（PATCH 缺省不更新，避免覆盖小程序端配置）
       if (!lockedZone) {
-        // 现场签到：默认关闭；开启且填写了开始时间才上传（RFC3339 可选，PATCH 缺省不更新）
-        payload.checkin_enabled = !!values.checkin_enabled;
-        if (values.checkin_enabled && values.checkin_start) {
-          payload.checkin_start = dayjsToApi(values.checkin_start as Dayjs) || '';
-        }
-        // 现场心动机会数（与用户每日心动次数独立，默认 0）
-        payload.onsite_loves_chances = values.onsite_loves_chances ?? 0;
         // 活动预热：warm_up_config 为小程序端自主配置内容，编辑回填保证原样透传
         payload.warm_up_enabled = !!values.warm_up_enabled;
         payload.warm_up_config = values.warm_up_config ?? '';
+        // 现场签到：默认关闭；开启且填写了开始时间才上传（RFC3339 可选，PATCH 缺省不更新）
+        payload.checkin_enabled = !!values.checkin_enabled;
+        if (values.checkin_enabled) {
+          if (values.checkin_start) {
+            payload.checkin_start = dayjsToApi(values.checkin_start as Dayjs) || '';
+          }
+          // 现场心动机会数：仅开启签到时提交（与签到开始时间同显隐）
+          payload.onsite_loves_chances = values.onsite_loves_chances ?? 0;
+        }
       }
 
       if (needsSlots) {
@@ -545,39 +547,11 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           </Form.Item>
         </div>
 
-        {/* ====== 9.5 现场签到与预热（专区模式不管理，隐藏） ====== */}
+        {/* ====== 9.5 预热与现场签到（专区模式不管理，隐藏） ====== */}
         {!lockedZone && (
           <div style={{ background: '#fafafa', borderLeft: '3px solid #fa8c16', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#fa8c16' }}>现场签到与预热</div>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#fa8c16' }}>预热与现场签到</div>
 
-            <Form.Item
-              label="现场签到"
-              name="checkin_enabled"
-              valuePropName="checked"
-              extra="开启后用户可在活动现场签到"
-            >
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-            </Form.Item>
-
-            {checkinEnabled && (
-              <Form.Item label="签到开始时间" name="checkin_start" extra="选填，不填则用户可在活动开始后签到">
-                <DatePicker showTime format="YYYY/MM/DD HH:mm" style={{ width: '100%' }} />
-              </Form.Item>
-            )}
-
-            <Form.Item
-              label="现场心动机会数"
-              name="onsite_loves_chances"
-              extra="活动现场用户的互选心动机会数，与每日心动次数相互独立"
-            >
-              <InputNumber min={0} precision={0} style={{ width: 200 }} />
-            </Form.Item>
-
-            <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
-            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>活动预热</div>
-            <div style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>
-              开启后小程序端展示预热内容，配置内容由小程序端共同维护
-            </div>
             <Form.Item label="启用预热" name="warm_up_enabled" valuePropName="checked" style={{ marginBottom: 12 }}>
               <Switch checkedChildren="开启" unCheckedChildren="关闭" />
             </Form.Item>
@@ -591,6 +565,33 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
               >
                 <Input.TextArea rows={6} style={{ fontFamily: 'monospace', fontSize: 13 }} placeholder={'{\n  "xxx": "..."\n}'} />
               </Form.Item>
+            )}
+
+            <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+
+            <Form.Item
+              label="现场签到"
+              name="checkin_enabled"
+              valuePropName="checked"
+              extra="开启后用户可在活动现场签到"
+            >
+              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+            </Form.Item>
+
+            {checkinEnabled && (
+              <>
+                <Form.Item label="签到开始时间" name="checkin_start" extra="选填">
+                  <DatePicker showTime format="YYYY/MM/DD HH:mm" style={{ width: '100%' }} />
+                </Form.Item>
+
+                <Form.Item
+                  label="现场心动机会数"
+                  name="onsite_loves_chances"
+                  extra="活动现场用户的心动机会数，与每日心动次数相互独立"
+                >
+                  <InputNumber min={0} precision={0} style={{ width: 200 }} />
+                </Form.Item>
+              </>
             )}
           </div>
         )}
