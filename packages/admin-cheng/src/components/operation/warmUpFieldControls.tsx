@@ -4,7 +4,7 @@ import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
-import CropperImageUpload from '@/components/common/CropperImageUpload';
+import ImageUpload from '@/components/common/ImageUpload';
 import { uploadApi } from '@/api/services/upload';
 import { getSmallUrl } from '@/utils/imageUtils';
 import { parseApiTime, dayjsToApi, formatDateTime } from '@/utils/format';
@@ -66,7 +66,8 @@ export const WarmUpFieldControl: React.FC<{ field: FormField }> = ({ field }) =>
     case 'multi_select':
       return <Select mode="multiple" placeholder="请选择" options={(field.options || []).map((o) => ({ label: o, value: o }))} />;
     case 'image':
-      return <CropperImageUpload aspect={640 / 480} sizeHint="建议尺寸：640 × 480 像素" />;
+      // 普通图片上传：不强制裁切比例、不显示建议尺寸
+      return <ImageUpload />;
     case 'video':
       return <VideoUpload />;
     default:
