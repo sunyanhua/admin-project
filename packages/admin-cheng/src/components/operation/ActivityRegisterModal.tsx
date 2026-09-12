@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Tag, Space, Avatar } from 'antd';
-import { UserAddOutlined, ReloadOutlined, EyeOutlined, ExportOutlined } from '@ant-design/icons';
+import { UserAddOutlined, ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -33,13 +33,15 @@ interface ActivityRegisterModalProps {
   activityType: number;
   formConfig: FormField[];
   onClose: () => void;
+  /** 活动是否开启现场签到（开启时显示自动排序按钮与序号列） */
+  checkinEnabled?: boolean;
   /** 自定义批量隐私拉取（专区管理员无批量隐私接口数据权限，逐条走报名专用隐私接口）；缺省用通用批量接口 */
   privacyBatchFetcher?: (records: RegisterRecord[], activityId: string) => Promise<Record<string, string>>;
 }
 
 
 const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
-  visible, activityId, activityTitle, activityType, formConfig, onClose, privacyBatchFetcher,
+  visible, activityId, activityTitle, activityType, formConfig, onClose, checkinEnabled = false, privacyBatchFetcher,
 }) => {
   const { success, error: showError } = useAppNotification();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -52,6 +54,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   /** 当前查看用户对应的报名记录 ID（专区专用资料接口按报名记录读取） */
   const [userDetailRegisterId, setUserDetailRegisterId] = useState<string>('');
   const [exporting, setExporting] = useState(false);
+  const [assigning, setAssigning] = useState(false);
 
   const isFreeFCFS = activityType === ActivityType.FREE_FCFS;
   const isPaidFCFS = activityType === ActivityType.PAID_FCFS;
@@ -134,6 +137,22 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const openDetail = (record: RegisterRecord) => {
     setDetailRecord(record);
     setDetailVisible(true);
+  };
+
+  /** 现场编号一键分配（按性别 1..N 自动排序） */
+  const handleAssignNumbers = async () => {
+    setAssigning(true);
+    try {
+      const res: any = await activityApi.assignOnsiteNumbers(activityId);
+      const male = res?.male_count ?? 0;
+      const female = res?.female_count ?? 0;
+      success(`编号分配完成：男 ${male} 人，女 ${female} 人`);
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '编号分配失败');
+    } finally {
+      setAssigning(false);
+    }
   };
 
   /** 入选：直接执行审核通过操作 */
@@ -235,6 +254,17 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     },
   ];
 
+  // 序号列（现场编号，一键分配后按性别 1..N；仅开启签到的活动显示；单条修改接口待后端补充后改为可输入）
+  if (checkinEnabled) {
+    columns.push({
+      title: '序号',
+      dataIndex: 'onsite_number',
+      key: 'onsite_number',
+      width: 70,
+      render: (v: number | null | undefined) => v != null ? v : <span style={{ color: '#999' }}>-</span>,
+    });
+  }
+
   // 详情列（活动配置了报名信息才显示，点击查看报名信息；置于报名时间之前）
   if (formConfig.length > 0) {
     columns.push({
@@ -298,6 +328,9 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
           <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+            {checkinEnabled && (
+              <Button icon={<OrderedListOutlined />} loading={assigning} onClick={handleAssignNumbers}>排序</Button>
+            )}
             <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
             <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
           </Space>

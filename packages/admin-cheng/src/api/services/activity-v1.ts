@@ -175,6 +175,7 @@ export interface RegisterRecord {
   gender: number;
   completed_at?: string;    // 完成时间（付费 FCFS）
   checkin_at?: string;
+  onsite_number?: number | null; // 现场活动编号（一键分配后按性别 1..N；未分配为 null）
   created_at?: string;
   updated_at?: string;
   user_data?: RegisterUserData;
@@ -240,5 +241,10 @@ export const activityApi = {
   /** 审核报名 */
   auditRegister: (activityId: string, registerId: string, data: { approved: boolean; reason?: string }) => {
     return request.put(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/audit`, data);
+  },
+
+  /** 现场编号一键分配（按性别各自 1..N，组内按审核通过时间正序；覆盖式幂等，新通过者追加组尾） */
+  assignOnsiteNumbers: (activityId: string) => {
+    return request.post(`/admin/v1/bizops/activity/${activityId}/register/assign-numbers`);
   },
 };
