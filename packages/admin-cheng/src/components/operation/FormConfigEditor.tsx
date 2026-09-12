@@ -78,7 +78,8 @@ const parseField = (f: any, manualId: boolean): EditorField => {
     required: f.required === true,
     options: f.options || undefined,
     config: type === 'data' && Array.isArray(f.config)
-      ? f.config.map((c: any) => parseField(c, manualId))
+      // 二级字段自动分配随机 id（缺 id 时生成），与一级字段的手填 id 行为不同
+      ? f.config.map((c: any) => parseField(c, false))
       : undefined,
     uid: generateFieldId(),
   };
@@ -250,10 +251,11 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
   // ---- 嵌套字段集合（类型「数据」，与第一层处理一致但不含「数据」类型） ----
 
   const addNestedField = useCallback((idx: number) => {
-    const f: EditorField = { id: manualId ? '' : generateFieldId(), label: '', type: 'text', required: defaultRequired, uid: generateFieldId() };
+    // 二级字段自动分配随机 id（不手填）
+    const f: EditorField = { id: generateFieldId(), label: '', type: 'text', required: defaultRequired, uid: generateFieldId() };
     const parent = fields[idx];
     updateField(idx, { config: [...(parent.config ?? []), f] });
-  }, [fields, updateField, manualId, defaultRequired]);
+  }, [fields, updateField, defaultRequired]);
 
   const updateNestedField = useCallback((idx: number, nIdx: number, patch: Partial<EditorField>) => {
     const parent = fields[idx];
@@ -310,7 +312,7 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
                     field={nf}
                     idx={nIdx}
                     typeOptions={nestedTypeOptions}
-                    manualId={manualId}
+                    manualId={false}
                     dragItemIdx={nestedDragItemIdx}
                     dragOverIdx={nestedDragOverIdx}
                     onReorder={(from, to) => reorderNestedFields(idx, from, to)}
