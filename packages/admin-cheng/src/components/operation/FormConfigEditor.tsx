@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button, Input, Select } from 'antd';
 import { PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons';
 
@@ -58,17 +58,26 @@ function generateFieldId(): string {
 
 // ==================== Component ====================
 
+/** 编辑器内部字段：uid 仅用于稳定渲染 key（手填 id 时 id 变化不能换 key，否则输入框失焦），不写入存储 */
+interface EditorField extends FormField {
+  uid: string;
+}
+
 const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChange, manualId = false, defaultRequired = false, fieldTypes = FIELD_TYPE_OPTIONS }) => {
-  const [fields, setFields] = useState<FormField[]>([]);
+  const [fields, setFields] = useState<EditorField[]>([]);
+  /** 自身 emit 产出的值：父层回显该值时跳过重建（重建会重新生成 uid 导致输入过程失焦） */
+  const lastEmitted = useRef<string | undefined>(undefined);
 
   // 解析 JSON 字符串为字段数组
   useEffect(() => {
+    if (value === lastEmitted.current) return;
+    lastEmitted.current = value ?? '';
     if (!value) { setFields([]); return; }
     try {
       const parsed = JSON.parse(value);
       if (Array.isArray(parsed)) {
         let hasNewId = false;
-        const withIds = parsed.map((f: any) => {
+        const withIds: EditorField[] = parsed.map((f: any) => {
           if (!f.id) hasNewId = true;
           return {
             // 手填 id 模式不自动生成（小程序端按固定 id 读取，留空由管理员填写）
@@ -77,6 +86,7 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
             type: f.type || 'text',
             required: f.required === true,
             options: f.options || undefined,
+            uid: generateFieldId(),
           };
         });
         setFields(withIds);
@@ -97,17 +107,19 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  const emit = useCallback((newFields: FormField[]) => {
+  const emit = useCallback((newFields: EditorField[]) => {
     setFields(newFields);
     const clean = newFields.filter((f) => f.label.trim()).map(f => ({
       id: f.id, label: f.label, type: f.type, required: f.required,
       options: f.options?.length ? f.options : undefined,
     }));
-    onChange?.(clean.length > 0 ? JSON.stringify(clean) : '');
+    const next = clean.length > 0 ? JSON.stringify(clean) : '';
+    lastEmitted.current = next;
+    onChange?.(next);
   }, [onChange]);
 
   const addField = useCallback(() => {
-    const f: FormField = { id: manualId ? '' : generateFieldId(), label: '', type: 'text', required: defaultRequired };
+    const f: EditorField = { id: manualId ? '' : generateFieldId(), label: '', type: 'text', required: defaultRequired, uid: generateFieldId() };
     emit([...fields, f]);
   }, [fields, emit, manualId, defaultRequired]);
 
@@ -135,7 +147,7 @@ const FormConfigEditor: React.FC<FormConfigEditorProps> = ({ value = '', onChang
         const isSelect = field.type === 'select' || field.type === 'multi_select';
         return (
           <div
-            key={field.id}
+            key={field.uid}
             draggable
             onDragStart={() => { dragItemIdx.current = idx; }}
             onDragEnter={() => { dragOverIdx.current = idx; }}
