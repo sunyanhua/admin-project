@@ -5,7 +5,7 @@ import { CheckOutlined, ReloadOutlined, EyeOutlined, ExportOutlined } from '@ant
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
-  RegisterAuditStatus, RegisterAuditStatusLabels, RegisterAuditStatusColors,
+  RegisterAuditStatus, RegisterAuditStatusLabels,
   RegisterPayStatus, RegisterPayStatusLabels, RegisterPayStatusColors,
   RegisterGender, RegisterGenderLabels,
   FreeFCFSStatusLabels, FreeFCFSStatusColors,
@@ -45,7 +45,8 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailRecord, setDetailRecord] = useState<RegisterRecord | null>(null);
-  const [detailReadonly, setDetailReadonly] = useState(false);
+  /** 正在执行「入选」操作的记录 id（按钮 loading） */
+  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState<string>('');
   /** 当前查看用户对应的报名记录 ID（专区专用资料接口按报名记录读取） */
@@ -130,10 +131,27 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     }
   };
 
-  const openDetail = (record: RegisterRecord, readonly: boolean) => {
+  const openDetail = (record: RegisterRecord) => {
     setDetailRecord(record);
-    setDetailReadonly(readonly);
     setDetailVisible(true);
+  };
+
+  /** 入选：直接执行审核通过操作 */
+  const handleApprove = async (record: RegisterRecord) => {
+    setApprovingIds((prev) => new Set(prev).add(record.id));
+    try {
+      await activityApi.auditRegister(activityId, record.id, { approved: true });
+      success('已入选');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '操作失败');
+    } finally {
+      setApprovingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(record.id);
+        return next;
+      });
+    }
   };
 
   // 筛选
@@ -231,41 +249,38 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     );
   } else if (isFreeReview) {
     columns.push(
-      { title: '审核状态', dataIndex: 'audit_status', key: 'audit_status', width: 80,
-        render: (v: number) => <Tag color={RegisterAuditStatusColors[v] || 'default'}>{RegisterAuditStatusLabels[v] ?? v}</Tag> },
       dateTimeColumn<RegisterRecord>('created_at', '报名时间'),
     );
   }
 
-  // 报名信息列
+  // 详情列（活动配置了报名信息才显示，点击查看报名信息）
   if (formConfig.length > 0) {
     columns.push({
-      title: '报名信息', key: 'form_info', width: 80,
+      title: '详情', key: 'form_info', width: 80,
       render: (_: any, r: RegisterRecord) => {
         if (!r.form_data) return <span style={{ color: '#999' }}>-</span>;
         return (
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r, true)}>[详情]</Button>
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)}>查看</Button>
         );
       },
     });
   }
 
-  // 操作列（仅审核模式；「查看」仅在活动配置了报名信息时显示——无报名信息时查看无内容可看）
+  // 操作列（仅审核模式）：待审核可「入选」直接审核通过，通过后显示「已入选」
   if (isFreeReview) {
-    const hasFormConfig = formConfig.length > 0;
     columns.push({
-      title: '操作', key: 'action', width: 140, fixed: 'right' as const,
+      title: '操作', key: 'action', width: 100, fixed: 'right' as const,
       render: (_: any, r: RegisterRecord) => {
-        const isPending = r.audit_status === RegisterAuditStatus.PENDING;
-        return (
-          <Space size="small" className="action-buttons">
-            {isPending ? (
-              <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => openDetail(r, false)}>审核</Button>
-            ) : hasFormConfig ? (
-              <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r, true)}>查看</Button>
-            ) : null}
-          </Space>
-        );
+        if (r.audit_status === RegisterAuditStatus.PENDING) {
+          return (
+            <Button type="link" size="small" icon={<CheckOutlined />} loading={approvingIds.has(r.id)}
+              onClick={() => handleApprove(r)}>入选</Button>
+          );
+        }
+        if (r.audit_status === RegisterAuditStatus.APPROVED) {
+          return <Tag color="success" title="已入选">已入选</Tag>;
+        }
+        return <Tag color="default" title="已拒绝">已拒绝</Tag>;
       },
     });
   }
@@ -296,7 +311,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         record={detailRecord}
         formConfig={formConfig}
         activityType={activityType}
-        readonly={detailReadonly}
+        readonly
         onClose={() => { setDetailVisible(false); setDetailRecord(null); }}
         onSuccess={refresh}
       />
