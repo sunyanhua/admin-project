@@ -42,26 +42,21 @@ const parseWarmUp = (raw?: string): { obj: Record<string, any>; content: WarmUpC
 // ==================== 配置管理 TAB（非「数据」字段统一一个表单） ====================
 
 interface ConfigFormPanelProps {
+  /** 活动与字段集合签名：变化时重建表单（initialValues 重新回填），避免 setFieldsValue 时序竞态冲掉用户输入 */
+  formKey: string;
   fields: FormField[];
   values: Record<string, any>;
   saving: boolean;
   onSave: (formValues: Record<string, any>) => void;
 }
 
-const ConfigFormPanel: React.FC<ConfigFormPanelProps> = ({ fields, values, saving, onSave }) => {
-  const [form] = Form.useForm();
-
-  // 活动切换/保存后同步最新值（Tabs 页面常驻，仅靠 initialValues 不会更新）
-  useEffect(() => {
-    form.setFieldsValue(toFormValues(fields, values));
-  }, [fields, values, form]);
-
+const ConfigFormPanel: React.FC<ConfigFormPanelProps> = ({ formKey, fields, values, saving, onSave }) => {
   if (fields.length === 0) {
     return <Empty description="尚未配置任何预热字段，请先在活动编辑的「预热配置」中添加字段" />;
   }
 
   return (
-    <Form form={form} layout="vertical" onFinish={onSave} initialValues={toFormValues(fields, values)}>
+    <Form key={formKey} layout="vertical" onFinish={onSave} initialValues={toFormValues(fields, values)}>
       {fields.map((f) => (
         <Form.Item
           key={f.id}
@@ -258,13 +253,21 @@ const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity
 
   const nonDataFields = content.config.filter((f) => f.type !== 'data');
   const dataFields = content.config.filter((f) => f.type === 'data');
+  /** 活动 + 字段集合签名：切换活动或字段集合变化时重建配置表单 */
+  const configFormKey = `${activity?.id || 'none'}:${nonDataFields.map((f) => f.id).join('|')}`;
 
   const tabItems = [
     {
       key: 'config',
       label: '配置管理',
       children: (
-        <ConfigFormPanel fields={nonDataFields} values={content.values} saving={saving} onSave={handleConfigSave} />
+        <ConfigFormPanel
+          formKey={configFormKey}
+          fields={nonDataFields}
+          values={content.values}
+          saving={saving}
+          onSave={handleConfigSave}
+        />
       ),
     },
     ...dataFields.map((f) => ({
