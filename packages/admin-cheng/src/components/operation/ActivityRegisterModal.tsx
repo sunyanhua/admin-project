@@ -235,6 +235,19 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     },
   ];
 
+  // 详情列（活动配置了报名信息才显示，点击查看报名信息；置于报名时间之前）
+  if (formConfig.length > 0) {
+    columns.push({
+      title: '详情', key: 'form_info', width: 80,
+      render: (_: any, r: RegisterRecord) => {
+        if (!r.form_data) return <span style={{ color: '#999' }}>-</span>;
+        return (
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)}>查看</Button>
+        );
+      },
+    });
+  }
+
   if (isFreeFCFS) {
     columns.push(
       dateTimeColumn<RegisterRecord>('created_at', '报名时间'),
@@ -251,19 +264,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     columns.push(
       dateTimeColumn<RegisterRecord>('created_at', '报名时间'),
     );
-  }
-
-  // 详情列（活动配置了报名信息才显示，点击查看报名信息）
-  if (formConfig.length > 0) {
-    columns.push({
-      title: '详情', key: 'form_info', width: 80,
-      render: (_: any, r: RegisterRecord) => {
-        if (!r.form_data) return <span style={{ color: '#999' }}>-</span>;
-        return (
-          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)}>查看</Button>
-        );
-      },
-    });
   }
 
   // 操作列（仅审核模式）：待审核可「入选」直接审核通过，通过后显示「已入选」
