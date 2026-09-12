@@ -250,8 +250,9 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     });
   }
 
-  // 操作列
+  // 操作列（仅审核模式；「查看」仅在活动配置了报名信息时显示——无报名信息时查看无内容可看）
   if (isFreeReview) {
+    const hasFormConfig = formConfig.length > 0;
     columns.push({
       title: '操作', key: 'action', width: 140, fixed: 'right' as const,
       render: (_: any, r: RegisterRecord) => {
@@ -260,9 +261,9 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           <Space size="small" className="action-buttons">
             {isPending ? (
               <Button type="link" size="small" icon={<CheckOutlined />} onClick={() => openDetail(r, false)}>审核</Button>
-            ) : (
+            ) : hasFormConfig ? (
               <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r, true)}>查看</Button>
-            )}
+            ) : null}
           </Space>
         );
       },
