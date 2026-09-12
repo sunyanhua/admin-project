@@ -43,6 +43,17 @@ const ACTIVITY_TYPE_OPTIONS = [
   { label: ActivityTypeLabels[ActivityType.FREE_REVIEW], value: ActivityType.FREE_REVIEW },
 ];
 
+/** 预热配置 JSON 合法性校验（小程序端自主内容，管理后台透传存储） */
+const validateWarmUpConfig = (_: any, value: any) => {
+  if (typeof value !== 'string' || !value) return Promise.resolve();
+  try {
+    JSON.parse(value);
+    return Promise.resolve();
+  } catch {
+    return Promise.reject(new Error('预热配置必须是合法的 JSON'));
+  }
+};
+
 const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess, onOpenPromiseModal, lockedZone }) => {
   const { success, error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
@@ -55,11 +66,15 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const [form] = Form.useForm();
   /** 当前选择的所属专区（用于控制"仅本专区用户可报名"开关可用性） */
   const zoneId = Form.useWatch('zone_id', form);
+  /** 现场签到开关（驱动签到开始时间显隐） */
+  const checkinEnabled = Form.useWatch('checkin_enabled', form);
+  /** 活动预热开关（驱动预热配置编辑器显隐） */
+  const warmUpEnabled = Form.useWatch('warm_up_enabled', form);
 
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [] };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], checkin_enabled: false, onsite_loves_chances: 0, warm_up_enabled: false, warm_up_config: '' };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -85,6 +100,11 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       description: activity.description || '',
       form_config: activity.form_config || '',
       sort_order: activity.sort_order ?? 0,
+      checkin_enabled: activity.checkin_enabled ?? false,
+      checkin_start: activity.checkin_start ? parseApiTime(activity.checkin_start) : undefined,
+      onsite_loves_chances: activity.onsite_loves_chances ?? 0,
+      warm_up_enabled: activity.warm_up_enabled ?? false,
+      warm_up_config: activity.warm_up_config ?? '',
     };
   }, [activity, lockedZone]);
 
@@ -147,6 +167,11 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           form_config: activity.form_config || '',
           promise_ids: parsePromiseIdsFromExtra(activity.extra_params),
           sort_order: activity.sort_order ?? 0,
+          checkin_enabled: activity.checkin_enabled ?? false,
+          checkin_start: activity.checkin_start ? parseApiTime(activity.checkin_start) : undefined,
+          onsite_loves_chances: activity.onsite_loves_chances ?? 0,
+          warm_up_enabled: activity.warm_up_enabled ?? false,
+          warm_up_config: activity.warm_up_config ?? '',
         });
       }, 50);
       return () => clearTimeout(timer);
@@ -172,6 +197,11 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         form_config: '',
         promise_ids: [],
         sort_order: 0,
+        checkin_enabled: false,
+        checkin_start: undefined,
+        onsite_loves_chances: 0,
+        warm_up_enabled: false,
+        warm_up_config: '',
       });
       setActivityType(ActivityType.FREE_FCFS);
       setStatusEnabled(true);
@@ -218,7 +248,6 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         form_config: values.form_config || '',
         extra_params: extraParams,
         require_match_profile: true,
-        sort_order: values.sort_order ?? 0,
         status: statusEnabled ? ActivityV1Status.ENABLED : ActivityV1Status.DISABLED,
       };
 
@@ -232,6 +261,23 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       if (values.gender_enabled != null) payload.gender_enabled = values.gender_enabled;
       // 显示状态（Switch checked = 显示）
       payload.hidden = hidden;
+
+      // 权重：专区模式不管理权重，不提交（PATCH 缺省不更新，创建走服务端默认）
+      if (!lockedZone) payload.sort_order = values.sort_order ?? 0;
+
+      // 现场签到与预热：专区模式不管理，不提交（PATCH 缺省不更新，避免覆盖小程序端配置）
+      if (!lockedZone) {
+        // 现场签到：默认关闭；开启且填写了开始时间才上传（RFC3339 可选，PATCH 缺省不更新）
+        payload.checkin_enabled = !!values.checkin_enabled;
+        if (values.checkin_enabled && values.checkin_start) {
+          payload.checkin_start = dayjsToApi(values.checkin_start as Dayjs) || '';
+        }
+        // 现场心动机会数（与用户每日心动次数独立，默认 0）
+        payload.onsite_loves_chances = values.onsite_loves_chances ?? 0;
+        // 活动预热：warm_up_config 为小程序端自主配置内容，编辑回填保证原样透传
+        payload.warm_up_enabled = !!values.warm_up_enabled;
+        payload.warm_up_config = values.warm_up_config ?? '';
+      }
 
       if (needsSlots) {
         if (genderEnabled) {
@@ -499,10 +545,62 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           </Form.Item>
         </div>
 
-        {/* ====== 10. 权重 ====== */}
-        <Form.Item label="权重" name="sort_order" extra="数值越大排序越靠前">
-          <InputNumber min={0} precision={0} style={{ width: 200 }} />
-        </Form.Item>
+        {/* ====== 9.5 现场签到与预热（专区模式不管理，隐藏） ====== */}
+        {!lockedZone && (
+          <div style={{ background: '#fafafa', borderLeft: '3px solid #fa8c16', borderRadius: 4, padding: '12px 14px', marginBottom: 16 }}>
+            <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12, color: '#fa8c16' }}>现场签到与预热</div>
+
+            <Form.Item
+              label="现场签到"
+              name="checkin_enabled"
+              valuePropName="checked"
+              extra="开启后用户可在活动现场签到"
+            >
+              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+            </Form.Item>
+
+            {checkinEnabled && (
+              <Form.Item label="签到开始时间" name="checkin_start" extra="选填，不填则用户可在活动开始后签到">
+                <DatePicker showTime format="YYYY/MM/DD HH:mm" style={{ width: '100%' }} />
+              </Form.Item>
+            )}
+
+            <Form.Item
+              label="现场心动机会数"
+              name="onsite_loves_chances"
+              extra="活动现场用户的互选心动机会数，与每日心动次数相互独立"
+            >
+              <InputNumber min={0} precision={0} style={{ width: 200 }} />
+            </Form.Item>
+
+            <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>活动预热</div>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 12 }}>
+              开启后小程序端展示预热内容，配置内容由小程序端共同维护
+            </div>
+            <Form.Item label="启用预热" name="warm_up_enabled" valuePropName="checked" style={{ marginBottom: 12 }}>
+              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+            </Form.Item>
+
+            {warmUpEnabled && (
+              <Form.Item
+                label="预热配置"
+                name="warm_up_config"
+                rules={[{ validator: validateWarmUpConfig }]}
+                extra="JSON 格式配置，保存时校验合法性"
+              >
+                <Input.TextArea rows={6} style={{ fontFamily: 'monospace', fontSize: 13 }} placeholder={'{\n  "xxx": "..."\n}'} />
+              </Form.Item>
+            )}
+          </div>
+        )}
+
+        {/* ====== 10. 权重（专区模式不管理，隐藏） ====== */}
+        {!lockedZone && (
+          <Form.Item label="权重" name="sort_order" extra="数值越大排序越靠前">
+            <InputNumber min={0} precision={0} style={{ width: 200 }} />
+          </Form.Item>
+        )}
 
         {/* ====== 11 & 12. 状态 & 显示状态 ====== */}
         <div style={{ display: 'flex', gap: 48 }}>

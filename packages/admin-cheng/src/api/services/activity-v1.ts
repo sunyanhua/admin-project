@@ -32,6 +32,11 @@ export interface Activity {
   sort_order: number;
   status: number; // 0=上线 1=下线
   hidden: boolean;
+  checkin_enabled?: boolean; // 是否启用现场签到
+  checkin_start?: string; // 现场签到开始时间（RFC3339，可选）
+  onsite_loves_chances?: number; // 现场心动机会数（默认 0，与用户每日心动次数独立）
+  warm_up_enabled?: boolean; // 是否启用预热
+  warm_up_config?: string; // 预热配置（小程序端自主内容，服务端透明存储）
   registered_count: number;
   created_by?: string;
   updated_by?: string;
@@ -64,6 +69,11 @@ export interface CreateActivityRequest {
   sort_order?: number;
   status?: number;
   hidden?: boolean;
+  checkin_enabled?: boolean; // 是否启用现场签到（默认 false）
+  checkin_start?: string; // 现场签到开始时间（RFC3339，可选）
+  onsite_loves_chances?: number; // 现场心动机会数（默认 0）
+  warm_up_enabled?: boolean; // 是否启用预热
+  warm_up_config?: string; // 预热配置（前端自主控制内容，服务端透明存储）
 }
 
 export interface UpdateActivityRequest {
@@ -91,6 +101,11 @@ export interface UpdateActivityRequest {
   sort_order?: number;
   status?: number;
   hidden?: boolean;
+  checkin_enabled?: boolean; // 是否启用现场签到
+  checkin_start?: string; // 现场签到开始时间（RFC3339，可选；PATCH 指针语义：缺省不更新）
+  onsite_loves_chances?: number; // 现场心动机会数
+  warm_up_enabled?: boolean; // 是否启用预热
+  warm_up_config?: string; // 预热配置（前端自主控制内容，服务端透明存储）
 }
 
 // ========================
