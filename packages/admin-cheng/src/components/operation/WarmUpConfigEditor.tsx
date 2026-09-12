@@ -11,7 +11,7 @@ interface WarmUpConfigEditorProps {
  * 交互同 FormConfigEditor（添加字段进行配置），但存储格式与行为不同：
  * - 所有字段合为一个数组，存入外层 JSON 的 "config" 键，即 {"config": [...]}
  * - 字段 id 手填（小程序端按固定 id 读取），新增字段默认必填
- * - 类型在多行输入框下加「编辑器」、图片上传下加「视频上传」
+ * - 类型含「编辑器」「视频上传」「数据」；「数据」类型可嵌套一层字段集合（存入该字段的 config，嵌套层无「数据」类型）
  */
 const WarmUpConfigEditor: React.FC<WarmUpConfigEditorProps> = ({ value = '', onChange }) => {
   // 从外层 {"config": [...]} 中取出字段数组交给 FormConfigEditor（兼容历史纯数组格式）
