@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
-import { EditOutlined, DeleteOutlined, FileTextOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, FileTextOutlined, FireOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
@@ -16,6 +16,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn, dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ActivityEditModal from '@/components/operation/ActivityEditModal';
 import ActivityRegisterModal from '@/components/operation/ActivityRegisterModal';
+import WarmUpManageModal from '@/components/operation/WarmUpManageModal';
 import PromiseTemplateModal from '@/components/operation/PromiseTemplateModal';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 
@@ -40,6 +41,8 @@ const ActivityManagement = () => {
   const [registerActivityType, setRegisterActivityType] = useState<number>(0);
   const [registerFormConfig, setRegisterFormConfig] = useState<FormField[]>([]);
   const [promiseModalVisible, setPromiseModalVisible] = useState(false);
+  const [warmUpVisible, setWarmUpVisible] = useState(false);
+  const [warmUpActivity, setWarmUpActivity] = useState<Activity | null>(null);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
   const fetchActivities = useCallback(async (params: any) => {
@@ -112,6 +115,11 @@ const ActivityManagement = () => {
   const handleCloseModal = () => {
     setModalVisible(false);
     setEditingActivity(null);
+  };
+
+  const handleOpenWarmUp = (record: Activity) => {
+    setWarmUpActivity(record);
+    setWarmUpVisible(true);
   };
 
   const handleShowRegisters = (record: Activity) => {
@@ -202,18 +210,6 @@ const ActivityManagement = () => {
       render: (v: boolean) => <Tag color={v ? 'default' : 'success'}>{v ? '隐藏' : '显示'}</Tag>,
     },
     {
-      title: '签到/预热',
-      key: 'onsite',
-      width: 100,
-      render: (_: any, r: Activity) => (
-        <Space direction="vertical" size={2}>
-          {r.checkin_enabled && <Tag color="blue" title="已启用现场签到">已启用现场签到</Tag>}
-          {r.warm_up_enabled && <Tag color="orange" title="已启用活动预热">已启用活动预热</Tag>}
-          {!r.checkin_enabled && !r.warm_up_enabled && <span style={{ color: '#999' }}>-</span>}
-        </Space>
-      ),
-    },
-    {
       title: '权重',
       dataIndex: 'sort_order',
       key: 'sort_order',
@@ -237,13 +233,18 @@ const ActivityManagement = () => {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 190,
       fixed: 'right' as const,
       render: (_: any, r: Activity) => (
         <Space size="small" className="action-buttons">
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>
             编辑
           </Button>
+          {r.warm_up_enabled && (
+            <Button type="link" size="small" icon={<FireOutlined />} onClick={() => handleOpenWarmUp(r)}>
+              预热
+            </Button>
+          )}
           <Button type="link" size="small" danger icon={<DeleteOutlined />}
             onClick={() => confirmDelete({
               name: r.title,
@@ -308,6 +309,13 @@ const ActivityManagement = () => {
         activityType={registerActivityType}
         formConfig={registerFormConfig}
         onClose={() => setRegisterModalVisible(false)}
+      />
+
+      <WarmUpManageModal
+        visible={warmUpVisible}
+        activity={warmUpActivity}
+        onClose={() => { setWarmUpVisible(false); setWarmUpActivity(null); }}
+        onSuccess={refresh}
       />
 
       <PromiseTemplateModal
