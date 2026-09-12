@@ -254,16 +254,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     },
   ];
 
-  // 序号列（现场编号，一键分配后按性别 1..N；仅开启签到的活动显示；单条修改接口待后端补充后改为可输入）
-  if (checkinEnabled) {
-    columns.push({
-      title: '序号',
-      dataIndex: 'onsite_number',
-      key: 'onsite_number',
-      width: 70,
-      render: (v: number | null | undefined) => v != null ? v : <span style={{ color: '#999' }}>-</span>,
-    });
-  }
 
   // 详情列（活动配置了报名信息才显示，点击查看报名信息；置于报名时间之前）
   if (formConfig.length > 0) {
@@ -312,6 +302,18 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         }
         return <Tag color="default" title="已拒绝">已拒绝</Tag>;
       },
+    });
+  }
+
+  // 序号列（现场编号，一键分配后按性别 1..N；置于操作列之后，仅开启签到的活动显示；单条修改接口待后端补充后改为可输入）
+  if (checkinEnabled) {
+    columns.push({
+      title: '序号',
+      dataIndex: 'onsite_number',
+      key: 'onsite_number',
+      width: 70,
+      fixed: 'right' as const,
+      render: (v: number | null | undefined) => v != null ? v : <span style={{ color: '#999' }}>-</span>,
     });
   }
 
