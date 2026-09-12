@@ -4,7 +4,7 @@ import { PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant-design/icons'
 
 // ==================== Types ====================
 
-export type FieldType = 'text' | 'textarea' | 'editor' | 'select' | 'multi_select' | 'image' | 'video';
+export type FieldType = 'text' | 'number' | 'datetime' | 'textarea' | 'editor' | 'select' | 'multi_select' | 'image' | 'video';
 
 export interface FieldTypeOption {
   label: string;
@@ -39,10 +39,12 @@ const FIELD_TYPE_OPTIONS: FieldTypeOption[] = [
   { label: '图片上传', value: 'image' },
 ];
 
-/** 预热配置类型列表：多行输入框下加「编辑器」，图片上传下加「视频上传」 */
+/** 预热配置类型列表：单行文本下加「数字」「日期时间」，多行文本下加「编辑器」，图片上传下加「视频上传」 */
 export const WARM_UP_FIELD_TYPE_OPTIONS: FieldTypeOption[] = [
-  { label: '输入框', value: 'text' },
-  { label: '多行输入框', value: 'textarea' },
+  { label: '单行文本', value: 'text' },
+  { label: '数字', value: 'number' },
+  { label: '日期时间', value: 'datetime' },
+  { label: '多行文本', value: 'textarea' },
   { label: '编辑器', value: 'editor' },
   { label: '单选', value: 'select' },
   { label: '多选', value: 'multi_select' },
