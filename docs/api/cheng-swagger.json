@@ -6936,6 +6936,178 @@
                 }
             }
         },
+        "/admin/v1/bizops/user/topic-data/{topic_key}": {
+            "get": {
+                "description": "按 topic_key 查全用户行：user_id/status 可选筛选 + created_at DESC 分页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据管理"
+                ],
+                "summary": "话题数据列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户 ID（uuid）",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态（0=启用 1=禁用）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（缺省 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（缺省 20，上限 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "列表成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicDataItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/topic-data/{topic_key}/score-logs": {
+            "get": {
+                "description": "风险排查台账：按 topic_key 范围（路径参数必填），user_id/score_field/operator_type/时间区间可选筛选 + created_at DESC 分页",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据管理"
+                ],
+                "summary": "score 增减日志列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户 ID（uuid）",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "分数位 1-9",
+                        "name": "score_field",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "操作者（1=C端用户 2=管理后台）",
+                        "name": "operator_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "起始时间 RFC3339（含）",
+                        "name": "start_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间 RFC3339（含）",
+                        "name": "end_at",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（缺省 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（缺省 20，上限 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "列表成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicScoreLogItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/user/{id}": {
             "get": {
                 "description": "查询指定用户的详细资料（基础资料 + 脱单档案 + 钱包积分金币），手机号脱敏返回，真实姓名返回完整值。隐私安全模式开启时敏感字段进一步脱敏（手机→138****1234, 姓名→张*, 邮箱→u***@example.com）。",
@@ -7438,6 +7610,127 @@
                     },
                     "500": {
                         "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/{id}/topic-data/{topic_key}": {
+            "get": {
+                "description": "目标用户不存在 → 40003；无行 → data=null",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据管理"
+                ],
+                "summary": "话题数据单条",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID（uuid）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "读取成功（无行 data=null）",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicDataItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001/40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "description": "score 仅增减（含 score 时 reason 必填）/ data 覆盖（null=清除）/ filter 覆盖（null=不参与筛选）/ status 切换；UPSERT 自动建行；返回更新后的行",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据管理"
+                ],
+                "summary": "单项数据修改",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID（uuid）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "单项修改请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicDataPatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "修改成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicDataItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001/40003）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -13724,6 +14017,244 @@
                 }
             }
         },
+        "/api/v1/topic-data/{topic_key}": {
+            "get": {
+                "description": "指定 topic_key：sort_by=score_N 白名单（缺省 score_1）倒序 + 可选 filter_N 等值筛选 + 分页；仅启用行；条目含公开画像（无 data）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "公开话题数据列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序键 score_1~score_9（缺省 score_1）",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（缺省 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（缺省 20，上限 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_1 等值筛选",
+                        "name": "filter_1",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_2 等值筛选",
+                        "name": "filter_2",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_3 等值筛选",
+                        "name": "filter_3",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_4 等值筛选",
+                        "name": "filter_4",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_5 等值筛选",
+                        "name": "filter_5",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_6 等值筛选",
+                        "name": "filter_6",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_7 等值筛选",
+                        "name": "filter_7",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_8 等值筛选",
+                        "name": "filter_8",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_9 等值筛选",
+                        "name": "filter_9",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "列表成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.PublicTopicDataItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/topic-data/{topic_key}/random": {
+            "get": {
+                "description": "指定 topic_key：top_n（默认 20，1-100）+ 可选 filter_N 等值筛选；ORDER BY random()；仅启用行",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "公开话题数据随机",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "随机返回条数（缺省 20，1-100）",
+                        "name": "top_n",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_1 等值筛选",
+                        "name": "filter_1",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_2 等值筛选",
+                        "name": "filter_2",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_3 等值筛选",
+                        "name": "filter_3",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_4 等值筛选",
+                        "name": "filter_4",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_5 等值筛选",
+                        "name": "filter_5",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_6 等值筛选",
+                        "name": "filter_6",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_7 等值筛选",
+                        "name": "filter_7",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_8 等值筛选",
+                        "name": "filter_8",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "filter_9 等值筛选",
+                        "name": "filter_9",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "随机成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.PublicTopicDataItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/user/match-profile": {
             "get": {
                 "description": "无需认证，浏览审核通过且全开放可见的脱单用户列表。支持性别、年龄、婚姻状态、身高、城市、学历、属相、星座、关键字（昵称/脱单号）筛选。所有筛选条件选填。",
@@ -17950,6 +18481,325 @@
                     },
                     "401": {
                         "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/topic-data/{topic_key}": {
+            "get": {
+                "description": "返回 status + score_1~9 + data_1~9 + filter_1~9；无行返回零值默认行；禁用行仍可读",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "读取话题数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "读取成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.TopicDataResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "未注册用户（42224）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "建行：未提交字段 score_*=0、data_*=null、filter_*=null；含 score 提交时 reason 必填；已存在 → data=false",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "首次全量提交话题数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "全量提交请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.CreateTopicDataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data=true（已建行）/ false（已存在，未执行）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "未注册用户（42224）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/topic-data/{topic_key}/data": {
+            "patch": {
+                "description": "只更新提供的字段（null=清除）；无行 → data=false；禁用行 → 42225",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "data 覆盖设置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "data 覆盖请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.DataPatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data=true（已执行）/ false（无行，未执行）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "未注册用户（42224）/ 数据已禁用（42225）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/topic-data/{topic_key}/filter": {
+            "patch": {
+                "description": "绝对值覆盖（null=不参与筛选）；无行 → data=false；禁用行 → 42225",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "filter 覆盖设置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "filter 覆盖请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.FilterPatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data=true（已执行）/ false（无行，未执行）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "未注册用户（42224）/ 数据已禁用（42225）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/topic-data/{topic_key}/reset": {
+            "post": {
+                "description": "score_*=0、data_*=null、filter_*=null（status 保留）；reason 必填，非零 score 记归零日志；无行 → data=false；禁用行 → 42225",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "全量重置话题数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "重置请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.ResetTopicDataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data=true（已执行）/ false（无行，未执行）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "未注册用户（42224）/ 数据已禁用（42225）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/topic-data/{topic_key}/score": {
+            "patch": {
+                "description": "仅增减不能覆盖：至少一个非零 delta + reason 必填；无行 → data=false；禁用行 → 42225",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据"
+                ],
+                "summary": "score 增减",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "score delta 请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.ScoreDeltaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "data=true（已执行）/ false（无行，未执行）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "422": {
+                        "description": "未注册用户（42224）/ 数据已禁用（42225）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -25229,6 +26079,655 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicDataItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "data_1": {
+                    "type": "string"
+                },
+                "data_2": {
+                    "type": "string"
+                },
+                "data_3": {
+                    "type": "string"
+                },
+                "data_4": {
+                    "type": "string"
+                },
+                "data_5": {
+                    "type": "string"
+                },
+                "data_6": {
+                    "type": "string"
+                },
+                "data_7": {
+                    "type": "string"
+                },
+                "data_8": {
+                    "type": "string"
+                },
+                "data_9": {
+                    "type": "string"
+                },
+                "filter_1": {
+                    "type": "integer"
+                },
+                "filter_2": {
+                    "type": "integer"
+                },
+                "filter_3": {
+                    "type": "integer"
+                },
+                "filter_4": {
+                    "type": "integer"
+                },
+                "filter_5": {
+                    "type": "integer"
+                },
+                "filter_6": {
+                    "type": "integer"
+                },
+                "filter_7": {
+                    "type": "integer"
+                },
+                "filter_8": {
+                    "type": "integer"
+                },
+                "filter_9": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score_1": {
+                    "type": "integer"
+                },
+                "score_2": {
+                    "type": "integer"
+                },
+                "score_3": {
+                    "type": "integer"
+                },
+                "score_4": {
+                    "type": "integer"
+                },
+                "score_5": {
+                    "type": "integer"
+                },
+                "score_6": {
+                    "type": "integer"
+                },
+                "score_7": {
+                    "type": "integer"
+                },
+                "score_8": {
+                    "type": "integer"
+                },
+                "score_9": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "topic_key": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicDataPatchRequest": {
+            "type": "object",
+            "properties": {
+                "data_1": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_2": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_3": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_4": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_5": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_6": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_7": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_8": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_9": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "filter_1": {
+                    "type": "integer"
+                },
+                "filter_2": {
+                    "type": "integer"
+                },
+                "filter_3": {
+                    "type": "integer"
+                },
+                "filter_4": {
+                    "type": "integer"
+                },
+                "filter_5": {
+                    "type": "integer"
+                },
+                "filter_6": {
+                    "type": "integer"
+                },
+                "filter_7": {
+                    "type": "integer"
+                },
+                "filter_8": {
+                    "type": "integer"
+                },
+                "filter_9": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "description": "Reason 事由（含 score 提交时必填，≤200 字）。",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "score_1": {
+                    "type": "integer"
+                },
+                "score_2": {
+                    "type": "integer"
+                },
+                "score_3": {
+                    "type": "integer"
+                },
+                "score_4": {
+                    "type": "integer"
+                },
+                "score_5": {
+                    "type": "integer"
+                },
+                "score_6": {
+                    "type": "integer"
+                },
+                "score_7": {
+                    "type": "integer"
+                },
+                "score_8": {
+                    "type": "integer"
+                },
+                "score_9": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "Status 启用/禁用（*int 指针——binding:required 零值陷阱，audit-checklist #16）。",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicScoreLogItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "delta": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "operator_id": {
+                    "type": "string"
+                },
+                "operator_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.TopicLogOperator"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "score_field": {
+                    "type": "integer"
+                },
+                "topic_key": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "value_after": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.CreateTopicDataRequest": {
+            "type": "object",
+            "properties": {
+                "data_1": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_2": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_3": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_4": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_5": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_6": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_7": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_8": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_9": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "filter_1": {
+                    "type": "integer"
+                },
+                "filter_2": {
+                    "type": "integer"
+                },
+                "filter_3": {
+                    "type": "integer"
+                },
+                "filter_4": {
+                    "type": "integer"
+                },
+                "filter_5": {
+                    "type": "integer"
+                },
+                "filter_6": {
+                    "type": "integer"
+                },
+                "filter_7": {
+                    "type": "integer"
+                },
+                "filter_8": {
+                    "type": "integer"
+                },
+                "filter_9": {
+                    "type": "integer"
+                },
+                "reason": {
+                    "description": "含 score 提交时必填",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "score_1": {
+                    "description": "初始分值（delta 语义：0 → 值）",
+                    "type": "integer"
+                },
+                "score_2": {
+                    "type": "integer"
+                },
+                "score_3": {
+                    "type": "integer"
+                },
+                "score_4": {
+                    "type": "integer"
+                },
+                "score_5": {
+                    "type": "integer"
+                },
+                "score_6": {
+                    "type": "integer"
+                },
+                "score_7": {
+                    "type": "integer"
+                },
+                "score_8": {
+                    "type": "integer"
+                },
+                "score_9": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.DataPatchRequest": {
+            "type": "object",
+            "properties": {
+                "data_1": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_2": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_3": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_4": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_5": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_6": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_7": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_8": {
+                    "type": "string",
+                    "maxLength": 1024
+                },
+                "data_9": {
+                    "type": "string",
+                    "maxLength": 1024
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.FilterPatchRequest": {
+            "type": "object",
+            "properties": {
+                "filter_1": {
+                    "type": "integer"
+                },
+                "filter_2": {
+                    "type": "integer"
+                },
+                "filter_3": {
+                    "type": "integer"
+                },
+                "filter_4": {
+                    "type": "integer"
+                },
+                "filter_5": {
+                    "type": "integer"
+                },
+                "filter_6": {
+                    "type": "integer"
+                },
+                "filter_7": {
+                    "type": "integer"
+                },
+                "filter_8": {
+                    "type": "integer"
+                },
+                "filter_9": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.PublicTopicDataItem": {
+            "type": "object",
+            "properties": {
+                "filter_1": {
+                    "type": "integer"
+                },
+                "filter_2": {
+                    "type": "integer"
+                },
+                "filter_3": {
+                    "type": "integer"
+                },
+                "filter_4": {
+                    "type": "integer"
+                },
+                "filter_5": {
+                    "type": "integer"
+                },
+                "filter_6": {
+                    "type": "integer"
+                },
+                "filter_7": {
+                    "type": "integer"
+                },
+                "filter_8": {
+                    "type": "integer"
+                },
+                "filter_9": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score_1": {
+                    "type": "integer"
+                },
+                "score_2": {
+                    "type": "integer"
+                },
+                "score_3": {
+                    "type": "integer"
+                },
+                "score_4": {
+                    "type": "integer"
+                },
+                "score_5": {
+                    "type": "integer"
+                },
+                "score_6": {
+                    "type": "integer"
+                },
+                "score_7": {
+                    "type": "integer"
+                },
+                "score_8": {
+                    "type": "integer"
+                },
+                "score_9": {
+                    "type": "integer"
+                },
+                "topic_key": {
+                    "type": "string"
+                },
+                "user_data": {
+                    "description": "UserData 用户公开画像（无画像用户为 null，条目仍展示）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                        }
+                    ]
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.ResetTopicDataRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "description": "Reason 归零事由（必填非空 ≤200 字）。",
+                    "type": "string",
+                    "maxLength": 200
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.ScoreDeltaRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "description": "Reason 事由（必填非空 ≤200 字）。",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "score_1": {
+                    "description": "变化量（delta，可负）",
+                    "type": "integer"
+                },
+                "score_2": {
+                    "type": "integer"
+                },
+                "score_3": {
+                    "type": "integer"
+                },
+                "score_4": {
+                    "type": "integer"
+                },
+                "score_5": {
+                    "type": "integer"
+                },
+                "score_6": {
+                    "type": "integer"
+                },
+                "score_7": {
+                    "type": "integer"
+                },
+                "score_8": {
+                    "type": "integer"
+                },
+                "score_9": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.TopicDataResponse": {
+            "type": "object",
+            "properties": {
+                "data_1": {
+                    "type": "string"
+                },
+                "data_2": {
+                    "type": "string"
+                },
+                "data_3": {
+                    "type": "string"
+                },
+                "data_4": {
+                    "type": "string"
+                },
+                "data_5": {
+                    "type": "string"
+                },
+                "data_6": {
+                    "type": "string"
+                },
+                "data_7": {
+                    "type": "string"
+                },
+                "data_8": {
+                    "type": "string"
+                },
+                "data_9": {
+                    "type": "string"
+                },
+                "filter_1": {
+                    "type": "integer"
+                },
+                "filter_2": {
+                    "type": "integer"
+                },
+                "filter_3": {
+                    "type": "integer"
+                },
+                "filter_4": {
+                    "type": "integer"
+                },
+                "filter_5": {
+                    "type": "integer"
+                },
+                "filter_6": {
+                    "type": "integer"
+                },
+                "filter_7": {
+                    "type": "integer"
+                },
+                "filter_8": {
+                    "type": "integer"
+                },
+                "filter_9": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score_1": {
+                    "type": "integer"
+                },
+                "score_2": {
+                    "type": "integer"
+                },
+                "score_3": {
+                    "type": "integer"
+                },
+                "score_4": {
+                    "type": "integer"
+                },
+                "score_5": {
+                    "type": "integer"
+                },
+                "score_6": {
+                    "type": "integer"
+                },
+                "score_7": {
+                    "type": "integer"
+                },
+                "score_8": {
+                    "type": "integer"
+                },
+                "score_9": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "topic_key": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_upload_model.ChunkResult": {
             "type": "object",
             "properties": {
@@ -29466,6 +30965,30 @@
                 "TemplateBroadcastPending",
                 "TemplateBroadcastProcessing",
                 "TemplateBroadcastDone"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.TopicLogOperator": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "TopicLogOperatorAdmin": "管理后台",
+                "TopicLogOperatorUnknown": "未知（哨兵）",
+                "TopicLogOperatorUser": "C 端用户本人"
+            },
+            "x-enum-descriptions": [
+                "未知（哨兵）",
+                "C 端用户本人",
+                "管理后台"
+            ],
+            "x-enum-varnames": [
+                "TopicLogOperatorUnknown",
+                "TopicLogOperatorUser",
+                "TopicLogOperatorAdmin"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.UploadFileType": {
