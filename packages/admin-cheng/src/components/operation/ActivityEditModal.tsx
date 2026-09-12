@@ -45,6 +45,19 @@ const ACTIVITY_TYPE_OPTIONS = [
   { label: ActivityTypeLabels[ActivityType.FREE_REVIEW], value: ActivityType.FREE_REVIEW },
 ];
 
+/** 预热与现场签到 5 字段的回填值（编辑模式 initialValues 与 setFieldsValue 共用） */
+const pickOnsiteFields = (activity: Activity) => {
+  const checkinStart = activity.checkin_start ? parseApiTime(activity.checkin_start) : undefined;
+  return {
+    checkin_enabled: activity.checkin_enabled ?? false,
+    // 防御后端 time.Time 零值（0001-01-01T00:00:00Z）被回显为异常日期
+    checkin_start: checkinStart && checkinStart.year() >= 1970 ? checkinStart : undefined,
+    onsite_loves_chances: activity.onsite_loves_chances ?? 0,
+    warm_up_enabled: activity.warm_up_enabled ?? false,
+    warm_up_config: activity.warm_up_config ?? '',
+  };
+};
+
 const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess, onOpenPromiseModal, lockedZone }) => {
   const { success, error: showError } = useAppNotification();
   const { user } = useAuth();
@@ -94,11 +107,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       description: activity.description || '',
       form_config: activity.form_config || '',
       sort_order: activity.sort_order ?? 0,
-      checkin_enabled: activity.checkin_enabled ?? false,
-      checkin_start: activity.checkin_start ? parseApiTime(activity.checkin_start) : undefined,
-      onsite_loves_chances: activity.onsite_loves_chances ?? 0,
-      warm_up_enabled: activity.warm_up_enabled ?? false,
-      warm_up_config: activity.warm_up_config ?? '',
+      ...pickOnsiteFields(activity),
     };
   }, [activity, lockedZone]);
 
@@ -161,11 +170,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           form_config: activity.form_config || '',
           promise_ids: parsePromiseIdsFromExtra(activity.extra_params),
           sort_order: activity.sort_order ?? 0,
-          checkin_enabled: activity.checkin_enabled ?? false,
-          checkin_start: activity.checkin_start ? parseApiTime(activity.checkin_start) : undefined,
-          onsite_loves_chances: activity.onsite_loves_chances ?? 0,
-          warm_up_enabled: activity.warm_up_enabled ?? false,
-          warm_up_config: activity.warm_up_config ?? '',
+          ...pickOnsiteFields(activity),
         });
       }, 50);
       return () => clearTimeout(timer);
@@ -264,7 +269,9 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         // 活动预热：warm_up_config 仅超级管理员编辑提交（其他管理员缺省不更新该字段）
         payload.warm_up_enabled = !!values.warm_up_enabled;
         if (isSuperAdmin) {
-          payload.warm_up_config = values.warm_up_config ?? '';
+          // 从 store 取值而非 values：预热关闭时该 Form.Item 未挂载，validateFields 的 values 不含它，
+          // 用 values 会得到 undefined → 空串按 PATCH「空串=清空」语义抹掉小程序端已有配置
+          payload.warm_up_config = form.getFieldValue('warm_up_config') ?? '';
         }
         // 现场签到：默认关闭；开启且填写了开始时间才上传（RFC3339 可选，PATCH 缺省不更新）
         payload.checkin_enabled = !!values.checkin_enabled;

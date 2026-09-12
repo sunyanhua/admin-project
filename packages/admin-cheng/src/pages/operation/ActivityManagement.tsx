@@ -207,8 +207,8 @@ const ActivityManagement = () => {
       width: 100,
       render: (_: any, r: Activity) => (
         <Space direction="vertical" size={2}>
-          {r.checkin_enabled && <Tag color="blue" title="已启用现场签到">签到</Tag>}
-          {r.warm_up_enabled && <Tag color="orange" title="已启用活动预热">预热</Tag>}
+          {r.checkin_enabled && <Tag color="blue" title="已启用现场签到">已启用现场签到</Tag>}
+          {r.warm_up_enabled && <Tag color="orange" title="已启用活动预热">已启用活动预热</Tag>}
           {!r.checkin_enabled && !r.warm_up_enabled && <span style={{ color: '#999' }}>-</span>}
         </Space>
       ),
