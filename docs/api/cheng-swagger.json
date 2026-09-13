@@ -18673,8 +18673,8 @@
             }
         },
         "/api/v1/wxa/submission/liked-ids": {
-            "get": {
-                "description": "返回当前用户已点赞的全部投稿 ID（公开列表页点赞态高亮回显）",
+            "post": {
+                "description": "返回当前用户已点赞的投稿 ID（公开列表页点赞态高亮回显）；请求体可选，ids 非空时仅查询这些投稿的点赞态，缺省返回全部",
                 "consumes": [
                     "application/json"
                 ],
@@ -18685,6 +18685,16 @@
                     "投稿模块"
                 ],
                 "summary": "我点赞过的投稿 ID 列表",
+                "parameters": [
+                    {
+                        "description": "查询参数（可省略，空 body=查询全部）",
+                        "name": "body",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_submission_model.SubmissionLikedIDsRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "查询成功",
@@ -18702,6 +18712,12 @@
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     },
                     "401": {
@@ -26557,6 +26573,18 @@
                 "liked": {
                     "description": "操作后是否处于已点赞状态",
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_submission_model.SubmissionLikedIDsRequest": {
+            "type": "object",
+            "properties": {
+                "ids": {
+                    "description": "指定投稿 ID 数组（每个元素须为 UUID）",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
