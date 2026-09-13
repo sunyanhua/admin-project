@@ -48,6 +48,12 @@ const ACTIVITY_TYPE_OPTIONS = [
 /** 预热与现场签到 5 字段的回填值（编辑模式 initialValues 与 setFieldsValue 共用） */
 const pickOnsiteFields = (activity: Activity) => {
   const checkinStart = activity.checkin_start ? parseApiTime(activity.checkin_start) : undefined;
+  // 页面ID：解析 warm_up_config 顶层 page_id 键（小程序端预热页面标识）
+  let warmUpPageId = '';
+  try {
+    const obj = JSON.parse(activity.warm_up_config || '{}');
+    if (obj && typeof obj === 'object') warmUpPageId = obj.page_id || '';
+  } catch { /* 原值非法则留空 */ }
   return {
     checkin_enabled: activity.checkin_enabled ?? false,
     // 防御后端 time.Time 零值（0001-01-01T00:00:00Z）被回显为异常日期
@@ -55,6 +61,7 @@ const pickOnsiteFields = (activity: Activity) => {
     onsite_loves_chances: activity.onsite_loves_chances ?? 0,
     warm_up_enabled: activity.warm_up_enabled ?? false,
     warm_up_config: activity.warm_up_config ?? '',
+    warm_up_page_id: warmUpPageId,
   };
 };
 
@@ -81,7 +88,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], checkin_enabled: false, onsite_loves_chances: 0, warm_up_enabled: false, warm_up_config: '' };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], checkin_enabled: false, onsite_loves_chances: 0, warm_up_enabled: false, warm_up_config: '', warm_up_page_id: '' };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -201,6 +208,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         onsite_loves_chances: 0,
         warm_up_enabled: false,
         warm_up_config: '',
+        warm_up_page_id: '',
       });
       setActivityType(ActivityType.FREE_FCFS);
       setStatusEnabled(true);
@@ -266,13 +274,22 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
 
       // 预热与现场签到：专区模式不管理，不提交（PATCH 缺省不更新，避免覆盖小程序端配置）
       if (!lockedZone) {
-        // 活动预热：warm_up_config 仅超级管理员编辑提交（其他管理员缺省不更新该字段）
         payload.warm_up_enabled = !!values.warm_up_enabled;
-        if (isSuperAdmin) {
-          // 从 store 取值而非 values：预热关闭时该 Form.Item 未挂载，validateFields 的 values 不含它，
-          // 用 values 会得到 undefined → 空串按 PATCH「空串=清空」语义抹掉小程序端已有配置
-          payload.warm_up_config = form.getFieldValue('warm_up_config') ?? '';
+        // warm_up_config 提交：store 原对象透传（从 store 取值而非 values——预热关闭时该 Form.Item
+        // 未挂载，validateFields 的 values 不含它，空串会按 PATCH「空串=清空」语义抹掉已有配置）
+        // 再合并页面ID（page_id 键）；非超管也因此只可能改动 page_id，其余内容原样保留
+        let warmUpObj: Record<string, any> = {};
+        try {
+          const parsed = JSON.parse(form.getFieldValue('warm_up_config') ?? '');
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) warmUpObj = parsed;
+        } catch { /* 原值非法则从空对象开始 */ }
+        const warmUpPageId = String(form.getFieldValue('warm_up_page_id') ?? '').trim();
+        if (warmUpPageId) {
+          warmUpObj.page_id = warmUpPageId;
+        } else {
+          delete warmUpObj.page_id;
         }
+        payload.warm_up_config = JSON.stringify(warmUpObj);
         // 现场签到：默认关闭；开启且填写了开始时间才上传（RFC3339 可选，PATCH 缺省不更新）
         payload.checkin_enabled = !!values.checkin_enabled;
         if (values.checkin_enabled) {
@@ -558,6 +575,12 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
             <Form.Item label="启用预热" name="warm_up_enabled" valuePropName="checked" style={{ marginBottom: 12 }}>
               <Switch checkedChildren="开启" unCheckedChildren="关闭" />
             </Form.Item>
+
+            {warmUpEnabled && (
+              <Form.Item label="页面ID" name="warm_up_page_id" extra="小程序端预热页面的页面ID，写入预热配置">
+                <Input placeholder="请输入页面ID" style={{ width: 240 }} />
+              </Form.Item>
+            )}
 
             {warmUpEnabled && isSuperAdmin && (
               <Form.Item
