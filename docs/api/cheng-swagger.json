@@ -21349,6 +21349,14 @@
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.RegistrationResponse": {
             "type": "object",
             "properties": {
+                "activity_data": {
+                    "description": "ActivityData 活动信息（2026-09-14 老大需求——我的报名列表卡片需直接渲染活动标题/时间/封面，\n免二次请求）。Service 层批量填充（一次 IN 查询）；活动行缺失（已删除）保持 null。\n复用公开活动 DTO（ActivityPublicResponse）——与公开列表/详情同一形状，前端一套渲染。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityPublicResponse"
+                        }
+                    ]
+                },
                 "activity_id": {
                     "type": "string"
                 },
