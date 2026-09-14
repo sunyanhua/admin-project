@@ -367,12 +367,13 @@ const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) =
 interface TopicScoreLog {
   id: string;
   user_id: string;
-  score_field: number;
   delta: number;
   value_after: number;
   reason: string;
   operator_type: number; // 1=C端用户 2=管理后台
   created_at: string;
+  /** 关联用户数据（同款三字段口径：user_data/user_profile/user_match_profile） */
+  user_profile?: { nickname?: string; avatar?: string } | null;
 }
 
 const OPERATOR_TYPE_OPTIONS = [
@@ -382,10 +383,7 @@ const OPERATOR_TYPE_OPTIONS = [
 
 const scoreLogFilters: FilterConfig[] = [
   { name: 'operator_type', placeholder: '全部操作者', type: 'select', options: OPERATOR_TYPE_OPTIONS },
-  {
-    name: 'score_field', placeholder: '全部分数位', type: 'select',
-    options: Array.from({ length: 9 }, (_, i) => ({ label: `score_${i + 1}`, value: i + 1 })),
-  },
+  { name: 'reason', placeholder: '搜索事由', type: 'input' },
 ];
 
 interface ScoreLogsPanelProps {
@@ -395,13 +393,15 @@ interface ScoreLogsPanelProps {
 
 const ScoreLogsPanel: React.FC<ScoreLogsPanelProps> = ({ pageId }) => {
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState<string>('');
 
   const fetchLogs = useCallback(async (params: any) => {
     return userApi.getTopicScoreLogs(pageId, {
       page: params.page,
       size: params.page_size,
       operator_type: params.operator_type,
-      score_field: params.score_field,
+      reason: params.reason,
     });
   }, [pageId]);
 
@@ -418,14 +418,22 @@ const ScoreLogsPanel: React.FC<ScoreLogsPanelProps> = ({ pageId }) => {
 
   const columns: ColumnsType<TopicScoreLog> = [
     {
-      title: '用户', dataIndex: 'user_id', key: 'user_id', width: 120,
-      render: (v: string) => (
-        <span title={v}>{v.length > 10 ? `${v.slice(0, 10)}…` : v}</span>
-      ),
-    },
-    {
-      title: '分数位', dataIndex: 'score_field', key: 'score_field', width: 80,
-      render: (v: number) => (v != null ? `score_${v}` : '-'),
+      title: '用户',
+      key: 'user',
+      width: 150,
+      render: (_: any, r: TopicScoreLog) => {
+        const nickname = r.user_profile?.nickname || r.user_id;
+        const avatar = r.user_profile?.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
     },
     {
       title: '积分变化', dataIndex: 'delta', key: 'delta', width: 90,
@@ -464,6 +472,12 @@ const ScoreLogsPanel: React.FC<ScoreLogsPanelProps> = ({ pageId }) => {
         <Button icon={<ReloadOutlined />} onClick={refresh} style={{ marginLeft: 12, flexShrink: 0 }}>刷新</Button>
       </div>
       <StandardTable className="warm-up-submission-audit" columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+      />
     </div>
   );
 };

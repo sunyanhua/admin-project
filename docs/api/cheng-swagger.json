@@ -7201,7 +7201,7 @@
         },
         "/admin/v1/bizops/user/topic-data/{topic_key}/score-logs": {
             "get": {
-                "description": "风险排查台账：按 topic_key 范围（路径参数必填），user_id/score_field/operator_type/时间区间可选筛选 + created_at DESC 分页",
+                "description": "风险排查台账：按 topic_key 范围（路径参数必填），user_id/score_field/operator_type/reason 模糊/时间区间可选筛选 + created_at DESC 分页",
                 "consumes": [
                     "application/json"
                 ],
@@ -7236,6 +7236,12 @@
                         "type": "integer",
                         "description": "操作者（1=C端用户 2=管理后台）",
                         "name": "operator_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "事由模糊筛选（≤200 字符，大小写不敏感包含匹配）",
+                        "name": "reason",
                         "in": "query"
                     },
                     {
@@ -27073,8 +27079,22 @@
                 "topic_key": {
                     "type": "string"
                 },
+                "user_data": {
+                    "description": "关联用户数据（批量查询填充，允许 null——用户可能未完善资料或已注销）。\n命名与 activity 报名列表 / zone 申请列表 / submission / lottery 同款三字段口径\n（同一批 pkgmodel 类型，前端一套映射通吃）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserDataForAdmin"
+                        }
+                    ]
+                },
                 "user_id": {
                     "type": "string"
+                },
+                "user_match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserMatchProfileDataForAdmin"
+                },
+                "user_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserProfileDataForAdmin"
                 },
                 "value_after": {
                     "type": "integer"

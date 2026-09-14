@@ -92,11 +92,11 @@ export const userApi = {
 
   /**
    * 话题数据 score 增减日志（台账）— GET /admin/v1/bizops/user/topic-data/:topic_key/score-logs
-   * 按 topic_key 必填；user_id/score_field/operator_type/start_at/end_at 可选筛选；created_at DESC 分页
+   * 按 topic_key 必填；user_id/score_field/operator_type/reason 模糊/时间区间可选筛选；created_at DESC 分页
    */
   getTopicScoreLogs: (topicKey: string, params?: {
     page?: number; size?: number; user_id?: string; score_field?: number;
-    operator_type?: number; start_at?: string; end_at?: string;
+    operator_type?: number; reason?: string; start_at?: string; end_at?: string;
   }) => {
     return request.get(`/admin/v1/bizops/user/topic-data/${topicKey}/score-logs`, { params });
   },
