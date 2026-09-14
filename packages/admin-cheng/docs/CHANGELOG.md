@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-09-14 14:45 | 624b978 | feat: 预热管理新增「积分排行」TAB（积分记录之前）——全量拉取话题数据与报名记录，客户端 join 出头像昵称/报名时间/报名状态（审核模式显示审核状态，其余显示已报名/未报名），按 score_1 降序（接口无排序参数，客户端排序）；user 服务新增 getTopicDataList |
 | 2026-09-14 13:35 | 92dab22 | feat: 积分记录调整——去掉分数位筛选与列表列；用户列改标准头像+昵称（点击看用户资料卡片）；搜索增加事由 reason 模糊搜索；同步 swagger（score-logs 新增 reason 参数与关联用户数据字段） |
 | 2026-09-14 13:20 | 5a2cb89 | feat: 预热管理新增「积分记录」TAB（动态审核之后）——按预热ID作为 topic_key 拉取 score 增减日志（score-logs 台账接口），展示用户/分数位/积分变化/变动后/事由/操作者/时间，支持操作者与分数位筛选；user 服务新增 getTopicScoreLogs |
 | 2026-09-14 12:58 | a75e390 | feat: 加积分改用专用 score 增减接口（PATCH topic-data/{topic_key}/score，score_1 为 delta，reason 必填）并执行 pm2 reload api-sync 同步 swagger；CLAUDE.md 增加接口查询规范（文档查不到接口先 pm2 reload api-sync 再查） |
