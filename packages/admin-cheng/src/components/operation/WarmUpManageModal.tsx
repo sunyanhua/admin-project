@@ -6,6 +6,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity } from '@/api/services/activity-v1';
 import { submissionApi, Submission } from '@/api/services/submission';
+import { userApi } from '@/api/services/user';
 import {
   SubmissionAuditStatus, SubmissionAuditStatusLabels, SubmissionAuditStatusColors,
 } from '@shared/constants';
@@ -13,6 +14,7 @@ import { getAvatarUrl } from '@/utils/imageUtils';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
+import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import SubmissionAuditModal from '@/components/operation/SubmissionAuditModal';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -360,6 +362,112 @@ const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) =
   );
 };
 
+// ==================== 积分记录 TAB（话题数据 score 增减日志） ====================
+
+interface TopicScoreLog {
+  id: string;
+  user_id: string;
+  score_field: number;
+  delta: number;
+  value_after: number;
+  reason: string;
+  operator_type: number; // 1=C端用户 2=管理后台
+  created_at: string;
+}
+
+const OPERATOR_TYPE_OPTIONS = [
+  { label: 'C端用户', value: 1 },
+  { label: '管理后台', value: 2 },
+];
+
+const scoreLogFilters: FilterConfig[] = [
+  { name: 'operator_type', placeholder: '全部操作者', type: 'select', options: OPERATOR_TYPE_OPTIONS },
+  {
+    name: 'score_field', placeholder: '全部分数位', type: 'select',
+    options: Array.from({ length: 9 }, (_, i) => ({ label: `score_${i + 1}`, value: i + 1 })),
+  },
+];
+
+interface ScoreLogsPanelProps {
+  /** 活动预热页面ID（作为话题键 topic_key） */
+  pageId: string;
+}
+
+const ScoreLogsPanel: React.FC<ScoreLogsPanelProps> = ({ pageId }) => {
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+
+  const fetchLogs = useCallback(async (params: any) => {
+    return userApi.getTopicScoreLogs(pageId, {
+      page: params.page,
+      size: params.page_size,
+      operator_type: params.operator_type,
+      score_field: params.score_field,
+    });
+  }, [pageId]);
+
+  const formatResponse = useCallback((res: any) => {
+    const list = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
+    return { list, count: total };
+  }, []);
+
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<TopicScoreLog>({
+    fetchFn: fetchLogs,
+    formatResponse,
+  });
+
+  const columns: ColumnsType<TopicScoreLog> = [
+    {
+      title: '用户', dataIndex: 'user_id', key: 'user_id', width: 120,
+      render: (v: string) => (
+        <span title={v}>{v.length > 10 ? `${v.slice(0, 10)}…` : v}</span>
+      ),
+    },
+    {
+      title: '分数位', dataIndex: 'score_field', key: 'score_field', width: 80,
+      render: (v: number) => (v != null ? `score_${v}` : '-'),
+    },
+    {
+      title: '积分变化', dataIndex: 'delta', key: 'delta', width: 90,
+      render: (v: number) => (
+        <span style={{ color: (v ?? 0) > 0 ? '#52c41a' : (v ?? 0) < 0 ? '#ff4d4f' : '#999', fontWeight: 500 }}>
+          {(v ?? 0) > 0 ? `+${v}` : v ?? 0}
+        </span>
+      ),
+    },
+    { title: '变动后', dataIndex: 'value_after', key: 'value_after', width: 80 },
+    {
+      title: '事由', dataIndex: 'reason', key: 'reason',
+      render: (text: string) => text || <span style={{ color: '#999' }}>-</span>,
+    },
+    {
+      title: '操作者', dataIndex: 'operator_type', key: 'operator_type', width: 90,
+      render: (v: number) => (
+        <Tag color={v === 2 ? 'blue' : 'default'} title={v === 2 ? '管理后台' : 'C端用户'}>
+          {v === 2 ? '管理后台' : 'C端用户'}
+        </Tag>
+      ),
+    },
+    dateTimeColumn<TopicScoreLog>('created_at', '时间'),
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <SearchPanel
+          filters={scoreLogFilters}
+          values={searchValues}
+          onChange={(name, value) => setSearchValues((prev) => ({ ...prev, [name]: value }))}
+          onSearch={(vals) => search(vals)}
+          onReset={() => { setSearchValues({}); search({}); }}
+        />
+        <Button icon={<ReloadOutlined />} onClick={refresh} style={{ marginLeft: 12, flexShrink: 0 }}>刷新</Button>
+      </div>
+      <StandardTable className="warm-up-submission-audit" columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+    </div>
+  );
+};
+
 // ==================== 预热管理弹窗 ====================
 
 const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity, onClose, onSuccess }) => {
@@ -435,6 +543,15 @@ const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity
       label: '动态审核',
       children: content.pageId ? (
         <SubmissionAuditPanel key={content.pageId} pageId={content.pageId} />
+      ) : (
+        <Empty description="尚未配置页面ID，请先在活动编辑的「预热」区块填写页面ID" />
+      ),
+    },
+    {
+      key: 'score-logs',
+      label: '积分记录',
+      children: content.pageId ? (
+        <ScoreLogsPanel key={content.pageId} pageId={content.pageId} />
       ) : (
         <Empty description="尚未配置页面ID，请先在活动编辑的「预热」区块填写页面ID" />
       ),
