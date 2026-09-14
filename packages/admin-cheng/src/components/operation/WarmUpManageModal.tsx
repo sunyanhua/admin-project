@@ -4,13 +4,16 @@ import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined } from '@ant
 import './WarmUpManageModal.css';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { activityApi, Activity } from '@/api/services/activity-v1';
+import { activityApi, Activity, RegisterRecord } from '@/api/services/activity-v1';
 import { submissionApi, Submission } from '@/api/services/submission';
 import { userApi } from '@/api/services/user';
 import {
   SubmissionAuditStatus, SubmissionAuditStatusLabels, SubmissionAuditStatusColors,
+  RegisterAuditStatus, RegisterAuditStatusLabels, RegisterAuditStatusColors,
+  ActivityType,
 } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
+import { formatDateTime } from '@/utils/format';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
@@ -482,6 +485,141 @@ const ScoreLogsPanel: React.FC<ScoreLogsPanelProps> = ({ pageId }) => {
   );
 };
 
+// ==================== 积分排行 TAB（话题数据用户 + 报名状态，按 score_1 降序） ====================
+
+interface ScoreRankRow {
+  user_id: string;
+  score: number;
+  /** 该用户在本活动的报名记录（未报名为 null；头像昵称/报名时间/状态均由此取） */
+  register: RegisterRecord | null;
+}
+
+interface ScoreRankPanelProps {
+  /** 活动预热页面ID（作为话题键 topic_key） */
+  pageId: string;
+  activityId: string;
+  activityType: number;
+}
+
+const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, activityType }) => {
+  const { error: showError } = useAppNotification();
+  const [data, setData] = useState<ScoreRankRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState<string>('');
+
+  /** 全量拉取话题数据 + 报名记录，客户端 join 后按 score_1 降序（接口无排序参数） */
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const rows: any[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await userApi.getTopicDataList(pageId, { page, size: 100 });
+        const list = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        rows.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      // 报名记录全量（接口无 user_id 筛选 → 客户端按 user_id join）
+      const regMap = new Map<string, RegisterRecord>();
+      let rp = 1;
+      while (true) {
+        const res: any = await activityApi.getRegisters(activityId, { page: rp, size: 100 });
+        const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        list.forEach((r) => regMap.set(r.user_id, r));
+        if (list.length < 100) break;
+        rp++;
+      }
+      const joined: ScoreRankRow[] = rows
+        .map((r) => ({
+          user_id: r.user_id,
+          score: r.score_1 ?? 0,
+          register: regMap.get(r.user_id) ?? null,
+        }))
+        .sort((a, b) => b.score - a.score);
+      setData(joined);
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '获取失败');
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [pageId, activityId, showError]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const columns: ColumnsType<ScoreRankRow> = [
+    {
+      title: '用户',
+      key: 'user',
+      width: 160,
+      render: (_: any, r: ScoreRankRow) => {
+        const up = r.register?.user_profile;
+        const nickname = up?.nickname || r.register?.nickname || r.user_id;
+        const avatar = up?.avatar || r.register?.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
+    },
+    {
+      title: '报名时间', key: 'register_time', width: 120,
+      render: (_: any, r: ScoreRankRow) => (
+        r.register?.created_at ? formatDateTime(r.register.created_at) : <span style={{ color: '#999' }}>-</span>
+      ),
+    },
+    {
+      title: '报名状态', key: 'register_status', width: 90,
+      render: (_: any, r: ScoreRankRow) => {
+        if (!r.register) return <Tag color="default" title="未报名">未报名</Tag>;
+        if (activityType === ActivityType.FREE_REVIEW) {
+          const v = r.register.audit_status;
+          return <Tag color={RegisterAuditStatusColors[v] || 'default'} title={RegisterAuditStatusLabels[v]}>{RegisterAuditStatusLabels[v] ?? v}</Tag>;
+        }
+        return <Tag color="success" title="已报名">已报名</Tag>;
+      },
+    },
+    {
+      title: '总积分', dataIndex: 'score', key: 'score', width: 90,
+      render: (v: number) => <span style={{ fontWeight: 600 }}>{v ?? 0}</span>,
+    },
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <Button icon={<ReloadOutlined />} onClick={fetchAll} loading={loading}>刷新</Button>
+      </div>
+      <Table
+        className="warm-up-submission-audit"
+        columns={columns}
+        dataSource={data}
+        rowKey="user_id"
+        loading={loading}
+        pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
+        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" /> }}
+      />
+
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+      />
+    </div>
+  );
+};
+
 // ==================== 预热管理弹窗 ====================
 
 const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity, onClose, onSuccess }) => {
@@ -557,6 +695,20 @@ const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity
       label: '动态审核',
       children: content.pageId ? (
         <SubmissionAuditPanel key={content.pageId} pageId={content.pageId} />
+      ) : (
+        <Empty description="尚未配置页面ID，请先在活动编辑的「预热」区块填写页面ID" />
+      ),
+    },
+    {
+      key: 'rank',
+      label: '积分排行',
+      children: content.pageId ? (
+        <ScoreRankPanel
+          key={`${content.pageId}-${activity?.id || 'none'}`}
+          pageId={content.pageId}
+          activityId={activity?.id || ''}
+          activityType={activity?.activity_type ?? 0}
+        />
       ) : (
         <Empty description="尚未配置页面ID，请先在活动编辑的「预热」区块填写页面ID" />
       ),

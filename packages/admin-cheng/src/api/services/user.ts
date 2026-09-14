@@ -100,4 +100,12 @@ export const userApi = {
   }) => {
     return request.get(`/admin/v1/bizops/user/topic-data/${topicKey}/score-logs`, { params });
   },
+
+  /**
+   * 话题数据列表（按 topic_key 查全用户行）— GET /admin/v1/bizops/user/topic-data/:topic_key
+   * user_id/status 可选筛选 + created_at DESC 分页；无排序参数（排行需客户端按 score_1 排序）
+   */
+  getTopicDataList: (topicKey: string, params?: { page?: number; size?: number; user_id?: string; status?: number }) => {
+    return request.get(`/admin/v1/bizops/user/topic-data/${topicKey}`, { params });
+  },
 };
