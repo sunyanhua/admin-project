@@ -108,4 +108,12 @@ export const userApi = {
   getTopicDataList: (topicKey: string, params?: { page?: number; size?: number; user_id?: string; status?: number }) => {
     return request.get(`/admin/v1/bizops/user/topic-data/${topicKey}`, { params });
   },
+
+  /**
+   * 话题数据 status 切换 — PATCH /admin/v1/bizops/user/:id/topic-data/:topic_key
+   * status 为指针字段（0=启用 1=禁用）；只传 status 仅切换状态，不触碰其余字段
+   */
+  updateTopicDataStatus: (userId: string, topicKey: string, status: number) => {
+    return request.patch(`/admin/v1/bizops/user/${userId}/topic-data/${topicKey}`, { status });
+  },
 };

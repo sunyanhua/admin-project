@@ -17,7 +17,7 @@ import { formatDateTime } from '@/utils/format';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
+import { dateTimeColumn, statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import SubmissionAuditModal from '@/components/operation/SubmissionAuditModal';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -490,6 +490,8 @@ const ScoreLogsPanel: React.FC<ScoreLogsPanelProps> = ({ pageId }) => {
 interface ScoreRankRow {
   user_id: string;
   score: number;
+  /** 话题数据行状态（0=正常 1=屏蔽） */
+  status: number;
   /** 该用户在本活动的报名记录（未报名为 null；头像昵称/报名时间/状态均由此取） */
   register: RegisterRecord | null;
 }
@@ -502,11 +504,23 @@ interface ScoreRankPanelProps {
 }
 
 const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, activityType }) => {
-  const { error: showError } = useAppNotification();
+  const { success, error: showError } = useAppNotification();
   const [data, setData] = useState<ScoreRankRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState<string>('');
+
+  /** 状态切换：正常（0）/ 屏蔽（1） */
+  const handleStatusToggle = async (record: ScoreRankRow, checked: boolean) => {
+    const next = checked ? 0 : 1;
+    try {
+      await userApi.updateTopicDataStatus(record.user_id, pageId, next);
+      success('状态更新成功');
+      setData((prev) => prev.map((item) => (item.user_id === record.user_id ? { ...item, status: next } : item)));
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '状态更新失败');
+    }
+  };
 
   /** 全量拉取话题数据 + 报名记录，客户端 join 后按 score_1 降序（接口无排序参数） */
   const fetchAll = useCallback(async () => {
@@ -537,6 +551,7 @@ const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, act
         .map((r) => ({
           user_id: r.user_id,
           score: r.score_1 ?? 0,
+          status: r.status ?? 0,
           register: regMap.get(r.user_id) ?? null,
         }))
         .sort((a, b) => b.score - a.score);
@@ -594,6 +609,7 @@ const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, act
       title: '总积分', dataIndex: 'score', key: 'score', width: 90,
       render: (v: number) => <span style={{ fontWeight: 600 }}>{v ?? 0}</span>,
     },
+    statusSwitchColumn<ScoreRankRow>('status', 0, 1, handleStatusToggle, '正常', '屏蔽', 100),
   ];
 
   return (
