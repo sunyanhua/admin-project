@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-09-14 12:58 | a75e390 | feat: 加积分改用专用 score 增减接口（PATCH topic-data/{topic_key}/score，score_1 为 delta，reason 必填）并执行 pm2 reload api-sync 同步 swagger；CLAUDE.md 增加接口查询规范（文档查不到接口先 pm2 reload api-sync 再查） |
 | 2026-09-14 11:00 | 69ae9ed | feat: 审核投稿弹窗改造——内容去类别胶囊；奖励金币/奖励积分默认取投稿 type 值可修改；去掉播出日期；拒绝原因默认「内容不合格」；动态审核场景（pointsTopicKey=预热ID）审核通过后额外调用 topic-data 接口加积分（score_1=奖励积分，reason=动态审核通过）；user 服务新增 patchTopicData |
 | 2026-09-14 10:30 | c14017f | refactor: 动态审核列表样式与布局——搜索区与列表加间距、表头淡灰无圆角（局部样式，StandardTable 支持 className）、首列改名发帖人、内容去掉类别标签、表头右上加刷新按钮 |
 | 2026-09-14 10:10 | bb5e0f1 | feat: 预热管理弹窗最前新增「动态审核」TAB——按活动预热页面ID（warm_up_config.page_id）作为 display_channel 渠道拉取投稿列表，展示投稿人/内容/附件/状态并支持审核（复用投稿审核弹窗与用户资料卡片）；未配置页面ID时显示提示；submission 服务补 display_channel 字段与筛选参数 |
