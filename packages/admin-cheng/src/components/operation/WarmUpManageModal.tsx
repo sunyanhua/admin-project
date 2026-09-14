@@ -1,9 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button, Empty, Form, Space, Table, Tabs } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Avatar, Button, Empty, Form, Image, Space, Table, Tabs, Tag } from 'antd';
+import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity } from '@/api/services/activity-v1';
+import { submissionApi, Submission } from '@/api/services/submission';
+import {
+  SubmissionAuditStatus, SubmissionAuditStatusLabels, SubmissionAuditStatusColors,
+  submissionTypeLabel, SubmissionTypeColors,
+} from '@shared/constants';
+import { getAvatarUrl } from '@/utils/imageUtils';
+import { useListPage } from '@/hooks/useListPage';
+import { StandardTable } from '@/components/templates/StandardTable';
+import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
+import SubmissionAuditModal from '@/components/operation/SubmissionAuditModal';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import type { FormField } from './FormConfigEditor';
@@ -20,6 +31,8 @@ interface WarmUpContent {
   config: FormField[];
   values: Record<string, any>;
   data: Record<string, any[]>;
+  /** 页面ID（warm_up_config 顶层 page_id 键，作为投稿展示渠道筛选值） */
+  pageId: string;
 }
 
 /** 数据记录随机唯一 id（与二级字段随机 id 同一生成方式） */
@@ -45,10 +58,11 @@ const parseWarmUp = (raw?: string): { obj: Record<string, any>; content: WarmUpC
         config: Array.isArray(obj.config) ? obj.config : [],
         values: obj.values && typeof obj.values === 'object' ? obj.values : {},
         data,
+        pageId: String(obj.page_id || '').trim(),
       },
     };
   } catch {
-    return { obj: {}, content: { config: [], values: {}, data: {} } };
+    return { obj: {}, content: { config: [], values: {}, data: {}, pageId: '' } };
   }
 };
 
@@ -201,11 +215,158 @@ const AddRecordModal: React.FC<AddRecordModalProps> = ({ visible, fields, onCanc
   );
 };
 
+// ==================== 动态审核 TAB（按页面ID渠道拉取投稿并审核） ====================
+
+const SUBMISSION_STATUS_OPTIONS = [
+  { label: '待审核', value: SubmissionAuditStatus.PENDING },
+  { label: '通过', value: SubmissionAuditStatus.APPROVED },
+  { label: '拒绝', value: SubmissionAuditStatus.REJECTED },
+];
+
+const submissionFilters: FilterConfig[] = [
+  { name: 'status', placeholder: '全部状态', type: 'select', options: SUBMISSION_STATUS_OPTIONS },
+  { name: 'keyword', placeholder: '搜索投稿内容', type: 'input' },
+];
+
+interface SubmissionAuditPanelProps {
+  /** 活动预热页面ID（作为投稿展示渠道 display_channel 筛选值） */
+  pageId: string;
+}
+
+const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) => {
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const [auditModalVisible, setAuditModalVisible] = useState(false);
+  const [auditRecord, setAuditRecord] = useState<Submission | null>(null);
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState<string>('');
+
+  const fetchSubmissions = useCallback(async (params: any) => {
+    return submissionApi.getList({
+      page: params.page,
+      size: params.page_size,
+      status: params.status,
+      keyword: params.keyword,
+      display_channel: pageId,
+    });
+  }, [pageId]);
+
+  const formatResponse = useCallback((res: any) => {
+    const list = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
+    return { list, count: total };
+  }, []);
+
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<Submission>({
+    fetchFn: fetchSubmissions,
+    formatResponse,
+  });
+
+  const columns: ColumnsType<Submission> = [
+    {
+      title: '投稿人',
+      key: 'user',
+      width: 160,
+      render: (_: any, r: Submission) => {
+        const up = r.user_profile;
+        const nickname = up?.nickname || r.nickname || r.user_id;
+        const avatar = up?.avatar || r.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
+    },
+    {
+      title: '内容',
+      dataIndex: 'content',
+      key: 'content',
+      render: (text: string, r: Submission) => {
+        const typeTag = r.type != null ? (
+          <Tag color={SubmissionTypeColors[r.type] || 'default'} style={{ marginRight: 4 }}>
+            {submissionTypeLabel(r.type)}
+          </Tag>
+        ) : null;
+        if (!text) return typeTag || <span style={{ color: '#999' }}>-</span>;
+        return (
+          <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            {typeTag}
+            {text.length > 120 ? `${text.slice(0, 120)}...` : text}
+          </span>
+        );
+      },
+    },
+    {
+      title: '附件', dataIndex: 'attachments', key: 'attachments', width: 100,
+      render: (atts: Submission['attachments']) => {
+        if (!atts || atts.length === 0) return <span style={{ color: '#999' }}>-</span>;
+        return (
+          <Space size={4} wrap>
+            {atts.slice(0, 3).map((att, idx) => (
+              <Image key={idx} src={att.url} preview={{ src: att.url }}
+                style={{ width: 28, height: 28, objectFit: 'cover', borderRadius: 4, border: '1px solid #e8e8e8' }} />
+            ))}
+          </Space>
+        );
+      },
+    },
+    {
+      title: '状态', dataIndex: 'audit_status', key: 'audit_status', width: 80,
+      render: (v: number) => (
+        <Tag color={SubmissionAuditStatusColors[v] || 'default'} title={SubmissionAuditStatusLabels[v]}>
+          {SubmissionAuditStatusLabels[v] ?? v}
+        </Tag>
+      ),
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 80,
+      fixed: 'right' as const,
+      render: (_: any, r: Submission) => (
+        <Space size="small" className="action-buttons">
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => { setAuditRecord(r); setAuditModalVisible(true); }}>审核</Button>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <SearchPanel
+        filters={submissionFilters}
+        values={searchValues}
+        onChange={(name, value) => setSearchValues((prev) => ({ ...prev, [name]: value }))}
+        onSearch={(vals) => search(vals)}
+        onReset={() => { setSearchValues({}); search({}); }}
+      />
+      <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+
+      <SubmissionAuditModal
+        visible={auditModalVisible}
+        record={auditRecord}
+        onClose={() => { setAuditModalVisible(false); setAuditRecord(null); }}
+        onSuccess={refresh}
+      />
+
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+      />
+    </div>
+  );
+};
+
 // ==================== 预热管理弹窗 ====================
 
 const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity, onClose, onSuccess }) => {
   const { success, error: showError } = useAppNotification();
-  const [content, setContent] = useState<WarmUpContent>({ config: [], values: {}, data: {} });
+  const [content, setContent] = useState<WarmUpContent>({ config: [], values: {}, data: {}, pageId: '' });
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('config');
   /** 完整 JSON 对象（保留 config 定义与未知键，保存时只更新 values/data） */
@@ -271,6 +432,15 @@ const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity
   const configFormKey = `${activity?.id || 'none'}:${nonDataFields.map((f) => f.id).join('|')}`;
 
   const tabItems = [
+    {
+      key: 'audit',
+      label: '动态审核',
+      children: content.pageId ? (
+        <SubmissionAuditPanel key={content.pageId} pageId={content.pageId} />
+      ) : (
+        <Empty description="尚未配置页面ID，请先在活动编辑的「预热」区块填写页面ID" />
+      ),
+    },
     {
       key: 'config',
       label: '配置管理',

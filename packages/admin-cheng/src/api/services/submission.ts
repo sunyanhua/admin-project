@@ -69,6 +69,7 @@ export interface Submission {
   approved_at?: string;
   delete_files: boolean;
   type?: number;
+  display_channel?: string; // 展示渠道（前端自主控制的渠道名，服务端透明存储；null/缺省=未指定渠道）
   created_at?: string;
   user_data?: SubmissionUserData;
   user_profile?: SubmissionUserProfile;
@@ -88,7 +89,7 @@ export interface UpdateSortOrderRequest {
 
 export const submissionApi = {
   /** 投稿列表 */
-  getList: (params?: { page?: number; size?: number; status?: number; keyword?: string }) => {
+  getList: (params?: { page?: number; size?: number; status?: number; keyword?: string; display_channel?: string }) => {
     return request.get('/admin/v1/bizops/submission', { params });
   },
 
