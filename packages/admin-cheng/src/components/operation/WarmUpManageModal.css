@@ -1,0 +1,17 @@
+/* ====== 预热管理弹窗局部样式 ====== */
+
+/* 动态审核：搜索区与列表之间的间距 */
+.warm-up-submission-audit .ant-table-wrapper {
+  margin-top: 12px;
+}
+
+/* 动态审核列表表头：淡灰色、无圆角 */
+.warm-up-submission-audit .ant-table-thead > tr > th {
+  background: #f5f5f5;
+}
+
+/* 新版 antd 表头背景由 ::before 伪元素绘制，一并去掉圆角 */
+.warm-up-submission-audit .ant-table-thead > tr > th::before {
+  background: #f5f5f5;
+  border-radius: 0;
+}

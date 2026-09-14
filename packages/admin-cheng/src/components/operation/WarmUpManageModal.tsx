@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Avatar, Button, Empty, Form, Image, Space, Table, Tabs, Tag } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
+import './WarmUpManageModal.css';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity } from '@/api/services/activity-v1';
 import { submissionApi, Submission } from '@/api/services/submission';
 import {
   SubmissionAuditStatus, SubmissionAuditStatusLabels, SubmissionAuditStatusColors,
-  submissionTypeLabel, SubmissionTypeColors,
 } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { useListPage } from '@/hooks/useListPage';
@@ -263,7 +263,7 @@ const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) =
 
   const columns: ColumnsType<Submission> = [
     {
-      title: '投稿人',
+      title: '发帖人',
       key: 'user',
       width: 160,
       render: (_: any, r: Submission) => {
@@ -285,16 +285,10 @@ const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) =
       title: '内容',
       dataIndex: 'content',
       key: 'content',
-      render: (text: string, r: Submission) => {
-        const typeTag = r.type != null ? (
-          <Tag color={SubmissionTypeColors[r.type] || 'default'} style={{ marginRight: 4 }}>
-            {submissionTypeLabel(r.type)}
-          </Tag>
-        ) : null;
-        if (!text) return typeTag || <span style={{ color: '#999' }}>-</span>;
+      render: (text: string) => {
+        if (!text) return <span style={{ color: '#999' }}>-</span>;
         return (
           <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-            {typeTag}
             {text.length > 120 ? `${text.slice(0, 120)}...` : text}
           </span>
         );
@@ -337,14 +331,17 @@ const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) =
 
   return (
     <div>
-      <SearchPanel
-        filters={submissionFilters}
-        values={searchValues}
-        onChange={(name, value) => setSearchValues((prev) => ({ ...prev, [name]: value }))}
-        onSearch={(vals) => search(vals)}
-        onReset={() => { setSearchValues({}); search({}); }}
-      />
-      <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <SearchPanel
+          filters={submissionFilters}
+          values={searchValues}
+          onChange={(name, value) => setSearchValues((prev) => ({ ...prev, [name]: value }))}
+          onSearch={(vals) => search(vals)}
+          onReset={() => { setSearchValues({}); search({}); }}
+        />
+        <Button icon={<ReloadOutlined />} onClick={refresh} style={{ marginLeft: 12, flexShrink: 0 }}>刷新</Button>
+      </div>
+      <StandardTable className="warm-up-submission-audit" columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
 
       <SubmissionAuditModal
         visible={auditModalVisible}

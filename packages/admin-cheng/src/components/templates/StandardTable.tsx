@@ -12,6 +12,8 @@ export interface StandardTableProps<T = any> {
   onPageChange?: (page: number, pageSize: number) => void;
   rowKey?: string | ((record: T) => string);
   scroll?: { x?: number | string; y?: number | string };
+  /** 外层容器 className（用于局部样式定制） */
+  className?: string;
 }
 
 export const StandardTable: React.FC<StandardTableProps> = ({
@@ -22,6 +24,7 @@ export const StandardTable: React.FC<StandardTableProps> = ({
   onPageChange,
   rowKey = 'id',
   scroll,
+  className,
 }) => {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
@@ -33,7 +36,7 @@ export const StandardTable: React.FC<StandardTableProps> = ({
   };
 
   return (
-    <div>
+    <div className={className}>
       <Table
         columns={columns}
         dataSource={dataSource}
