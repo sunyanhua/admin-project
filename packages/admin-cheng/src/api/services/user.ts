@@ -81,4 +81,12 @@ export const userApi = {
   updateUserStatus: (id: string | number, status: number) => {
     return request.patch(`/admin/v1/bizops/user/${id}/status`, { status });
   },
+
+  /**
+   * 话题数据单项修改 — PATCH /admin/v1/bizops/user/:id/topic-data/:topic_key
+   * score_1..score_9 仅增减（含 score 时 reason 必填），UPSERT 自动建行
+   */
+  patchTopicData: (userId: string, topicKey: string, data: { score_1?: number; reason?: string }) => {
+    return request.patch(`/admin/v1/bizops/user/${userId}/topic-data/${topicKey}`, data);
+  },
 };

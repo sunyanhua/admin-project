@@ -346,6 +346,7 @@ const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) =
       <SubmissionAuditModal
         visible={auditModalVisible}
         record={auditRecord}
+        pointsTopicKey={pageId}
         onClose={() => { setAuditModalVisible(false); setAuditRecord(null); }}
         onSuccess={refresh}
       />

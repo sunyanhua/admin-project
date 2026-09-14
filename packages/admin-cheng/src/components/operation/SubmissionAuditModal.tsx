@@ -1,48 +1,54 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Radio, DatePicker, Avatar, Image, Input, InputNumber, Tag } from 'antd';
+import { Button, Space, Radio, Avatar, Image, Input, InputNumber } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { SubmissionAuditStatus, submissionTypeLabel, SubmissionTypeColors } from '@shared/constants';
+import { SubmissionAuditStatus } from '@shared/constants';
 import { getAvatarUrl } from '@/utils/imageUtils';
 import { submissionApi, Submission } from '@/api/services/submission';
+import { userApi } from '@/api/services/user';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import { Dayjs } from 'dayjs';
-import { safeDayjs, dayjsToApi, parseApiTime } from '@/utils/format';
 
 interface SubmissionAuditModalProps {
   visible: boolean;
   record: Submission | null;
   onClose: () => void;
   onSuccess: () => void;
+  /**
+   * 奖励积分对应的话题键（动态审核场景：活动预热ID）。
+   * 传值时显示「奖励积分」输入，且审核通过后额外调用 topic-data 接口给用户加积分；
+   * 缺省（如广播投稿页）不显示积分、不加积分。
+   */
+  pointsTopicKey?: string;
 }
 
 const FILE_TYPE_LABELS: Record<number, string> = { 1: '图片', 2: '音频', 3: '视频' };
 
 const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
-  visible, record, onClose, onSuccess,
+  visible, record, onClose, onSuccess, pointsTopicKey,
 }) => {
   const { success, error: showError } = useAppNotification();
   const [submitting, setSubmitting] = useState(false);
   const [action, setAction] = useState<number>(SubmissionAuditStatus.APPROVED);
   const [reason, setReason] = useState('');
-  const [approvedAt, setApprovedAt] = useState<Dayjs | null>(null);
   const [rewardCoins, setRewardCoins] = useState<number | null>(null);
+  const [rewardPoints, setRewardPoints] = useState<number | null>(null);
 
   const isApproved = record?.audit_status === SubmissionAuditStatus.APPROVED;
-  // 已通过 → 状态锁定为通过，只能改播出日期
+  // 已通过 → 状态锁定为通过
   const actionLocked = isApproved;
 
   useEffect(() => {
     if (!visible || !record) return;
     if (record.audit_status === SubmissionAuditStatus.APPROVED) {
       setAction(SubmissionAuditStatus.APPROVED);
-      setApprovedAt(parseApiTime(record.approved_at) || null);
-      setRewardCoins(record.reward_coins ?? 20);
+      setRewardCoins(record.reward_coins ?? record.type ?? 20);
     } else {
       setAction(SubmissionAuditStatus.APPROVED);
-      setApprovedAt(null);
-      setRewardCoins(20);
+      // 奖励金币/奖励积分默认使用这条数据的 type 值，可修改
+      setRewardCoins(record.type ?? 20);
     }
-    setReason(record.audit_reason || '');
+    setRewardPoints(record.type ?? 20);
+    // 拒绝原因默认为「内容不合格」
+    setReason(record.audit_reason || '内容不合格');
   }, [visible, record]);
 
   if (!record) return null;
@@ -60,6 +66,10 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
       showError('请填写奖励金币');
       return;
     }
+    if (action === SubmissionAuditStatus.APPROVED && pointsTopicKey && (rewardPoints == null || rewardPoints < 0)) {
+      showError('请填写奖励积分');
+      return;
+    }
     try {
       setSubmitting(true);
       const statusChanged = action !== record.audit_status;
@@ -71,9 +81,12 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
           reward_coins: action === SubmissionAuditStatus.APPROVED ? (rewardCoins ?? 0) : undefined,
         });
       }
-      // 通过状态（含本次审核通过后）→ 播出日期单独走 approved-at 接口
-      if (action === SubmissionAuditStatus.APPROVED) {
-        await submissionApi.updateApprovedAt(record.id, approvedAt ? (dayjsToApi(approvedAt) ?? null) : null);
+      // 审核通过后额外给用户加积分（动态审核场景：topic_key=活动预热ID，score_1=奖励积分）
+      if (statusChanged && action === SubmissionAuditStatus.APPROVED && pointsTopicKey) {
+        await userApi.patchTopicData(record.user_id, pointsTopicKey, {
+          score_1: rewardPoints ?? 0,
+          reason: '动态审核通过',
+        });
       }
       success('保存成功');
       onClose();
@@ -109,11 +122,6 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
       {/* 内容 */}
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>内容</div>
       <div style={{ marginBottom: 16, padding: 12, background: '#fafafa', borderRadius: 8, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13 }}>
-        {record.type != null && (
-          <Tag color={SubmissionTypeColors[record.type] || 'default'} style={{ marginBottom: 8 }}>
-            {submissionTypeLabel(record.type)}
-          </Tag>
-        )}
         {record.content || <span style={{ color: '#999' }}>-</span>}
       </div>
 
@@ -166,16 +174,20 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
                 placeholder="请输入奖励金币数量"
               />
             </div>
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ marginBottom: 4, color: '#666', fontSize: 13 }}>播出日期（选填）</div>
-              <DatePicker
-                value={approvedAt}
-                onChange={d => setApprovedAt(d)}
-                format="YYYY/MM/DD"
-                style={{ width: 200 }}
-                placeholder="请选择播出日期"
-              />
-            </div>
+            {pointsTopicKey && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ marginBottom: 4, color: '#666', fontSize: 13 }}>奖励积分（必填，审核通过后计入用户话题数据）</div>
+                <InputNumber
+                  min={0}
+                  precision={0}
+                  value={rewardPoints}
+                  disabled={actionLocked}
+                  onChange={v => setRewardPoints(v)}
+                  style={{ width: 200 }}
+                  placeholder="请输入奖励积分值"
+                />
+              </div>
+            )}
           </>
         )}
 
