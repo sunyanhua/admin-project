@@ -6646,7 +6646,7 @@
         },
         "/admin/v1/bizops/submission/{id}/audit": {
             "post": {
-                "description": "管理后台对投稿执行审核操作（通过/拒绝），通过时可发放金币奖励",
+                "description": "管理后台对投稿执行审核操作（通过/拒绝），通过时可发放金币奖励；push_message=false 静默审核（不推送消息、不计红点，业务流转照常）",
                 "consumes": [
                     "application/json"
                 ],
@@ -15080,6 +15080,65 @@
                 }
             }
         },
+        "/api/v1/wxa/activity/{id}/onsite-users/{userid}": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "按 user id 读取本活动现场单个用户（需 C 端 JWT，查看者须入选+签到，否则 40512）。\n条目与现场用户列表完全同构（脱单档案卡片+现场编号+签到时间+心动次数）；\n目标不在现场名单（未入选/未签到/资料缺失）→ 40514。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "现场用户详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "目标用户 ID（UUID）",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteUserItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/activity/{id}/register": {
             "post": {
                 "security": [
@@ -21293,6 +21352,10 @@
                 "activity_id": {
                     "type": "string"
                 },
+                "approved_at": {
+                    "description": "ApprovedAt 审核通过时间（自动通过=创建时间，后台通过=通过时刻；未入选为 null）——\n与管理端 RegisterAdminResponse 同口径（2026-09-14 老大需求：C 端补齐）。",
+                    "type": "string"
+                },
                 "attachments": {
                     "type": "array",
                     "items": {
@@ -26374,6 +26437,10 @@
                     ]
                 },
                 "delete_files": {
+                    "type": "boolean"
+                },
+                "push_message": {
+                    "description": "PushMessage 是否推送消息（**缺省/null = true 推送**；*bool 指针——bool 零值 false\n会被误读为「不推送」，无法表达默认 true）。\nfalse = 静默审核：不写站内明细、不增加红点计数、不发订阅消息；\n审核业务流转（状态/驳回原因/金币奖励/文件删除）不受影响。",
                     "type": "boolean"
                 },
                 "reason": {
