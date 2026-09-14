@@ -7924,6 +7924,72 @@
                 }
             }
         },
+        "/admin/v1/bizops/user/{id}/topic-data/{topic_key}/score": {
+            "patch": {
+                "description": "仅对 score_1~9 做增减（delta，可负）；至少一个非零 + reason 必填；不触碰 data/filter/status；无行自动建行；返回更新后的行",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "话题数据管理"
+                ],
+                "summary": "score 增减",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID（uuid）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "话题键（1-64 字符，小写英文/数字/中横线/英文冒号）",
+                        "name": "topic_key",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "score 增减请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicScoreDeltaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "增减成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicDataItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001/40003）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/zone": {
             "get": {
                 "security": [
@@ -26936,6 +27002,47 @@
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_topic_data_model.AdminTopicScoreDeltaRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "description": "Reason 事由（必填非空 ≤200 字）。",
+                    "type": "string",
+                    "maxLength": 200
+                },
+                "score_1": {
+                    "description": "变化量（delta，可负）",
+                    "type": "integer"
+                },
+                "score_2": {
+                    "type": "integer"
+                },
+                "score_3": {
+                    "type": "integer"
+                },
+                "score_4": {
+                    "type": "integer"
+                },
+                "score_5": {
+                    "type": "integer"
+                },
+                "score_6": {
+                    "type": "integer"
+                },
+                "score_7": {
+                    "type": "integer"
+                },
+                "score_8": {
+                    "type": "integer"
+                },
+                "score_9": {
+                    "type": "integer"
                 }
             }
         },

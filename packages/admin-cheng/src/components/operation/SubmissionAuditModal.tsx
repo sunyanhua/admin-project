@@ -81,9 +81,9 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
           reward_coins: action === SubmissionAuditStatus.APPROVED ? (rewardCoins ?? 0) : undefined,
         });
       }
-      // 审核通过后额外给用户加积分（动态审核场景：topic_key=活动预热ID，score_1=奖励积分）
+      // 审核通过后额外给用户加积分（动态审核场景：topic_key=活动预热ID，score_1=奖励积分，delta 增减）
       if (statusChanged && action === SubmissionAuditStatus.APPROVED && pointsTopicKey) {
-        await userApi.patchTopicData(record.user_id, pointsTopicKey, {
+        await userApi.adjustTopicDataScore(record.user_id, pointsTopicKey, {
           score_1: rewardPoints ?? 0,
           reason: '动态审核通过',
         });

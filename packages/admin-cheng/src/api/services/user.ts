@@ -83,10 +83,10 @@ export const userApi = {
   },
 
   /**
-   * 话题数据单项修改 — PATCH /admin/v1/bizops/user/:id/topic-data/:topic_key
-   * score_1..score_9 仅增减（含 score 时 reason 必填），UPSERT 自动建行
+   * 话题数据 score 增减 — PATCH /admin/v1/bizops/user/:id/topic-data/:topic_key/score
+   * score_1..score_9 为变化量（delta，可负）；至少一个非零 + reason 必填；无行自动建行
    */
-  patchTopicData: (userId: string, topicKey: string, data: { score_1?: number; reason?: string }) => {
-    return request.patch(`/admin/v1/bizops/user/${userId}/topic-data/${topicKey}`, data);
+  adjustTopicDataScore: (userId: string, topicKey: string, data: { score_1?: number; reason: string }) => {
+    return request.patch(`/admin/v1/bizops/user/${userId}/topic-data/${topicKey}/score`, data);
   },
 };
