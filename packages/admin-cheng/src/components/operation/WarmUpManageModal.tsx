@@ -708,6 +708,32 @@ const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity
 
   const tabItems = [
     {
+      key: 'config',
+      label: '配置管理',
+      children: (
+        <ConfigFormPanel
+          formKey={configFormKey}
+          fields={nonDataFields}
+          values={content.values}
+          saving={saving}
+          onSave={handleConfigSave}
+        />
+      ),
+    },
+    ...dataFields.map((f) => ({
+      key: `data:${f.id}`,
+      label: f.label || f.id,
+      children: (
+        <DataRecordPanel
+          field={f}
+          records={content.data[f.id] ?? []}
+          saving={saving}
+          onAdd={(vals) => handleAddRecord(f.id, vals)}
+          onDelete={(idx) => handleDeleteRecord(f.id, idx)}
+        />
+      ),
+    })),
+    {
       key: 'audit',
       label: '动态审核',
       children: content.pageId ? (
@@ -739,32 +765,6 @@ const WarmUpManageModal: React.FC<WarmUpManageModalProps> = ({ visible, activity
         <Empty description="尚未配置页面ID，请先在活动编辑的「预热」区块填写页面ID" />
       ),
     },
-    {
-      key: 'config',
-      label: '配置管理',
-      children: (
-        <ConfigFormPanel
-          formKey={configFormKey}
-          fields={nonDataFields}
-          values={content.values}
-          saving={saving}
-          onSave={handleConfigSave}
-        />
-      ),
-    },
-    ...dataFields.map((f) => ({
-      key: `data:${f.id}`,
-      label: f.label || f.id,
-      children: (
-        <DataRecordPanel
-          field={f}
-          records={content.data[f.id] ?? []}
-          saving={saving}
-          onAdd={(vals) => handleAddRecord(f.id, vals)}
-          onDelete={(idx) => handleDeleteRecord(f.id, idx)}
-        />
-      ),
-    })),
   ];
 
   return (
