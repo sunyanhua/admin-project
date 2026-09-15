@@ -123,6 +123,15 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSou
             </Space>
           </div>
           <Divider style={{ margin: '16px 0' }} />
+          {h5Page && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>H5地址：</label>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                <span style={{ wordBreak: 'break-all', flex: 1 }}>{h5Page}</span>
+                <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(h5Page); success('复制成功'); }} />
+              </div>
+            </div>
+          )}
           {showSource && (
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>来源渠道：</label>
@@ -146,15 +155,6 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSou
                 <span>{pagePath}</span>
                 <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(pagePath); success('复制成功'); }} />
               </Space>
-            </div>
-          )}
-          {h5Page && (
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>H5地址：</label>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
-                <span style={{ wordBreak: 'break-all', flex: 1 }}>{h5Page}</span>
-                <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(h5Page); success('复制成功'); }} />
-              </div>
             </div>
           )}
           {showShortlink && shortLink && (
