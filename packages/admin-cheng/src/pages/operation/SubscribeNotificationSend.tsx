@@ -156,7 +156,7 @@ const SubscribeNotificationSend: React.FC = () => {
                     {/* 第四行：小程序来源 */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Space size={8}>
-                        <img src={logoNotification} alt="他俩能成" style={{ width: 24, height: 'auto' }} />
+                        <img src={logoNotification} alt="他俩能成" style={{ width: 20, height: 'auto' }} />
                         <span style={{ fontSize: 15, color: 'rgba(0,0,0,.65)' }}>他俩能成</span>
                       </Space>
                       <Space size={4}>
