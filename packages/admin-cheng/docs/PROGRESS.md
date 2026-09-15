@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-09-13**
+**2026-09-15**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-15 | 预热管理新增「动态审核」（按预热页面ID渠道拉投稿审核，通过后加积分走 score 专用接口）「积分记录」「积分排行」（score_1 排行+报名状态+正常/屏蔽开关）TAB；审核投稿弹窗改造（去类别胶囊/播出日期、奖励金币与积分默认 type 值、拒绝原因默认、通过后 topic-data score_1 加积分）；现场大屏（签到心形照片墙/中央聚焦胶片双布局、交叉渐变、男女交错、演示模式按 0、Z 切布局）；脱单资料导出（16 列，含能成ID/是否实名/脱敏身份证号，Shift+1 显示导出按钮）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | WarmUpManageModal + SubmissionAuditModal + ActivityOnsite + MatchProfileManagement + activity-v1/user/submission 服务 + router | 69ae9ed、a75e390、5a2cb89、92dab22、624b978、a2dcf4c、5681847、d890dba、f3e38bc、b8f9eea、0f0a215、0fa87e7、3c32ff3、4d629ed、62d8591、619e9c2、bafacc7、cf42a83、57a7032、bdf9847、6674aaf、33795d1（构建产物未提交） |
 | 2026-09-13 | 报名名单列统一（详情列按需显示/审核模式「入选」直接通过并去审核状态列、序号列在操作列后）、开启签到的活动加「排序」一键分配现场编号（assign-numbers）与只读序号列（单条修改序号接口后端未提供）、预热区块新增「页面ID」字段写入 warm_up_config page_id 键；**测试版构建发布**（build:zone-test 合并产物：主后台 + 专区管理后台，待上传测试服务器 /cheng/ 目录） | activity-v1 + ActivityRegisterModal + ActivityManagement + ActivityEditModal | d9efaa6、bbea516、c3ffd83、83dfc9b、6636ca8、6aeee63（构建产物未提交） |
 | 2026-09-12 | 活动管理接入现场签到与预热（swagger 2026-09-11 更新 5 字段）；预热配置字段式编辑（id 手填、类型含编辑器/视频/数据、数据可嵌套一层、二级字段自动 id、新字段默认必填）；预热管理弹窗（配置管理 TAB 统一赋值 + 数据字段多 TAB 记录增删、记录随机唯一 id、图片/视频上传表单内预览）；专区模式隐藏签到预热与权重管理；**测试版构建发布**（build:zone-test 合并产物：主后台 + 专区管理后台，待上传测试服务器 /cheng/ 目录） | activity-v1 + ActivityEditModal + WarmUpConfigEditor + WarmUpManageModal + warmUpFieldControls + FormConfigEditor + ActivityManagement + ImageUpload | a310378、83ff36d、908330d、8b8370d、5845ada、daf34b9、1f8a299、17733ed、b6ab862、5829fd7、ff799ec、0780db9、cec0ff6、756e6a7、e75669f、6686ae1（构建产物未提交） |
 | 2026-09-10 | 专区活动发布/专区首页新增查看小程序码（SourceQrcodeModal 支持 showSource/showShortlink 关闭来源渠道与短链）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | SourceQrcodeModal + ZoneActivities + ZoneInfo | 685a5a7（构建产物未提交） |
