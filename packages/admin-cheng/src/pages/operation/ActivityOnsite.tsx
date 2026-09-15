@@ -533,8 +533,10 @@ const ActivityOnsite: React.FC = () => {
                     <div style={{ height: '36vh', lineHeight: '36vh' }}>
                       {fPhoto ? <img src={fPhoto} alt="" style={{ maxWidth: '100%', maxHeight: '100%', verticalAlign: 'middle', borderRadius: '1.3vh' }} /> : null}
                     </div>
-                    <div style={{ lineHeight: '4.5vh', fontSize: '3.2vh', color: '#ffd8cc', marginTop: '1vh', fontWeight: 'bold' }}>
-                      {f?.onsite_number ?? '-'} - {f?.profile?.nickname || '-'}
+                    <div style={{ marginTop: '1vh', textAlign: 'center' }}>
+                      <span style={{ display: 'inline-block', lineHeight: '4.5vh', fontSize: '3.2vh', color: '#fff', fontWeight: 'bold', background: 'rgba(0,0,0,.5)', borderRadius: '1vh', padding: '0 1.5vw' }}>
+                        {f?.onsite_number ?? '-'} - {f?.profile?.nickname || '-'}
+                      </span>
                     </div>
                   </div>
                   {/* 心形计数 */}
@@ -551,8 +553,10 @@ const ActivityOnsite: React.FC = () => {
                     <div style={{ height: '36vh', lineHeight: '36vh' }}>
                       {mPhoto ? <img src={mPhoto} alt="" style={{ maxWidth: '100%', maxHeight: '100%', verticalAlign: 'middle', borderRadius: '1.3vh' }} /> : null}
                     </div>
-                    <div style={{ lineHeight: '4.5vh', fontSize: '3.2vh', color: '#ffd8cc', marginTop: '1vh', fontWeight: 'bold' }}>
-                      {m?.onsite_number ?? '-'} - {m?.profile?.nickname || '-'}
+                    <div style={{ marginTop: '1vh', textAlign: 'center' }}>
+                      <span style={{ display: 'inline-block', lineHeight: '4.5vh', fontSize: '3.2vh', color: '#fff', fontWeight: 'bold', background: 'rgba(0,0,0,.5)', borderRadius: '1vh', padding: '0 1.5vw' }}>
+                        {m?.onsite_number ?? '-'} - {m?.profile?.nickname || '-'}
+                      </span>
                     </div>
                   </div>
                 </div>
