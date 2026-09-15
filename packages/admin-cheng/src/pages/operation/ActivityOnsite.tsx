@@ -90,6 +90,8 @@ const ActivityOnsite: React.FC = () => {
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
   const [focusIdx, setFocusIdx] = useState(0);
   const [demo, setDemo] = useState(false);
+  /** 照片墙布局：heart=心形（默认） spotlight=中央聚焦+底部胶片 */
+  const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
   const demoRef = useRef(false);
   /** 照片墙容器（钳制照片位置时测量用） */
   const wallRef = useRef<HTMLDivElement>(null);
@@ -308,13 +310,14 @@ const ActivityOnsite: React.FC = () => {
     return () => clearTimeout(t);
   }, [tab, wall, clampWall]);
 
-  // 键盘切换：0 演示模式 / 1 嘉宾一览 / 2 匹配嘉宾
+  // 键盘切换：0 演示模式 / 1 嘉宾一览 / 2 匹配嘉宾 / z 照片墙布局
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.key === '0') toggleDemo();
       else if (e.key === '1') setTab('list');
       else if (e.key === '2') setTab('feeling');
+      else if (e.key === 'z' || e.key === 'Z') setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'));
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
@@ -346,7 +349,7 @@ const ActivityOnsite: React.FC = () => {
 
       {/* 右下角操作提示 */}
       <div style={{ position: 'absolute', bottom: 16, right: 18, zIndex: 5, color: 'rgba(255,255,255,.35)', fontSize: 12 }}>
-        键盘 1/2 切换 · 0 演示模式
+        键盘 1/2 切换 · 0 演示模式 · Z 布局切换
       </div>
 
       {/* 内容区 */}
@@ -354,6 +357,34 @@ const ActivityOnsite: React.FC = () => {
         {tab === 'list' ? (
           wallItems.length === 0 ? (
             <div style={{ paddingTop: '30vh', textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无签到嘉宾</div>
+          ) : wallMode === 'spotlight' ? (
+            /* 方案1：中央聚焦 + 底部胶片（按 Z 切换） */
+            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {/* 中央聚焦嘉宾（自动轮播，点击底部胶片可跳转） */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingTop: '2vh' }}>
+                {(() => {
+                  const cur = wall[focusIdx % wall.length];
+                  if (!cur) return null;
+                  return (
+                    <div style={{ textAlign: 'center', height: '64vh', position: 'relative' }}>
+                      <img src={cur.photo} alt={cur.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
+                      <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
+                        {cur.number || '-'} - {cur.nick}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+              {/* 底部胶片条 */}
+              <div style={{ height: '20vh', display: 'flex', gap: 10, alignItems: 'center', overflowX: 'auto', padding: '1.5vh 2vw', flexShrink: 0 }}>
+                {wall.map((p, i) => (
+                  <div key={`film-${p.userId}-${p.number}`} onClick={() => setFocusIdx(i)} style={{ flexShrink: 0, height: '15vh', position: 'relative', cursor: 'pointer' }}>
+                    <img src={p.photo} alt={p.nick} style={{ height: '100%', borderRadius: 6, border: i === focusIdx % wall.length ? '3px solid #e04d2c' : '2px solid rgba(255,255,255,.5)', objectFit: 'cover', display: 'block' }} />
+                    <span className={`onsite-number gender-${p.gender}`} style={{ fontSize: '0.9vw', minWidth: '1.9vw', height: '1.9vw' }}>{p.number || '-'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <div ref={wallRef} style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
               {wallItems.map((p, i) => (
