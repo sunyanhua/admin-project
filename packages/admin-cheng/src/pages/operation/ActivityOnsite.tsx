@@ -431,13 +431,15 @@ const ActivityOnsite: React.FC = () => {
             <button onClick={() => setBgMode('cover')} style={bgMode === 'cover' ? toolBtnActive : toolBtn}>等比铺满</button>
             <button onClick={() => setBgMode('stretch')} style={bgMode === 'stretch' ? toolBtnActive : toolBtn}>全屏铺满</button>
           </div>
-          {/* 界面切换 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ marginRight: 4 }}>界面切换</span>
-            <button onClick={() => setTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示</button>
-            <button onClick={() => setTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名</button>
-            <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式</button>
-            <button onClick={() => setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'))} style={wallMode === 'spotlight' ? toolBtnActive : toolBtn}>展示切换</button>
+          {/* 界面切换（按钮注明快捷键，两行每行两个；展示切换为纯切换无高亮态） */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 6 }}>
+              <button onClick={() => setTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示(1)</button>
+              <button onClick={() => setTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名(2)</button>
+              <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
+              <button onClick={() => setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'))} style={toolBtn}>展示切换(z)</button>
+            </div>
           </div>
         </div>
       </div>
