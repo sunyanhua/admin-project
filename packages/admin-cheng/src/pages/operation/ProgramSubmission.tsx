@@ -46,6 +46,8 @@ const ProgramSubmission = () => {
       size: params.page_size,
       status: params.status,
       keyword: params.keyword,
+      // 广播投稿页只查看「broadcast」渠道的投稿
+      display_channel: 'broadcast',
     });
   }, []);
 
