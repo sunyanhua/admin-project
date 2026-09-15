@@ -89,6 +89,12 @@ const ActivityOnsite: React.FC = () => {
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
   const [focusIdx, setFocusIdx] = useState(0);
+  /** 胶片模式：当前展示的聚焦嘉宾（渐入渐出用） */
+  const [shown, setShown] = useState<WallUser | null>(null);
+  const [fading, setFading] = useState(false);
+  /** 胶片条水平位移（当前聚焦项居中） */
+  const [stripShift, setStripShift] = useState(0);
+  const stripRef = useRef<HTMLDivElement>(null);
   const [demo, setDemo] = useState(false);
   /** 照片墙布局：heart=心形（默认） spotlight=中央聚焦+底部胶片 */
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
@@ -310,6 +316,36 @@ const ActivityOnsite: React.FC = () => {
     return () => clearTimeout(t);
   }, [tab, wall, clampWall]);
 
+  // 胶片模式：聚焦图渐出 → 换图 → 渐入
+  useEffect(() => {
+    if (wallMode !== 'spotlight' || !wall.length) return;
+    const cur = wall[focusIdx % wall.length];
+    if (!cur) return;
+    setFading(true); // 淡出旧图
+    const t = setTimeout(() => {
+      setShown(cur);
+      setFading(false); // 淡入新图
+    }, 350);
+    return () => clearTimeout(t);
+  }, [focusIdx, wallMode, wall]);
+
+  // 胶片模式：列表平移使当前聚焦项居中（图片加载完成后需重新测量，onLoad 补触发）
+  const centerStrip = useCallback(() => {
+    if (wallMode !== 'spotlight') return;
+    const track = stripRef.current;
+    if (!track || !wall.length) return;
+    const active = track.querySelector<HTMLElement>(`[data-film-index="${focusIdx % wall.length}"]`);
+    if (!active) return;
+    const viewW = track.clientWidth;
+    const aL = active.offsetLeft;
+    const aW = active.offsetWidth;
+    setStripShift(viewW / 2 - (aL + aW / 2));
+  }, [wallMode, focusIdx, wall]);
+
+  useEffect(() => {
+    centerStrip();
+  }, [centerStrip]);
+
   // 键盘切换：0 演示模式 / 1 嘉宾一览 / 2 匹配嘉宾 / z 照片墙布局
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
@@ -347,11 +383,6 @@ const ActivityOnsite: React.FC = () => {
         </div>
       </div>
 
-      {/* 右下角操作提示 */}
-      <div style={{ position: 'absolute', bottom: 16, right: 18, zIndex: 5, color: 'rgba(255,255,255,.35)', fontSize: 12 }}>
-        键盘 1/2 切换 · 0 演示模式 · Z 布局切换
-      </div>
-
       {/* 内容区 */}
       <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
         {tab === 'list' ? (
@@ -360,29 +391,27 @@ const ActivityOnsite: React.FC = () => {
           ) : wallMode === 'spotlight' ? (
             /* 方案1：中央聚焦 + 底部胶片（按 Z 切换） */
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              {/* 中央聚焦嘉宾（自动轮播，点击底部胶片可跳转） */}
+              {/* 中央聚焦嘉宾：渐出换图后渐入 */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingTop: '2vh' }}>
-                {(() => {
-                  const cur = wall[focusIdx % wall.length];
-                  if (!cur) return null;
-                  return (
-                    <div style={{ textAlign: 'center', height: '64vh', position: 'relative' }}>
-                      <img src={cur.photo} alt={cur.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
-                      <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
-                        {cur.number || '-'} - {cur.nick}
-                      </div>
+                {shown && (
+                  <div style={{ textAlign: 'center', height: '64vh', position: 'relative', opacity: fading ? 0 : 1, transition: 'opacity .35s ease' }}>
+                    <img src={shown.photo} alt={shown.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
+                    <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
+                      {shown.number || '-'} - {shown.nick}
                     </div>
-                  );
-                })()}
-              </div>
-              {/* 底部胶片条 */}
-              <div style={{ height: '20vh', display: 'flex', gap: 10, alignItems: 'center', overflowX: 'auto', padding: '1.5vh 2vw', flexShrink: 0 }}>
-                {wall.map((p, i) => (
-                  <div key={`film-${p.userId}-${p.number}`} onClick={() => setFocusIdx(i)} style={{ flexShrink: 0, height: '15vh', position: 'relative', cursor: 'pointer' }}>
-                    <img src={p.photo} alt={p.nick} style={{ height: '100%', borderRadius: 6, border: i === focusIdx % wall.length ? '3px solid #e04d2c' : '2px solid rgba(255,255,255,.5)', objectFit: 'cover', display: 'block' }} />
-                    <span className={`onsite-number gender-${p.gender}`} style={{ fontSize: '0.9vw', minWidth: '1.9vw', height: '1.9vw' }}>{p.number || '-'}</span>
                   </div>
-                ))}
+                )}
+              </div>
+              {/* 底部胶片条：平移使当前聚焦项居中，无滚动条 */}
+              <div ref={stripRef} style={{ height: '20vh', overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', height: '100%', padding: '1.5vh 2vw', width: 'max-content', transform: `translateX(${stripShift}px)`, transition: 'transform .6s ease' }}>
+                  {wall.map((p, i) => (
+                    <div key={`film-${p.userId}-${p.number}`} data-film-index={i} onClick={() => setFocusIdx(i)} style={{ flexShrink: 0, height: '15vh', position: 'relative', cursor: 'pointer' }}>
+                      <img src={p.photo} alt={p.nick} onLoad={centerStrip} style={{ height: '100%', borderRadius: 6, border: i === focusIdx % wall.length ? '3px solid #e04d2c' : '2px solid rgba(255,255,255,.5)', objectFit: 'cover', display: 'block' }} />
+                      <span className={`onsite-number gender-${p.gender}`} style={{ fontSize: '0.9vw', minWidth: '1.9vw', height: '1.9vw' }}>{p.number || '-'}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
