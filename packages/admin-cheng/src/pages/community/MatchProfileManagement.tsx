@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Tag, Avatar, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { EyeOutlined, ReloadOutlined, TrophyOutlined } from '@ant-design/icons';
+import { EyeOutlined, ReloadOutlined, TrophyOutlined, ExportOutlined } from '@ant-design/icons';
+import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useAuth } from '@/contexts/AuthContext';
 import { userApi } from '../../api/services/user';
@@ -13,8 +15,9 @@ import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import RealNameWithTag from '@/components/user/RealNameWithTag';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
-import { MatchProfileAuditStatus, UserVisibility, UserGenderLabels, MaritalStatusLabels } from '@/api/types/status';
+import { MatchProfileAuditStatus, UserVisibility, UserGenderLabels, MaritalStatusLabels, EducationLabels } from '@/api/types/status';
 import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
+import { formatDateTime } from '@/utils/format';
 import type { CommunityUserItem } from '@/api/types/user';
 import '@/styles/user-detail-modal.css';
 
@@ -53,6 +56,19 @@ const AUDIT_MAP: Record<number, { color: string; text: string }> = {
   [MatchProfileAuditStatus.REVOKED]: { color: 'default', text: '已撤销' },
 };
 
+/** 列表筛选参数组装（列表与导出共用，保证导出与搜索筛选口径一致） */
+function buildListParams(params: Record<string, any>) {
+  const displayFilter = params.display_status ? DISPLAY_STATUS_FILTERS[params.display_status] : undefined;
+  return {
+    page: params.page,
+    size: params.size,
+    keyword: params.keyword || undefined,
+    has_match_profile: true,
+    match_audit_status: params.audit_status != null ? params.audit_status : undefined,
+    ...displayFilter,
+  };
+}
+
 /** 显示状态 */
 function getDisplayStatus(mp: CommunityUserItem['match_profile']): { text: string; color: string } {
   if (!mp) return { text: '-', color: 'default' };
@@ -78,17 +94,13 @@ const MatchProfileManagement = () => {
   const [ranking, setRanking] = useState(false);
 
   const fetchUsers = useCallback(async (params: any) => {
-    const displayFilter = params.display_status
-      ? DISPLAY_STATUS_FILTERS[params.display_status]
-      : undefined;
-    return userApi.getUsers({
+    return userApi.getUsers(buildListParams({
       page: params.page,
       size: params.page_size || params.size,
-      keyword: params.keyword || undefined,
-      has_match_profile: true,
-      match_audit_status: params.audit_status != null ? params.audit_status : undefined,
-      ...displayFilter,
-    });
+      keyword: params.keyword,
+      audit_status: params.audit_status,
+      display_status: params.display_status,
+    }));
   }, []);
 
   const formatUserResponse = useCallback((res: any) => ({
@@ -104,6 +116,50 @@ const MatchProfileManagement = () => {
   const handleViewDetail = (record: CommunityUserItem) => {
     setDetailItem(record);
     setDetailModalOpen(true);
+  };
+
+  const [exporting, setExporting] = useState(false);
+
+  /** 导出脱单资料：按当前搜索筛选结果全量分页拉取后生成 Excel */
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const all: CommunityUserItem[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await userApi.getUsers(buildListParams({ page, size: 100, ...values }));
+        const list: CommunityUserItem[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        all.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      const headers = ['姓名', '手机号', '性别', '年龄', '星座', '职业', '学历', '民族', '户籍', '工作单位', '毕业学校', '注册时间', '最近活跃时间'];
+      const rows = all.map((r) => [
+        r.match_profile?.real_name || '',
+        r.user.phone || '',
+        UserGenderLabels[r.profile.gender] || '',
+        r.profile.age ?? '',
+        r.profile.zodiac || '',
+        r.match_profile?.profession || '',
+        r.match_profile?.education != null ? (EducationLabels[r.match_profile.education] || r.match_profile.education) : '',
+        r.match_profile?.ethnicity || '',
+        r.match_profile?.household_registration || '',
+        r.match_profile?.workplace || '',
+        r.match_profile?.graduate || '',
+        r.user.created_at ? formatDateTime(r.user.created_at) : '',
+        r.user.last_active_at ? formatDateTime(r.user.last_active_at) : '',
+      ]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '脱单资料');
+      XLSX.writeFile(wb, `脱单资料_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
+      success(`导出成功，共 ${all.length} 条`);
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '导出失败');
+    } finally {
+      setExporting(false);
+    }
   };
 
   // 执行排名结算（嗑学分周榜）
@@ -240,6 +296,7 @@ const MatchProfileManagement = () => {
             {isSuperAdmin && (
               <Button icon={<TrophyOutlined />} loading={ranking} onClick={handleRank}>排名</Button>
             )}
+            <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
             <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
           </>
         }
