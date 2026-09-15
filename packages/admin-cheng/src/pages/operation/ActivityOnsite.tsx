@@ -34,6 +34,20 @@ interface WallItem extends WallUser {
   size: number;
 }
 
+/** 男女按序号交错排列（男1、女1、男2、女2…），避免同性别聚在墙的一侧 */
+const interleaveGenders = (users: WallUser[]): WallUser[] => {
+  const males = users.filter((u) => u.gender === 'male').sort((a, b) => a.number - b.number);
+  const females = users.filter((u) => u.gender === 'female').sort((a, b) => a.number - b.number);
+  const others = users.filter((u) => u.gender !== 'male' && u.gender !== 'female');
+  const result: WallUser[] = [];
+  const n = Math.max(males.length, females.length);
+  for (let i = 0; i < n; i++) {
+    if (males[i]) result.push(males[i]);
+    if (females[i]) result.push(females[i]);
+  }
+  return [...result, ...others];
+};
+
 const buildWallItems = (photos: WallUser[]): WallItem[] => {
   const n = photos.length;
   const size = n <= 30 ? 16 : n <= 60 ? 13 : 10;
@@ -167,10 +181,11 @@ const ActivityOnsite: React.FC = () => {
         };
       });
       base.sort((a, b) => a.number - b.number);
-      setWall(base);
-      await upgradePhotos(base.map((u) => u.userId));
-      // 用拉取到的照片重建
-      setWall(base.map((u) => ({ ...u, photo: photoMapRef.current.get(u.userId) || u.photo })));
+      const ordered = interleaveGenders(base);
+      setWall(ordered);
+      await upgradePhotos(ordered.map((u) => u.userId));
+      // 用拉取到的照片重建（保持交错顺序）
+      setWall(ordered.map((u) => ({ ...u, photo: photoMapRef.current.get(u.userId) || u.photo })));
     } catch { /* 轮询静默 */ }
   }, [id, upgradePhotos]);
 
@@ -250,16 +265,15 @@ const ActivityOnsite: React.FC = () => {
           userId: `demo-${gender}-${i}`,
           photo: u?.match_profile?.photos?.[0] || u?.profile?.avatar || demoAvatar(offset + i, gender),
         }));
-      const demoWall: WallUser[] = [
-        ...toWall(females, 0, 'female'),
-        ...toWall(males, females.length, 'male'),
-      ];
+      const femaleWall = toWall(females, 0, 'female');
+      const maleWall = toWall(males, females.length, 'male');
+      const demoWall = interleaveGenders([...femaleWall, ...maleWall]);
       setWall(demoWall);
       // 演示配对：男女顺序两两配对，随机心形计数
       const demoCouples: OnsiteCouple[] = [];
-      for (let i = 0; i < females.length && i < males.length; i++) {
-        const f = demoWall[i];
-        const m = demoWall[females.length + i];
+      for (let i = 0; i < femaleWall.length && i < maleWall.length; i++) {
+        const f = femaleWall[i];
+        const m = maleWall[i];
         demoCouples.push({
           couple_id: `demo-couple-${i}`,
           female: { onsite_number: f.number, profile: { nickname: f.nick, avatar: f.photo }, user: { user_id: f.userId } },
