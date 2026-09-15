@@ -72,7 +72,6 @@ const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [tab, setTab] = useState<'list' | 'feeling'>('list');
   const [scale, setScale] = useState(1);
-  const [title, setTitle] = useState('');
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
   const [focusIdx, setFocusIdx] = useState(0);
@@ -160,7 +159,6 @@ const ActivityOnsite: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    activityApi.getDetail(id).then((res: any) => setTitle(res?.title || '')).catch(() => {});
     fetchWall();
     fetchCouples();
     // 大屏轮询：10s 刷新（新签到/新配对实时上屏）；演示模式下跳过，避免覆盖演示数据
@@ -255,13 +253,12 @@ const ActivityOnsite: React.FC = () => {
 
   return (
     <div style={{ height: '100vh', width: '100vw', background: 'linear-gradient(160deg,#2b0a3d 0%,#4a1030 45%,#7a1a2e 100%)', overflow: 'hidden', position: 'relative', fontFamily: 'inherit' }}>
-      {/* 顶部标题（居中独立一行） */}
-      <div style={{ position: 'absolute', top: 14, left: 0, right: 0, textAlign: 'center', zIndex: 5 }}>
-        <span style={{ color: '#fff', fontSize: 28, fontWeight: 700, letterSpacing: 2 }}>{title || '活动现场'}</span>
-        {demo && (
-          <span style={{ marginLeft: 12, padding: '2px 10px', borderRadius: 10, background: '#e04d2c', color: '#fff', fontSize: 13, verticalAlign: 'middle' }}>演示模式</span>
-        )}
-      </div>
+      {/* 演示模式徽章（仅演示时显示） */}
+      {demo && (
+        <div style={{ position: 'absolute', top: 14, left: 0, right: 0, textAlign: 'center', zIndex: 5 }}>
+          <span style={{ padding: '2px 10px', borderRadius: 10, background: '#e04d2c', color: '#fff', fontSize: 13 }}>演示模式</span>
+        </div>
+      )}
 
       {/* 右上角缩放工具：默认隐藏，鼠标移到右上角显示 */}
       <div className="onsite-tools">
