@@ -158,6 +158,27 @@ export interface RegisterMatchProfile {
   zone_id?: string;
 }
 
+// ========================
+// 现场配对（大屏）
+// ========================
+
+export interface OnsiteCoupleUser {
+  checkin_at?: string;
+  onsite_number?: number | null; // 现场活动编号（未分配为 null）
+  profile?: { age?: number; avatar?: string; gender?: number; nickname?: string; zodiac?: string };
+  user?: { user_id?: string };
+}
+
+export interface OnsiteCouple {
+  couple_id: string;
+  female?: OnsiteCoupleUser;
+  male?: OnsiteCoupleUser;
+  female_loves_count?: number; // 女士心动次数（女方发起）
+  male_loves_count?: number; // 男士心动次数（男方发起）
+  onsite_loves_count?: number; // 现场心动次数（双向合计，无现场心动为 0）
+  matching?: number; // 配对匹配度
+}
+
 export interface RegisterRecord {
   id: string;
   activity_id: string;
@@ -246,5 +267,10 @@ export const activityApi = {
   /** 现场编号一键分配（按性别各自 1..N，组内按审核通过时间正序；覆盖式幂等，新通过者追加组尾） */
   assignOnsiteNumbers: (activityId: string) => {
     return request.post(`/admin/v1/bizops/activity/${activityId}/register/assign-numbers`);
+  },
+
+  /** 现场配对信息列表（双方均为入选+签到人员的全部配对，按匹配度倒序） */
+  getOnsiteCouples: (activityId: string, params?: { page?: number; size?: number }) => {
+    return request.get(`/admin/v1/bizops/activity/${activityId}/onsite-couples`, { params });
   },
 };

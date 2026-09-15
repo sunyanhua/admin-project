@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
-import { EditOutlined, DeleteOutlined, FileTextOutlined, FireOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, FileTextOutlined, FireOutlined, MonitorOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
@@ -121,6 +121,12 @@ const ActivityManagement = () => {
   const handleOpenWarmUp = (record: Activity) => {
     setWarmUpActivity(record);
     setWarmUpVisible(true);
+  };
+
+  const handleOpenOnsite = (record: Activity) => {
+    // 新标签页打开现场大屏（全屏独立页，不带后台布局）
+    const base = window.location.href.split('#')[0];
+    window.open(`${base}#/activity-onsite/${record.id}`, '_blank');
   };
 
   const handleShowRegisters = (record: Activity) => {
@@ -252,10 +258,19 @@ const ActivityManagement = () => {
               删除
             </Button>
           </Space>
-          {r.warm_up_enabled && (
-            <Button type="link" size="small" icon={<FireOutlined />} onClick={() => handleOpenWarmUp(r)}>
-              预热
-            </Button>
+          {(r.checkin_enabled || r.warm_up_enabled) && (
+            <Space size="small">
+              {r.checkin_enabled && (
+                <Button type="link" size="small" icon={<MonitorOutlined />} onClick={() => handleOpenOnsite(r)}>
+                  现场
+                </Button>
+              )}
+              {r.warm_up_enabled && (
+                <Button type="link" size="small" icon={<FireOutlined />} onClick={() => handleOpenWarmUp(r)}>
+                  预热
+                </Button>
+              )}
+            </Space>
           )}
         </Space>
       ),

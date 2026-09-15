@@ -32,6 +32,8 @@ import ZoneManagement from '@/pages/operation/ZoneManagement';
 // 活动管理页面（v1）
 import ActivityManagement from '@/pages/operation/ActivityManagement';
 import EventRegisterList from '@/pages/events/EventRegisterList';
+// 活动现场大屏（签到照片墙 + 现场配对，全屏无后台布局）
+import ActivityOnsite from '@/pages/operation/ActivityOnsite';
 
 // 首页弹窗管理
 import HomePopupManagement from '@/pages/system/HomePopupManagement';
@@ -61,6 +63,15 @@ const ProtectedLayout = () => (
 
 const router = createHashRouter([
   { path: '/login', element: <Login /> },
+  // 活动现场大屏：全屏独立页（无后台布局，仅鉴权）
+  {
+    path: '/activity-onsite/:id',
+    element: (
+      <ProtectedRoute>
+        <ActivityOnsite />
+      </ProtectedRoute>
+    ),
+  },
   {
     path: '/',
     element: <ProtectedLayout />,
