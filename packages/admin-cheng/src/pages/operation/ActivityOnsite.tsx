@@ -99,6 +99,8 @@ const ActivityOnsite: React.FC = () => {
   const [demo, setDemo] = useState(false);
   /** 现场大屏背景图（活动 onsite_config.bg_screen，未配置用默认渐变） */
   const [bgScreen, setBgScreen] = useState('');
+  /** 背景模式：cover=等比铺满（不裁剪比例填满，裁掉溢出） stretch=全屏铺满（拉伸 100%×100%） */
+  const [bgMode, setBgMode] = useState<'cover' | 'stretch'>('cover');
   /** 照片墙布局：heart=心形（默认） spotlight=中央聚焦+底部胶片 */
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
   const demoRef = useRef(false);
@@ -385,6 +387,10 @@ const ActivityOnsite: React.FC = () => {
     setScale((prev) => Math.min(1.25, Math.max(0.2, Math.round((prev + delta) * 100) / 100)));
   };
 
+  /** 工作区按钮样式 */
+  const toolBtn: React.CSSProperties = { background: 'rgba(255,255,255,.15)', color: '#fff', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontSize: 12 };
+  const toolBtnActive: React.CSSProperties = { ...toolBtn, background: '#e04d2c' };
+
   const wallItems = buildWallItems(wall);
 
   return (
@@ -393,7 +399,9 @@ const ActivityOnsite: React.FC = () => {
         height: '100vh',
         width: '100vw',
         background: bgScreen
-          ? `linear-gradient(rgba(24,6,32,.5), rgba(24,6,32,.5)), url(${bgScreen}) center / cover no-repeat`
+          ? (bgMode === 'stretch'
+            ? `url(${bgScreen}) center / 100% 100% no-repeat`
+            : `url(${bgScreen}) center / cover no-repeat`)
           : 'linear-gradient(160deg,#2b0a3d 0%,#4a1030 45%,#7a1a2e 100%)',
         overflow: 'hidden',
         position: 'relative',
@@ -407,12 +415,30 @@ const ActivityOnsite: React.FC = () => {
         </div>
       )}
 
-      {/* 右上角缩放工具：默认隐藏，鼠标移到右上角显示 */}
+      {/* 右上角工作区：鼠标悬停显示，移走隐藏 */}
       <div className="onsite-tools">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <button onClick={() => applyScale(-0.05)} style={{ background: 'rgba(0,0,0,.5)', color: '#fff', border: 'none', borderRadius: 6, width: 34, height: 30, cursor: 'pointer' }}>－</button>
-          <span style={{ color: '#fff', minWidth: 52, textAlign: 'center', fontWeight: 'bold' }}>{Math.round(scale * 100)}%</span>
-          <button onClick={() => applyScale(0.05)} style={{ background: 'rgba(0,0,0,.5)', color: '#fff', border: 'none', borderRadius: 6, width: 34, height: 30, cursor: 'pointer' }}>＋</button>
+        <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 10, whiteSpace: 'nowrap' }}>
+          {/* 横向压缩 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ marginRight: 4 }}>横向压缩</span>
+            <button onClick={() => applyScale(-0.05)} style={toolBtn}>－</button>
+            <span style={{ minWidth: 46, textAlign: 'center', fontWeight: 'bold' }}>{Math.round(scale * 100)}%</span>
+            <button onClick={() => applyScale(0.05)} style={toolBtn}>＋</button>
+          </div>
+          {/* 背景模式 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ marginRight: 4 }}>背景模式</span>
+            <button onClick={() => setBgMode('cover')} style={bgMode === 'cover' ? toolBtnActive : toolBtn}>等比铺满</button>
+            <button onClick={() => setBgMode('stretch')} style={bgMode === 'stretch' ? toolBtnActive : toolBtn}>全屏铺满</button>
+          </div>
+          {/* 界面切换 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ marginRight: 4 }}>界面切换</span>
+            <button onClick={() => setTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示</button>
+            <button onClick={() => setTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名</button>
+            <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式</button>
+            <button onClick={() => setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'))} style={wallMode === 'spotlight' ? toolBtnActive : toolBtn}>展示切换</button>
+          </div>
         </div>
       </div>
 
@@ -528,7 +554,7 @@ const ActivityOnsite: React.FC = () => {
 
       {/* 照片墙样式（移植自旧系统 activscreen） */}
       <style>{`
-        .onsite-tools { position: fixed; top: 0; right: 0; width: 220px; height: 64px; z-index: 100; opacity: 0; transition: opacity .3s; display: flex; align-items: center; justify-content: flex-end; padding-right: 14px; }
+        .onsite-tools { position: fixed; top: 0; right: 0; width: 430px; height: 160px; z-index: 100; opacity: 0; transition: opacity .3s; display: flex; align-items: flex-start; justify-content: flex-end; padding: 10px 14px; }
         .onsite-tools:hover { opacity: 1; }
         .onsite-photo { position: absolute; transition: transform .5s, opacity .5s; opacity: .85; }
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
