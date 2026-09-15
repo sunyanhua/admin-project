@@ -433,12 +433,14 @@ const ActivityOnsite: React.FC = () => {
             <span style={{ minWidth: 46, textAlign: 'center', fontWeight: 'bold' }}>{Math.round(scale * 100)}%</span>
             <button onClick={() => applyScale(0.05)} style={toolBtn}>＋</button>
           </div>
-          {/* 背景模式 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ marginRight: 4 }}>背景模式</span>
-            <button onClick={() => setBgMode('cover')} style={bgMode === 'cover' ? toolBtnActive : toolBtn}>等比铺满</button>
-            <button onClick={() => setBgMode('stretch')} style={bgMode === 'stretch' ? toolBtnActive : toolBtn}>全屏铺满</button>
-          </div>
+          {/* 背景模式（未配置背景图时不显示） */}
+          {bgScreen && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>背景模式</span>
+              <button onClick={() => setBgMode('cover')} style={bgMode === 'cover' ? toolBtnActive : toolBtn}>等比铺满</button>
+              <button onClick={() => setBgMode('stretch')} style={bgMode === 'stretch' ? toolBtnActive : toolBtn}>全屏铺满</button>
+            </div>
+          )}
           {/* 界面切换（按钮注明快捷键，两行每行两个；展示切换为纯切换无高亮态） */}
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
