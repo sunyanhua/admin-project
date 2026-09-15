@@ -527,7 +527,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询指定活动的报名记录，支持多维度组合筛选。\naudit_status: 0=待审核 1=通过 2=拒绝；pay_status: 0=待支付 1=已支付 2=已退款；\ngender: 0=未设置 1=男 2=女；keyword: 按用户昵称（模糊）、手机号（精确）、真实姓名（精确）搜索",
+                "description": "分页查询指定活动的报名记录，支持多维度组合筛选。\naudit_status: 0=待审核 1=通过 2=拒绝；pay_status: 0=待支付 1=已支付 2=已退款；\ngender: 0=未设置 1=男 2=女；keyword: 按用户昵称（模糊）、手机号（精确）、真实姓名（精确）搜索\nchecked_in: true=已签到 false=未签到；缺省或空串=不筛选",
                 "produces": [
                     "application/json"
                 ],
@@ -565,6 +565,12 @@
                         "type": "string",
                         "description": "关键字搜索（昵称、手机号、姓名）",
                         "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "现场签到筛选（true=已签到 false=未签到；缺省或空串=不筛选）",
+                        "name": "checked_in",
                         "in": "query"
                     },
                     {
@@ -20784,6 +20790,10 @@
                     "description": "男性名额（gender_enabled=true 时有值）",
                     "type": "integer"
                 },
+                "onsite_config": {
+                    "description": "现场配置（仅管理后台可见）",
+                    "type": "string"
+                },
                 "onsite_loves_chances": {
                     "description": "现场心动机会数（与用户每日心动次数独立）",
                     "type": "integer"
@@ -21086,6 +21096,10 @@
                 "male_slots": {
                     "description": "男性名额（gender_enabled=true 时必填）",
                     "type": "integer"
+                },
+                "onsite_config": {
+                    "description": "OnsiteConfig 现场配置（2026-09-15 老大需求）：前端自主控制内容，服务端透明存储（不解析格式）；\n仅管理后台可见——不进 ActivityPublicResponse（C 端/公开接口不返回）。",
+                    "type": "string"
                 },
                 "onsite_loves_chances": {
                     "description": "现场心动机会数（默认 0，与用户每日心动次数独立）",
@@ -21479,6 +21493,10 @@
                 "male_slots": {
                     "description": "男性名额",
                     "type": "integer"
+                },
+                "onsite_config": {
+                    "description": "现场配置（前端自主控制内容，服务端透明存储；仅管理后台可见）",
+                    "type": "string"
                 },
                 "onsite_loves_chances": {
                     "description": "现场心动机会数（与用户每日心动次数独立）",
