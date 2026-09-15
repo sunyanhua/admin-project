@@ -4,6 +4,7 @@ import { ReloadOutlined, SendOutlined, BellOutlined, MoreOutlined, LinkOutlined,
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { notificationApi, SubscribeBindSummary } from '@/api/services/notification';
 import { StandardPage } from '@/components/templates/StandardPage';
+import logoNotification from '@/styles/logo-notification.png';
 
 const SubscribeNotificationSend: React.FC = () => {
   const { success, error: showError } = useAppNotification();
@@ -128,40 +129,40 @@ const SubscribeNotificationSend: React.FC = () => {
             </Card>
 
             {/* 微信消息卡片预览 */}
-            <div style={{ flex: '1 1 300px', maxWidth: 380, minWidth: 300 }}>
+            <div style={{ flex: '1 1 360px', maxWidth: 480, minWidth: 340 }}>
               <Card title="消息预览" size="small">
                 <div style={{ padding: '2px 0' }}>
-                  <div style={{ border: '1px solid #e5e5e5', borderRadius: 8, background: '#fff', padding: '14px 16px', maxWidth: 320, margin: '0 auto' }}>
+                  <div style={{ border: '1px solid #e5e5e5', borderRadius: 10, background: '#fff', padding: '20px 22px', maxWidth: 420, margin: '0 auto' }}>
                     {/* 第一行：标题 + 铃铛/三点 */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,.88)' }}>收到用户报名提交通知</span>
-                      <Space size={10}>
-                        <BellOutlined style={{ color: 'rgba(0,0,0,.45)' }} />
-                        <MoreOutlined style={{ color: 'rgba(0,0,0,.45)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                      <span style={{ fontSize: 17, fontWeight: 600, color: 'rgba(0,0,0,.88)' }}>收到用户报名提交通知</span>
+                      <Space size={12}>
+                        <BellOutlined style={{ color: 'rgba(0,0,0,.45)', fontSize: 17 }} />
+                        <MoreOutlined style={{ color: 'rgba(0,0,0,.45)', fontSize: 17 }} />
                       </Space>
                     </div>
                     {/* 第二行：报名项目 */}
-                    <div style={{ fontSize: 14, lineHeight: '22px' }}>
+                    <div style={{ fontSize: 16, lineHeight: '26px' }}>
                       <span style={{ color: 'rgba(0,0,0,.45)' }}>报名项目：</span>
                       <span style={{ color: 'rgba(0,0,0,.88)' }}>{previewProject || <span style={{ color: 'rgba(0,0,0,.25)' }}>待填写</span>}</span>
                     </div>
                     {/* 第三行：报名编号 */}
-                    <div style={{ fontSize: 14, lineHeight: '22px' }}>
+                    <div style={{ fontSize: 16, lineHeight: '26px' }}>
                       <span style={{ color: 'rgba(0,0,0,.45)' }}>报名编号：</span>
                       <span style={{ color: 'rgba(0,0,0,.88)' }}>{previewCode || <span style={{ color: 'rgba(0,0,0,.25)' }}>待填写</span>}</span>
                     </div>
                     {/* 分割线 */}
-                    <div style={{ height: 1, background: '#f0f0f0', margin: '12px 0' }} />
+                    <div style={{ height: 1, background: '#f0f0f0', margin: '14px 0' }} />
                     {/* 第四行：小程序来源 */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Space size={6}>
-                        <span style={{ width: 20, height: 20, borderRadius: 5, background: 'linear-gradient(135deg,#1677ff,#69b1ff)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 'bold' }}>成</span>
-                        <span style={{ fontSize: 13, color: 'rgba(0,0,0,.65)' }}>他俩能成</span>
+                      <Space size={8}>
+                        <img src={logoNotification} alt="他俩能成" style={{ width: 24, height: 24, borderRadius: 5 }} />
+                        <span style={{ fontSize: 15, color: 'rgba(0,0,0,.65)' }}>他俩能成</span>
                       </Space>
                       <Space size={4}>
-                        <LinkOutlined style={{ color: 'rgba(0,0,0,.45)', fontSize: 13 }} />
-                        <span style={{ fontSize: 13, color: 'rgba(0,0,0,.45)' }}>小程序</span>
-                        <RightOutlined style={{ color: 'rgba(0,0,0,.45)', fontSize: 12 }} />
+                        <LinkOutlined style={{ color: '#6355c7', fontSize: 15 }} />
+                        <span style={{ fontSize: 15, color: 'rgba(0,0,0,.45)' }}>小程序</span>
+                        <RightOutlined style={{ color: 'rgba(0,0,0,.45)', fontSize: 14 }} />
                       </Space>
                     </div>
                   </div>
