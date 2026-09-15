@@ -430,7 +430,12 @@ const ActivityOnsite: React.FC = () => {
               <div ref={stripRef} style={{ height: '20vh', overflow: 'hidden', flexShrink: 0 }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center', height: '100%', padding: '1.5vh 2vw', width: 'max-content', transform: `translateX(${stripShift}px)`, transition: 'transform .6s ease' }}>
                   {wall.map((p, i) => (
-                    <div key={`film-${p.userId}-${p.number}`} data-film-index={i} onClick={() => setFocusIdx(i)} style={{ flexShrink: 0, height: '15vh', position: 'relative', cursor: 'pointer' }}>
+                    <div
+                      key={`film-${p.userId}-${p.number}`}
+                      data-film-index={i}
+                      onClick={() => setFocusIdx(i)}
+                      style={{ flexShrink: 0, height: '15vh', position: 'relative', cursor: 'pointer', opacity: i === focusIdx % wall.length ? 1 : 0.45, transition: 'opacity .4s ease' }}
+                    >
                       <img src={p.photo} alt={p.nick} onLoad={centerStrip} style={{ height: '100%', borderRadius: 6, border: i === focusIdx % wall.length ? '3px solid #e04d2c' : '2px solid rgba(255,255,255,.5)', objectFit: 'cover', display: 'block' }} />
                       <span className={`onsite-number gender-${p.gender}`} style={{ fontSize: '0.9vw', minWidth: '1.9vw', height: '1.9vw' }}>{p.number || '-'}</span>
                     </div>
