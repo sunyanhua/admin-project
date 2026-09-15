@@ -407,8 +407,9 @@ const ActivityOnsite: React.FC = () => {
               {/* 中央聚焦嘉宾：双层交叉渐变，切换不留空白 */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingTop: '2vh' }}>
                 <div style={{ position: 'relative', height: '64vh', width: '46vw', maxWidth: '100%' }}>
+                  {/* key 按嘉宾身份：晋升时当前层重建挂载、无过渡直接显示，避免从 0 重淡入造成闪白 */}
                   {current && (
-                    <div style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 0 : 1, transition: 'opacity .5s ease' }}>
+                    <div key={`cur-${current.userId}-${current.number}`} style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 0 : 1, transition: 'opacity .5s ease' }}>
                       <img src={current.photo} alt={current.nick} style={{ height: 'calc(100% - 4.5vh)', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
                       <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
                         {current.number || '-'} - {current.nick}
@@ -416,7 +417,7 @@ const ActivityOnsite: React.FC = () => {
                     </div>
                   )}
                   {next && (
-                    <div style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 1 : 0, transition: 'opacity .5s ease' }}>
+                    <div key={`next-${next.userId}-${next.number}`} style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 1 : 0, transition: 'opacity .5s ease' }}>
                       <img src={next.photo} alt={next.nick} style={{ height: 'calc(100% - 4.5vh)', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
                       <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
                         {next.number || '-'} - {next.nick}
