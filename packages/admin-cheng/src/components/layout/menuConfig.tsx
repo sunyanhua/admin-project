@@ -27,6 +27,7 @@ import {
   TrophyOutlined,
   ScheduleOutlined,
   CalendarOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 
 /** 顶部一级菜单配置 */
@@ -122,6 +123,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       children: [
         { key: '/operation/gifts', icon: <GiftOutlined />, label: '礼物管理' },
         { key: '/operation/lottery', icon: <TrophyOutlined />, label: '抽奖管理' },
+        { key: '/operation/subscribe-notification', icon: <BellOutlined />, label: '订阅通知发送' },
       ],
     },
 

@@ -10111,6 +10111,55 @@
                 }
             }
         },
+        "/admin/v1/notification/subscribe-bind/summary": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "v6_wxa_subscribe_bind 台账按 status 的行级汇总计数（每行 = 一次二维码生成请求，非用户数）：待扫码（含已过期）/ 其中已过期未扫码 / 已绑定 / 已解绑 / 总行数。无查询参数。只读端点不写审计。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-通知管理"
+                ],
+                "summary": "服务号关注绑定状态汇总",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_notification_model.SubscribeBindSummaryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/permission/tree": {
             "get": {
                 "description": "返回管理后台全部权限的树形结构，供前端渲染权限分配界面。",
@@ -25291,6 +25340,31 @@
             "properties": {
                 "total": {
                     "description": "Total 未读消息总数。",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_notification_model.SubscribeBindSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "bound_count": {
+                    "description": "BoundCount 已绑定行数（status=bound）。",
+                    "type": "integer"
+                },
+                "expired_pending_count": {
+                    "description": "ExpiredPendingCount 其中 expire_at 已过的过期未扫码行数（pending_count 的子集）。",
+                    "type": "integer"
+                },
+                "pending_count": {
+                    "description": "PendingCount 待扫码行数（status=pending，含已过期——过期是派生状态不物理置位）。",
+                    "type": "integer"
+                },
+                "total_count": {
+                    "description": "TotalCount 台账总行数（COUNT(*) 权威值）。",
+                    "type": "integer"
+                },
+                "unbound_count": {
+                    "description": "UnboundCount 已解绑行数（status=unbound——主动解绑 + 换绑被置换）。",
                     "type": "integer"
                 }
             }
