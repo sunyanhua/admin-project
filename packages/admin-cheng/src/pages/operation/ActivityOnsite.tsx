@@ -370,18 +370,26 @@ const ActivityOnsite: React.FC = () => {
     centerStrip();
   }, [centerStrip]);
 
+  /** 切换界面并立即拉取对应最新数据（演示模式下保持演示数据不刷新） */
+  const switchTab = useCallback((next: 'list' | 'feeling') => {
+    setTab(next);
+    if (demoRef.current) return;
+    if (next === 'list') fetchWall();
+    else fetchCouples();
+  }, [fetchWall, fetchCouples]);
+
   // 键盘切换：0 演示模式 / 1 嘉宾一览 / 2 匹配嘉宾 / z 照片墙布局
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.key === '0') toggleDemo();
-      else if (e.key === '1') setTab('list');
-      else if (e.key === '2') setTab('feeling');
+      else if (e.key === '1') switchTab('list');
+      else if (e.key === '2') switchTab('feeling');
       else if (e.key === 'z' || e.key === 'Z') setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'));
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, [toggleDemo]);
+  }, [toggleDemo, switchTab]);
 
   const applyScale = (delta: number) => {
     setScale((prev) => Math.min(1.25, Math.max(0.2, Math.round((prev + delta) * 100) / 100)));
@@ -435,8 +443,8 @@ const ActivityOnsite: React.FC = () => {
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 6 }}>
-              <button onClick={() => setTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示(1)</button>
-              <button onClick={() => setTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名(2)</button>
+              <button onClick={() => switchTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示(1)</button>
+              <button onClick={() => switchTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名(2)</button>
               <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
               <button onClick={() => setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'))} style={toolBtn}>展示切换(z)</button>
             </div>
