@@ -218,19 +218,34 @@ const ActivityOnsite: React.FC = () => {
       return;
     }
     try {
-      // 演示数据仅取脱单档案审核通过的用户（match_audit_status 0=审核通过）
+      // 演示数据优先取脱单档案审核通过的用户（match_audit_status 0=审核通过）
       const res: any = await userApi.getUsers({ page: 1, size: 100, match_audit_status: 0 });
-      const list: any[] = Array.isArray(res) ? res : (res?.list || []);
-      const shuffled = [...list].sort(() => Math.random() - 0.5).slice(0, 50);
+      const audited: any[] = Array.isArray(res) ? res : (res?.list || []);
+      let shuffled = [...audited].sort(() => Math.random() - 0.5);
+      // 审核通过用户不足 50 时，从全量用户补齐（保证心形演示效果）
+      if (shuffled.length < 50) {
+        try {
+          const res2: any = await userApi.getUsers({ page: 1, size: 100 });
+          const all: any[] = Array.isArray(res2) ? res2 : (res2?.list || []);
+          const existing = new Set(shuffled.map((u) => u?.user?.user_id).filter(Boolean));
+          const extra = all
+            .filter((u) => u && !existing.has(u?.user?.user_id))
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 50 - shuffled.length);
+          shuffled = [...shuffled, ...extra];
+        } catch { /* 全量补齐失败则用合成嘉宾 */ }
+      }
+      // 仍不足时用合成嘉宾补足到 50
+      while (shuffled.length < 50) shuffled.push(null);
       const females = shuffled.filter((u) => u?.profile?.gender === 2);
       const males = shuffled.filter((u) => u?.profile?.gender === 1);
       const others = shuffled.filter((u) => u?.profile?.gender !== 1 && u?.profile?.gender !== 2);
-      // 其余性别未知的用户交替补入男女，保证演示性别均衡
+      // 其余（含合成）用户交替补入男女，保证演示性别均衡
       others.forEach((u, i) => (i % 2 === 0 ? males : females).push(u));
       const toWall = (list2: any[], offset: number, gender: 'male' | 'female'): WallUser[] =>
         list2.map((u, i) => ({
           number: i + 1,
-          nick: u?.profile?.nickname || `嘉宾${offset + i + 1}`,
+          nick: u?.profile?.nickname || `演示嘉宾${offset + i + 1}`,
           gender,
           userId: `demo-${gender}-${i}`,
           photo: u?.match_profile?.photos?.[0] || u?.profile?.avatar || demoAvatar(offset + i, gender),
@@ -334,7 +349,7 @@ const ActivityOnsite: React.FC = () => {
                   className={`onsite-photo${i === focusIdx ? ' focus' : ''}`}
                   style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: i === focusIdx ? 50 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
                 >
-                  <span className={`onsite-number gender-${p.gender}`}><i>{p.number || '-'}</i></span>
+                  <span className={`onsite-number gender-${p.gender}`}>{p.number || '-'}</span>
                   <img src={p.photo} alt={p.nick} onLoad={clampWall} />
                   <span className="onsite-nick">{p.nick}</span>
                 </div>
@@ -396,11 +411,7 @@ const ActivityOnsite: React.FC = () => {
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
         .onsite-photo.focus { transform: translate(calc(-50% + var(--fx,0px)), calc(-50% + var(--fy,0px))) scale(var(--fscale,2)) rotate(0deg) !important; opacity: 1; }
         .onsite-photo.focus img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-        .onsite-number { position: absolute; left: -1vw; top: -1vw; width: 3vw; height: 3vw; transform: rotate(-45deg); background: #e04d2c; z-index: 2; }
-        .onsite-number:before, .onsite-number:after { content: ""; position: absolute; width: 100%; height: 100%; border-radius: 50%; background: inherit; }
-        .onsite-number:before { top: -50%; left: 0; }
-        .onsite-number:after { left: 50%; top: 0; }
-        .onsite-number i { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); color: #fff; font-size: 1vw; font-weight: bold; font-style: normal; line-height: 1; text-align: center; white-space: nowrap; }
+        .onsite-number { position: absolute; left: 5%; top: 4%; min-width: 2.4vw; height: 2.4vw; padding: 0 .4vw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e04d2c; color: #fff; font-size: 1.2vw; font-weight: bold; line-height: 1; white-space: nowrap; z-index: 2; }
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
