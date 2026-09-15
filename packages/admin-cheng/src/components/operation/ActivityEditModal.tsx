@@ -56,10 +56,10 @@ const pickOnsiteFields = (activity: Activity) => {
     const obj = JSON.parse(activity.warm_up_config || '{}');
     if (obj && typeof obj === 'object') warmUpPageId = obj.page_id || '';
   } catch { /* 原值非法则留空 */ }
-  // 现场大屏背景图：解析 checkin_config 顶层 bg_screen 键
+  // 现场大屏背景图：解析 onsite_config 顶层 bg_screen 键
   let onsiteBgScreen = '';
   try {
-    const obj = JSON.parse(activity.checkin_config || '{}');
+    const obj = JSON.parse(activity.onsite_config || '{}');
     if (obj && typeof obj === 'object') onsiteBgScreen = obj.bg_screen || '';
   } catch { /* 原值非法则留空 */ }
   return {
@@ -309,10 +309,10 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           // 现场心动机会数：仅开启签到时提交（与签到开始时间同显隐）
           payload.onsite_loves_chances = values.onsite_loves_chances ?? 0;
         }
-        // 现场签到配置：checkin_config 为 JSON（服务端透明存储），原对象透传 + 仅管理 bg_screen 键（现场大屏背景图）
+        // 现场签到配置：onsite_config 为 JSON（服务端透明存储），原对象透传 + 仅管理 bg_screen 键（现场大屏背景图）
         let checkinObj: Record<string, any> = {};
         try {
-          const parsed = JSON.parse(activity?.checkin_config || '{}');
+          const parsed = JSON.parse(activity?.onsite_config || '{}');
           if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) checkinObj = parsed;
         } catch { /* 原值非法则从空对象开始 */ }
         const onsiteBg = String(form.getFieldValue('onsite_bg_screen') ?? '').trim();
@@ -321,7 +321,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         } else {
           delete checkinObj.bg_screen;
         }
-        payload.checkin_config = JSON.stringify(checkinObj);
+        payload.onsite_config = JSON.stringify(checkinObj);
       }
 
       if (needsSlots) {

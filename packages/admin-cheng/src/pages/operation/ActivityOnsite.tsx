@@ -97,7 +97,7 @@ const ActivityOnsite: React.FC = () => {
   const [stripShift, setStripShift] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
   const [demo, setDemo] = useState(false);
-  /** 现场大屏背景图（活动 checkin_config.bg_screen，未配置用默认渐变） */
+  /** 现场大屏背景图（活动 onsite_config.bg_screen，未配置用默认渐变） */
   const [bgScreen, setBgScreen] = useState('');
   /** 照片墙布局：heart=心形（默认） spotlight=中央聚焦+底部胶片 */
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
@@ -223,10 +223,10 @@ const ActivityOnsite: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    // 活动详情：取现场大屏背景图（checkin_config.bg_screen）
+    // 活动详情：取现场大屏背景图（onsite_config.bg_screen）
     activityApi.getDetail(id).then((res: any) => {
       try {
-        const obj = JSON.parse(res?.checkin_config || '{}');
+        const obj = JSON.parse(res?.onsite_config || '{}');
         if (obj && typeof obj === 'object' && obj.bg_screen) setBgScreen(String(obj.bg_screen));
       } catch { /* 无配置保持默认渐变 */ }
     }).catch(() => {});
