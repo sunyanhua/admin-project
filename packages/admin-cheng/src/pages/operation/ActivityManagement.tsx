@@ -167,11 +167,6 @@ const ActivityManagement = () => {
               </span>
             </Button>
             <SourceQrcodeModal basePage={`pages/activity-detail/index?id=${r.id}`} />
-            {r.checkin_enabled && (
-              <SourceQrcodeModal basePage={`pages/activity-onsite/index?id=${r.id}`} showSource={false} showShortlink={false}>
-                <span style={{ color: '#1890ff', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}>查看二维码</span>
-              </SourceQrcodeModal>
-            )}
           </Space>
         );
       },

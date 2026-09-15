@@ -10,6 +10,7 @@ import { RichTextEditor } from '@/components/templates/RichTextEditor';
 import FormConfigEditor from '@/components/operation/FormConfigEditor';
 import WarmUpConfigEditor from '@/components/operation/WarmUpConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { settingsApi, SettingItem } from '@/api/services/settings';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -598,7 +599,14 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
             <div style={{ height: 1, background: '#e8e8e8', margin: '0 0 16px 0' }} />
 
             <Form.Item
-              label="现场签到"
+              label={
+                <Space size={4}>
+                  <span>现场签到</span>
+                  {mode === 'edit' && activity && checkinEnabled && (
+                    <SourceQrcodeModal basePage={`pages/activity-onsite/index?id=${activity.id}`} showSource={false} showShortlink={false} />
+                  )}
+                </Space>
+              }
               name="checkin_enabled"
               valuePropName="checked"
               extra="开启后用户可在活动现场签到"
