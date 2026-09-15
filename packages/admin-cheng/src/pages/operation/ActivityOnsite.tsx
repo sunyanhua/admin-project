@@ -59,6 +59,15 @@ const buildWallItems = (photos: WallUser[]): WallItem[] => {
   });
 };
 
+/** 演示模式占位头像（SVG 数据 URI，无网络依赖） */
+const demoAvatar = (i: number, gender: 'male' | 'female') => {
+  const palettes = ['#e04d2c', '#eb5482', '#0088cc', '#6c5ce7', '#00b894', '#f0932b', '#e056fd'];
+  const c = palettes[i % palettes.length];
+  const label = gender === 'male' ? '男' : '女';
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><rect width='240' height='240' fill='${c}'/><text x='50%' y='58%' font-size='96' text-anchor='middle' fill='rgba(255,255,255,.9)'>${label}</text></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [tab, setTab] = useState<'list' | 'feeling'>('list');
@@ -67,7 +76,8 @@ const ActivityOnsite: React.FC = () => {
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
   const [focusIdx, setFocusIdx] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [demo, setDemo] = useState(false);
+  const demoRef = useRef(false);
   /** 用户照片缓存（脱单照片优先，缺失回退头像）；批量补拉后靠 setState 重建触发重渲染 */
   const photoMapRef = useRef<Map<string, string>>(new Map());
 
@@ -150,18 +160,69 @@ const ActivityOnsite: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    setLoading(true);
     activityApi.getDetail(id).then((res: any) => setTitle(res?.title || '')).catch(() => {});
     fetchWall();
     fetchCouples();
-    setLoading(false);
-    // 大屏轮询：10s 刷新（新签到/新配对实时上屏）
+    // 大屏轮询：10s 刷新（新签到/新配对实时上屏）；演示模式下跳过，避免覆盖演示数据
     const timer = setInterval(() => {
+      if (demoRef.current) return;
       fetchWall();
       fetchCouples();
     }, 10000);
     return () => clearInterval(timer);
   }, [id, fetchWall, fetchCouples]);
+
+  /** 演示模式：按 0 键从系统随机抽 50 名左右男女用户模拟心形照片墙与配对 */
+  const toggleDemo = useCallback(async () => {
+    if (demoRef.current) {
+      demoRef.current = false;
+      setDemo(false);
+      fetchWall();
+      fetchCouples();
+      return;
+    }
+    try {
+      const res: any = await userApi.getUsers({ page: 1, size: 100 });
+      const list: any[] = Array.isArray(res) ? res : (res?.list || []);
+      const shuffled = [...list].sort(() => Math.random() - 0.5).slice(0, 50);
+      const females = shuffled.filter((u) => u?.profile?.gender === 2);
+      const males = shuffled.filter((u) => u?.profile?.gender === 1);
+      const others = shuffled.filter((u) => u?.profile?.gender !== 1 && u?.profile?.gender !== 2);
+      // 其余性别未知的用户交替补入男女，保证演示性别均衡
+      others.forEach((u, i) => (i % 2 === 0 ? males : females).push(u));
+      const toWall = (list2: any[], offset: number, gender: 'male' | 'female'): WallUser[] =>
+        list2.map((u, i) => ({
+          number: i + 1,
+          nick: u?.profile?.nickname || `嘉宾${offset + i + 1}`,
+          gender,
+          userId: `demo-${gender}-${i}`,
+          photo: u?.match_profile?.photos?.[0] || u?.profile?.avatar || demoAvatar(offset + i, gender),
+        }));
+      const demoWall: WallUser[] = [
+        ...toWall(females, 0, 'female'),
+        ...toWall(males, females.length, 'male'),
+      ];
+      setWall(demoWall);
+      // 演示配对：男女顺序两两配对，随机心形计数
+      const demoCouples: OnsiteCouple[] = [];
+      for (let i = 0; i < females.length && i < males.length; i++) {
+        const f = demoWall[i];
+        const m = demoWall[females.length + i];
+        demoCouples.push({
+          couple_id: `demo-couple-${i}`,
+          female: { onsite_number: f.number, profile: { nickname: f.nick, avatar: f.photo }, user: { user_id: f.userId } },
+          male: { onsite_number: m.number, profile: { nickname: m.nick, avatar: m.photo }, user: { user_id: m.userId } },
+          female_loves_count: 1 + Math.floor(Math.random() * 3),
+          male_loves_count: 1 + Math.floor(Math.random() * 3),
+          onsite_loves_count: 1,
+          matching: 1,
+        });
+      }
+      setCouples(demoCouples);
+      demoRef.current = true;
+      setDemo(true);
+    } catch { /* 演示数据拉取失败保持现状 */ }
+  }, [fetchWall, fetchCouples]);
 
   // 聚焦动画：逐张放大高亮停留 2 秒，无限循环
   useEffect(() => {
@@ -174,62 +235,74 @@ const ActivityOnsite: React.FC = () => {
     return () => clearInterval(timer);
   }, [tab, wall]);
 
-  // 键盘切换：1 嘉宾一览 2 匹配嘉宾
+  // 键盘切换：0 演示模式 / 1 嘉宾一览 / 2 匹配嘉宾
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
-      if (e.key === '1') setTab('list');
+      if (e.key === '0') toggleDemo();
+      else if (e.key === '1') setTab('list');
       else if (e.key === '2') setTab('feeling');
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, []);
+  }, [toggleDemo]);
 
   const applyScale = (delta: number) => {
-    setScale((prev) => {
-      const next = Math.min(1.25, Math.max(0.2, Math.round((prev + delta) * 100) / 100));
-      return next;
-    });
+    setScale((prev) => Math.min(1.25, Math.max(0.2, Math.round((prev + delta) * 100) / 100)));
   };
 
   const wallItems = buildWallItems(wall);
 
   return (
     <div style={{ height: '100vh', width: '100vw', background: 'linear-gradient(160deg,#2b0a3d 0%,#4a1030 45%,#7a1a2e 100%)', overflow: 'hidden', position: 'relative', fontFamily: 'inherit' }}>
-      {/* 顶部栏：标题 + TAB + 缩放工具 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', background: 'rgba(0,0,0,.25)' }}>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            onClick={() => setTab('list')}
-            style={{
-              border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 600, padding: '8px 22px', borderRadius: 6,
-              background: tab === 'list' ? '#e04d2c' : 'rgba(255,255,255,.12)', color: '#fff',
-            }}
-          >
-            嘉宾一览
-          </button>
-          <button
-            onClick={() => setTab('feeling')}
-            style={{
-              border: 'none', cursor: 'pointer', fontSize: 16, fontWeight: 600, padding: '8px 22px', borderRadius: 6,
-              background: tab === 'feeling' ? '#e04d2c' : 'rgba(255,255,255,.12)', color: '#fff',
-            }}
-          >
-            匹配嘉宾
-          </button>
-        </div>
-        <div style={{ color: '#fff', fontSize: 22, fontWeight: 700, letterSpacing: 1 }}>{title || '活动现场'}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, opacity: 0.6 }}>
+      {/* 顶部标题（居中独立一行） */}
+      <div style={{ position: 'absolute', top: 14, left: 0, right: 0, textAlign: 'center', zIndex: 5 }}>
+        <span style={{ color: '#fff', fontSize: 28, fontWeight: 700, letterSpacing: 2 }}>{title || '活动现场'}</span>
+        {demo && (
+          <span style={{ marginLeft: 12, padding: '2px 10px', borderRadius: 10, background: '#e04d2c', color: '#fff', fontSize: 13, verticalAlign: 'middle' }}>演示模式</span>
+        )}
+      </div>
+
+      {/* 右上角缩放工具：默认隐藏，鼠标移到右上角显示 */}
+      <div className="onsite-tools">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <button onClick={() => applyScale(-0.05)} style={{ background: 'rgba(0,0,0,.5)', color: '#fff', border: 'none', borderRadius: 6, width: 34, height: 30, cursor: 'pointer' }}>－</button>
           <span style={{ color: '#fff', minWidth: 52, textAlign: 'center', fontWeight: 'bold' }}>{Math.round(scale * 100)}%</span>
           <button onClick={() => applyScale(0.05)} style={{ background: 'rgba(0,0,0,.5)', color: '#fff', border: 'none', borderRadius: 6, width: 34, height: 30, cursor: 'pointer' }}>＋</button>
         </div>
       </div>
 
+      {/* 底部居中 TAB */}
+      <div style={{ position: 'absolute', bottom: 18, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 16, zIndex: 5 }}>
+        <button
+          onClick={() => setTab('list')}
+          style={{
+            border: '1px solid rgba(255,255,255,.3)', cursor: 'pointer', fontSize: 18, fontWeight: 600, padding: '10px 34px', borderRadius: 24,
+            background: tab === 'list' ? '#e04d2c' : 'rgba(255,255,255,.1)', color: '#fff',
+          }}
+        >
+          嘉宾一览
+        </button>
+        <button
+          onClick={() => setTab('feeling')}
+          style={{
+            border: '1px solid rgba(255,255,255,.3)', cursor: 'pointer', fontSize: 18, fontWeight: 600, padding: '10px 34px', borderRadius: 24,
+            background: tab === 'feeling' ? '#e04d2c' : 'rgba(255,255,255,.1)', color: '#fff',
+          }}
+        >
+          匹配嘉宾
+        </button>
+      </div>
+
+      {/* 右下角操作提示 */}
+      <div style={{ position: 'absolute', bottom: 16, right: 18, zIndex: 5, color: 'rgba(255,255,255,.35)', fontSize: 12 }}>
+        键盘 1/2 切换 · 0 演示模式
+      </div>
+
       {/* 内容区 */}
-      <div style={{ height: 'calc(100vh - 60px)', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
+      <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
         {tab === 'list' ? (
-          loading ? null : wallItems.length === 0 ? (
+          wallItems.length === 0 ? (
             <div style={{ paddingTop: '30vh', textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无签到嘉宾</div>
           ) : (
             <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
@@ -249,7 +322,7 @@ const ActivityOnsite: React.FC = () => {
         ) : couples.length === 0 ? (
           <div style={{ paddingTop: '30vh', textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无配对</div>
         ) : (
-          <div style={{ height: '100%', overflowY: 'auto', padding: '1.5vh 3vw' }}>
+          <div style={{ height: '100%', overflowY: 'auto', padding: '6vh 3vw 10vh' }}>
             {couples.map((c) => {
               const f = c.female;
               const m = c.male;
@@ -295,15 +368,17 @@ const ActivityOnsite: React.FC = () => {
 
       {/* 照片墙样式（移植自旧系统 activscreen） */}
       <style>{`
+        .onsite-tools { position: fixed; top: 0; right: 0; width: 220px; height: 64px; z-index: 100; opacity: 0; transition: opacity .3s; display: flex; align-items: center; justify-content: flex-end; padding-right: 14px; }
+        .onsite-tools:hover { opacity: 1; }
         .onsite-photo { position: absolute; transition: transform .5s, opacity .5s; opacity: .85; }
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
         .onsite-photo.focus { transform: translate(-50%,-50%) scale(2) rotate(0deg) !important; opacity: 1; }
         .onsite-photo.focus img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-        .onsite-number { position: absolute; left: 2%; top: 2%; width: 2.2vw; height: 2.2vw; transform: rotate(-45deg); background: #e04d2c; z-index: 2; }
+        .onsite-number { position: absolute; left: -0.5vw; top: -0.5vw; width: 2.6vw; height: 2.6vw; transform: rotate(-45deg); background: #e04d2c; z-index: 2; }
         .onsite-number:before, .onsite-number:after { content: ""; position: absolute; width: 100%; height: 100%; border-radius: 50%; background: inherit; }
         .onsite-number:before { top: -50%; left: 0; }
         .onsite-number:after { left: 50%; top: 0; }
-        .onsite-number i { position: absolute; left: 56%; top: 44%; width: 65%; height: 65%; display: flex; align-items: center; justify-content: center; transform: translate(-50%,-50%) rotate(45deg); color: #fff; font-size: 1.3vw; font-weight: bold; font-style: normal; line-height: 1; text-align: center; }
+        .onsite-number i { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); color: #fff; font-size: 1.3vw; font-weight: bold; font-style: normal; line-height: 1; text-align: center; }
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
