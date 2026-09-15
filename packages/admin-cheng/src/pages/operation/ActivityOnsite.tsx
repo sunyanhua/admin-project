@@ -77,8 +77,46 @@ const ActivityOnsite: React.FC = () => {
   const [focusIdx, setFocusIdx] = useState(0);
   const [demo, setDemo] = useState(false);
   const demoRef = useRef(false);
+  /** 照片墙容器（钳制照片位置时测量用） */
+  const wallRef = useRef<HTMLDivElement>(null);
   /** 用户照片缓存（脱单照片优先，缺失回退头像）；批量补拉后靠 setState 重建触发重渲染 */
   const photoMapRef = useRef<Map<string, string>>(new Map());
+
+  /**
+   * 按图片实际比例钳制位置：整卡（含旋转）完整落在墙内；
+   * 聚焦放大时向心形中心移动 45% 并按移动后位置计算完整可见的缩放上限（移植旧系统 clampone）
+   */
+  const clampWall = useCallback(() => {
+    const wallEl = wallRef.current;
+    if (!wallEl) return;
+    wallEl.querySelectorAll<HTMLElement>('.onsite-photo').forEach((el) => {
+      const img = el.querySelector('img') as HTMLImageElement | null;
+      if (!img || !img.complete || !img.naturalWidth) return;
+      const wallbox = wallEl.getBoundingClientRect();
+      const w = el.offsetWidth;
+      if (!wallbox.width || !wallbox.height || !w) return;
+      const h = (w * img.naturalHeight) / img.naturalWidth;
+      const rad = ((parseFloat(el.dataset.rot || '0')) * Math.PI) / 180;
+      const bw = w * Math.abs(Math.cos(rad)) + h * Math.abs(Math.sin(rad)); // 旋转后包围盒
+      const bh = w * Math.abs(Math.sin(rad)) + h * Math.abs(Math.cos(rad));
+      const m = Math.max(8, wallbox.width * 0.014 + 4); // 含号码牌凸出的安全边距
+      const cx0 = (parseFloat(el.style.left) || 0) / 100 * wallbox.width;
+      const cy0 = (parseFloat(el.style.top) || 0) / 100 * wallbox.height;
+      const cx = Math.min(Math.max(cx0, bw / 2 + m), wallbox.width - bw / 2 - m);
+      const cy = Math.min(Math.max(cy0, bh / 2 + m), wallbox.height - bh / 2 - m);
+      el.style.left = `${(cx / wallbox.width) * 100}%`;
+      el.style.top = `${(cy / wallbox.height) * 100}%`;
+      // 聚焦时向心形中心移动 45%，并按移动后位置计算完整可见的缩放上限
+      const fx = (wallbox.width / 2 - cx) * 0.45;
+      const fy = (wallbox.height / 2 - cy) * 0.45;
+      const mcx = cx + fx, mcy = cy + fy;
+      const hw = w / 2, hh = h / 2;
+      const fscale = Math.max(1, Math.min(2, (mcx - m) / hw, (wallbox.width - mcx - m) / hw, (mcy - m) / hh, (wallbox.height - mcy - m) / hh));
+      el.style.setProperty('--fx', `${fx.toFixed(1)}px`);
+      el.style.setProperty('--fy', `${fy.toFixed(1)}px`);
+      el.style.setProperty('--fscale', fscale.toFixed(2));
+    });
+  }, []);
 
   const photoOf = useCallback((userId: string, avatar: string) => {
     const cached = photoMapRef.current.get(userId);
@@ -180,7 +218,8 @@ const ActivityOnsite: React.FC = () => {
       return;
     }
     try {
-      const res: any = await userApi.getUsers({ page: 1, size: 100 });
+      // 演示数据仅取脱单档案审核通过的用户（match_audit_status 0=审核通过）
+      const res: any = await userApi.getUsers({ page: 1, size: 100, match_audit_status: 0 });
       const list: any[] = Array.isArray(res) ? res : (res?.list || []);
       const shuffled = [...list].sort(() => Math.random() - 0.5).slice(0, 50);
       const females = shuffled.filter((u) => u?.profile?.gender === 2);
@@ -233,6 +272,13 @@ const ActivityOnsite: React.FC = () => {
     return () => clearInterval(timer);
   }, [tab, wall]);
 
+  // 渲染后按图片实际尺寸钳制位置（缓存图片 load 不触发，延时补一次）
+  useEffect(() => {
+    if (tab !== 'list' || !wall.length) return;
+    const t = setTimeout(clampWall, 60);
+    return () => clearTimeout(t);
+  }, [tab, wall, clampWall]);
+
   // 键盘切换：0 演示模式 / 1 嘉宾一览 / 2 匹配嘉宾
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
@@ -280,15 +326,16 @@ const ActivityOnsite: React.FC = () => {
           wallItems.length === 0 ? (
             <div style={{ paddingTop: '30vh', textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无签到嘉宾</div>
           ) : (
-            <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+            <div ref={wallRef} style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
               {wallItems.map((p, i) => (
                 <div
                   key={`${p.userId}-${p.number}`}
+                  data-rot={p.rotate}
                   className={`onsite-photo${i === focusIdx ? ' focus' : ''}`}
                   style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: i === focusIdx ? 50 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
                 >
                   <span className={`onsite-number gender-${p.gender}`}><i>{p.number || '-'}</i></span>
-                  <img src={p.photo} alt={p.nick} />
+                  <img src={p.photo} alt={p.nick} onLoad={clampWall} />
                   <span className="onsite-nick">{p.nick}</span>
                 </div>
               ))}
@@ -347,13 +394,13 @@ const ActivityOnsite: React.FC = () => {
         .onsite-tools:hover { opacity: 1; }
         .onsite-photo { position: absolute; transition: transform .5s, opacity .5s; opacity: .85; }
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
-        .onsite-photo.focus { transform: translate(-50%,-50%) scale(2) rotate(0deg) !important; opacity: 1; }
+        .onsite-photo.focus { transform: translate(calc(-50% + var(--fx,0px)), calc(-50% + var(--fy,0px))) scale(var(--fscale,2)) rotate(0deg) !important; opacity: 1; }
         .onsite-photo.focus img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-        .onsite-number { position: absolute; left: -0.5vw; top: -0.5vw; width: 2.6vw; height: 2.6vw; transform: rotate(-45deg); background: #e04d2c; z-index: 2; }
+        .onsite-number { position: absolute; left: -1vw; top: -1vw; width: 3vw; height: 3vw; transform: rotate(-45deg); background: #e04d2c; z-index: 2; }
         .onsite-number:before, .onsite-number:after { content: ""; position: absolute; width: 100%; height: 100%; border-radius: 50%; background: inherit; }
         .onsite-number:before { top: -50%; left: 0; }
         .onsite-number:after { left: 50%; top: 0; }
-        .onsite-number i { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); color: #fff; font-size: 1.3vw; font-weight: bold; font-style: normal; line-height: 1; text-align: center; }
+        .onsite-number i { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; transform: rotate(45deg); color: #fff; font-size: 1vw; font-weight: bold; font-style: normal; line-height: 1; text-align: center; white-space: nowrap; }
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
