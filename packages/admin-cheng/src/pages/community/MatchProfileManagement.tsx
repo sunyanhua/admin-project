@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Tag, Avatar, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { EyeOutlined, ReloadOutlined, TrophyOutlined, ExportOutlined } from '@ant-design/icons';
@@ -119,6 +119,8 @@ const MatchProfileManagement = () => {
   };
 
   const [exporting, setExporting] = useState(false);
+  /** 导出按钮默认隐藏，按 Shift+1 切换显示 */
+  const [exportVisible, setExportVisible] = useState(false);
 
   /** 导出脱单资料：按当前搜索筛选结果全量分页拉取后生成 Excel */
   const handleExport = async () => {
@@ -161,6 +163,20 @@ const MatchProfileManagement = () => {
       setExporting(false);
     }
   };
+
+  // Shift+1 切换导出按钮显示（输入框聚焦时不拦截按键）
+  useEffect(() => {
+    const onkey = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+      if (e.key === '!' || (e.shiftKey && e.key === '1')) {
+        setExportVisible((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onkey);
+    return () => window.removeEventListener('keydown', onkey);
+  }, []);
 
   // 执行排名结算（嗑学分周榜）
   const handleRank = async () => {
@@ -293,10 +309,12 @@ const MatchProfileManagement = () => {
         }
         extraActions={
           <>
+            {exportVisible && (
+              <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+            )}
             {isSuperAdmin && (
               <Button icon={<TrophyOutlined />} loading={ranking} onClick={handleRank}>排名</Button>
             )}
-            <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
             <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
           </>
         }
