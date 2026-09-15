@@ -60,6 +60,13 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSou
     setShortLink('');
     setQrLoading(true);
     try {
+      // ====== ⚠️ 临时关闭（2026-09-15）：所有弹窗暂不生成小程序码 ======
+      // 后续重新开启：删除下方 QR_DISABLED 分支即可恢复小程序码/页面路径/短链生成
+      const QR_DISABLED = true;
+      if (QR_DISABLED) {
+        return;
+      }
+
       // scene 参数：JSON 字符串（url 必带，source 选填）；url 统一带前导斜杠（全站统一）
       const sceneData: { url: string; source?: string } = { url: basePage.startsWith('/') ? basePage : `/${basePage}` };
       if (sourceId !== '') sceneData.source = sourceId;
@@ -165,14 +172,16 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSou
               </Space>
             </div>
           )}
-          {qrcodeUrl && (
-            <div>
-              <label style={{ display: 'block', marginBottom: 8, fontWeight: 500, textAlign: 'left' }}>小程序码：</label>
+          <div>
+            <label style={{ display: 'block', marginBottom: 8, fontWeight: 500, textAlign: 'left' }}>小程序码：</label>
+            {qrcodeUrl ? (
               <div style={{ textAlign: 'center' }}>
                 <Image src={qrcodeUrl} alt="小程序码" style={{ width: 320, height: 320 }} />
               </div>
-            </div>
-          )}
+            ) : (
+              <div style={{ textAlign: 'center', padding: 24, color: '#999', fontSize: 13 }}>小程序码暂不生成（临时关闭，后续恢复）</div>
+            )}
+          </div>
           {qrLoading && <div style={{ textAlign: 'center', padding: 40 }}><Spin /> 生成中...</div>}
         </div>
       </Modal>
