@@ -89,9 +89,10 @@ const ActivityOnsite: React.FC = () => {
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
   const [focusIdx, setFocusIdx] = useState(0);
-  /** 胶片模式：当前展示的聚焦嘉宾（渐入渐出用） */
-  const [shown, setShown] = useState<WallUser | null>(null);
-  const [fading, setFading] = useState(false);
+  /** 胶片模式：交叉渐变的当前层/下一层 */
+  const [current, setCurrent] = useState<WallUser | null>(null);
+  const [next, setNext] = useState<WallUser | null>(null);
+  const [crossing, setCrossing] = useState(false);
   /** 胶片条水平位移（当前聚焦项居中） */
   const [stripShift, setStripShift] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
@@ -316,17 +317,22 @@ const ActivityOnsite: React.FC = () => {
     return () => clearTimeout(t);
   }, [tab, wall, clampWall]);
 
-  // 胶片模式：聚焦图渐出 → 换图 → 渐入
+  // 胶片模式：交叉渐变——旧图渐隐的同时新图渐入，中间不留空白
   useEffect(() => {
     if (wallMode !== 'spotlight' || !wall.length) return;
     const cur = wall[focusIdx % wall.length];
     if (!cur) return;
-    setFading(true); // 淡出旧图
+    setNext(cur);
+    const raf = requestAnimationFrame(() => setCrossing(true));
     const t = setTimeout(() => {
-      setShown(cur);
-      setFading(false); // 淡入新图
-    }, 350);
-    return () => clearTimeout(t);
+      setCurrent(cur);
+      setNext(null);
+      setCrossing(false);
+    }, 550);
+    return () => {
+      clearTimeout(t);
+      cancelAnimationFrame(raf);
+    };
   }, [focusIdx, wallMode, wall]);
 
   // 胶片模式：列表平移使当前聚焦项居中（图片加载完成后需重新测量，onLoad 补触发）
@@ -391,16 +397,26 @@ const ActivityOnsite: React.FC = () => {
           ) : wallMode === 'spotlight' ? (
             /* 方案1：中央聚焦 + 底部胶片（按 Z 切换） */
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              {/* 中央聚焦嘉宾：渐出换图后渐入 */}
+              {/* 中央聚焦嘉宾：双层交叉渐变，切换不留空白 */}
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingTop: '2vh' }}>
-                {shown && (
-                  <div style={{ textAlign: 'center', height: '64vh', position: 'relative', opacity: fading ? 0 : 1, transition: 'opacity .35s ease' }}>
-                    <img src={shown.photo} alt={shown.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
-                    <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
-                      {shown.number || '-'} - {shown.nick}
+                <div style={{ position: 'relative', height: '64vh', width: '46vw', maxWidth: '100%' }}>
+                  {current && (
+                    <div style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 0 : 1, transition: 'opacity .5s ease' }}>
+                      <img src={current.photo} alt={current.nick} style={{ height: 'calc(100% - 4.5vh)', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
+                      <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
+                        {current.number || '-'} - {current.nick}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                  {next && (
+                    <div style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 1 : 0, transition: 'opacity .5s ease' }}>
+                      <img src={next.photo} alt={next.nick} style={{ height: 'calc(100% - 4.5vh)', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
+                      <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
+                        {next.number || '-'} - {next.nick}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               {/* 底部胶片条：平移使当前聚焦项居中，无滚动条 */}
               <div ref={stripRef} style={{ height: '20vh', overflow: 'hidden', flexShrink: 0 }}>
