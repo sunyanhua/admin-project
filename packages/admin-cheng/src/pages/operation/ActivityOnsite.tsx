@@ -237,6 +237,7 @@ const ActivityOnsite: React.FC = () => {
     if (demoRef.current) {
       demoRef.current = false;
       setDemo(false);
+      setFocusIdx(0);
       fetchWall();
       fetchCouples();
       return;
@@ -277,6 +278,7 @@ const ActivityOnsite: React.FC = () => {
       const femaleWall = toWall(females, 0, 'female');
       const maleWall = toWall(males, females.length, 'male');
       const demoWall = interleaveGenders([...femaleWall, ...maleWall]);
+      setFocusIdx(0);
       setWall(demoWall);
       // 演示配对：男女顺序两两配对，随机心形计数
       const demoCouples: OnsiteCouple[] = [];
@@ -299,16 +301,16 @@ const ActivityOnsite: React.FC = () => {
     } catch { /* 演示数据拉取失败保持现状 */ }
   }, [fetchWall, fetchCouples]);
 
-  // 聚焦动画：逐张放大高亮停留 2 秒，无限循环
+  // 聚焦动画：逐张放大高亮停留 2 秒，无限循环。
+  // 依赖 wall.length 而非 wall 数组本身——轮询刷新不重置索引、不打断轮播序列
   useEffect(() => {
-    if (tab !== 'list') return;
-    if (!wall.length) return;
-    setFocusIdx(0);
+    if (tab !== 'list' || !wall.length) return;
+    setFocusIdx((prev) => (prev < wall.length ? prev : 0));
     const timer = setInterval(() => {
       setFocusIdx((prev) => (prev + 1) % Math.max(wall.length, 1));
     }, 2000);
     return () => clearInterval(timer);
-  }, [tab, wall]);
+  }, [tab, wall.length]);
 
   // 渲染后按图片实际尺寸钳制位置（缓存图片 load 不触发，延时补一次）
   useEffect(() => {
@@ -317,11 +319,16 @@ const ActivityOnsite: React.FC = () => {
     return () => clearTimeout(t);
   }, [tab, wall, clampWall]);
 
-  // 胶片模式：交叉渐变——旧图渐隐的同时新图渐入，中间不留空白
+  // 胶片模式：交叉渐变——旧图渐隐的同时新图渐入，中间不留空白。
+  // 同一嘉宾的数据刷新（轮询/照片升级）跳过重放，避免闪烁
+  const lastFadedRef = useRef<string>('');
   useEffect(() => {
     if (wallMode !== 'spotlight' || !wall.length) return;
     const cur = wall[focusIdx % wall.length];
     if (!cur) return;
+    const key = `${cur.userId}-${cur.number}`;
+    if (lastFadedRef.current === key && current?.userId === cur.userId) return;
+    lastFadedRef.current = key;
     setNext(cur);
     const raf = requestAnimationFrame(() => setCrossing(true));
     const t = setTimeout(() => {
