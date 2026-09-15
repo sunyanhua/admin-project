@@ -34,6 +34,7 @@ export interface Activity {
   hidden: boolean;
   checkin_enabled?: boolean; // 是否启用现场签到
   checkin_start?: string; // 现场签到开始时间（RFC3339，可选）
+  checkin_config?: string; // 现场签到配置（JSON，前端自主控制内容服务端透明存储；当前含 bg_screen 大屏背景图）
   onsite_loves_chances?: number; // 现场心动机会数（默认 0，与用户每日心动次数独立）
   warm_up_enabled?: boolean; // 是否启用预热
   warm_up_config?: string; // 预热配置（小程序端自主内容，服务端透明存储）
@@ -71,6 +72,7 @@ export interface CreateActivityRequest {
   hidden?: boolean;
   checkin_enabled?: boolean; // 是否启用现场签到（默认 false）
   checkin_start?: string; // 现场签到开始时间（RFC3339，可选）
+  checkin_config?: string; // 现场签到配置（JSON，服务端透明存储）
   onsite_loves_chances?: number; // 现场心动机会数（默认 0）
   warm_up_enabled?: boolean; // 是否启用预热
   warm_up_config?: string; // 预热配置（前端自主控制内容，服务端透明存储）
@@ -103,6 +105,7 @@ export interface UpdateActivityRequest {
   hidden?: boolean;
   checkin_enabled?: boolean; // 是否启用现场签到
   checkin_start?: string; // 现场签到开始时间（RFC3339，可选；PATCH 指针语义：缺省不更新）
+  checkin_config?: string; // 现场签到配置（JSON，服务端透明存储）
   onsite_loves_chances?: number; // 现场心动机会数
   warm_up_enabled?: boolean; // 是否启用预热
   warm_up_config?: string; // 预热配置（前端自主控制内容，服务端透明存储）

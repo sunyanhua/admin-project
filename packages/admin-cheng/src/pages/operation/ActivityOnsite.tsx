@@ -97,6 +97,8 @@ const ActivityOnsite: React.FC = () => {
   const [stripShift, setStripShift] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
   const [demo, setDemo] = useState(false);
+  /** 现场大屏背景图（活动 checkin_config.bg_screen，未配置用默认渐变） */
+  const [bgScreen, setBgScreen] = useState('');
   /** 照片墙布局：heart=心形（默认） spotlight=中央聚焦+底部胶片 */
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
   const demoRef = useRef(false);
@@ -221,6 +223,13 @@ const ActivityOnsite: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
+    // 活动详情：取现场大屏背景图（checkin_config.bg_screen）
+    activityApi.getDetail(id).then((res: any) => {
+      try {
+        const obj = JSON.parse(res?.checkin_config || '{}');
+        if (obj && typeof obj === 'object' && obj.bg_screen) setBgScreen(String(obj.bg_screen));
+      } catch { /* 无配置保持默认渐变 */ }
+    }).catch(() => {});
     fetchWall();
     fetchCouples();
     // 大屏轮询：10s 刷新（新签到/新配对实时上屏）；演示模式下跳过，避免覆盖演示数据
@@ -379,7 +388,18 @@ const ActivityOnsite: React.FC = () => {
   const wallItems = buildWallItems(wall);
 
   return (
-    <div style={{ height: '100vh', width: '100vw', background: 'linear-gradient(160deg,#2b0a3d 0%,#4a1030 45%,#7a1a2e 100%)', overflow: 'hidden', position: 'relative', fontFamily: 'inherit' }}>
+    <div
+      style={{
+        height: '100vh',
+        width: '100vw',
+        background: bgScreen
+          ? `linear-gradient(rgba(24,6,32,.5), rgba(24,6,32,.5)), url(${bgScreen}) center / cover no-repeat`
+          : 'linear-gradient(160deg,#2b0a3d 0%,#4a1030 45%,#7a1a2e 100%)',
+        overflow: 'hidden',
+        position: 'relative',
+        fontFamily: 'inherit',
+      }}
+    >
       {/* 演示模式徽章（仅演示时显示） */}
       {demo && (
         <div style={{ position: 'absolute', top: 14, left: 0, right: 0, textAlign: 'center', zIndex: 5 }}>

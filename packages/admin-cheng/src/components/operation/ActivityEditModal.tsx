@@ -6,6 +6,7 @@ import { activityApi, Activity, CreateActivityRequest } from '@/api/services/act
 import { zoneApi, Zone } from '@/api/services/zone';
 import CropperImageUpload from '@/components/common/CropperImageUpload';
 import MultiImageUpload from '@/components/common/MultiImageUpload';
+import ImageUpload from '@/components/common/ImageUpload';
 import { RichTextEditor } from '@/components/templates/RichTextEditor';
 import FormConfigEditor from '@/components/operation/FormConfigEditor';
 import WarmUpConfigEditor from '@/components/operation/WarmUpConfigEditor';
@@ -55,11 +56,18 @@ const pickOnsiteFields = (activity: Activity) => {
     const obj = JSON.parse(activity.warm_up_config || '{}');
     if (obj && typeof obj === 'object') warmUpPageId = obj.page_id || '';
   } catch { /* 原值非法则留空 */ }
+  // 现场大屏背景图：解析 checkin_config 顶层 bg_screen 键
+  let onsiteBgScreen = '';
+  try {
+    const obj = JSON.parse(activity.checkin_config || '{}');
+    if (obj && typeof obj === 'object') onsiteBgScreen = obj.bg_screen || '';
+  } catch { /* 原值非法则留空 */ }
   return {
     checkin_enabled: activity.checkin_enabled ?? false,
     // 防御后端 time.Time 零值（0001-01-01T00:00:00Z）被回显为异常日期
     checkin_start: checkinStart && checkinStart.year() >= 1970 ? checkinStart : undefined,
     onsite_loves_chances: activity.onsite_loves_chances ?? 0,
+    onsite_bg_screen: onsiteBgScreen,
     warm_up_enabled: activity.warm_up_enabled ?? false,
     warm_up_config: activity.warm_up_config ?? '',
     warm_up_page_id: warmUpPageId,
@@ -89,7 +97,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], checkin_enabled: false, onsite_loves_chances: 0, warm_up_enabled: false, warm_up_config: '', warm_up_page_id: '' };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], checkin_enabled: false, onsite_loves_chances: 0, onsite_bg_screen: '', warm_up_enabled: false, warm_up_config: '', warm_up_page_id: '' };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -207,6 +215,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         checkin_enabled: false,
         checkin_start: undefined,
         onsite_loves_chances: 0,
+        onsite_bg_screen: '',
         warm_up_enabled: false,
         warm_up_config: '',
         warm_up_page_id: '',
@@ -300,6 +309,19 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           // 现场心动机会数：仅开启签到时提交（与签到开始时间同显隐）
           payload.onsite_loves_chances = values.onsite_loves_chances ?? 0;
         }
+        // 现场签到配置：checkin_config 为 JSON（服务端透明存储），原对象透传 + 仅管理 bg_screen 键（现场大屏背景图）
+        let checkinObj: Record<string, any> = {};
+        try {
+          const parsed = JSON.parse(activity?.checkin_config || '{}');
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) checkinObj = parsed;
+        } catch { /* 原值非法则从空对象开始 */ }
+        const onsiteBg = String(form.getFieldValue('onsite_bg_screen') ?? '').trim();
+        if (onsiteBg) {
+          checkinObj.bg_screen = onsiteBg;
+        } else {
+          delete checkinObj.bg_screen;
+        }
+        payload.checkin_config = JSON.stringify(checkinObj);
       }
 
       if (needsSlots) {
@@ -626,6 +648,14 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
                   extra="活动现场用户的心动机会数，与每日心动次数相互独立"
                 >
                   <InputNumber min={0} precision={0} style={{ width: 200 }} />
+                </Form.Item>
+
+                <Form.Item
+                  label="现场大屏背景图"
+                  name="onsite_bg_screen"
+                  extra="现场大屏页的背景图，以 JSON 形式写入签到配置（bg_screen）"
+                >
+                  <ImageUpload />
                 </Form.Item>
               </>
             )}
