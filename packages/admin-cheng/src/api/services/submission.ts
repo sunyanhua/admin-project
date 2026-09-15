@@ -81,6 +81,8 @@ export interface AuditSubmissionRequest {
   delete_files?: boolean;
   reason?: string;
   reward_coins?: number;
+  /** 是否推送消息（缺省 true；false=静默审核：不写站内明细、不增红点、不发订阅消息） */
+  push_message?: boolean;
 }
 
 export interface UpdateSortOrderRequest {

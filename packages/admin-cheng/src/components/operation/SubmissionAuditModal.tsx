@@ -18,12 +18,14 @@ interface SubmissionAuditModalProps {
    * 缺省（如广播投稿页）不显示积分、不加积分。
    */
   pointsTopicKey?: string;
+  /** 审核是否推送消息（缺省 true 推送；false=静默审核） */
+  pushMessage?: boolean;
 }
 
 const FILE_TYPE_LABELS: Record<number, string> = { 1: '图片', 2: '音频', 3: '视频' };
 
 const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
-  visible, record, onClose, onSuccess, pointsTopicKey,
+  visible, record, onClose, onSuccess, pointsTopicKey, pushMessage = true,
 }) => {
   const { success, error: showError } = useAppNotification();
   const [submitting, setSubmitting] = useState(false);
@@ -74,11 +76,12 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
       setSubmitting(true);
       const statusChanged = action !== record.audit_status;
       if (statusChanged) {
-        // 审核状态变更 → 走 audit 接口
+        // 审核状态变更 → 走 audit 接口（push_message 显式传值：true 推送 / false 静默审核）
         await submissionApi.audit(record.id, {
           action,
           reason: action === SubmissionAuditStatus.REJECTED ? reason : undefined,
           reward_coins: action === SubmissionAuditStatus.APPROVED ? (rewardCoins ?? 0) : undefined,
+          push_message: pushMessage,
         });
       }
       // 审核通过后额外给用户加积分（动态审核场景：topic_key=活动预热ID，score_1=奖励积分，delta 增减）

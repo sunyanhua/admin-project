@@ -219,6 +219,7 @@ const ProgramSubmission = () => {
       <SubmissionAuditModal
         visible={auditModalVisible}
         record={auditRecord}
+        pushMessage
         onClose={() => { setAuditModalVisible(false); setAuditRecord(null); }}
         onSuccess={refresh}
       />
