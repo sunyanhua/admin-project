@@ -653,7 +653,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
                 <Form.Item
                   label="现场大屏背景图"
                   name="onsite_bg_screen"
-                  extra="现场大屏页的背景图，以 JSON 形式写入签到配置（bg_screen）"
+                  extra="用于活动现场大屏的背景画面展示"
                 >
                   <ImageUpload />
                 </Form.Item>
