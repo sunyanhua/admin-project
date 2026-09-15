@@ -272,28 +272,6 @@ const ActivityOnsite: React.FC = () => {
         </div>
       </div>
 
-      {/* 底部居中 TAB */}
-      <div style={{ position: 'absolute', bottom: 18, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 16, zIndex: 5 }}>
-        <button
-          onClick={() => setTab('list')}
-          style={{
-            border: '1px solid rgba(255,255,255,.3)', cursor: 'pointer', fontSize: 18, fontWeight: 600, padding: '10px 34px', borderRadius: 24,
-            background: tab === 'list' ? '#e04d2c' : 'rgba(255,255,255,.1)', color: '#fff',
-          }}
-        >
-          嘉宾一览
-        </button>
-        <button
-          onClick={() => setTab('feeling')}
-          style={{
-            border: '1px solid rgba(255,255,255,.3)', cursor: 'pointer', fontSize: 18, fontWeight: 600, padding: '10px 34px', borderRadius: 24,
-            background: tab === 'feeling' ? '#e04d2c' : 'rgba(255,255,255,.1)', color: '#fff',
-          }}
-        >
-          匹配嘉宾
-        </button>
-      </div>
-
       {/* 右下角操作提示 */}
       <div style={{ position: 'absolute', bottom: 16, right: 18, zIndex: 5, color: 'rgba(255,255,255,.35)', fontSize: 12 }}>
         键盘 1/2 切换 · 0 演示模式
