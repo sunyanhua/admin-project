@@ -136,12 +136,19 @@ const MatchProfileManagement = () => {
         if (list.length < 100) break;
         page++;
       }
-      const headers = ['姓名', '手机号', '性别', '年龄', '星座', '职业', '学历', '民族', '户籍', '工作单位', '毕业学校', '注册时间', '最近活跃时间'];
+      // 脱敏身份证号（隐私接口，读取留痕）
+      const userIds = all.map((r) => r.user.user_id).filter(Boolean);
+      const idCardMap: Record<string, string> = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
+
+      const headers = ['能成ID', '姓名', '手机号', '性别', '年龄', '是否实名', '身份证号', '星座', '职业', '学历', '民族', '户籍', '工作单位', '毕业学校', '注册时间', '最近活跃时间'];
       const rows = all.map((r) => [
+        r.match_profile?.match_code || '',
         r.match_profile?.real_name || '',
         r.user.phone || '',
         UserGenderLabels[r.profile.gender] || '',
         r.profile.age ?? '',
+        r.match_profile?.is_real_verified ? '是' : '否',
+        idCardMap[r.user.user_id] || '',
         r.profile.zodiac || '',
         r.match_profile?.profession || '',
         r.match_profile?.education != null ? (EducationLabels[r.match_profile.education] || r.match_profile.education) : '',
