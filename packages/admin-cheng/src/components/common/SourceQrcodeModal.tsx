@@ -19,10 +19,12 @@ export interface SourceQrcodeModalProps {
   showSource?: boolean;
   /** 是否生成小程序短链接，默认 true */
   showShortlink?: boolean;
+  /** H5 地址（可选，传入时展示并可一键复制） */
+  h5Page?: string;
   children?: React.ReactNode;
 }
 
-const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSource = true, showShortlink = true, children }) => {
+const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSource = true, showShortlink = true, h5Page, children }) => {
   const { success, error: showError } = useAppNotification();
   const [modalVisible, setModalVisible] = useState(false);
   const [sources, setSources] = useState<any[]>([]);
@@ -143,6 +145,15 @@ const SourceQrcodeModal: React.FC<SourceQrcodeModalProps> = ({ basePage, showSou
                 <span>{pagePath}</span>
                 <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(pagePath); success('复制成功'); }} />
               </Space>
+            </div>
+          )}
+          {h5Page && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', marginBottom: 8, fontWeight: 500 }}>H5地址：</label>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 4 }}>
+                <span style={{ wordBreak: 'break-all', flex: 1 }}>{h5Page}</span>
+                <Button type="text" size="small" icon={<CopyOutlined />} onClick={() => { navigator.clipboard.writeText(h5Page); success('复制成功'); }} />
+              </div>
             </div>
           )}
           {showShortlink && shortLink && (

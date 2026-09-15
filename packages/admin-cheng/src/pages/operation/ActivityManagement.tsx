@@ -172,7 +172,7 @@ const ActivityManagement = () => {
                 {text}
               </span>
             </Button>
-            <SourceQrcodeModal basePage={`pages/activity-detail/index?id=${r.id}`} />
+            <SourceQrcodeModal basePage={`pages/activity-detail/index?id=${r.id}`} h5Page={`https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-detail/index?id=${r.id}`} />
           </Space>
         );
       },

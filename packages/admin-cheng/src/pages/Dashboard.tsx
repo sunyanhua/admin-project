@@ -63,7 +63,7 @@ const Dashboard = () => {
           <Descriptions.Item label="小程序名称">
             <Space size={4}>
               他俩能成
-              <SourceQrcodeModal basePage="pages/index/index" />
+              <SourceQrcodeModal basePage="pages/index/index" h5Page="https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html" />
             </Space>
           </Descriptions.Item>
           <Descriptions.Item label="原始ID">

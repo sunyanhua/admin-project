@@ -224,7 +224,7 @@ const ProgramManagement: React.FC = () => {
         <Form.Item label="节目名称">
           <Space size={4}>
             <span style={{ fontSize: 14 }}>一路畅通《他俩能成》</span>
-            <SourceQrcodeModal basePage="/pages/broadcast/index" />
+            <SourceQrcodeModal basePage="/pages/broadcast/index" h5Page="https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/broadcast/index" />
           </Space>
         </Form.Item>
 
