@@ -235,26 +235,28 @@ const ActivityManagement = () => {
     {
       title: '操作',
       key: 'action',
-      width: 190,
+      width: 120,
       fixed: 'right' as const,
       render: (_: any, r: Activity) => (
-        <Space size="small" className="action-buttons">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>
-            编辑
-          </Button>
+        <Space size="small" direction="vertical" align="start" className="action-buttons">
+          <Space size="small">
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(r)}>
+              编辑
+            </Button>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}
+              onClick={() => confirmDelete({
+                name: r.title,
+                deleteFn: () => activityApi.delete(r.id),
+                onSuccess: refresh,
+              })}>
+              删除
+            </Button>
+          </Space>
           {r.warm_up_enabled && (
             <Button type="link" size="small" icon={<FireOutlined />} onClick={() => handleOpenWarmUp(r)}>
               预热
             </Button>
           )}
-          <Button type="link" size="small" danger icon={<DeleteOutlined />}
-            onClick={() => confirmDelete({
-              name: r.title,
-              deleteFn: () => activityApi.delete(r.id),
-              onSuccess: refresh,
-            })}>
-            删除
-          </Button>
         </Space>
       ),
     },
