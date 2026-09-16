@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Tag, Modal, Descriptions, Button, Space, Avatar } from 'antd';
+import { Tag, Modal, Descriptions, Button, Space } from 'antd';
 import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { invoiceApi } from '@/api/services/invoice';
@@ -13,7 +13,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '@/components/user/UserDetailSections';
 import { formatDateTime, formatDate } from '@/utils/format';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 
 // 发票状态
 const INVOICE_STATUS_MAP: Record<number, { text: string; color: string }> = {
@@ -111,7 +111,7 @@ const InvoiceManagement = () => {
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)} disabled={!u?.id}>
             <Space size={4}>
-              <Avatar src={getAvatarUrl(u?.avatar_url)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+              <UserAvatar src={u?.avatar_url} nick={u?.nickname} />
               <span style={{ fontSize: 14 }}>{u?.nickname || '-'}</span>
             </Space>
           </Button>

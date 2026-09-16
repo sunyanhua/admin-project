@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Radio, Avatar, Image, Input, InputNumber } from 'antd';
+import { Button, Space, Radio, Image, Input, InputNumber } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { SubmissionAuditStatus } from '@shared/constants';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { submissionApi, Submission } from '@/api/services/submission';
 import { userApi } from '@/api/services/user';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -118,7 +118,7 @@ const SubmissionAuditModal: React.FC<SubmissionAuditModalProps> = ({
       {/* 投稿用户 */}
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>投稿用户</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: 12, background: '#fafafa', borderRadius: 8 }}>
-        <Avatar size={56} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+        <UserAvatar src={avatar} nick={nickname} size={56} />
         <span style={{ fontSize: 15, fontWeight: 600 }}>{nickname}</span>
       </div>
 

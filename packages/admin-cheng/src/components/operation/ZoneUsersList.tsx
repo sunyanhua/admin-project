@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space, Tag, Avatar } from 'antd';
+import { Button, Space, Tag } from 'antd';
 import { ExportOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
@@ -11,7 +11,7 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import RealNameWithTag from '@/components/user/RealNameWithTag';
-import { getMediumUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { MatchProfileAuditStatus, UserGenderLabels, MaritalStatusLabels } from '@/api/types/status';
 import type { CommunityUserItem } from '@/api/types/user';
 import { buildProfileUrl, splitPhotos, applyLinkColumns } from './excelExport.utils';
@@ -208,7 +208,7 @@ const ZoneUsersList: React.FC<ZoneUsersListProps> = ({ zoneId, zoneName, active 
         <Button type="link" style={{ padding: 0, height: 'auto' }}
           onClick={() => { setUserDetailUserId(record.user.user_id); setUserDetailVisible(true); }}>
           <Space size={4}>
-            <Avatar src={getMediumUrl(record.match_profile?.photos?.[0] || record.profile.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <UserAvatar src={record.match_profile?.photos?.[0] || record.profile.avatar} nick={record.profile.nickname} />
             <span style={{ fontSize: 14 }}>{record.profile.nickname || '-'}</span>
           </Space>
         </Button>

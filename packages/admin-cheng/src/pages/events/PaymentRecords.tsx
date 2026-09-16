@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Space, Tag, Modal, Descriptions, Avatar } from 'antd';
+import { Space, Tag, Modal, Descriptions } from 'antd';
 import { userColumn, statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import request from '@/api';
@@ -13,7 +13,7 @@ import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '../../components/user/UserDetailSections';
 import EventDetailModal from '../../components/events/EventDetailModal';
 import { formatDateTime } from '@/utils/format';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 
 // 支付状态枚举
 enum PaymentStatus {
@@ -225,7 +225,7 @@ const PaymentRecords = () => {
           <Descriptions column={2} bordered size="small">
             <Descriptions.Item label="报名用户" span={2}>
               <Space>
-                <Avatar src={getAvatarUrl(d.user_data?.avatar)} size="small" />
+                <UserAvatar src={d.user_data?.avatar} nick={d.user_data?.nick} size={24} />
                 <span>{d.user_data?.nick || d.user_data?.userid || '-'}</span>
               </Space>
             </Descriptions.Item>

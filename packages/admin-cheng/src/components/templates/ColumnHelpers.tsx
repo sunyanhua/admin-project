@@ -1,6 +1,7 @@
-import { Switch, Tag, Avatar, Button, Space, Image } from 'antd';
+import { Switch, Tag, Button, Space, Image } from 'antd';
 import { formatDateTime } from '@/utils/format';
-import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
+import { getMediumUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 
 // ====== Status Switch 列 ======
 
@@ -127,7 +128,7 @@ export function userColumn<T extends Record<string, any>>(
       const nick = record[nickField] || record.user_data?.[nickField] || record.userid || '-';
       const content = (
         <Space size={4}>
-          <Avatar src={getAvatarUrl(avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+          <UserAvatar src={avatar} nick={nick} />
           <span style={{ fontSize: 14 }}>{nick}</span>
         </Space>
       );

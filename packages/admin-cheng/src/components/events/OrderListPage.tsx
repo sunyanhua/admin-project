@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Button, Space, Tag, Modal, Descriptions, Avatar } from 'antd';
+import { Button, Space, Tag, Modal, Descriptions } from 'antd';
 import { statusTagColumn } from '@/components/templates/ColumnHelpers';
 import type { ColumnsType } from 'antd/es/table';
 import { orderApi } from '@/api/services/order';
@@ -13,7 +13,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { DetailModal } from '@/components/templates/DetailModal';
 import UserDetailSections from '@/components/user/UserDetailSections';
 import { formatDateTime, formatDate } from '@/utils/format';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 
 // 订单状态（v1 mall）
 const ORDER_STATUS_MAP: Record<number, { text: string; color: string }> = {
@@ -152,7 +152,7 @@ const OrderListPage: React.FC<OrderListPageProps> = ({ config }) => {
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }} onClick={() => handleViewUserDetail(record)} disabled={!uid}>
             <Space size={4}>
-              <Avatar src={getAvatarUrl(avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+              <UserAvatar src={avatar} nick={nick} />
               <span style={{ fontSize: 14 }}>{nick}</span>
             </Space>
           </Button>

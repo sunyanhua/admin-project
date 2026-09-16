@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Form, Input, Image, Avatar, Radio } from 'antd';
+import { Button, Space, Form, Input, Image, Radio } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { ApplicationReviewStatus, ApplicationReviewStatusLabels, RegisterGenderLabels } from '@shared/constants';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { zoneApi, Application, DBAttachment } from '@/api/services/zone';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
@@ -139,8 +139,7 @@ const ZoneApplicationReviewModal: React.FC<ZoneApplicationReviewModalProps> = ({
       {/* === 用户信息 === */}
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8 }}>申请用户</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: 12, background: '#fafafa', borderRadius: 8 }}>
-        <Avatar size={56} style={{ borderRadius: '50%', flexShrink: 0 }}
-          src={getAvatarUrl(profile?.avatar || '')} />
+        <UserAvatar size={56} src={profile?.avatar} nick={profile?.nickname || application.user_id} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 600 }}>{profile?.nickname || application.user_id}</div>
           <div style={{ fontSize: 13, color: '#666', marginTop: 2 }}>

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Tag, Avatar, Button, Space } from 'antd';
+import { Tag, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { EyeOutlined } from '@ant-design/icons';
 import { userApi } from '../../api/services/user';
@@ -12,7 +12,7 @@ import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
 import { AdminUserStatus, MatchProfileAuditStatus } from '@/api/types/status';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { formatDateTime, formatDate } from '@/utils/format';
 import type { CommunityUserItem } from '@/api/types/user';
 import '@/styles/user-detail-modal.css';
@@ -117,14 +117,7 @@ const UserList = () => {
           onClick={() => handleViewDetail(record)}
         >
           <Space size={4}>
-            {/* 头像为空/加载失败时兜底显示昵称首字，避免灰色占位块 */}
-            <Avatar
-              src={record.profile.avatar ? getAvatarUrl(record.profile.avatar) : undefined}
-              size={40}
-              style={{ borderRadius: '50%', flexShrink: 0, background: '#1890ff' }}
-            >
-              {record.profile.nickname?.charAt(0) || '?'}
-            </Avatar>
+            <UserAvatar src={record.profile.avatar} nick={record.profile.nickname} />
             <span style={{ fontSize: 14 }}>
               {record.profile.nickname || '-'}
             </span>

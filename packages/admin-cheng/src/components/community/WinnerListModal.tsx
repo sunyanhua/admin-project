@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space, Avatar } from 'antd';
+import { Button, Space } from 'antd';
 import { FormOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { PrizeType } from '@shared/constants';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { lotteryApi, UserPrize } from '@/api/services/lottery';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -77,8 +77,7 @@ const WinnerListModal: React.FC<WinnerListModalProps> = ({ visible, poolId, pool
           <Button type="link" style={{ padding: 0, height: 'auto' }}
             onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
             <Space size={4}>
-              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }}
-                src={getAvatarUrl(avatar)} />
+              <UserAvatar src={avatar} nick={nickname} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
             </Space>
           </Button>

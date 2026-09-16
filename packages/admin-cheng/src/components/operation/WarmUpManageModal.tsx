@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Avatar, Button, Empty, Form, Image, Space, Table, Tabs, Tag } from 'antd';
+import { Button, Empty, Form, Image, Space, Table, Tabs, Tag } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
 import './WarmUpManageModal.css';
 import type { ColumnsType } from 'antd/es/table';
@@ -12,7 +12,7 @@ import {
   RegisterAuditStatus, RegisterAuditStatusLabels, RegisterAuditStatusColors,
   ActivityType,
 } from '@shared/constants';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { formatDateTime } from '@/utils/format';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -279,7 +279,7 @@ const SubmissionAuditPanel: React.FC<SubmissionAuditPanelProps> = ({ pageId }) =
           <Button type="link" style={{ padding: 0, height: 'auto' }}
             onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
             <Space size={4}>
-              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <UserAvatar src={avatar} nick={nickname} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
             </Space>
           </Button>
@@ -432,7 +432,7 @@ const ScoreLogsPanel: React.FC<ScoreLogsPanelProps> = ({ pageId }) => {
           <Button type="link" style={{ padding: 0, height: 'auto' }}
             onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
             <Space size={4}>
-              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <UserAvatar src={avatar} nick={nickname} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
             </Space>
           </Button>
@@ -582,7 +582,7 @@ const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, act
           <Button type="link" style={{ padding: 0, height: 'auto' }}
             onClick={() => { setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
             <Space size={4}>
-              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <UserAvatar src={avatar} nick={nickname} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
             </Space>
           </Button>

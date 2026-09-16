@@ -1,6 +1,6 @@
-import { Modal, Descriptions, Avatar } from 'antd';
+import { Modal, Descriptions } from 'antd';
 import { RegisterGenderLabels } from '@shared/constants';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 
 export interface UserInfoData {
   user_id: string;
@@ -30,7 +30,7 @@ const UserInfoModal: React.FC<UserInfoModalProps> = ({ visible, record, onClose 
       maskClosable={false}
     >
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <Avatar size={80} src={getAvatarUrl(record.avatar)} style={{ borderRadius: '50%' }} />
+        <UserAvatar size={80} src={record.avatar} nick={record.nickname || record.user_id} />
         <div style={{ fontSize: 16, fontWeight: 500, marginTop: 8 }}>{record.nickname || record.user_id}</div>
       </div>
       <Descriptions column={2} size="small" bordered>

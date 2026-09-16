@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space, Avatar } from 'antd';
+import { Button, Space } from 'antd';
 import { EditOutlined, UndoOutlined, ReloadOutlined, EyeOutlined, ExportOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
@@ -10,7 +10,7 @@ import {
   ApplicationReviewStatusLabels,
   RegisterGenderLabels,
 } from '@shared/constants';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { zoneApi, Application } from '@/api/services/zone';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -194,7 +194,7 @@ const ZoneVerifyList: React.FC<ZoneVerifyListProps> = ({ zoneId, zoneName, activ
           <Button type="link" style={{ padding: 0, height: 'auto' }}
             onClick={() => { setUserDetailUserId(r.user_id); setUserDetailAppId(r.id); setUserDetailVisible(true); }}>
             <Space size={4}>
-              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }} src={getAvatarUrl(avatar)} />
+              <UserAvatar src={avatar} nick={nickname} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
             </Space>
           </Button>

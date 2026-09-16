@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Space, Tag, Image, Avatar, InputNumber } from 'antd';
+import { Button, Space, Tag, Image, InputNumber } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import {
@@ -10,7 +10,7 @@ import {
   submissionTypeLabel,
   SubmissionTypeColors,
 } from '@shared/constants';
-import { getAvatarUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { parseApiTime } from '@/utils/format';
 import { submissionApi, Submission } from '@/api/services/submission';
 import { useListPage } from '@/hooks/useListPage';
@@ -100,8 +100,7 @@ const ProgramSubmission = () => {
               setUserDetailVisible(true);
             }}>
             <Space size={4}>
-              <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0 }}
-                src={getAvatarUrl(avatar)} />
+              <UserAvatar src={avatar} nick={nickname} />
               <span style={{ fontSize: 14 }}>{nickname}</span>
             </Space>
           </Button>

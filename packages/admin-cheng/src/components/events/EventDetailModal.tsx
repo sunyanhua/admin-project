@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { Modal, Descriptions, Tag, Space, Image, Avatar, Button, Form, Input, Upload, DatePicker } from 'antd';
+import { Modal, Descriptions, Tag, Space, Image, Button, Form, Input, Upload, DatePicker } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { eventApi } from '@/api/services/event';
 import { EventStatus } from '@shared/constants/event.enums';
 import { formatDateTime, parseApiTime, dayjsToApi } from '@/utils/format';
-import { getAvatarUrl, getFullWidthUrl } from '@/utils/imageUtils';
+import { getFullWidthUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ImageUpload from '@/components/common/ImageUpload';
 import { uploadApi } from '@/api/services/upload';
@@ -198,7 +199,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
             <Descriptions.Item label="发布者" span={2}>
               <Space>
-                <Avatar src={getAvatarUrl(data.user_data?.avatar)} size="small" />
+                <UserAvatar src={data.user_data?.avatar} nick={data.user_data?.nick} size={24} />
                 <span>{data.user_data?.nick || data.user_data?.userid || '-'}</span>
               </Space>
             </Descriptions.Item>

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { Tag, Avatar, Button, Space } from 'antd';
+import { Tag, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { EyeOutlined, ReloadOutlined, TrophyOutlined, ExportOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
@@ -16,7 +16,7 @@ import RealNameWithTag from '@/components/user/RealNameWithTag';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 import AuditMatchProfileModal from '@/components/user/AuditMatchProfileModal';
 import { MatchProfileAuditStatus, UserVisibility, UserGenderLabels, MaritalStatusLabels, EducationLabels } from '@/api/types/status';
-import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
 import { formatDateTime } from '@/utils/format';
 import type { CommunityUserItem } from '@/api/types/user';
 import '@/styles/user-detail-modal.css';
@@ -212,7 +212,7 @@ const MatchProfileManagement = () => {
           onClick={() => handleViewDetail(record)}
         >
           <Space size={4}>
-            <Avatar src={getMediumUrl(record.match_profile?.photos?.[0] || record.profile.avatar)} size={40} style={{ borderRadius: '50%', flexShrink: 0 }} />
+            <UserAvatar src={record.match_profile?.photos?.[0] || record.profile.avatar} nick={record.profile.nickname} />
             <span style={{ fontSize: 14 }}>{record.profile.nickname || '-'}</span>
           </Space>
         </Button>
