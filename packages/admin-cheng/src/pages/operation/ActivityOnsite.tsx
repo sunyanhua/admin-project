@@ -202,14 +202,14 @@ const ActivityOnsite: React.FC = () => {
     } catch { /* 轮询静默 */ }
   }, [id, upgradePhotos]);
 
-  /** 现场配对数据（双方入选+签到，按匹配度倒序） */
+  /** 心动排名数据（有现场心动的配对，按现场心动次数倒序） */
   const fetchCouples = useCallback(async () => {
     if (!id) return;
     try {
       const all: OnsiteCouple[] = [];
       let page = 1;
       while (true) {
-        const res: any = await activityApi.getOnsiteCouples(id, { page, size: 100 });
+        const res: any = await activityApi.getOnsiteLovesCouples(id, { page, size: 100 });
         const list: OnsiteCouple[] = Array.isArray(res) ? res : (res?.list || []);
         if (!list.length) break;
         all.push(...list);

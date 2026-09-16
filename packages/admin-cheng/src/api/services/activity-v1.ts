@@ -276,4 +276,9 @@ export const activityApi = {
   getOnsiteCouples: (activityId: string, params?: { page?: number; size?: number }) => {
     return request.get(`/admin/v1/bizops/activity/${activityId}/onsite-couples`, { params });
   },
+
+  /** 心动配对信息列表（有现场心动的配对 loves_count>0，按现场心动次数倒序） */
+  getOnsiteLovesCouples: (activityId: string, params?: { page?: number; size?: number }) => {
+    return request.get(`/admin/v1/bizops/activity/${activityId}/onsite-loves-couples`, { params });
+  },
 };
