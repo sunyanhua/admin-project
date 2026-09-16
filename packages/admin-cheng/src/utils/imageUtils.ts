@@ -35,6 +35,8 @@ export const getThumbnailUrl = (url: string | undefined | null, size: number): s
   if (!url) return '';
   if (!shouldAddThumbnail(url)) return url;
   if (hasThumbnailSuffix(url)) return url;
+  // 带查询参数的 URL（如签名地址）不能追加路径后缀，原样返回避免图片失效
+  if (url.includes('?')) return url;
   return `${url}/${size}.0`;
 };
 

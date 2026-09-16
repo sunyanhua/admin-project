@@ -117,11 +117,14 @@ const UserList = () => {
           onClick={() => handleViewDetail(record)}
         >
           <Space size={4}>
+            {/* 头像为空/加载失败时兜底显示昵称首字，避免灰色占位块 */}
             <Avatar
-              src={getAvatarUrl(record.profile.avatar)}
+              src={record.profile.avatar ? getAvatarUrl(record.profile.avatar) : undefined}
               size={40}
-              style={{ borderRadius: '50%', flexShrink: 0 }}
-            />
+              style={{ borderRadius: '50%', flexShrink: 0, background: '#1890ff' }}
+            >
+              {record.profile.nickname?.charAt(0) || '?'}
+            </Avatar>
             <span style={{ fontSize: 14 }}>
               {record.profile.nickname || '-'}
             </span>
