@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-16 | 用户头像灰块全站统一（UserAvatar 组件：空/加载失败兜底昵称首字，16 处列表与弹窗替换）；缩略图工具对带查询参数 URL 不加后缀；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | UserAvatar + imageUtils + 16 个列表/弹窗文件 | 6fce9b5、18b24db（构建产物未提交） |
 | 2026-09-16 | 现场大屏心动排名改用 onsite-loves-couples（有现场心动的配对按心动次数倒序）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | activity-v1 + ActivityOnsite | 638b81d（构建产物未提交） |
 | 2026-09-15 | 互动管理新增「订阅通知发送」（广播表单+订阅情况+微信消息预览）；二维码弹窗增加 H5 地址（工作台/活动/广播/专区）、短链临时关闭；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | notification 服务 + SubscribeNotificationSend + SourceQrcodeModal + menuConfig/router + 相关页面 | 401495f、dc907c1、fcf6d51、3801b12、a193b78、d693d1f、39c464e、57119fb、d1d0057、2f7a00d（构建产物未提交） |
 | 2026-09-15 | 投稿审核增加 push_message 推送开关（投稿管理 true 推送/动态审核 false 静默）；广播投稿管理固定按 display_channel=broadcast 筛选；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | submission 服务 + SubmissionAuditModal + ProgramSubmission + WarmUpManageModal | 47818a7、c4430cb（构建产物未提交） |
