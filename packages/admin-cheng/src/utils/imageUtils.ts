@@ -20,10 +20,10 @@ export const shouldAddThumbnail = (url: string): boolean => {
 
 /**
  * 检查是否已有缩略后缀，避免重复添加
- * 匹配形如 "/256.0"、"/1024.0" 的后缀
+ * 匹配形如 "/256.0"、"/1024.0" 的后缀，以及历史数据的整数后缀 "/256"
  */
 export const hasThumbnailSuffix = (url: string): boolean => {
-  return /\/\d+\.\d+$/.test(url);
+  return /\/\d+(\.\d+)?$/.test(url);
 };
 
 /**
