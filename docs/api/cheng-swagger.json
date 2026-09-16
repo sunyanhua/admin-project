@@ -10043,6 +10043,85 @@
             }
         },
         "/admin/v1/notification/service-template/broadcast": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询公众号模板消息广播批次台账（v6_wxa_template_broadcast，created_at 倒序）。筛选（全部可选，缺省不筛）：status 批次状态（0 待发送/1 发送中/2 已完成）、since/until RFC3339 时间闭区间、keyword 报名项目/编号模糊匹配。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-通知管理"
+                ],
+                "summary": "广播批次台账列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "批次状态筛选（0=待发送 1=发送中 2=已完成，缺省全部）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "起始时间 RFC3339（含）",
+                        "name": "since",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间 RFC3339（含）",
+                        "name": "until",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "报名项目/编号关键字模糊匹配",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
