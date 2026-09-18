@@ -25,22 +25,20 @@ const AUDIT_STATUS_OPTIONS = [
   { label: '待审核', value: MatchProfileAuditStatus.PENDING },
   { label: '审核通过', value: MatchProfileAuditStatus.APPROVED },
   { label: '审核拒绝', value: MatchProfileAuditStatus.REJECTED },
-  { label: '已撤销', value: MatchProfileAuditStatus.REVOKED },
+  { label: '已退出', value: MatchProfileAuditStatus.REVOKED },
 ];
 
 const DISPLAY_STATUS_OPTIONS = [
   { label: '公开', value: 'public' },
   { label: '仅专区可见', value: 'zone_only' },
   { label: '已隐藏', value: 'hidden' },
-  { label: '已退出', value: 'quit' },
 ];
 
-/** 显示状态下拉 → 服务端筛选参数。已退出只看 is_active，与 visibility 无关 */
+/** 显示状态下拉 → 服务端筛选参数 */
 const DISPLAY_STATUS_FILTERS: Record<string, { is_active: boolean; visibility?: number }> = {
   public: { is_active: true, visibility: UserVisibility.FULL },
   zone_only: { is_active: true, visibility: UserVisibility.ZONE },
   hidden: { is_active: true, visibility: UserVisibility.HIDE },
-  quit: { is_active: false },
 };
 
 const filters: FilterConfig[] = [
@@ -53,7 +51,7 @@ const AUDIT_MAP: Record<number, { color: string; text: string }> = {
   [MatchProfileAuditStatus.PENDING]: { color: 'processing', text: '待审核' },
   [MatchProfileAuditStatus.APPROVED]: { color: 'success', text: '已通过' },
   [MatchProfileAuditStatus.REJECTED]: { color: 'error', text: '已拒绝' },
-  [MatchProfileAuditStatus.REVOKED]: { color: 'default', text: '已撤销' },
+  [MatchProfileAuditStatus.REVOKED]: { color: 'default', text: '已退出' },
 };
 
 /** 列表筛选参数组装（列表与导出共用，保证导出与搜索筛选口径一致） */
@@ -269,7 +267,8 @@ const MatchProfileManagement = () => {
         return (
           <Space size={4}>
             <Tag color={a.color}>{a.text}</Tag>
-            <Tag color={ds.color}>{ds.text}</Tag>
+            {/* 审核状态为「已退出」时不显示显示状态 */}
+            {audit !== MatchProfileAuditStatus.REVOKED && <Tag color={ds.color}>{ds.text}</Tag>}
           </Space>
         );
       },
