@@ -72,7 +72,7 @@ const MATCH_AUDIT_MAP: Record<number, { color: string; text: string }> = {
   0: { color: 'processing', text: '待审核' },
   1: { color: 'success', text: '已通过' },
   2: { color: 'error', text: '已拒绝' },
-  3: { color: 'default', text: '已撤销' },
+  3: { color: 'default', text: '已退出' },
 };
 
 /** 根据 is_migrated / is_activated 推导用户类型标签 */
@@ -241,7 +241,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '自我介绍', value: matchProfile.self_intro || '-', span: 2 },
         { label: '择偶要求', value: matchProfile.partner_demand || '-', span: 2 },
         { label: '人气', value: matchProfile.popularity ?? '-', span: 1 },
-        { label: '可见范围', value: getVisibilityTag(matchProfile), span: 1 },
+        { label: '可见范围', value: matchProfile.audit_status === MatchProfileAuditStatus.REVOKED ? '-' : getVisibilityTag(matchProfile), span: 1 },
         { label: '最后更新', value: matchProfile.updated_at ? formatDateTime(matchProfile.updated_at) : '-', span: 1 },
         {
           label: '审核状态',
