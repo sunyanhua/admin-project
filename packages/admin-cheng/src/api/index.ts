@@ -44,8 +44,8 @@ export const clearTokens = () => {
 
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
-/** 单次刷新：当前 Bearer Token → 新 Token；失败返回 null */
-async function tryRefreshOnce(): Promise<string | null> {
+/** 单次刷新：当前 Bearer Token → 新 Token；失败返回 null（Token 失效）或 ''（网络故障，可稍后重试） */
+async function tryRefreshOnce(): Promise<string | null | ''> {
   const current = getAccessToken();
   if (!current) return null;
   try {
@@ -61,16 +61,27 @@ async function tryRefreshOnce(): Promise<string | null> {
       scheduleTokenRefresh();
       return access_token;
     }
-  } catch { /* ignore */ }
+  } catch (err: any) {
+    // 无响应 = 网络故障（部署重启/抖动），不是 Token 失效
+    if (!err?.response) return '';
+  }
   return null;
 }
 
-/** 刷新：瞬时故障（网络抖动/限流）延迟 2s 重试一次 */
-async function doRefresh(): Promise<string | null> {
-  const token = await tryRefreshOnce();
-  if (token) return token;
-  await new Promise((r) => setTimeout(r, 2000));
-  return tryRefreshOnce();
+/**
+ * 刷新：瞬时网络故障延迟 2s 重试一次。
+ * 返回 { token } 成功；{ network: true } 网络故障（会话保留，稍后可重试）；否则 Token 确已失效。
+ */
+async function doRefresh(): Promise<{ token: string | null; network: boolean }> {
+  let t = await tryRefreshOnce();
+  if (t) return { token: t, network: false };
+  if (t === '') {
+    await new Promise((r) => setTimeout(r, 2000));
+    t = await tryRefreshOnce();
+    if (t) return { token: t, network: false };
+    if (t === '') return { token: null, network: true };
+  }
+  return { token: null, network: false };
 }
 
 /** 到期前自动刷新（存储的到期时间已提前 5 分钟），保证活跃会话永不掉线 */
@@ -79,12 +90,27 @@ export function scheduleTokenRefresh() {
   const expiry = getTokenExpiry();
   if (!expiry) return;
   const delay = Math.max(0, expiry - Date.now());
+  const onResult = (r: { token: string | null; network: boolean }) => {
+    // 网络故障不判定失效：10 秒后重试（部署重启/抖动场景不掉线）
+    if (r.network) {
+      refreshTimer = setTimeout(() => scheduleTokenRefresh(), 10000);
+    }
+  };
   if (delay <= 0) {
     // 已到提前刷新点：立即刷新兜底（失败交由 401 拦截器处理）
-    doRefresh();
+    doRefresh().then(onResult);
     return;
   }
-  refreshTimer = setTimeout(() => doRefresh(), delay);
+  refreshTimer = setTimeout(() => { doRefresh().then(onResult); }, delay);
+}
+
+// 浏览器节流/休眠恢复后重同步：标签页重新可见、窗口聚焦、网络恢复时重新校准刷新时机
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') scheduleTokenRefresh();
+  });
+  window.addEventListener('focus', scheduleTokenRefresh);
+  window.addEventListener('online', scheduleTokenRefresh);
 }
 
 export function cancelTokenRefreshScheduler() {
@@ -146,22 +172,26 @@ instance.interceptors.response.use(
     if (error.response?.status === 401) {
       if (originalRequest._retry) {
         // 已重试过一次仍 401 → 再完整刷新一轮，成功则重试原请求
-        const secondToken = await doRefresh();
-        if (secondToken) {
-          originalRequest.headers.Authorization = `Bearer ${secondToken}`;
+        const second = await doRefresh();
+        if (second.token) {
+          originalRequest.headers.Authorization = `Bearer ${second.token}`;
           return instance(originalRequest);
         }
+        // 网络故障（部署重启/抖动）：保留会话，仅让本次请求失败
+        if (second.network) return Promise.reject(error);
       } else if (!isRefreshing) {
         originalRequest._retry = true;
         isRefreshing = true;
-        const newToken = await doRefresh();
+        const res = await doRefresh();
         isRefreshing = false;
-        if (newToken) {
-          onRefreshSuccess(newToken);
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+        if (res.token) {
+          onRefreshSuccess(res.token);
+          originalRequest.headers.Authorization = `Bearer ${res.token}`;
           return instance(originalRequest);
         }
         refreshSubscribers = [];
+        // 网络故障（部署重启/抖动）：保留会话，仅让本次请求失败
+        if (res.network) return Promise.reject(error);
       } else {
         return new Promise((resolve) => {
           addRefreshSubscriber((token: string) => {
