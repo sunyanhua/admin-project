@@ -26669,6 +26669,14 @@
                 "display_channel": {
                     "type": "string"
                 },
+                "ext_audit": {
+                    "description": "仅后台扩展字段（前端自主控制，服务端透明存储）",
+                    "type": "string"
+                },
+                "ext_public": {
+                    "description": "公开扩展字段（前端自主控制，服务端透明存储）",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -26737,6 +26745,14 @@
                     "type": "boolean"
                 },
                 "display_channel": {
+                    "type": "string"
+                },
+                "ext_audit": {
+                    "description": "仅后台扩展字段（前端自主控制，服务端透明存储）",
+                    "type": "string"
+                },
+                "ext_public": {
+                    "description": "公开扩展字段（前端自主控制，服务端透明存储）",
                     "type": "string"
                 },
                 "id": {
@@ -26823,6 +26839,12 @@
                 "display_channel": {
                     "type": "string"
                 },
+                "ext_private": {
+                    "type": "string"
+                },
+                "ext_public": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -26862,6 +26884,12 @@
                     "type": "string"
                 },
                 "display_channel": {
+                    "type": "string"
+                },
+                "ext_private": {
+                    "type": "string"
+                },
+                "ext_public": {
                     "type": "string"
                 },
                 "id": {
@@ -26941,6 +26969,10 @@
                     "description": "投稿时间 RFC3339 格式",
                     "type": "string"
                 },
+                "ext_public": {
+                    "description": "公开扩展字段（前端自主控制，服务端透明存储）",
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -26985,6 +27017,10 @@
                 },
                 "created_at": {
                     "description": "投稿时间 RFC3339 格式",
+                    "type": "string"
+                },
+                "ext_public": {
+                    "description": "公开扩展字段（前端自主控制，服务端透明存储）",
                     "type": "string"
                 },
                 "id": {
@@ -27036,6 +27072,16 @@
                     "description": "DisplayChannel 展示渠道（前端自主控制，服务端透明存储；null/缺省=未指定）。",
                     "type": "string",
                     "maxLength": 100
+                },
+                "ext_audit": {
+                    "type": "string"
+                },
+                "ext_private": {
+                    "type": "string"
+                },
+                "ext_public": {
+                    "description": "扩展字段（前端自主控制，服务端透明存储不解析——硬约束 #11；null/缺省=未指定）。\n写入路径统一（本请求），读取面分三档：ext_public 公开页+本人+管理后台、\next_private 仅本人、ext_audit 仅管理后台。",
+                    "type": "string"
                 },
                 "is_public": {
                     "type": "boolean"
@@ -30282,7 +30328,12 @@
                     "type": "string"
                 },
                 "status": {
-                    "type": "integer"
+                    "description": "状态类型化（2026-09-18 BUG-09）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ZoneApplicationStatus"
+                        }
+                    ]
                 },
                 "subscribed_audit": {
                     "description": "SubscribedAudit 专区申请审核场景订阅状态（Available 额度，B9——LEFT JOIN quota 账本口径）。",
@@ -30338,7 +30389,12 @@
                     "type": "string"
                 },
                 "status": {
-                    "type": "integer"
+                    "description": "状态类型化（2026-09-18 BUG-09）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ZoneApplicationStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -30520,7 +30576,12 @@
                     "type": "string"
                 },
                 "status": {
-                    "type": "integer"
+                    "description": "Status 状态类型化（2026-09-18 BUG-09：TD-018 清偿遗漏同类——对齐 dto-typing.md）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -32146,6 +32207,34 @@
                 "UserVisibilityFull",
                 "UserVisibilityZone",
                 "UserVisibilityHide"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.ZoneApplicationStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "ZoneApplicationApproved": "已通过",
+                "ZoneApplicationPending": "待审核",
+                "ZoneApplicationRejected": "已拒绝（审核不通过）",
+                "ZoneApplicationRevoked": "已撤销（通过后被撤销）"
+            },
+            "x-enum-descriptions": [
+                "待审核",
+                "已通过",
+                "已拒绝（审核不通过）",
+                "已撤销（通过后被撤销）"
+            ],
+            "x-enum-varnames": [
+                "ZoneApplicationPending",
+                "ZoneApplicationApproved",
+                "ZoneApplicationRejected",
+                "ZoneApplicationRevoked"
             ]
         },
         "internal_module_recommend.HelpSelectResponse": {
