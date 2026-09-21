@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-09-18**
+**2026-09-21**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-21 | 报名字段配置单选/多选「其他」勾选（共享 FormConfigEditor，活动与专区申请表单配置同步生效）；活动编辑「现场图片二维码」（extra_params.onsite_qrcode）；首页弹窗宽度字段与图片必填；**测试版构建发布**（build:zone-test 合并产物，待上传测试服务器 /cheng/ 目录） | FormConfigEditor + ActivityEditModal + HomePopupManagement | 104f71d、d8f9861、dbd12bf、b4be552（构建产物未提交） |
 | 2026-09-18 | 登录态稳定性（刷新时机重同步、网络故障不登出）；脱单资料与用户卡片状态调整（已撤销→已退出、显示状态去已退出、已退出时隐藏显示状态）；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | api/index + MatchProfileManagement + UserDetailSections | aaf1942、4da190c、71a9f92（构建产物未提交） |
 | 2026-09-16 | 头像显示修复——历史缩略后缀整数格式（/256）识别支持，避免重复追加后缀导致 CDN 拒绝；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | imageUtils | 2a5a2a3（构建产物未提交） |
 | 2026-09-16 | 用户头像灰块全站统一（UserAvatar 组件：空/加载失败兜底昵称首字，16 处列表与弹窗替换）；缩略图工具对带查询参数 URL 不加后缀；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | UserAvatar + imageUtils + 16 个列表/弹窗文件 | 6fce9b5、18b24db（构建产物未提交） |
