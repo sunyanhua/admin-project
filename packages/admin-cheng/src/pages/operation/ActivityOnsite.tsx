@@ -532,9 +532,7 @@ const ActivityOnsite: React.FC = () => {
         const idx = strip.findIndex((u) => u.userId === winner?.userId);
         const target = (((strip.length - 1 - idx) % len) + len) % len;
         const d = stepsTo(luckyOffsetRef.current, target, len);
-        let n = d + 1;
-        while (n < 8) n += Math.max(1, len);
-        return { nF: n, nM: 0, total: n, luckyTarget: target, fTarget: 0, mTarget: 0 };
+        return { nF: d + 1, nM: 0, total: d + 1, luckyTarget: target, fTarget: 0, mTarget: 0 };
       }
       const fLen = Math.max(1, femaleReelLenRef.current);
       const mLen = Math.max(1, maleReelLenRef.current);
@@ -546,32 +544,21 @@ const ActivityOnsite: React.FC = () => {
       const mTarget = (((mStrip.length - 1 - mIdx) % mLen) + mLen) % mLen;
       const dF = stepsTo(fOffsetRef.current, fTarget, fLen);
       const dM = stepsTo(mOffsetRef.current, mTarget, mLen);
-      let nF = dF + 1;
-      while (nF < 8) nF += fLen;
-      let nM = dM + 1;
-      while (nM < 8) nM += mLen;
+      const nF = dF + 1;
+      const nM = dM + 1;
       return { nF, nM, total: Math.max(nF, nM), luckyTarget: 0, fTarget, mTarget };
     };
 
     const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
-    // 减速时长序列：首步 320ms（按 P 瞬间剧烈降速）、末步 900ms，中间按二次方递增压缩进总预算 4.8 秒
-    const FIRST_STEP = 320;
-    const LAST_STEP = 900;
-    const BUDGET = 4800;
+    // 减速时长序列：严格单调——首步 320ms（按 P 瞬间剧烈降速）、末步 800ms。
+    // 步数 ≤8 线性递增；步数多时中间平速 300ms（总时长控制在 5 秒左右），避免先慢后快的乱速
     let durations: number[];
     if (total <= 1) {
-      durations = [LAST_STEP];
-    } else if (total === 2) {
-      durations = [FIRST_STEP, LAST_STEP];
+      durations = [800];
+    } else if (total <= 8) {
+      durations = Array.from({ length: total }, (_, i) => Math.round(320 + (800 - 320) * (i / (total - 1))));
     } else {
-      const midBudget = BUDGET - FIRST_STEP - LAST_STEP;
-      const weights = Array.from({ length: total - 2 }, (_, i) => Math.pow((i + 1) / (total - 1), 2));
-      const wSum = weights.reduce((a, b) => a + b, 0) || 1;
-      durations = [
-        FIRST_STEP,
-        ...weights.map((w) => Math.max(150, Math.round((w / wSum) * midBudget))),
-        LAST_STEP,
-      ];
+      durations = [320, ...Array<number>(total - 2).fill(300), 800];
     }
 
     const inc = (i: number) => {
