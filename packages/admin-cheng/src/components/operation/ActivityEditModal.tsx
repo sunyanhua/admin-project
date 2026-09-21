@@ -41,6 +41,15 @@ export interface ActivityLockedZone {
   name: string;
 }
 
+/** 现场图片二维码：解析 extra_params 顶层 onsite_qrcode 键 */
+const parseOnsiteQrcodeFromExtra = (extraParams?: string): string => {
+  try {
+    const obj = JSON.parse(extraParams || '{}');
+    if (obj && typeof obj === 'object') return obj.onsite_qrcode || '';
+  } catch { /* 原值非法则留空 */ }
+  return '';
+};
+
 const ACTIVITY_TYPE_OPTIONS = [
   { label: ActivityTypeLabels[ActivityType.FREE_FCFS], value: ActivityType.FREE_FCFS },
   { label: ActivityTypeLabels[ActivityType.PAID_FCFS], value: ActivityType.PAID_FCFS },
@@ -97,7 +106,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], checkin_enabled: false, onsite_loves_chances: 0, onsite_bg_screen: '', warm_up_enabled: false, warm_up_config: '', warm_up_page_id: '' };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], onsite_qrcode: '', checkin_enabled: false, onsite_loves_chances: 0, onsite_bg_screen: '', warm_up_enabled: false, warm_up_config: '', warm_up_page_id: '' };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -123,6 +132,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       description: activity.description || '',
       form_config: activity.form_config || '',
       sort_order: activity.sort_order ?? 0,
+      onsite_qrcode: parseOnsiteQrcodeFromExtra(activity.extra_params),
       ...pickOnsiteFields(activity),
     };
   }, [activity, lockedZone]);
@@ -186,6 +196,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           form_config: activity.form_config || '',
           promise_ids: parsePromiseIdsFromExtra(activity.extra_params),
           sort_order: activity.sort_order ?? 0,
+          onsite_qrcode: parseOnsiteQrcodeFromExtra(activity.extra_params),
           ...pickOnsiteFields(activity),
         });
       }, 50);
@@ -212,6 +223,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         form_config: '',
         promise_ids: [],
         sort_order: 0,
+        onsite_qrcode: '',
         checkin_enabled: false,
         checkin_start: undefined,
         onsite_loves_chances: 0,
@@ -247,9 +259,24 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       const selectedTemplates = selectedIds
         .map((id) => promiseTemplates.find((t) => t.id === id))
         .filter((t): t is PromiseTemplate => !!t);
-      const extraParams = selectedTemplates.length > 0
-        ? JSON.stringify({ [EXTRA_PROMISE_KEY]: selectedTemplates })
-        : '{}';
+      // extra_params：原对象透传（保留未知键）+ 承诺书（promise 键）+ 现场图片二维码（onsite_qrcode 键）
+      let extraObj: Record<string, any> = {};
+      try {
+        const parsed = JSON.parse(activity?.extra_params || '{}');
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) extraObj = parsed;
+      } catch { /* 原值非法则从空对象开始 */ }
+      if (selectedTemplates.length > 0) {
+        extraObj[EXTRA_PROMISE_KEY] = selectedTemplates;
+      } else {
+        delete extraObj[EXTRA_PROMISE_KEY];
+      }
+      const onsiteQrcode = String(form.getFieldValue('onsite_qrcode') ?? '').trim();
+      if (onsiteQrcode) {
+        extraObj.onsite_qrcode = onsiteQrcode;
+      } else {
+        delete extraObj.onsite_qrcode;
+      }
+      const extraParams = JSON.stringify(extraObj);
 
       const payload: CreateActivityRequest = {
         title: values.title,
@@ -660,6 +687,17 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
               </>
             )}
           </div>
+        )}
+
+        {/* ====== 9.8 现场图片二维码（专区模式不管理，隐藏） ====== */}
+        {!lockedZone && (
+          <Form.Item
+            label="现场图片二维码"
+            name="onsite_qrcode"
+            extra="用于活动现场展示的图片二维码"
+          >
+            <ImageUpload />
+          </Form.Item>
         )}
 
         {/* ====== 10. 权重（专区模式不管理，隐藏） ====== */}
