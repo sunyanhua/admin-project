@@ -417,12 +417,17 @@ const ActivityOnsite: React.FC = () => {
   const malesOf = useCallback(() => wall.filter((u) => u.gender === 'male'), [wall]);
   const femalesOf = useCallback(() => wall.filter((u) => u.gender === 'female'), [wall]);
 
-  /** 老虎机条带：洗牌后重复 copies 份拼接（内容固定，滚动靠偏移驱动） */
+  /**
+   * 老虎机条带：洗牌后【反序】重复 copies 份拼接（内容固定，滚动靠偏移驱动）。
+   * 反序 + 正向位移（条带下移）实现「下一张照片从上方进入、向下移动」的老虎机方向；
+   * 对齐公式按 offset % len 取模，与顺序无关，减速停格逻辑不受影响。
+   */
   const buildStrip = useCallback((users: WallUser[], copies = 5): WallUser[] => {
     if (!users.length) return [];
     const shuffled = [...users].sort(() => Math.random() - 0.5);
+    const rev = [...shuffled].reverse();
     const arr: WallUser[] = [];
-    for (let i = 0; i < copies; i++) arr.push(...shuffled);
+    for (let i = 0; i < copies; i++) arr.push(...rev);
     return arr;
   }, []);
 
