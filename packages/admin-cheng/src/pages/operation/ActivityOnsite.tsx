@@ -508,9 +508,10 @@ const ActivityOnsite: React.FC = () => {
     setDrawPhase('slowing');
     clearDrawTimer();
     const isLucky = tab === 'lucky';
-    const winner = randOf(wall);
-    const maleWinner = randOf(malesOf());
-    const femaleWinner = randOf(femalesOf());
+    // 获奖者直接从条带（首周期）中抽取——轮询刷新 wall 后 winner 仍在条带内，findIndex 恒有效
+    const winner = randOf(luckyStripRef.current.slice(0, luckyReelLenRef.current)) || randOf(wall);
+    const maleWinner = randOf(maleStripRef.current.slice(0, maleReelLenRef.current)) || randOf(malesOf());
+    const femaleWinner = randOf(femaleStripRef.current.slice(0, femaleReelLenRef.current)) || randOf(femalesOf());
 
     // 距获奖者还需前进的步数（0=下一步即落在获奖者）。target 为偏移的目标余数
     const stepsTo = (offsetNow: number, target: number, len: number): number => {
@@ -553,10 +554,10 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
-    // 减速时长序列（四次方 ease-in：降速更狠——前段快速、末段极慢，整体约 4.2 秒内停下）
-    const raw = Array.from({ length: total }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, total - 1), 4));
+    // 减速时长序列：起步档大幅提高（按 P 瞬间明显降速），四次方 ease-in 逐渐放缓到末段极慢，整体约 4.5 秒内停下
+    const raw = Array.from({ length: total }, (_, i) => 260 + 640 * Math.pow(i / Math.max(1, total - 1), 4));
     const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
-    const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4200)));
+    const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4500)));
 
     const inc = (i: number) => {
       if (isLucky) {
@@ -580,14 +581,14 @@ const ActivityOnsite: React.FC = () => {
       if (i >= total) {
         // 最后一步滑动完成后再揭晓，定格在获奖者
         drawTimerRef.current = setTimeout(() => {
-          // 强制对齐到获奖者（双保险：无论减速过程有无漂移，卡片与提示永远一致）
+          // 强制对齐到获奖者：偏移余数直接置为目标余数（target < 周期，无需回卷），保证卡片与提示永远一致
           setSnapFrame(true);
           if (isLucky) {
-            luckyOffsetRef.current = (luckyOffsetRef.current % luckyReelLenRef.current) + luckyTarget;
+            luckyOffsetRef.current = luckyTarget;
             setLuckyOffset(luckyOffsetRef.current);
           } else {
-            fOffsetRef.current = (fOffsetRef.current % femaleReelLenRef.current) + fTarget;
-            mOffsetRef.current = (mOffsetRef.current % maleReelLenRef.current) + mTarget;
+            fOffsetRef.current = fTarget;
+            mOffsetRef.current = mTarget;
             setFOffset(fOffsetRef.current);
             setMOffset(mOffsetRef.current);
           }
