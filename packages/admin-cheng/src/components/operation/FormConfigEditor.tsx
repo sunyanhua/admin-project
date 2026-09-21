@@ -18,6 +18,8 @@ export interface FormField {
   type: FieldType;
   required: boolean;
   options?: string[];
+  /** 单选/多选是否允许用户填写「其他」 */
+  allow_other?: boolean;
   /** 类型「数据」的嵌套字段集合（不含「数据」类型，其余与第一层一致） */
   config?: FormField[];
 }
@@ -77,6 +79,7 @@ const parseField = (f: any, manualId: boolean): EditorField => {
     type,
     required: f.required === true,
     options: f.options || undefined,
+    allow_other: typeof f.allow_other === 'boolean' ? f.allow_other : undefined,
     config: type === 'data' && Array.isArray(f.config)
       // 二级字段自动分配随机 id（缺 id 时生成），与一级字段的手填 id 行为不同
       ? f.config.map((c: any) => parseField(c, false))
@@ -92,6 +95,7 @@ const toStoredField = (f: EditorField): FormField => ({
   type: f.type,
   required: f.required,
   options: f.options?.length ? f.options : undefined,
+  allow_other: (f.type === 'select' || f.type === 'multi_select') ? f.allow_other : undefined,
   config: f.type === 'data' ? (f.config ?? []).filter((c) => c.label.trim()).map(toStoredField) : undefined,
 });
 
@@ -172,15 +176,20 @@ const FieldRowEditor: React.FC<FieldRowEditorProps> = ({ field, idx, typeOptions
         </label>
       </div>
 
-      {/* 选项（单选/多选，用 | 分割） */}
+      {/* 选项（单选/多选，用 | 分割）+ 是否允许「其他」 */}
       {isSelect && (
-        <div style={{ marginTop: 4 }}>
+        <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
           <Input
             size="small"
             placeholder="选项，用 | 分割，如：A|B|C"
             value={field.options?.join('|') || ''}
             onChange={(e) => onChange({ options: e.target.value.split('|').map((s) => s.trim()) })}
           />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, whiteSpace: 'nowrap' }}>
+            <input type="checkbox" checked={field.allow_other === true} style={{ margin: 0 }}
+              onChange={(e) => onChange({ allow_other: e.target.checked })} />
+            其他
+          </label>
         </div>
       )}
 
