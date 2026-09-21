@@ -105,21 +105,30 @@ const ActivityOnsite: React.FC = () => {
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
   /** 抽奖环节：cover=栏目封面 rolling=滚动中 slowing=减速中 done=已揭晓 */
   const [drawPhase, setDrawPhase] = useState<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
-  /** 幸运之星：转轮照片队列与滚动格数、最终结果 */
-  const [luckyReel, setLuckyReel] = useState<WallUser[]>([]);
+  /** 幸运之星：静态长条带（洗牌后重复 5 份，内容固定）与滚动偏移、最终结果 */
+  const [luckyStrip, setLuckyStrip] = useState<WallUser[]>([]);
   const [luckyOffset, setLuckyOffset] = useState(0);
   const [drawWinner, setDrawWinner] = useState<WallUser | null>(null);
-  /** 能成时刻：男女转轮与最终配对 */
-  const [femaleReel, setFemaleReel] = useState<WallUser[]>([]);
-  const [maleReel, setMaleReel] = useState<WallUser[]>([]);
+  /** 能成时刻：男女条带与最终配对 */
+  const [femaleStrip, setFemaleStrip] = useState<WallUser[]>([]);
+  const [maleStrip, setMaleStrip] = useState<WallUser[]>([]);
   const [fOffset, setFOffset] = useState(0);
   const [mOffset, setMOffset] = useState(0);
   const [drawPairWinner, setDrawPairWinner] = useState<{ male: WallUser | null; female: WallUser | null } | null>(null);
   /** 转轮滚动速度（transition 时长，减速时逐级增大） */
   const [reelSpeed, setReelSpeed] = useState(70);
-  const luckyReelRef = useRef<WallUser[]>([]);
-  const femaleReelRef = useRef<WallUser[]>([]);
-  const maleReelRef = useRef<WallUser[]>([]);
+  /** 回卷帧：禁用过渡（周期相同内容一致，视觉无缝） */
+  const [snapFrame, setSnapFrame] = useState(false);
+  const luckyStripRef = useRef<WallUser[]>([]);
+  const femaleStripRef = useRef<WallUser[]>([]);
+  const maleStripRef = useRef<WallUser[]>([]);
+  /** 每个条带的一个循环周期长度（洗牌列表长度） */
+  const luckyReelLenRef = useRef(1);
+  const femaleReelLenRef = useRef(1);
+  const maleReelLenRef = useRef(1);
+  const luckyOffsetRef = useRef(0);
+  const fOffsetRef = useRef(0);
+  const mOffsetRef = useRef(0);
   const drawTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoRef = useRef(false);
   /** 照片墙容器（钳制照片位置时测量用） */
@@ -408,27 +417,39 @@ const ActivityOnsite: React.FC = () => {
   const malesOf = useCallback(() => wall.filter((u) => u.gender === 'male'), [wall]);
   const femalesOf = useCallback(() => wall.filter((u) => u.gender === 'female'), [wall]);
 
-  /** 老虎机转轮：打乱后循环补齐到至少 minLen 张（照片首尾相连） */
-  const buildReel = useCallback((users: WallUser[], minLen = 16): WallUser[] => {
+  /** 老虎机条带：洗牌后重复 copies 份拼接（内容固定，滚动靠偏移驱动） */
+  const buildStrip = useCallback((users: WallUser[], copies = 5): WallUser[] => {
     if (!users.length) return [];
     const shuffled = [...users].sort(() => Math.random() - 0.5);
     const arr: WallUser[] = [];
-    while (arr.length < minLen) arr.push(...shuffled);
-    return arr.slice(0, minLen);
+    for (let i = 0; i < copies; i++) arr.push(...shuffled);
+    return arr;
+  }, []);
+
+  /** 回卷：滚动超过 4 圈后瞬间跳回（内容周期相同，禁用过渡做到视觉无缝） */
+  const wrapOffset = useCallback((len: number, offset: number): number => {
+    if (offset >= len * 4) {
+      setSnapFrame(true);
+      setTimeout(() => setSnapFrame(false), 0);
+      return offset - len * 4;
+    }
+    return offset;
   }, []);
 
   /** 进入幸运之星（快捷键 3）：先显示栏目封面，按 O 开始滚动 */
   const startLucky = useCallback(() => {
     clearDrawTimer();
-    const reel = buildReel([...wall]);
-    luckyReelRef.current = reel;
-    setLuckyReel(reel);
+    const strip = buildStrip([...wall]);
+    luckyStripRef.current = strip;
+    luckyReelLenRef.current = wall.length || 1;
+    setLuckyStrip(strip);
+    luckyOffsetRef.current = 0;
     setLuckyOffset(0);
     setReelSpeed(70);
     setTab('lucky');
     setDrawPhase('cover');
     setDrawWinner(null);
-  }, [clearDrawTimer, wall, buildReel]);
+  }, [clearDrawTimer, wall, buildStrip]);
 
   /** 进入能成时刻（快捷键 4） */
   const startCouple = useCallback(() => {
@@ -436,39 +457,46 @@ const ActivityOnsite: React.FC = () => {
     const males = malesOf();
     const females = femalesOf();
     // 某一性别不足时退回全体嘉宾，保证转轮可用
-    const fre = buildReel(females.length ? females : [...wall]);
-    const mre = buildReel(males.length ? males : [...wall]);
-    femaleReelRef.current = fre;
-    maleReelRef.current = mre;
-    setFemaleReel(fre);
-    setMaleReel(mre);
+    const fStrip = buildStrip(females.length ? females : [...wall]);
+    const mStrip = buildStrip(males.length ? males : [...wall]);
+    femaleStripRef.current = fStrip;
+    maleStripRef.current = mStrip;
+    femaleReelLenRef.current = (females.length || wall.length) || 1;
+    maleReelLenRef.current = (males.length || wall.length) || 1;
+    setFemaleStrip(fStrip);
+    setMaleStrip(mStrip);
+    fOffsetRef.current = 0;
+    mOffsetRef.current = 0;
     setFOffset(0);
     setMOffset(0);
     setReelSpeed(70);
     setTab('couple');
     setDrawPhase('cover');
     setDrawPairWinner(null);
-  }, [clearDrawTimer, malesOf, femalesOf, wall, buildReel]);
+  }, [clearDrawTimer, malesOf, femalesOf, wall, buildStrip]);
 
-  /** O：开始滚动（转轮自上而下快速移动，照片首尾相连） */
+  /** O：开始滚动（条带自上而下快速移动，照片首尾相连） */
   const beginRoll = useCallback(() => {
     if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'cover') return;
-    if (tab === 'lucky' && !luckyReelRef.current.length) return;
-    if (tab === 'couple' && (!femaleReelRef.current.length || !maleReelRef.current.length)) return;
+    if (tab === 'lucky' && !luckyStripRef.current.length) return;
+    if (tab === 'couple' && (!femaleStripRef.current.length || !maleStripRef.current.length)) return;
     setDrawPhase('rolling');
     clearDrawTimer();
     setReelSpeed(70);
     const tick = () => {
       if (tab === 'lucky') {
-        setLuckyOffset((o) => o + 1);
+        luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + 1);
+        setLuckyOffset(luckyOffsetRef.current);
       } else {
-        setFOffset((o) => o + 1);
-        setMOffset((o) => o + 1);
+        fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
+        mOffsetRef.current = wrapOffset(maleReelLenRef.current, mOffsetRef.current + 1);
+        setFOffset(fOffsetRef.current);
+        setMOffset(mOffsetRef.current);
       }
       drawTimerRef.current = setTimeout(tick, 70);
     };
     tick();
-  }, [tab, drawPhase, clearDrawTimer]);
+  }, [tab, drawPhase, clearDrawTimer, wrapOffset]);
 
   /** P：减速并慢慢停下（逐级拉长间隔，最后对齐停在预设结果上） */
   const slowRoll = useCallback(() => {
@@ -482,39 +510,36 @@ const ActivityOnsite: React.FC = () => {
     const seq = [80, 100, 130, 170, 230, 310, 420, 570, 760];
     const inc = () => {
       if (isLucky) {
-        setLuckyOffset((o) => o + 1);
+        luckyOffsetRef.current += 1;
+        setLuckyOffset(luckyOffsetRef.current);
       } else {
-        setFOffset((o) => o + 1);
-        setMOffset((o) => o + 1);
+        fOffsetRef.current += 1;
+        mOffsetRef.current += 1;
+        setFOffset(fOffsetRef.current);
+        setMOffset(mOffsetRef.current);
       }
     };
     const finish = () => {
-      // 最后一段：平滑滑到获奖者停稳
+      // 最后一段：平滑滑到获奖者停稳（对齐到当前周期内的获奖者位置）
       setReelSpeed(520);
       if (isLucky) {
-        const reel = luckyReelRef.current;
-        setLuckyOffset((o) => {
-          const len = reel.length || 1;
-          const idx = reel.findIndex((u) => u.userId === winner?.userId);
-          return o + ((idx - (o % len) + len) % len);
-        });
+        const len = luckyReelLenRef.current || 1;
+        const idx = luckyStripRef.current.findIndex((u) => u.userId === winner?.userId);
+        luckyOffsetRef.current += ((idx - (luckyOffsetRef.current % len) + len) % len);
+        setLuckyOffset(luckyOffsetRef.current);
         drawTimerRef.current = setTimeout(() => {
           setDrawWinner(winner);
           setDrawPhase('done');
         }, 560);
       } else {
-        const fre = femaleReelRef.current;
-        const mre = maleReelRef.current;
-        setFOffset((o) => {
-          const len = fre.length || 1;
-          const idx = fre.findIndex((u) => u.userId === femaleWinner?.userId);
-          return o + ((idx - (o % len) + len) % len);
-        });
-        setMOffset((o) => {
-          const len = mre.length || 1;
-          const idx = mre.findIndex((u) => u.userId === maleWinner?.userId);
-          return o + ((idx - (o % len) + len) % len);
-        });
+        const fLen = femaleReelLenRef.current || 1;
+        const mLen = maleReelLenRef.current || 1;
+        const fIdx = femaleStripRef.current.findIndex((u) => u.userId === femaleWinner?.userId);
+        const mIdx = maleStripRef.current.findIndex((u) => u.userId === maleWinner?.userId);
+        fOffsetRef.current += ((fIdx - (fOffsetRef.current % fLen) + fLen) % fLen);
+        mOffsetRef.current += ((mIdx - (mOffsetRef.current % mLen) + mLen) % mLen);
+        setFOffset(fOffsetRef.current);
+        setMOffset(mOffsetRef.current);
         drawTimerRef.current = setTimeout(() => {
           setDrawPairWinner({ male: maleWinner, female: femaleWinner });
           setDrawPhase('done');
@@ -635,20 +660,18 @@ const ActivityOnsite: React.FC = () => {
               </>
             ) : (
               <>
-                {luckyReel.length > 0 && (
-                  <div className={`draw-reel-window lucky${drawPhase === 'done' ? ' win' : ''}`}>
-                    <div className="draw-reel-strip" style={{ transform: `translateY(calc(26vh * ${-luckyOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
-                      {/* 固定 30 个槽位按偏移取模取人：无限循环滚动，无空段 */}
-                      {Array.from({ length: 30 }).map((_, j) => {
-                        const u = luckyReel[(luckyOffset + j) % luckyReel.length];
-                        return (
-                          <div key={`slot-${j}`} className="draw-reel-item">
+                {luckyStrip.length > 0 && (
+                  <div className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`}>
+                    <div className="draw-reel-window">
+                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(26vh * ${-luckyOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                        {luckyStrip.map((u, i) => (
+                          <div key={`${u.userId}-${i}`} className="draw-reel-item">
                             <img src={u.photo} alt={u.nick} />
                             <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
                             <span className="draw-nick">{u.nick}</span>
                           </div>
-                        );
-                      })}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -676,36 +699,34 @@ const ActivityOnsite: React.FC = () => {
               <>
                 <div style={{ display: 'flex', gap: '8vw' }}>
                   {/* 女方转轮 */}
-                  {femaleReel.length > 0 && (
-                    <div className={`draw-reel-window couple${drawPhase === 'done' ? ' win' : ''}`}>
-                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-fOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
-                        {Array.from({ length: 30 }).map((_, j) => {
-                          const u = femaleReel[(fOffset + j) % femaleReel.length];
-                          return (
-                            <div key={`fs-${j}`} className="draw-reel-item">
+                  {femaleStrip.length > 0 && (
+                    <div className={`draw-reel-frame couple${drawPhase === 'done' ? ' win' : ''}`}>
+                      <div className="draw-reel-window">
+                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-fOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                          {femaleStrip.map((u, i) => (
+                            <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
                               <span className="onsite-number gender-female">{u.number || '-'}</span>
                               <span className="draw-nick">{u.nick}</span>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
                   {/* 男方转轮 */}
-                  {maleReel.length > 0 && (
-                    <div className={`draw-reel-window couple${drawPhase === 'done' ? ' win' : ''}`}>
-                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-mOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
-                        {Array.from({ length: 30 }).map((_, j) => {
-                          const u = maleReel[(mOffset + j) % maleReel.length];
-                          return (
-                            <div key={`ms-${j}`} className="draw-reel-item">
+                  {maleStrip.length > 0 && (
+                    <div className={`draw-reel-frame couple${drawPhase === 'done' ? ' win' : ''}`}>
+                      <div className="draw-reel-window">
+                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-mOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                          {maleStrip.map((u, i) => (
+                            <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
                               <span className="onsite-number gender-male">{u.number || '-'}</span>
                               <span className="draw-nick">{u.nick}</span>
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -847,16 +868,18 @@ const ActivityOnsite: React.FC = () => {
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         /* 抽奖环节（幸运之星/能成时刻）：转轮式滚动，照片首尾相连 */
         .draw-cover-title { font-size: 9vh; font-weight: 800; color: #ffd700; letter-spacing: 8px; text-shadow: 0 4px 24px rgba(0,0,0,.5); }
-        /* 窗口高 = 卡片高 + 上下边框 4px（border-box），保证显示区与每张卡片高度完全一致 */
-        .draw-reel-window { width: 18vw; height: calc(26vh + 4px); overflow: hidden; border: solid 2px rgba(255,255,255,.5); border-radius: 1.6vh; background: rgba(0,0,0,.25); }
-        .draw-reel-window.couple { width: 15vw; height: calc(24vh + 4px); }
+        /* 边框/光晕在外框；内窗口无边框，高度与每张卡片完全一致 */
+        .draw-reel-frame { width: 18vw; border: solid 2px rgba(255,255,255,.5); border-radius: 1.6vh; background: rgba(0,0,0,.25); overflow: hidden; }
+        .draw-reel-frame.couple { width: 15vw; }
+        .draw-reel-window { height: 26vh; overflow: hidden; }
+        .draw-reel-frame.couple .draw-reel-window { height: 24vh; }
         .draw-reel-strip { display: flex; flex-direction: column; will-change: transform; }
         .draw-reel-item { position: relative; width: 100%; height: 26vh; flex-shrink: 0; }
-        .draw-reel-window.couple .draw-reel-item { height: 24vh; }
+        .draw-reel-frame.couple .draw-reel-item { height: 24vh; }
         .draw-reel-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .draw-reel-item .onsite-number { left: 2%; top: 2%; }
         .draw-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px; text-align: center; background: rgba(0,0,0,.5); color: #fff; font-size: 1.6vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .draw-reel-window.win { border-color: #ffd700; box-shadow: 0 0 50px rgba(255,215,0,.8); }
+        .draw-reel-frame.win { border-color: #ffd700; box-shadow: 0 0 50px rgba(255,215,0,.8); }
       `}</style>
     </div>
   );
