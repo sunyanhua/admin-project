@@ -88,6 +88,11 @@ const HomePopupManagement: React.FC = () => {
   };
 
   const handleSave = async () => {
+    // 弹窗图片：必填
+    if (!data.image) {
+      showError('请上传弹窗图片');
+      return;
+    }
     // 宽度百分比：必填，范围 30-100
     if (data.width_percent == null) {
       showError('请填写弹窗宽度');
@@ -134,7 +139,7 @@ const HomePopupManagement: React.FC = () => {
       <Card style={{ maxWidth: 800 }}>
         <Spin spinning={loading}>
           <Form layout="vertical">
-            <Form.Item label="弹窗图片" extra="建议尺寸：750 × 1000 像素">
+            <Form.Item label="弹窗图片" required extra="建议尺寸：750 × 1000 像素">
               <ImageUpload
                 value={data.image}
                 onChange={url => setData(prev => ({ ...prev, image: url }))}
