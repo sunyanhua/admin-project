@@ -105,12 +105,21 @@ const ActivityOnsite: React.FC = () => {
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
   /** 抽奖环节：cover=栏目封面 rolling=滚动中 slowing=减速中 done=已揭晓 */
   const [drawPhase, setDrawPhase] = useState<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
-  /** 幸运之星：当前展示与最终结果 */
-  const [drawUser, setDrawUser] = useState<WallUser | null>(null);
+  /** 幸运之星：转轮照片队列与滚动格数、最终结果 */
+  const [luckyReel, setLuckyReel] = useState<WallUser[]>([]);
+  const [luckyOffset, setLuckyOffset] = useState(0);
   const [drawWinner, setDrawWinner] = useState<WallUser | null>(null);
-  /** 能成时刻：当前展示与最终配对 */
-  const [drawPair, setDrawPair] = useState<{ male: WallUser | null; female: WallUser | null }>({ male: null, female: null });
+  /** 能成时刻：男女转轮与最终配对 */
+  const [femaleReel, setFemaleReel] = useState<WallUser[]>([]);
+  const [maleReel, setMaleReel] = useState<WallUser[]>([]);
+  const [fOffset, setFOffset] = useState(0);
+  const [mOffset, setMOffset] = useState(0);
   const [drawPairWinner, setDrawPairWinner] = useState<{ male: WallUser | null; female: WallUser | null } | null>(null);
+  /** 转轮滚动速度（transition 时长，减速时逐级增大） */
+  const [reelSpeed, setReelSpeed] = useState(70);
+  const luckyReelRef = useRef<WallUser[]>([]);
+  const femaleReelRef = useRef<WallUser[]>([]);
+  const maleReelRef = useRef<WallUser[]>([]);
   const drawTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoRef = useRef(false);
   /** 照片墙容器（钳制照片位置时测量用） */
@@ -399,71 +408,127 @@ const ActivityOnsite: React.FC = () => {
   const malesOf = useCallback(() => wall.filter((u) => u.gender === 'male'), [wall]);
   const femalesOf = useCallback(() => wall.filter((u) => u.gender === 'female'), [wall]);
 
+  /** 老虎机转轮：打乱后循环补齐到至少 minLen 张（照片首尾相连） */
+  const buildReel = useCallback((users: WallUser[], minLen = 16): WallUser[] => {
+    if (!users.length) return [];
+    const shuffled = [...users].sort(() => Math.random() - 0.5);
+    const arr: WallUser[] = [];
+    while (arr.length < minLen) arr.push(...shuffled);
+    return arr.slice(0, minLen);
+  }, []);
+
   /** 进入幸运之星（快捷键 3）：先显示栏目封面，按 O 开始滚动 */
   const startLucky = useCallback(() => {
     clearDrawTimer();
+    const reel = buildReel([...wall]);
+    luckyReelRef.current = reel;
+    setLuckyReel(reel);
+    setLuckyOffset(0);
+    setReelSpeed(70);
     setTab('lucky');
     setDrawPhase('cover');
     setDrawWinner(null);
-    setDrawUser(randOf(wall));
-  }, [clearDrawTimer, wall]);
+  }, [clearDrawTimer, wall, buildReel]);
 
   /** 进入能成时刻（快捷键 4） */
   const startCouple = useCallback(() => {
     clearDrawTimer();
+    const males = malesOf();
+    const females = femalesOf();
+    // 某一性别不足时退回全体嘉宾，保证转轮可用
+    const fre = buildReel(females.length ? females : [...wall]);
+    const mre = buildReel(males.length ? males : [...wall]);
+    femaleReelRef.current = fre;
+    maleReelRef.current = mre;
+    setFemaleReel(fre);
+    setMaleReel(mre);
+    setFOffset(0);
+    setMOffset(0);
+    setReelSpeed(70);
     setTab('couple');
     setDrawPhase('cover');
     setDrawPairWinner(null);
-    const males = malesOf();
-    const females = femalesOf();
-    setDrawPair({ male: randOf(males), female: randOf(females) });
-  }, [clearDrawTimer, malesOf, femalesOf]);
+  }, [clearDrawTimer, malesOf, femalesOf, wall, buildReel]);
 
-  /** O：开始滚动（老虎机快速翻卡） */
+  /** O：开始滚动（转轮自上而下快速移动，照片首尾相连） */
   const beginRoll = useCallback(() => {
     if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'cover') return;
+    if (tab === 'lucky' && !luckyReelRef.current.length) return;
+    if (tab === 'couple' && (!femaleReelRef.current.length || !maleReelRef.current.length)) return;
     setDrawPhase('rolling');
     clearDrawTimer();
-    const isLucky = tab === 'lucky';
+    setReelSpeed(70);
     const tick = () => {
-      if (isLucky) {
-        setDrawUser(randOf(wall));
+      if (tab === 'lucky') {
+        setLuckyOffset((o) => o + 1);
       } else {
-        setDrawPair({ male: randOf(malesOf()), female: randOf(femalesOf()) });
+        setFOffset((o) => o + 1);
+        setMOffset((o) => o + 1);
       }
       drawTimerRef.current = setTimeout(tick, 70);
     };
     tick();
-  }, [tab, drawPhase, clearDrawTimer, wall, malesOf, femalesOf]);
+  }, [tab, drawPhase, clearDrawTimer]);
 
-  /** P：减速并慢慢停下（逐级拉长间隔后停在预设结果上） */
+  /** P：减速并慢慢停下（逐级拉长间隔，最后对齐停在预设结果上） */
   const slowRoll = useCallback(() => {
     if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'rolling') return;
     setDrawPhase('slowing');
     clearDrawTimer();
     const isLucky = tab === 'lucky';
+    const winner = randOf(wall);
     const maleWinner = randOf(malesOf());
     const femaleWinner = randOf(femalesOf());
-    const winner = randOf(wall);
     const seq = [80, 100, 130, 170, 230, 310, 420, 570, 760];
+    const inc = () => {
+      if (isLucky) {
+        setLuckyOffset((o) => o + 1);
+      } else {
+        setFOffset((o) => o + 1);
+        setMOffset((o) => o + 1);
+      }
+    };
+    const finish = () => {
+      // 最后一段：平滑滑到获奖者停稳
+      setReelSpeed(520);
+      if (isLucky) {
+        const reel = luckyReelRef.current;
+        setLuckyOffset((o) => {
+          const len = reel.length || 1;
+          const idx = reel.findIndex((u) => u.userId === winner?.userId);
+          return o + ((idx - (o % len) + len) % len);
+        });
+        drawTimerRef.current = setTimeout(() => {
+          setDrawWinner(winner);
+          setDrawPhase('done');
+        }, 560);
+      } else {
+        const fre = femaleReelRef.current;
+        const mre = maleReelRef.current;
+        setFOffset((o) => {
+          const len = fre.length || 1;
+          const idx = fre.findIndex((u) => u.userId === femaleWinner?.userId);
+          return o + ((idx - (o % len) + len) % len);
+        });
+        setMOffset((o) => {
+          const len = mre.length || 1;
+          const idx = mre.findIndex((u) => u.userId === maleWinner?.userId);
+          return o + ((idx - (o % len) + len) % len);
+        });
+        drawTimerRef.current = setTimeout(() => {
+          setDrawPairWinner({ male: maleWinner, female: femaleWinner });
+          setDrawPhase('done');
+        }, 560);
+      }
+    };
     const step = (i: number) => {
       if (i >= seq.length) {
-        if (isLucky) {
-          setDrawUser(winner);
-          setDrawWinner(winner);
-        } else {
-          setDrawPair({ male: maleWinner, female: femaleWinner });
-          setDrawPairWinner({ male: maleWinner, female: femaleWinner });
-        }
-        setDrawPhase('done');
+        finish();
         return;
       }
       drawTimerRef.current = setTimeout(() => {
-        if (isLucky) {
-          setDrawUser(randOf(wall));
-        } else {
-          setDrawPair({ male: randOf(malesOf()), female: randOf(femalesOf()) });
-        }
+        setReelSpeed(seq[i]);
+        inc();
         step(i + 1);
       }, seq[i]);
     };
@@ -560,7 +625,7 @@ const ActivityOnsite: React.FC = () => {
       {/* 内容区 */}
       <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
         {tab === 'lucky' ? (
-          /* ====== 幸运之星（3）：老虎机随机抽一人 ====== */
+          /* ====== 幸运之星（3）：转轮式随机抽一人（照片自上而下滚动，首尾相连） ====== */
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
             {drawPhase === 'cover' ? (
               <>
@@ -570,14 +635,17 @@ const ActivityOnsite: React.FC = () => {
               </>
             ) : (
               <>
-                {drawUser && (
-                  <div
-                    key={`lucky-${drawUser.userId}-${drawPhase === 'done' ? 'win' : 'roll'}`}
-                    className={`draw-card lucky${drawPhase === 'done' ? ' win' : ''}`}
-                  >
-                    <span className={`onsite-number gender-${drawUser.gender}`}>{drawUser.number || '-'}</span>
-                    <img src={drawUser.photo} alt={drawUser.nick} />
-                    <span className="draw-nick">{drawUser.nick}</span>
+                {luckyReel.length > 0 && (
+                  <div className={`draw-reel-window lucky${drawPhase === 'done' ? ' win' : ''}`}>
+                    <div className="draw-reel-strip" style={{ transform: `translateY(calc(26vh * ${-luckyOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
+                      {luckyReel.map((u, i) => (
+                        <div key={`${u.userId}-${i}`} className="draw-reel-item">
+                          <img src={u.photo} alt={u.nick} />
+                          <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
+                          <span className="draw-nick">{u.nick}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {drawPhase === 'done' && drawWinner && (
@@ -592,7 +660,7 @@ const ActivityOnsite: React.FC = () => {
             )}
           </div>
         ) : tab === 'couple' ? (
-          /* ====== 能成时刻（4）：老虎机随机抽一对（左男右女） ====== */
+          /* ====== 能成时刻（4）：双转轮随机抽一对（左女右男） ====== */
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
             {drawPhase === 'cover' ? (
               <>
@@ -602,21 +670,33 @@ const ActivityOnsite: React.FC = () => {
               </>
             ) : (
               <>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8vw' }}>
-                  {/* 女方 */}
-                  {drawPair.female && (
-                    <div key={`cf-${drawPair.female.userId}-${drawPhase === 'done' ? 'win' : 'roll'}`} className={`draw-card${drawPhase === 'done' ? ' win' : ''}`}>
-                      <span className={`onsite-number gender-female`}>{drawPair.female.number || '-'}</span>
-                      <img src={drawPair.female.photo} alt={drawPair.female.nick} />
-                      <span className="draw-nick">{drawPair.female.nick}</span>
+                <div style={{ display: 'flex', gap: '8vw' }}>
+                  {/* 女方转轮 */}
+                  {femaleReel.length > 0 && (
+                    <div className={`draw-reel-window couple${drawPhase === 'done' ? ' win' : ''}`}>
+                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-fOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
+                        {femaleReel.map((u, i) => (
+                          <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
+                            <img src={u.photo} alt={u.nick} />
+                            <span className="onsite-number gender-female">{u.number || '-'}</span>
+                            <span className="draw-nick">{u.nick}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {/* 男方 */}
-                  {drawPair.male && (
-                    <div key={`cm-${drawPair.male.userId}-${drawPhase === 'done' ? 'win' : 'roll'}`} className={`draw-card${drawPhase === 'done' ? ' win' : ''}`}>
-                      <span className={`onsite-number gender-male`}>{drawPair.male.number || '-'}</span>
-                      <img src={drawPair.male.photo} alt={drawPair.male.nick} />
-                      <span className="draw-nick">{drawPair.male.nick}</span>
+                  {/* 男方转轮 */}
+                  {maleReel.length > 0 && (
+                    <div className={`draw-reel-window couple${drawPhase === 'done' ? ' win' : ''}`}>
+                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-mOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
+                        {maleReel.map((u, i) => (
+                          <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
+                            <img src={u.photo} alt={u.nick} />
+                            <span className="onsite-number gender-male">{u.number || '-'}</span>
+                            <span className="draw-nick">{u.nick}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -755,16 +835,17 @@ const ActivityOnsite: React.FC = () => {
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        /* 抽奖环节（幸运之星/能成时刻） */
+        /* 抽奖环节（幸运之星/能成时刻）：转轮式滚动，照片首尾相连 */
         .draw-cover-title { font-size: 9vh; font-weight: 800; color: #ffd700; letter-spacing: 8px; text-shadow: 0 4px 24px rgba(0,0,0,.5); }
-        .draw-card { position: relative; width: 16vw; animation: drawFlip .3s ease-out; }
-        .draw-card.lucky { width: 20vw; }
-        .draw-card img { width: 100%; height: auto; display: block; border-radius: 1.6vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 6px 24px rgba(0,0,0,.4); }
-        .draw-card .onsite-number { left: 2%; top: 2%; }
-        .draw-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px; text-align: center; background: rgba(0,0,0,.5); color: #fff; font-size: 1.6vw; border-radius: 0 0 1.6vh 1.6vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .draw-card.win { box-shadow: 0 0 50px rgba(255,215,0,.9); border-radius: 1.6vh; }
-        .draw-card.win img { border-color: #ffd700; }
-        @keyframes drawFlip { 0% { transform: perspective(900px) rotateX(88deg); opacity: .15; } 100% { transform: perspective(900px) rotateX(0deg); opacity: 1; } }
+        .draw-reel-window { width: 18vw; height: 26vh; overflow: hidden; border: solid 2px rgba(255,255,255,.5); border-radius: 1.6vh; background: rgba(0,0,0,.25); }
+        .draw-reel-window.couple { width: 15vw; height: 24vh; }
+        .draw-reel-strip { display: flex; flex-direction: column; will-change: transform; }
+        .draw-reel-item { position: relative; width: 100%; height: 26vh; flex-shrink: 0; }
+        .draw-reel-window.couple .draw-reel-item { height: 24vh; }
+        .draw-reel-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .draw-reel-item .onsite-number { left: 2%; top: 2%; }
+        .draw-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px; text-align: center; background: rgba(0,0,0,.5); color: #fff; font-size: 1.6vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .draw-reel-window.win { border-color: #ffd700; box-shadow: 0 0 50px rgba(255,215,0,.8); }
       `}</style>
     </div>
   );
