@@ -550,19 +550,25 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
-    // 以张为单位减速：最多显示 8 张；第一张立即减速到一半（180ms），之后每张比前一张慢 20%，封顶 1.5 秒
+    // 获奖者永远固定在第 8 张：以张为单位减速展示 8 张（第一张立即减速一半 180ms，之后每张比前一张慢 20%，封顶 1.5 秒）。
+    // 总行程不足 8 张时补整圈，P 瞬间静默跳过 (总行程-8) 张，展示的 8 张最后一张必然是获奖者
     const MAX_SHOW = 8;
-    const showF = Math.min(nF, MAX_SHOW);
-    const showM = Math.min(nM, MAX_SHOW);
-    const showTotal = isLucky ? Math.min(total, MAX_SHOW) : Math.max(showF, showM);
+    const travel = (n: number, len: number): number => {
+      let t = n;
+      const l = Math.max(1, len);
+      while (t < MAX_SHOW) t += l;
+      return t;
+    };
+    const showTotal = MAX_SHOW;
     const durations = Array.from({ length: showTotal }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
+    const skipLucky = isLucky ? travel(total, luckyReelLenRef.current) - MAX_SHOW : 0;
+    const skipF = isLucky ? 0 : travel(nF, femaleReelLenRef.current) - MAX_SHOW;
+    const skipM = isLucky ? 0 : travel(nM, maleReelLenRef.current) - MAX_SHOW;
 
-    // 超出 8 张的剩余距离在 P 瞬间静默跳过（禁过渡，滚动快速期不可感知）
-    const skipF = nF - showF;
-    const skipM = nM - showM;
-    if (isLucky && skipF > 0) {
+    // 跳过部分在 P 瞬间静默完成（禁过渡，滚动快速期不可感知）
+    if (isLucky && skipLucky > 0) {
       setSnapFrame(true);
-      luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + skipF);
+      luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + skipLucky);
       setLuckyOffset(luckyOffsetRef.current);
       setTimeout(() => setSnapFrame(false), 0);
     } else if (!isLucky && (skipF > 0 || skipM > 0)) {
@@ -581,11 +587,11 @@ const ActivityOnsite: React.FC = () => {
           setLuckyOffset(luckyOffsetRef.current);
         }
       } else {
-        if (i < showF) {
+        if (i < MAX_SHOW) {
           fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
           setFOffset(fOffsetRef.current);
         }
-        if (i < showM) {
+        if (i < MAX_SHOW) {
           mOffsetRef.current = wrapOffset(maleReelLenRef.current, mOffsetRef.current + 1);
           setMOffset(mOffsetRef.current);
         }
