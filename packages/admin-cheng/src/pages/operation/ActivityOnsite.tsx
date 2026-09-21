@@ -602,26 +602,26 @@ const ActivityOnsite: React.FC = () => {
       if (i >= showTotal) {
         // 最后一步滑动完成后进入「越过卡位再回弹停稳」的老虎机手感
         drawTimerRef.current = setTimeout(() => {
-          // ① 越过目标 0.3 格
+          // ① 在当前偏移上越过 0.3 格（不做跨周期坐标跳变，避免倒扫多张卡片）
           setReelSpeed(380);
           if (isLucky) {
-            luckyOffsetRef.current = luckyTarget + 0.3;
+            luckyOffsetRef.current += 0.3;
             setLuckyOffset(luckyOffsetRef.current);
           } else {
-            fOffsetRef.current = fTarget + 0.3;
-            mOffsetRef.current = mTarget + 0.3;
+            fOffsetRef.current += 0.3;
+            mOffsetRef.current += 0.3;
             setFOffset(fOffsetRef.current);
             setMOffset(mOffsetRef.current);
           }
-          // ② 回弹到精确卡位
+          // ② 回弹 0.3 格到精确卡位
           drawTimerRef.current = setTimeout(() => {
             setReelSpeed(520);
             if (isLucky) {
-              luckyOffsetRef.current = luckyTarget;
+              luckyOffsetRef.current -= 0.3;
               setLuckyOffset(luckyOffsetRef.current);
             } else {
-              fOffsetRef.current = fTarget;
-              mOffsetRef.current = mTarget;
+              fOffsetRef.current -= 0.3;
+              mOffsetRef.current -= 0.3;
               setFOffset(fOffsetRef.current);
               setMOffset(mOffsetRef.current);
             }
