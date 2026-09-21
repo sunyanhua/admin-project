@@ -550,23 +550,42 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
-    // 减速时长序列：指数递增（老虎机摩擦感）——每步比上一步慢约 22%，160ms 平滑增长到 700ms 上限
-    const durations = total <= 1
-      ? [700]
-      : Array.from({ length: total }, (_, i) => Math.min(700, Math.round(160 * Math.pow(1.22, i))));
+    // 以张为单位减速：最多显示 8 张；第一张立即减速到一半（180ms），之后每张再减半，封顶 1.5 秒
+    const MAX_SHOW = 8;
+    const showF = Math.min(nF, MAX_SHOW);
+    const showM = Math.min(nM, MAX_SHOW);
+    const showTotal = isLucky ? Math.min(total, MAX_SHOW) : Math.max(showF, showM);
+    const durations = Array.from({ length: showTotal }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(2, i))));
+
+    // 超出 8 张的剩余距离在 P 瞬间静默跳过（禁过渡，滚动快速期不可感知）
+    const skipF = nF - showF;
+    const skipM = nM - showM;
+    if (isLucky && skipF > 0) {
+      setSnapFrame(true);
+      luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + skipF);
+      setLuckyOffset(luckyOffsetRef.current);
+      setTimeout(() => setSnapFrame(false), 0);
+    } else if (!isLucky && (skipF > 0 || skipM > 0)) {
+      setSnapFrame(true);
+      fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + skipF);
+      mOffsetRef.current = wrapOffset(maleReelLenRef.current, mOffsetRef.current + skipM);
+      setFOffset(fOffsetRef.current);
+      setMOffset(mOffsetRef.current);
+      setTimeout(() => setSnapFrame(false), 0);
+    }
 
     const inc = (i: number) => {
       if (isLucky) {
-        if (i < total) {
+        if (i < showTotal) {
           luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + 1);
           setLuckyOffset(luckyOffsetRef.current);
         }
       } else {
-        if (i < nF) {
+        if (i < showF) {
           fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
           setFOffset(fOffsetRef.current);
         }
-        if (i < nM) {
+        if (i < showM) {
           mOffsetRef.current = wrapOffset(maleReelLenRef.current, mOffsetRef.current + 1);
           setMOffset(mOffsetRef.current);
         }
@@ -574,7 +593,7 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const step = (i: number) => {
-      if (i >= total) {
+      if (i >= showTotal) {
         // 最后一步滑动完成后进入「越过卡位再回弹停稳」的老虎机手感
         drawTimerRef.current = setTimeout(() => {
           // ① 越过目标 0.3 格
@@ -610,7 +629,7 @@ const ActivityOnsite: React.FC = () => {
               setDrawPhase('done');
             }, 560);
           }, 400);
-        }, durations[total - 1] + 60);
+        }, durations[showTotal - 1] + 60);
         return;
       }
       drawTimerRef.current = setTimeout(() => {
