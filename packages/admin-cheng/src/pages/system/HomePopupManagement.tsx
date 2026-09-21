@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Card, Form, Button, Input, Typography, Spin, DatePicker, Space } from 'antd';
+import { Card, Form, Button, Input, InputNumber, Typography, Spin, DatePicker, Space } from 'antd';
 import { SaveOutlined, ClearOutlined } from '@ant-design/icons';
 import { settingsApi, SettingType } from '@/api/services/settings';
 import ImageUpload from '@/components/common/ImageUpload';
@@ -15,9 +15,11 @@ interface HomePopupData {
   link: string;
   start_time: string;
   end_time: string;
+  /** 弹窗宽度百分比（30-100，默认 100） */
+  width_percent: number;
 }
 
-const emptyData = (): HomePopupData => ({ popup_id: '', image: '', link: '', start_time: '', end_time: '' });
+const emptyData = (): HomePopupData => ({ popup_id: '', image: '', link: '', start_time: '', end_time: '', width_percent: 100 });
 
 /** 系统自动生成弹窗 ID（不展示给用户） */
 const generatePopupId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -46,6 +48,7 @@ const HomePopupManagement: React.FC = () => {
             link: parsed.link || '',
             start_time: parsed.start_time || '',
             end_time: parsed.end_time || '',
+            width_percent: typeof parsed.width_percent === 'number' ? parsed.width_percent : 100,
           };
           setData(d);
           if (d.start_time && d.end_time) {
@@ -85,6 +88,15 @@ const HomePopupManagement: React.FC = () => {
   };
 
   const handleSave = async () => {
+    // 宽度百分比：必填，范围 30-100
+    if (data.width_percent == null) {
+      showError('请填写弹窗宽度');
+      return;
+    }
+    if (data.width_percent < 30 || data.width_percent > 100) {
+      showError('弹窗宽度需在 30-100 之间');
+      return;
+    }
     setSaving(true);
     try {
       // 每次编辑自动生成新的弹窗 ID
@@ -126,6 +138,18 @@ const HomePopupManagement: React.FC = () => {
               <ImageUpload
                 value={data.image}
                 onChange={url => setData(prev => ({ ...prev, image: url }))}
+              />
+            </Form.Item>
+
+            <Form.Item label="弹窗宽度" required extra="弹窗在屏幕中占的宽度比例">
+              <InputNumber
+                min={30}
+                max={100}
+                precision={0}
+                addonAfter="%"
+                style={{ width: 200 }}
+                value={data.width_percent}
+                onChange={v => setData(prev => ({ ...prev, width_percent: v ?? 100 }))}
               />
             </Form.Item>
 
