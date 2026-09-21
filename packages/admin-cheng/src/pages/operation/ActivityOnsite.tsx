@@ -550,12 +550,12 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
-    // 以张为单位减速：最多显示 8 张；第一张立即减速到一半（180ms），之后每张再减半，封顶 1.5 秒
+    // 以张为单位减速：最多显示 8 张；第一张立即减速到一半（180ms），之后每张比前一张慢 20%，封顶 1.5 秒
     const MAX_SHOW = 8;
     const showF = Math.min(nF, MAX_SHOW);
     const showM = Math.min(nM, MAX_SHOW);
     const showTotal = isLucky ? Math.min(total, MAX_SHOW) : Math.max(showF, showM);
-    const durations = Array.from({ length: showTotal }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(2, i))));
+    const durations = Array.from({ length: showTotal }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
 
     // 超出 8 张的剩余距离在 P 瞬间静默跳过（禁过渡，滚动快速期不可感知）
     const skipF = nF - showF;
