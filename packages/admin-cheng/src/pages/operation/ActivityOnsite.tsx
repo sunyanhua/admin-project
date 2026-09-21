@@ -84,7 +84,7 @@ const demoAvatar = (i: number, gender: 'male' | 'female') => {
 
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [tab, setTab] = useState<'list' | 'feeling'>('list');
+  const [tab, setTab] = useState<'list' | 'feeling' | 'lucky' | 'couple'>('list');
   const [scale, setScale] = useState(1);
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
@@ -103,6 +103,15 @@ const ActivityOnsite: React.FC = () => {
   const [bgMode, setBgMode] = useState<'cover' | 'stretch'>('cover');
   /** 照片墙布局：heart=心形（默认） spotlight=中央聚焦+底部胶片 */
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
+  /** 抽奖环节：cover=栏目封面 rolling=滚动中 slowing=减速中 done=已揭晓 */
+  const [drawPhase, setDrawPhase] = useState<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
+  /** 幸运之星：当前展示与最终结果 */
+  const [drawUser, setDrawUser] = useState<WallUser | null>(null);
+  const [drawWinner, setDrawWinner] = useState<WallUser | null>(null);
+  /** 能成时刻：当前展示与最终配对 */
+  const [drawPair, setDrawPair] = useState<{ male: WallUser | null; female: WallUser | null }>({ male: null, female: null });
+  const [drawPairWinner, setDrawPairWinner] = useState<{ male: WallUser | null; female: WallUser | null } | null>(null);
+  const drawTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const demoRef = useRef(false);
   /** 照片墙容器（钳制照片位置时测量用） */
   const wallRef = useRef<HTMLDivElement>(null);
@@ -378,18 +387,110 @@ const ActivityOnsite: React.FC = () => {
     else fetchCouples();
   }, [fetchWall, fetchCouples]);
 
-  // 键盘切换：0 演示模式 / 1 嘉宾一览 / 2 匹配嘉宾 / z 照片墙布局
+  const clearDrawTimer = useCallback(() => {
+    if (drawTimerRef.current) {
+      clearTimeout(drawTimerRef.current);
+      drawTimerRef.current = null;
+    }
+  }, []);
+
+  const randOf = <T,>(arr: T[]): T | null => (arr.length ? arr[Math.floor(Math.random() * arr.length)] : null);
+
+  const malesOf = useCallback(() => wall.filter((u) => u.gender === 'male'), [wall]);
+  const femalesOf = useCallback(() => wall.filter((u) => u.gender === 'female'), [wall]);
+
+  /** 进入幸运之星（快捷键 3）：先显示栏目封面，按 O 开始滚动 */
+  const startLucky = useCallback(() => {
+    clearDrawTimer();
+    setTab('lucky');
+    setDrawPhase('cover');
+    setDrawWinner(null);
+    setDrawUser(randOf(wall));
+  }, [clearDrawTimer, wall]);
+
+  /** 进入能成时刻（快捷键 4） */
+  const startCouple = useCallback(() => {
+    clearDrawTimer();
+    setTab('couple');
+    setDrawPhase('cover');
+    setDrawPairWinner(null);
+    const males = malesOf();
+    const females = femalesOf();
+    setDrawPair({ male: randOf(males), female: randOf(females) });
+  }, [clearDrawTimer, malesOf, femalesOf]);
+
+  /** O：开始滚动（老虎机快速翻卡） */
+  const beginRoll = useCallback(() => {
+    if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'cover') return;
+    setDrawPhase('rolling');
+    clearDrawTimer();
+    const isLucky = tab === 'lucky';
+    const tick = () => {
+      if (isLucky) {
+        setDrawUser(randOf(wall));
+      } else {
+        setDrawPair({ male: randOf(malesOf()), female: randOf(femalesOf()) });
+      }
+      drawTimerRef.current = setTimeout(tick, 70);
+    };
+    tick();
+  }, [tab, drawPhase, clearDrawTimer, wall, malesOf, femalesOf]);
+
+  /** P：减速并慢慢停下（逐级拉长间隔后停在预设结果上） */
+  const slowRoll = useCallback(() => {
+    if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'rolling') return;
+    setDrawPhase('slowing');
+    clearDrawTimer();
+    const isLucky = tab === 'lucky';
+    const maleWinner = randOf(malesOf());
+    const femaleWinner = randOf(femalesOf());
+    const winner = randOf(wall);
+    const seq = [80, 100, 130, 170, 230, 310, 420, 570, 760];
+    const step = (i: number) => {
+      if (i >= seq.length) {
+        if (isLucky) {
+          setDrawUser(winner);
+          setDrawWinner(winner);
+        } else {
+          setDrawPair({ male: maleWinner, female: femaleWinner });
+          setDrawPairWinner({ male: maleWinner, female: femaleWinner });
+        }
+        setDrawPhase('done');
+        return;
+      }
+      drawTimerRef.current = setTimeout(() => {
+        if (isLucky) {
+          setDrawUser(randOf(wall));
+        } else {
+          setDrawPair({ male: randOf(malesOf()), female: randOf(femalesOf()) });
+        }
+        step(i + 1);
+      }, seq[i]);
+    };
+    step(0);
+  }, [tab, drawPhase, clearDrawTimer, wall, malesOf, femalesOf]);
+
+  // 键盘切换：0 演示 / 1 嘉宾一览 / 2 心动排名 / 3 幸运之星 / 4 能成时刻 / z 布局 / o 开始滚动 / p 减速停下
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       if (e.key === '0') toggleDemo();
       else if (e.key === '1') switchTab('list');
       else if (e.key === '2') switchTab('feeling');
+      else if (e.key === '3') startLucky();
+      else if (e.key === '4') startCouple();
       else if (e.key === 'z' || e.key === 'Z') setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'));
+      else if (e.key === 'o' || e.key === 'O') beginRoll();
+      else if (e.key === 'p' || e.key === 'P') slowRoll();
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, [toggleDemo, switchTab]);
+  }, [toggleDemo, switchTab, startLucky, startCouple, beginRoll, slowRoll]);
+
+  // 离开抽奖环节时清理滚动定时器
+  useEffect(() => {
+    if (tab !== 'lucky' && tab !== 'couple') clearDrawTimer();
+  }, [tab, clearDrawTimer]);
 
   const applyScale = (delta: number) => {
     setScale((prev) => Math.min(1.25, Math.max(0.2, Math.round((prev + delta) * 100) / 100)));
@@ -444,9 +545,11 @@ const ActivityOnsite: React.FC = () => {
           {/* 界面切换（按钮注明快捷键，两行每行两个；展示切换为纯切换无高亮态） */}
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: 6 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 6 }}>
               <button onClick={() => switchTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示(1)</button>
               <button onClick={() => switchTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名(2)</button>
+              <button onClick={startLucky} style={tab === 'lucky' ? toolBtnActive : toolBtn}>幸运之星(3)</button>
+              <button onClick={startCouple} style={tab === 'couple' ? toolBtnActive : toolBtn}>能成时刻(4)</button>
               <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
               <button onClick={() => setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'))} style={toolBtn}>展示切换(z)</button>
             </div>
@@ -456,7 +559,79 @@ const ActivityOnsite: React.FC = () => {
 
       {/* 内容区 */}
       <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
-        {tab === 'list' ? (
+        {tab === 'lucky' ? (
+          /* ====== 幸运之星（3）：老虎机随机抽一人 ====== */
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
+            {drawPhase === 'cover' ? (
+              <>
+                <div className="draw-cover-title">幸运之星</div>
+                <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>从现场嘉宾中随机抽取一位幸运之星</div>
+                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 减速停止</div>
+              </>
+            ) : (
+              <>
+                {drawUser && (
+                  <div
+                    key={`lucky-${drawUser.userId}-${drawPhase === 'done' ? 'win' : 'roll'}`}
+                    className={`draw-card lucky${drawPhase === 'done' ? ' win' : ''}`}
+                  >
+                    <span className={`onsite-number gender-${drawUser.gender}`}>{drawUser.number || '-'}</span>
+                    <img src={drawUser.photo} alt={drawUser.nick} />
+                    <span className="draw-nick">{drawUser.nick}</span>
+                  </div>
+                )}
+                {drawPhase === 'done' && drawWinner && (
+                  <>
+                    <div style={{ color: '#ffd700', fontSize: '4.5vh', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>
+                      恭喜 {drawWinner.number || ''} 号 {drawWinner.nick}
+                    </div>
+                    <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 3 重新开始</div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        ) : tab === 'couple' ? (
+          /* ====== 能成时刻（4）：老虎机随机抽一对（左男右女） ====== */
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
+            {drawPhase === 'cover' ? (
+              <>
+                <div className="draw-cover-title">能成时刻</div>
+                <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>从现场嘉宾中随机抽取一对幸运组合</div>
+                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 减速停止</div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8vw' }}>
+                  {/* 女方 */}
+                  {drawPair.female && (
+                    <div key={`cf-${drawPair.female.userId}-${drawPhase === 'done' ? 'win' : 'roll'}`} className={`draw-card${drawPhase === 'done' ? ' win' : ''}`}>
+                      <span className={`onsite-number gender-female`}>{drawPair.female.number || '-'}</span>
+                      <img src={drawPair.female.photo} alt={drawPair.female.nick} />
+                      <span className="draw-nick">{drawPair.female.nick}</span>
+                    </div>
+                  )}
+                  {/* 男方 */}
+                  {drawPair.male && (
+                    <div key={`cm-${drawPair.male.userId}-${drawPhase === 'done' ? 'win' : 'roll'}`} className={`draw-card${drawPhase === 'done' ? ' win' : ''}`}>
+                      <span className={`onsite-number gender-male`}>{drawPair.male.number || '-'}</span>
+                      <img src={drawPair.male.photo} alt={drawPair.male.nick} />
+                      <span className="draw-nick">{drawPair.male.nick}</span>
+                    </div>
+                  )}
+                </div>
+                {drawPhase === 'done' && drawPairWinner && (
+                  <>
+                    <div style={{ color: '#ffd700', fontSize: '4.5vh', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>
+                      恭喜 {drawPairWinner.female?.nick} × {drawPairWinner.male?.nick}
+                    </div>
+                    <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 4 重新开始</div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        ) : tab === 'list' ? (
           wallItems.length === 0 ? (
             <div style={{ paddingTop: '30vh', textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无签到嘉宾</div>
           ) : wallMode === 'spotlight' ? (
@@ -580,6 +755,16 @@ const ActivityOnsite: React.FC = () => {
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* 抽奖环节（幸运之星/能成时刻） */
+        .draw-cover-title { font-size: 9vh; font-weight: 800; color: #ffd700; letter-spacing: 8px; text-shadow: 0 4px 24px rgba(0,0,0,.5); }
+        .draw-card { position: relative; width: 16vw; animation: drawFlip .3s ease-out; }
+        .draw-card.lucky { width: 20vw; }
+        .draw-card img { width: 100%; height: auto; display: block; border-radius: 1.6vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 6px 24px rgba(0,0,0,.4); }
+        .draw-card .onsite-number { left: 2%; top: 2%; }
+        .draw-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px; text-align: center; background: rgba(0,0,0,.5); color: #fff; font-size: 1.6vw; border-radius: 0 0 1.6vh 1.6vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .draw-card.win { box-shadow: 0 0 50px rgba(255,215,0,.9); border-radius: 1.6vh; }
+        .draw-card.win img { border-color: #ffd700; }
+        @keyframes drawFlip { 0% { transform: perspective(900px) rotateX(88deg); opacity: .15; } 100% { transform: perspective(900px) rotateX(0deg); opacity: 1; } }
       `}</style>
     </div>
   );
