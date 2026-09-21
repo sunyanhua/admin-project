@@ -514,44 +514,56 @@ const ActivityOnsite: React.FC = () => {
       return ((idx - ((offsetNow + 1) % len)) % len + len) % len;
     };
 
-    /** 减速总步数 N：各转轮恰好落在获奖者；不足 8 步时补整圈保持减速观感 */
-    const calcSteps = (): number => {
+    /**
+     * 各转轮解耦计算减速步数：nF/nM 各自恰好落在获奖者（不足 8 步时按各自周期补整圈），
+     * 总步数取两者较大值——先到先停，另一方继续滚到自己的获奖者。
+     * 避免两个转轮长度互质约束无解导致的死循环（能成时刻卡死根因）。
+     */
+    const calcSteps = (): { nF: number; nM: number; total: number } => {
       if (isLucky) {
         const len = luckyReelLenRef.current;
         const d = stepsTo(luckyOffsetRef.current, luckyStripRef.current.findIndex((u) => u.userId === winner?.userId), len);
         let n = d + 1;
-        while (n < 8 || (n - 1 - d) % len !== 0) n++;
-        return n;
+        while (n < 8) n += Math.max(1, len);
+        return { nF: n, nM: 0, total: n };
       }
-      const fLen = femaleReelLenRef.current;
-      const mLen = maleReelLenRef.current;
+      const fLen = Math.max(1, femaleReelLenRef.current);
+      const mLen = Math.max(1, maleReelLenRef.current);
       const dF = stepsTo(fOffsetRef.current, femaleStripRef.current.findIndex((u) => u.userId === femaleWinner?.userId), fLen);
       const dM = stepsTo(mOffsetRef.current, maleStripRef.current.findIndex((u) => u.userId === maleWinner?.userId), mLen);
-      let n = Math.max(dF, dM) + 1;
-      while (n < 8 || (n - 1 - dF) % fLen !== 0 || (n - 1 - dM) % mLen !== 0) n++;
-      return n;
+      let nF = dF + 1;
+      while (nF < 8) nF += fLen;
+      let nM = dM + 1;
+      while (nM < 8) nM += mLen;
+      return { nF, nM, total: Math.max(nF, nM) };
     };
 
-    const N = calcSteps();
+    const { nF, nM, total } = calcSteps();
     // 减速时长序列（ease-in 轮廓，整体压缩到约 4.5 秒内停下）
-    const raw = Array.from({ length: N }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, N - 1), 2));
+    const raw = Array.from({ length: total }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, total - 1), 2));
     const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
     const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4500)));
 
-    const inc = () => {
+    const inc = (i: number) => {
       if (isLucky) {
-        luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + 1);
-        setLuckyOffset(luckyOffsetRef.current);
+        if (i < total) {
+          luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + 1);
+          setLuckyOffset(luckyOffsetRef.current);
+        }
       } else {
-        fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
-        mOffsetRef.current = wrapOffset(maleReelLenRef.current, mOffsetRef.current + 1);
-        setFOffset(fOffsetRef.current);
-        setMOffset(mOffsetRef.current);
+        if (i < nF) {
+          fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
+          setFOffset(fOffsetRef.current);
+        }
+        if (i < nM) {
+          mOffsetRef.current = wrapOffset(maleReelLenRef.current, mOffsetRef.current + 1);
+          setMOffset(mOffsetRef.current);
+        }
       }
     };
 
     const step = (i: number) => {
-      if (i >= N) {
+      if (i >= total) {
         // 最后一步滑动完成后再揭晓，定格在获奖者
         drawTimerRef.current = setTimeout(() => {
           if (isLucky) {
@@ -560,12 +572,12 @@ const ActivityOnsite: React.FC = () => {
             setDrawPairWinner({ male: maleWinner, female: femaleWinner });
           }
           setDrawPhase('done');
-        }, durations[N - 1] + 60);
+        }, durations[total - 1] + 60);
         return;
       }
       drawTimerRef.current = setTimeout(() => {
         setReelSpeed(durations[i]);
-        inc();
+        inc(i);
         step(i + 1);
       }, durations[i]);
     };
