@@ -638,13 +638,17 @@ const ActivityOnsite: React.FC = () => {
                 {luckyReel.length > 0 && (
                   <div className={`draw-reel-window lucky${drawPhase === 'done' ? ' win' : ''}`}>
                     <div className="draw-reel-strip" style={{ transform: `translateY(calc(26vh * ${-luckyOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
-                      {luckyReel.map((u, i) => (
-                        <div key={`${u.userId}-${i}`} className="draw-reel-item">
-                          <img src={u.photo} alt={u.nick} />
-                          <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
-                          <span className="draw-nick">{u.nick}</span>
-                        </div>
-                      ))}
+                      {/* 固定 30 个槽位按偏移取模取人：无限循环滚动，无空段 */}
+                      {Array.from({ length: 30 }).map((_, j) => {
+                        const u = luckyReel[(luckyOffset + j) % luckyReel.length];
+                        return (
+                          <div key={`slot-${j}`} className="draw-reel-item">
+                            <img src={u.photo} alt={u.nick} />
+                            <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
+                            <span className="draw-nick">{u.nick}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -675,13 +679,16 @@ const ActivityOnsite: React.FC = () => {
                   {femaleReel.length > 0 && (
                     <div className={`draw-reel-window couple${drawPhase === 'done' ? ' win' : ''}`}>
                       <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-fOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
-                        {femaleReel.map((u, i) => (
-                          <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
-                            <img src={u.photo} alt={u.nick} />
-                            <span className="onsite-number gender-female">{u.number || '-'}</span>
-                            <span className="draw-nick">{u.nick}</span>
-                          </div>
-                        ))}
+                        {Array.from({ length: 30 }).map((_, j) => {
+                          const u = femaleReel[(fOffset + j) % femaleReel.length];
+                          return (
+                            <div key={`fs-${j}`} className="draw-reel-item">
+                              <img src={u.photo} alt={u.nick} />
+                              <span className="onsite-number gender-female">{u.number || '-'}</span>
+                              <span className="draw-nick">{u.nick}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -689,13 +696,16 @@ const ActivityOnsite: React.FC = () => {
                   {maleReel.length > 0 && (
                     <div className={`draw-reel-window couple${drawPhase === 'done' ? ' win' : ''}`}>
                       <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vh * ${-mOffset}))`, transition: `transform ${reelSpeed}ms linear` }}>
-                        {maleReel.map((u, i) => (
-                          <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
-                            <img src={u.photo} alt={u.nick} />
-                            <span className="onsite-number gender-male">{u.number || '-'}</span>
-                            <span className="draw-nick">{u.nick}</span>
-                          </div>
-                        ))}
+                        {Array.from({ length: 30 }).map((_, j) => {
+                          const u = maleReel[(mOffset + j) % maleReel.length];
+                          return (
+                            <div key={`ms-${j}`} className="draw-reel-item">
+                              <img src={u.photo} alt={u.nick} />
+                              <span className="onsite-number gender-male">{u.number || '-'}</span>
+                              <span className="draw-nick">{u.nick}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -837,8 +847,9 @@ const ActivityOnsite: React.FC = () => {
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         /* 抽奖环节（幸运之星/能成时刻）：转轮式滚动，照片首尾相连 */
         .draw-cover-title { font-size: 9vh; font-weight: 800; color: #ffd700; letter-spacing: 8px; text-shadow: 0 4px 24px rgba(0,0,0,.5); }
-        .draw-reel-window { width: 18vw; height: 26vh; overflow: hidden; border: solid 2px rgba(255,255,255,.5); border-radius: 1.6vh; background: rgba(0,0,0,.25); }
-        .draw-reel-window.couple { width: 15vw; height: 24vh; }
+        /* 窗口高 = 卡片高 + 上下边框 4px（border-box），保证显示区与每张卡片高度完全一致 */
+        .draw-reel-window { width: 18vw; height: calc(26vh + 4px); overflow: hidden; border: solid 2px rgba(255,255,255,.5); border-radius: 1.6vh; background: rgba(0,0,0,.25); }
+        .draw-reel-window.couple { width: 15vw; height: calc(24vh + 4px); }
         .draw-reel-strip { display: flex; flex-direction: column; will-change: transform; }
         .draw-reel-item { position: relative; width: 100%; height: 26vh; flex-shrink: 0; }
         .draw-reel-window.couple .draw-reel-item { height: 24vh; }
