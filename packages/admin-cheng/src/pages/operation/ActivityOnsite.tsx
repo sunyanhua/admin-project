@@ -539,8 +539,8 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const { nF, nM, total } = calcSteps();
-    // 减速时长序列（ease-in 轮廓，整体压缩到约 4.5 秒内停下）
-    const raw = Array.from({ length: total }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, total - 1), 2));
+    // 减速时长序列（三次方 ease-in：前段快速降速、最后两张切换明显更慢，整体约 4.5 秒内停下）
+    const raw = Array.from({ length: total }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, total - 1), 3));
     const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
     const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4500)));
 
@@ -687,7 +687,7 @@ const ActivityOnsite: React.FC = () => {
                 {luckyStrip.length > 0 && (
                   <div className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`}>
                     <div className="draw-reel-window">
-                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vw * ${-luckyOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vw * ${luckyOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                         {luckyStrip.map((u, i) => (
                           <div key={`${u.userId}-${i}`} className="draw-reel-item">
                             <img src={u.photo} alt={u.nick} />
@@ -726,7 +726,7 @@ const ActivityOnsite: React.FC = () => {
                   {femaleStrip.length > 0 && (
                     <div className={`draw-reel-frame couple${drawPhase === 'done' ? ' win' : ''}`}>
                       <div className="draw-reel-window">
-                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * ${-fOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * ${fOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                           {femaleStrip.map((u, i) => (
                             <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
@@ -742,7 +742,7 @@ const ActivityOnsite: React.FC = () => {
                   {maleStrip.length > 0 && (
                     <div className={`draw-reel-frame couple${drawPhase === 'done' ? ' win' : ''}`}>
                       <div className="draw-reel-window">
-                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * ${-mOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * ${mOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                           {maleStrip.map((u, i) => (
                             <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
