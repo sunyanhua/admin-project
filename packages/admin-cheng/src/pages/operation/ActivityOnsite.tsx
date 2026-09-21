@@ -554,10 +554,25 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
-    // 减速时长序列：起步档大幅提高（按 P 瞬间明显降速），四次方 ease-in 逐渐放缓到末段极慢，整体约 4.5 秒内停下
-    const raw = Array.from({ length: total }, (_, i) => 260 + 640 * Math.pow(i / Math.max(1, total - 1), 4));
-    const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
-    const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4500)));
+    // 减速时长序列：首步 320ms（按 P 瞬间剧烈降速）、末步 900ms，中间按二次方递增压缩进总预算 4.8 秒
+    const FIRST_STEP = 320;
+    const LAST_STEP = 900;
+    const BUDGET = 4800;
+    let durations: number[];
+    if (total <= 1) {
+      durations = [LAST_STEP];
+    } else if (total === 2) {
+      durations = [FIRST_STEP, LAST_STEP];
+    } else {
+      const midBudget = BUDGET - FIRST_STEP - LAST_STEP;
+      const weights = Array.from({ length: total - 2 }, (_, i) => Math.pow((i + 1) / (total - 1), 2));
+      const wSum = weights.reduce((a, b) => a + b, 0) || 1;
+      durations = [
+        FIRST_STEP,
+        ...weights.map((w) => Math.max(150, Math.round((w / wSum) * midBudget))),
+        LAST_STEP,
+      ];
+    }
 
     const inc = (i: number) => {
       if (isLucky) {
