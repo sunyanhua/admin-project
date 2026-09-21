@@ -418,16 +418,15 @@ const ActivityOnsite: React.FC = () => {
   const femalesOf = useCallback(() => wall.filter((u) => u.gender === 'female'), [wall]);
 
   /**
-   * 老虎机条带：洗牌后【反序】重复 copies 份拼接（内容固定，滚动靠偏移驱动）。
-   * 反序 + 正向位移（条带下移）实现「下一张照片从上方进入、向下移动」的老虎机方向；
-   * 对齐公式按 offset % len 取模，与顺序无关，减速停格逻辑不受影响。
+   * 老虎机条带：洗牌后重复 copies 份拼接（内容固定，滚动靠偏移驱动）。
+   * 条带末尾锚定窗口顶部（transform 负向基座），正向位移时上方的照片从顶部进入、向下移动；
+   * 可见项 = 条带长度 - 1 - offset，减速对齐按取模公式计算目标位置。
    */
   const buildStrip = useCallback((users: WallUser[], copies = 5): WallUser[] => {
     if (!users.length) return [];
     const shuffled = [...users].sort(() => Math.random() - 0.5);
-    const rev = [...shuffled].reverse();
     const arr: WallUser[] = [];
-    for (let i = 0; i < copies; i++) arr.push(...rev);
+    for (let i = 0; i < copies; i++) arr.push(...shuffled);
     return arr;
   }, []);
 
@@ -513,29 +512,39 @@ const ActivityOnsite: React.FC = () => {
     const maleWinner = randOf(malesOf());
     const femaleWinner = randOf(femalesOf());
 
-    // 距获奖者还需前进的步数（0=下一步即落在获奖者）
-    const stepsTo = (offsetNow: number, idx: number, len: number): number => {
-      if (idx < 0 || len <= 1) return 0;
-      return ((idx - ((offsetNow + 1) % len)) % len + len) % len;
+    // 距获奖者还需前进的步数（0=下一步即落在获奖者）。target 为偏移的目标余数
+    const stepsTo = (offsetNow: number, target: number, len: number): number => {
+      if (target < 0 || len <= 1) return 0;
+      return ((target - ((offsetNow + 1) % len)) % len + len) % len;
     };
 
     /**
      * 各转轮解耦计算减速步数：nF/nM 各自恰好落在获奖者（不足 8 步时按各自周期补整圈），
      * 总步数取两者较大值——先到先停，另一方继续滚到自己的获奖者。
      * 避免两个转轮长度互质约束无解导致的死循环（能成时刻卡死根因）。
+     * 可见项 = 条带长度 - 1 - 偏移，目标余数 = (条带长度 - 1 - 获奖者索引) % 周期。
      */
     const calcSteps = (): { nF: number; nM: number; total: number } => {
       if (isLucky) {
         const len = luckyReelLenRef.current;
-        const d = stepsTo(luckyOffsetRef.current, luckyStripRef.current.findIndex((u) => u.userId === winner?.userId), len);
+        const strip = luckyStripRef.current;
+        const idx = strip.findIndex((u) => u.userId === winner?.userId);
+        const target = (((strip.length - 1 - idx) % len) + len) % len;
+        const d = stepsTo(luckyOffsetRef.current, target, len);
         let n = d + 1;
         while (n < 8) n += Math.max(1, len);
         return { nF: n, nM: 0, total: n };
       }
       const fLen = Math.max(1, femaleReelLenRef.current);
       const mLen = Math.max(1, maleReelLenRef.current);
-      const dF = stepsTo(fOffsetRef.current, femaleStripRef.current.findIndex((u) => u.userId === femaleWinner?.userId), fLen);
-      const dM = stepsTo(mOffsetRef.current, maleStripRef.current.findIndex((u) => u.userId === maleWinner?.userId), mLen);
+      const fStrip = femaleStripRef.current;
+      const mStrip = maleStripRef.current;
+      const fIdx = fStrip.findIndex((u) => u.userId === femaleWinner?.userId);
+      const mIdx = mStrip.findIndex((u) => u.userId === maleWinner?.userId);
+      const fTarget = (((fStrip.length - 1 - fIdx) % fLen) + fLen) % fLen;
+      const mTarget = (((mStrip.length - 1 - mIdx) % mLen) + mLen) % mLen;
+      const dF = stepsTo(fOffsetRef.current, fTarget, fLen);
+      const dM = stepsTo(mOffsetRef.current, mTarget, mLen);
       let nF = dF + 1;
       while (nF < 8) nF += fLen;
       let nM = dM + 1;
@@ -692,7 +701,7 @@ const ActivityOnsite: React.FC = () => {
                 {luckyStrip.length > 0 && (
                   <div className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`}>
                     <div className="draw-reel-window">
-                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vw * ${luckyOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vw * (${luckyOffset} - ${luckyStrip.length} + 1)))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                         {luckyStrip.map((u, i) => (
                           <div key={`${u.userId}-${i}`} className="draw-reel-item">
                             <img src={u.photo} alt={u.nick} />
@@ -731,7 +740,7 @@ const ActivityOnsite: React.FC = () => {
                   {femaleStrip.length > 0 && (
                     <div className={`draw-reel-frame couple${drawPhase === 'done' ? ' win' : ''}`}>
                       <div className="draw-reel-window">
-                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * ${fOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * (${fOffset} - ${femaleStrip.length} + 1)))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                           {femaleStrip.map((u, i) => (
                             <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
@@ -747,7 +756,7 @@ const ActivityOnsite: React.FC = () => {
                   {maleStrip.length > 0 && (
                     <div className={`draw-reel-frame couple${drawPhase === 'done' ? ' win' : ''}`}>
                       <div className="draw-reel-window">
-                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * ${mOffset}))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                        <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * (${mOffset} - ${maleStrip.length} + 1)))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                           {maleStrip.map((u, i) => (
                             <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
