@@ -524,7 +524,7 @@ const ActivityOnsite: React.FC = () => {
      * 避免两个转轮长度互质约束无解导致的死循环（能成时刻卡死根因）。
      * 可见项 = 条带长度 - 1 - 偏移，目标余数 = (条带长度 - 1 - 获奖者索引) % 周期。
      */
-    const calcSteps = (): { nF: number; nM: number; total: number } => {
+    const calcSteps = (): { nF: number; nM: number; total: number; luckyTarget: number; fTarget: number; mTarget: number } => {
       if (isLucky) {
         const len = luckyReelLenRef.current;
         const strip = luckyStripRef.current;
@@ -533,7 +533,7 @@ const ActivityOnsite: React.FC = () => {
         const d = stepsTo(luckyOffsetRef.current, target, len);
         let n = d + 1;
         while (n < 8) n += Math.max(1, len);
-        return { nF: n, nM: 0, total: n };
+        return { nF: n, nM: 0, total: n, luckyTarget: target, fTarget: 0, mTarget: 0 };
       }
       const fLen = Math.max(1, femaleReelLenRef.current);
       const mLen = Math.max(1, maleReelLenRef.current);
@@ -549,14 +549,14 @@ const ActivityOnsite: React.FC = () => {
       while (nF < 8) nF += fLen;
       let nM = dM + 1;
       while (nM < 8) nM += mLen;
-      return { nF, nM, total: Math.max(nF, nM) };
+      return { nF, nM, total: Math.max(nF, nM), luckyTarget: 0, fTarget, mTarget };
     };
 
-    const { nF, nM, total } = calcSteps();
-    // 减速时长序列（三次方 ease-in：前段快速降速、最后两张切换明显更慢，整体约 4.5 秒内停下）
-    const raw = Array.from({ length: total }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, total - 1), 3));
+    const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
+    // 减速时长序列（四次方 ease-in：降速更狠——前段快速、末段极慢，整体约 4.2 秒内停下）
+    const raw = Array.from({ length: total }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, total - 1), 4));
     const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
-    const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4500)));
+    const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4200)));
 
     const inc = (i: number) => {
       if (isLucky) {
@@ -580,6 +580,18 @@ const ActivityOnsite: React.FC = () => {
       if (i >= total) {
         // 最后一步滑动完成后再揭晓，定格在获奖者
         drawTimerRef.current = setTimeout(() => {
+          // 强制对齐到获奖者（双保险：无论减速过程有无漂移，卡片与提示永远一致）
+          setSnapFrame(true);
+          if (isLucky) {
+            luckyOffsetRef.current = (luckyOffsetRef.current % luckyReelLenRef.current) + luckyTarget;
+            setLuckyOffset(luckyOffsetRef.current);
+          } else {
+            fOffsetRef.current = (fOffsetRef.current % femaleReelLenRef.current) + fTarget;
+            mOffsetRef.current = (mOffsetRef.current % maleReelLenRef.current) + mTarget;
+            setFOffset(fOffsetRef.current);
+            setMOffset(mOffsetRef.current);
+          }
+          setTimeout(() => setSnapFrame(false), 0);
           if (isLucky) {
             setDrawWinner(winner);
           } else {
