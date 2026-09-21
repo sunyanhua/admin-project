@@ -116,7 +116,7 @@ const ActivityOnsite: React.FC = () => {
   const [mOffset, setMOffset] = useState(0);
   const [drawPairWinner, setDrawPairWinner] = useState<{ male: WallUser | null; female: WallUser | null } | null>(null);
   /** 转轮滚动速度（transition 时长，减速时逐级增大） */
-  const [reelSpeed, setReelSpeed] = useState(70);
+  const [reelSpeed, setReelSpeed] = useState(90);
   /** 回卷帧：禁用过渡（周期相同内容一致，视觉无缝） */
   const [snapFrame, setSnapFrame] = useState(false);
   const luckyStripRef = useRef<WallUser[]>([]);
@@ -445,7 +445,7 @@ const ActivityOnsite: React.FC = () => {
     setLuckyStrip(strip);
     luckyOffsetRef.current = 0;
     setLuckyOffset(0);
-    setReelSpeed(70);
+    setReelSpeed(90);
     setTab('lucky');
     setDrawPhase('cover');
     setDrawWinner(null);
@@ -469,7 +469,7 @@ const ActivityOnsite: React.FC = () => {
     mOffsetRef.current = 0;
     setFOffset(0);
     setMOffset(0);
-    setReelSpeed(70);
+    setReelSpeed(90);
     setTab('couple');
     setDrawPhase('cover');
     setDrawPairWinner(null);
@@ -482,7 +482,7 @@ const ActivityOnsite: React.FC = () => {
     if (tab === 'couple' && (!femaleStripRef.current.length || !maleStripRef.current.length)) return;
     setDrawPhase('rolling');
     clearDrawTimer();
-    setReelSpeed(70);
+    setReelSpeed(90);
     const tick = () => {
       if (tab === 'lucky') {
         luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + 1);
@@ -493,7 +493,7 @@ const ActivityOnsite: React.FC = () => {
         setFOffset(fOffsetRef.current);
         setMOffset(mOffsetRef.current);
       }
-      drawTimerRef.current = setTimeout(tick, 70);
+      drawTimerRef.current = setTimeout(tick, 90);
     };
     tick();
   }, [tab, drawPhase, clearDrawTimer, wrapOffset]);
@@ -533,8 +533,10 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const N = calcSteps();
-    // 减速时长序列（ease-in：80ms 渐增至 800ms）
-    const durations = Array.from({ length: N }, (_, i) => 80 + Math.round(720 * Math.pow(i / Math.max(1, N - 1), 2)));
+    // 减速时长序列（ease-in 轮廓，整体压缩到约 4.5 秒内停下）
+    const raw = Array.from({ length: N }, (_, i) => 80 + 720 * Math.pow(i / Math.max(1, N - 1), 2));
+    const rawSum = raw.reduce((a, b) => a + b, 0) || 1;
+    const durations = raw.map((d) => Math.max(70, Math.round((d / rawSum) * 4500)));
 
     const inc = () => {
       if (isLucky) {
