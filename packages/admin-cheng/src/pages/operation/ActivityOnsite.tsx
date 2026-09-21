@@ -550,16 +550,10 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
-    // 减速时长序列：严格单调——首步 320ms（按 P 瞬间剧烈降速）、末步 800ms。
-    // 步数 ≤8 线性递增；步数多时中间平速 300ms（总时长控制在 5 秒左右），避免先慢后快的乱速
-    let durations: number[];
-    if (total <= 1) {
-      durations = [800];
-    } else if (total <= 8) {
-      durations = Array.from({ length: total }, (_, i) => Math.round(320 + (800 - 320) * (i / (total - 1))));
-    } else {
-      durations = [320, ...Array<number>(total - 2).fill(300), 800];
-    }
+    // 减速时长序列：指数递增（老虎机摩擦感）——每步比上一步慢约 22%，160ms 平滑增长到 700ms 上限
+    const durations = total <= 1
+      ? [700]
+      : Array.from({ length: total }, (_, i) => Math.min(700, Math.round(160 * Math.pow(1.22, i))));
 
     const inc = (i: number) => {
       if (isLucky) {
@@ -581,26 +575,41 @@ const ActivityOnsite: React.FC = () => {
 
     const step = (i: number) => {
       if (i >= total) {
-        // 最后一步滑动完成后再揭晓，定格在获奖者
+        // 最后一步滑动完成后进入「越过卡位再回弹停稳」的老虎机手感
         drawTimerRef.current = setTimeout(() => {
-          // 强制对齐到获奖者：偏移余数直接置为目标余数（target < 周期，无需回卷），保证卡片与提示永远一致
-          setSnapFrame(true);
+          // ① 越过目标 0.3 格
+          setReelSpeed(380);
           if (isLucky) {
-            luckyOffsetRef.current = luckyTarget;
+            luckyOffsetRef.current = luckyTarget + 0.3;
             setLuckyOffset(luckyOffsetRef.current);
           } else {
-            fOffsetRef.current = fTarget;
-            mOffsetRef.current = mTarget;
+            fOffsetRef.current = fTarget + 0.3;
+            mOffsetRef.current = mTarget + 0.3;
             setFOffset(fOffsetRef.current);
             setMOffset(mOffsetRef.current);
           }
-          setTimeout(() => setSnapFrame(false), 0);
-          if (isLucky) {
-            setDrawWinner(winner);
-          } else {
-            setDrawPairWinner({ male: maleWinner, female: femaleWinner });
-          }
-          setDrawPhase('done');
+          // ② 回弹到精确卡位
+          drawTimerRef.current = setTimeout(() => {
+            setReelSpeed(520);
+            if (isLucky) {
+              luckyOffsetRef.current = luckyTarget;
+              setLuckyOffset(luckyOffsetRef.current);
+            } else {
+              fOffsetRef.current = fTarget;
+              mOffsetRef.current = mTarget;
+              setFOffset(fOffsetRef.current);
+              setMOffset(mOffsetRef.current);
+            }
+            // ③ 回弹完成后再揭晓
+            drawTimerRef.current = setTimeout(() => {
+              if (isLucky) {
+                setDrawWinner(winner);
+              } else {
+                setDrawPairWinner({ male: maleWinner, female: femaleWinner });
+              }
+              setDrawPhase('done');
+            }, 560);
+          }, 400);
         }, durations[total - 1] + 60);
         return;
       }
