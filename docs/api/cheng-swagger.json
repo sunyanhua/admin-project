@@ -9326,7 +9326,7 @@
         },
         "/admin/v1/login": {
             "post": {
-                "description": "使用用户名和密码登录管理后台，成功返回 Admin JWT Token。免鉴权接口（AdminAuthMiddleware 白名单放行）。",
+                "description": "使用用户名和密码登录管理后台，成功返回 Admin JWT Token。免鉴权接口（AdminAuthMiddleware 白名单放行）。连续失败达配置阈值（默认 5 次）后账户临时锁定（默认 15 分钟），锁定期内返回 40239。",
                 "consumes": [
                     "application/json"
                 ],
