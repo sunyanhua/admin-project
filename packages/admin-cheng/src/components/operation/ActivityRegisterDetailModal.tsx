@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Form, Input, Radio } from 'antd';
+import { Button, Space, Form, Input, Radio, Image } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import {
   RegisterAuditStatus, ActivityType,
@@ -110,7 +110,7 @@ const ActivityRegisterDetailModal: React.FC<ActivityRegisterDetailModalProps> = 
                             {atts.map((att: any, idx: number) => {
                               const ft = att.file_type as number;
                               if (ft === 1) {
-                                return <img key={idx} src={att.url} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4, border: '1px solid #e8e8e8' }} />;
+                                return <Image key={idx} src={att.url} preview={{ src: att.url }} style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 4, border: '1px solid #e8e8e8' }} />;
                               }
                               return <a key={idx} href={att.url} target="_blank" rel="noopener noreferrer"
                                 style={{ display: 'inline-block', padding: '4px 12px', border: '1px solid #d9d9d9', borderRadius: 4, color: '#1677ff' }}>{FILE_TYPE_LABELS[ft] || '文件'}</a>;
