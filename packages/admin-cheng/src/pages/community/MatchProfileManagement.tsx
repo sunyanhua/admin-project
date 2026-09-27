@@ -78,7 +78,7 @@ function getDisplayStatus(mp: CommunityUserItem['match_profile']): { text: strin
 }
 
 const MatchProfileManagement = () => {
-  const { success, error: showError } = useAppNotification();
+  const { success, error: showError, warning: showWarning } = useAppNotification();
   const { user } = useAuth();
   const isSuperAdmin = user?.isRoot ?? false;
   const [values, setValues] = useState<Record<string, any>>({});
@@ -116,13 +116,50 @@ const MatchProfileManagement = () => {
     setDetailModalOpen(true);
   };
 
-  const [exporting, setExporting] = useState(false);
-  /** 导出按钮默认隐藏，按 Shift+1 切换显示 */
+  /** 导出中状态：null 空闲 / 'all' 导出全部 / 'page' 导出本页 */
+  const [exporting, setExporting] = useState<null | 'all' | 'page'>(null);
+  /** 导出全部按钮默认隐藏，按 Shift+1 切换显示 */
   const [exportVisible, setExportVisible] = useState(false);
 
-  /** 导出脱单资料：按当前搜索筛选结果全量分页拉取后生成 Excel */
-  const handleExport = async () => {
-    setExporting(true);
+  /** 生成 Excel 文件（导出全部与导出本页共用，行内容完全一致） */
+  const exportToExcel = async (list: CommunityUserItem[], fileName: string) => {
+    if (!list.length) {
+      showWarning('没有可导出的数据');
+      return;
+    }
+    // 脱敏身份证号（隐私接口，读取留痕）
+    const userIds = list.map((r) => r.user.user_id).filter(Boolean);
+    const idCardMap: Record<string, string> = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
+
+    const headers = ['能成ID', '姓名', '手机号', '性别', '年龄', '是否实名', '身份证号', '星座', '职业', '学历', '民族', '户籍', '工作单位', '毕业学校', '注册时间', '最近活跃时间'];
+    const rows = list.map((r) => [
+      r.match_profile?.match_code || '',
+      r.match_profile?.real_name || '',
+      r.user.phone || '',
+      UserGenderLabels[r.profile.gender] || '',
+      r.profile.age ?? '',
+      r.match_profile?.is_real_verified ? '是' : '否',
+      idCardMap[r.user.user_id] || '',
+      r.profile.zodiac || '',
+      r.match_profile?.profession || '',
+      r.match_profile?.education != null ? (EducationLabels[r.match_profile.education] || r.match_profile.education) : '',
+      r.match_profile?.ethnicity || '',
+      r.match_profile?.household_registration || '',
+      r.match_profile?.workplace || '',
+      r.match_profile?.graduate || '',
+      r.user.created_at ? formatDateTime(r.user.created_at) : '',
+      r.user.last_active_at ? formatDateTime(r.user.last_active_at) : '',
+    ]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '脱单资料');
+    XLSX.writeFile(wb, fileName);
+    success(`导出成功，共 ${list.length} 条`);
+  };
+
+  /** 导出全部：按当前搜索筛选结果全量分页拉取后生成 Excel */
+  const handleExportAll = async () => {
+    setExporting('all');
     try {
       const all: CommunityUserItem[] = [];
       let page = 1;
@@ -134,38 +171,23 @@ const MatchProfileManagement = () => {
         if (list.length < 100) break;
         page++;
       }
-      // 脱敏身份证号（隐私接口，读取留痕）
-      const userIds = all.map((r) => r.user.user_id).filter(Boolean);
-      const idCardMap: Record<string, string> = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
-
-      const headers = ['能成ID', '姓名', '手机号', '性别', '年龄', '是否实名', '身份证号', '星座', '职业', '学历', '民族', '户籍', '工作单位', '毕业学校', '注册时间', '最近活跃时间'];
-      const rows = all.map((r) => [
-        r.match_profile?.match_code || '',
-        r.match_profile?.real_name || '',
-        r.user.phone || '',
-        UserGenderLabels[r.profile.gender] || '',
-        r.profile.age ?? '',
-        r.match_profile?.is_real_verified ? '是' : '否',
-        idCardMap[r.user.user_id] || '',
-        r.profile.zodiac || '',
-        r.match_profile?.profession || '',
-        r.match_profile?.education != null ? (EducationLabels[r.match_profile.education] || r.match_profile.education) : '',
-        r.match_profile?.ethnicity || '',
-        r.match_profile?.household_registration || '',
-        r.match_profile?.workplace || '',
-        r.match_profile?.graduate || '',
-        r.user.created_at ? formatDateTime(r.user.created_at) : '',
-        r.user.last_active_at ? formatDateTime(r.user.last_active_at) : '',
-      ]);
-      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '脱单资料');
-      XLSX.writeFile(wb, `脱单资料_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
-      success(`导出成功，共 ${all.length} 条`);
+      await exportToExcel(all, `脱单资料全部_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
     } catch (err: any) {
       showError(err?.response?.data?.message || '导出失败');
     } finally {
-      setExporting(false);
+      setExporting(null);
+    }
+  };
+
+  /** 导出本页：仅导出当前页数据，行内容与导出全部一致 */
+  const handleExportPage = async () => {
+    setExporting('page');
+    try {
+      await exportToExcel(data, `脱单资料本页_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '导出失败');
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -315,8 +337,9 @@ const MatchProfileManagement = () => {
         }
         extraActions={
           <>
+            <Button icon={<ExportOutlined />} loading={exporting === 'page'} onClick={handleExportPage}>导出本页</Button>
             {exportVisible && (
-              <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+              <Button icon={<ExportOutlined />} loading={exporting === 'all'} onClick={handleExportAll}>导出全部</Button>
             )}
             {isSuperAdmin && (
               <Button icon={<TrophyOutlined />} loading={ranking} onClick={handleRank}>排名</Button>
