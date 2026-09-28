@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-09-27**
+**2026-09-28**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-28 | 活动报名名单「导入报名」TAB（免报名预报名导入）——审核模式活动 0 报名也可点击查看名单；报名名单弹窗（仅审核模式）分「用户报名/导入报名」两 TAB；导入 TAB 含预报名列表（状态/关键词筛选）、下载模版（22 列：姓名/手机号/性别映射接口字段，其余打包 JSON 进 presign_data）、导入报名（100 条分片调 POST presign，提示新增/跳过）、免报名入选（POST presign/{pid}/register 一键转报名记录并审核通过）；活动新增 presign_enabled 字段（报名方式审核筛选自动 true，其余 false）；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | activity-v1 + ActivityPresignTab + ActivityRegisterModal + ActivityEditModal + ActivityManagement + ZoneActivities + api/types/status | 78f0acd、9485aca、46ee06a（构建产物未提交） |
 | 2026-09-27 | 脱单资料管理新增「导出本页」常备按钮（直接导出当前页数据，无需 Shift+1），原隐藏导出按钮（Shift+1）改名「导出全部」；抽出公共 exportToExcel 函数，两种导出行内容完全一致（16 列、身份证号脱敏），文件名区分「脱单资料全部/本页_时间戳.xlsx」，无数据时 warning 提示；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | MatchProfileManagement | 2cd44f3（构建产物未提交） |
 | 2026-09-24 | 报名信息详情弹窗图片支持点击预览放大（报名名单「查看」弹窗中图片字段由普通 img 改为 antd Image + preview，点击全屏预览，与专区申请审核弹窗写法一致）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterDetailModal | 2d44435（构建产物未提交） |
 | 2026-09-22 | 现场大屏抽奖环节（幸运之星/能成时刻）：转轮式滚动（自上而下、无限循环、卡片3:4）、按 O 开始按 P 减速（每张比前一张慢 20%、获奖者固定第 8 张、过冲回弹定格）、多轮修复（卡死/空白/错位/倒扫）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityOnsite | 8020ffa、590e14a、d277d93、3438f68、c77347a、841c688、4de7f9c、e2ee9e4、c9e4ef0、dc939d5、6cd6dfe、74caba3、59fff89、298db11（构建产物未提交） |
