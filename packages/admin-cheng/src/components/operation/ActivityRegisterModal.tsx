@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Tag, Space, Tabs } from 'antd';
-import { UserAddOutlined, ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined } from '@ant-design/icons';
+import { Button, Tag, Space, Tabs, Avatar } from 'antd';
+import { UserAddOutlined, ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -236,8 +236,13 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       key: 'user',
       width: 160,
       render: (_: any, r: RegisterRecord) => {
-        // 免报名入选产生的报名记录（无注册用户）：灰色「未注册」，不可点击
-        if (!r.user_id) return <span style={{ color: '#999' }}>未注册</span>;
+        // 免报名入选产生的报名记录（无注册用户）：灰色人头 + 灰色「未注册」，不可点击
+        if (!r.user_id) return (
+          <Space size={4}>
+            <Avatar size={40} style={{ borderRadius: '50%', flexShrink: 0, background: '#d9d9d9', color: '#fff' }} icon={<UserOutlined />} />
+            <span style={{ fontSize: 14, color: '#999' }}>未注册</span>
+          </Space>
+        );
         const up = r.user_profile;
         const nickname = up?.nickname || r.nickname || r.user_id;
         const avatar = up?.avatar || r.avatar || '';
