@@ -208,6 +208,11 @@ export interface RegisterRecord {
   user_data?: RegisterUserData;
   user_profile?: RegisterUserProfile;
   user_match_profile?: RegisterMatchProfile;
+  presign_id?: string; // 关联的预报名信息 ID（免报名入选产生的记录非空）
+  /** 免报名入选记录反查预报名补齐的资料（user_id 为空时前端按 register_id 查询填充） */
+  presign_real_name?: string;
+  presign_phone?: string;
+  presign_gender?: number;
 }
 
 /** 预报名信息（审核模式活动导入的免报名用户） */

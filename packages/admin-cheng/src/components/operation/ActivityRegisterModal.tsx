@@ -12,7 +12,7 @@ import {
   ActivityType,
 } from '@shared/constants';
 import UserAvatar from '@/components/user/UserAvatar';
-import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
+import { activityApi, RegisterRecord, PresignRecord } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -61,16 +61,35 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const isPaidFCFS = activityType === ActivityType.PAID_FCFS;
   const isFreeReview = activityType === ActivityType.FREE_REVIEW;
 
+  /** 免报名入选记录（user_id 为空）反查预报名信息，补齐姓名/性别/手机号 */
+  const enrichAdminRecords = useCallback(async (list: RegisterRecord[]) => {
+    const adminRecords = list.filter((r) => !r.user_id && r.presign_id);
+    if (!adminRecords.length) return list;
+    const enriched = await Promise.all(adminRecords.map(async (r) => {
+      try {
+        const res: any = await activityApi.getPresigns(activityId, { register_id: r.id, page: 1, size: 20 });
+        const p: PresignRecord | undefined = Array.isArray(res) ? res[0] : (res?.list || [])[0];
+        if (!p) return r;
+        return { ...r, presign_real_name: p.real_name, presign_phone: p.phone, presign_gender: p.gender };
+      } catch { return r; } // 反查失败不阻塞列表展示
+    }));
+    const map = new Map(enriched.map((r) => [r.id, r]));
+    return list.map((r) => map.get(r.id) || r);
+  }, [activityId]);
+
   const fetchRegisters = useCallback(async (params: any) => {
     if (!activityId) return { list: [], total: 0 };
-    return activityApi.getRegisters(activityId, {
+    const res: any = await activityApi.getRegisters(activityId, {
       page: params.page, size: params.page_size,
       audit_status: params.audit_status,
       pay_status: params.pay_status,
       gender: params.gender,
       keyword: params.keyword,
     });
-  }, [activityId]);
+    const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
+    return { list: await enrichAdminRecords(list), total };
+  }, [activityId, enrichAdminRecords]);
 
   const formatResponse = useCallback((res: any) => {
     const list = Array.isArray(res) ? res : (res?.list || []);
@@ -217,6 +236,8 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       key: 'user',
       width: 160,
       render: (_: any, r: RegisterRecord) => {
+        // 免报名入选产生的报名记录（无注册用户）：灰色「未注册」，不可点击
+        if (!r.user_id) return <span style={{ color: '#999' }}>未注册</span>;
         const up = r.user_profile;
         const nickname = up?.nickname || r.nickname || r.user_id;
         const avatar = up?.avatar || r.avatar || '';
@@ -235,16 +256,18 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       title: '姓名',
       key: 'real_name',
       width: 100,
-      render: (_: any, r: RegisterRecord) => (
-        <RealNameWithTag name={r.user_match_profile?.real_name} verified={r.user_match_profile?.is_real_verified} />
-      ),
+      render: (_: any, r: RegisterRecord) => {
+        // 免报名入选记录：姓名取自反查的预报名信息
+        if (!r.user_id) return r.presign_real_name || '-';
+        return <RealNameWithTag name={r.user_match_profile?.real_name} verified={r.user_match_profile?.is_real_verified} />;
+      },
     },
     {
       title: '性别',
       key: 'gender',
       width: 70,
       render: (_: any, r: RegisterRecord) => {
-        const g = r.user_profile?.gender ?? r.gender;
+        const g = r.user_profile?.gender ?? r.gender ?? r.presign_gender;
         return g != null ? (RegisterGenderLabels[g] ?? g) : '-';
       },
     },
@@ -253,7 +276,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       key: 'phone',
       width: 130,
       render: (_: any, r: RegisterRecord) => {
-        const phone = r.user_data?.phone || r.phone;
+        const phone = r.user_data?.phone || r.phone || r.presign_phone;
         return phone || <span style={{ color: '#999' }}>-</span>;
       },
     },
@@ -265,7 +288,8 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     columns.push({
       title: '详情', key: 'form_info', width: 80,
       render: (_: any, r: RegisterRecord) => {
-        if (!r.form_data) return <span style={{ color: '#999' }}>-</span>;
+        // 免报名入选记录：详情固定显示 -
+        if (!r.user_id || !r.form_data) return <span style={{ color: '#999' }}>-</span>;
         return (
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)}>查看</Button>
         );
