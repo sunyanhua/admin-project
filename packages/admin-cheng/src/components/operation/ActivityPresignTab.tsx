@@ -210,7 +210,9 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
       width: 120,
       fixed: 'right' as const,
       render: (_: any, r: PresignRecord) => {
-        if ((r.status ?? PresignStatus.NOT_REGISTERED) !== PresignStatus.NOT_REGISTERED) {
+        // 已报名入选（register_id 非空或 status 已报名）：操作显示 -
+        const isRegistered = !!r.register_id || (r.status ?? PresignStatus.NOT_REGISTERED) !== PresignStatus.NOT_REGISTERED;
+        if (isRegistered) {
           return <span style={{ color: '#999' }}>-</span>;
         }
         return (
