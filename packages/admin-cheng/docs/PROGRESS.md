@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-09-28**
+**2026-09-29**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-09-29 | 报名审核流程完善——审核弹窗化（操作列「审核」→报名详情弹窗内入选/退回，退回必填原因）；免报名入选记录展示（user_id 空按 register_id 反查预报名补齐姓名/性别/手机号，用户名灰色人头+「未注册」不可点击，详情显示 -）；已免报名入选状态区分（processing 色）；免报名入选二次确认；已入选/已退回状态标签可点击查看报名信息；审核模式去掉冗余详情列；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterModal + ActivityRegisterDetailModal + ActivityPresignTab + activity-v1 | e975a01、8bcc1c0、e925d2a、0bccd0e、bbe902b、b942f5d、a163e96、6f802dc（构建产物未提交） |
 | 2026-09-28 | 活动报名名单「导入报名」TAB（免报名预报名导入）——审核模式活动 0 报名也可点击查看名单；报名名单弹窗（仅审核模式）分「用户报名/导入报名」两 TAB；导入 TAB 含预报名列表（状态/关键词筛选）、下载模版（22 列：姓名/手机号/性别映射接口字段，其余打包 JSON 进 presign_data）、导入报名（100 条分片调 POST presign，提示新增/跳过）、免报名入选（POST presign/{pid}/register 一键转报名记录并审核通过）；活动新增 presign_enabled 字段（报名方式审核筛选自动 true，其余 false）；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | activity-v1 + ActivityPresignTab + ActivityRegisterModal + ActivityEditModal + ActivityManagement + ZoneActivities + api/types/status | 78f0acd、9485aca、46ee06a（构建产物未提交） |
 | 2026-09-27 | 脱单资料管理新增「导出本页」常备按钮（直接导出当前页数据，无需 Shift+1），原隐藏导出按钮（Shift+1）改名「导出全部」；抽出公共 exportToExcel 函数，两种导出行内容完全一致（16 列、身份证号脱敏），文件名区分「脱单资料全部/本页_时间戳.xlsx」，无数据时 warning 提示；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | MatchProfileManagement | 2cd44f3（构建产物未提交） |
 | 2026-09-24 | 报名信息详情弹窗图片支持点击预览放大（报名名单「查看」弹窗中图片字段由普通 img 改为 antd Image + preview，点击全屏预览，与专区申请审核弹窗写法一致）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterDetailModal | 2d44435（构建产物未提交） |
