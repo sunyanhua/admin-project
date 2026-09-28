@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Button, Space, Tag, Upload } from 'antd';
+import { Button, Space, Tag, Upload, Modal } from 'antd';
 import { DownloadOutlined, ImportOutlined, UserAddOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
@@ -140,22 +140,31 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
     }
   };
 
-  /** 免报名入选：预报名一键转为报名记录并审核通过 */
-  const handleRegisterPresign = async (record: PresignRecord) => {
-    setRegisteringIds((prev) => new Set(prev).add(record.id));
-    try {
-      await activityApi.registerPresign(activityId, record.id);
-      success('免报名入选成功');
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '操作失败');
-    } finally {
-      setRegisteringIds((prev) => {
-        const next = new Set(prev);
-        next.delete(record.id);
-        return next;
-      });
-    }
+  /** 免报名入选：预报名一键转为报名记录并审核通过（二次确认） */
+  const handleRegisterPresign = (record: PresignRecord) => {
+    const name = record.real_name || record.phone || '';
+    Modal.confirm({
+      title: '确认免报名入选',
+      content: `确认将「${name}」免报名入选该活动？操作后将生成报名记录并直接审核通过。`,
+      okText: '确认入选',
+      cancelText: '取消',
+      onOk: async () => {
+        setRegisteringIds((prev) => new Set(prev).add(record.id));
+        try {
+          await activityApi.registerPresign(activityId, record.id);
+          success('免报名入选成功');
+          refresh();
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '操作失败');
+        } finally {
+          setRegisteringIds((prev) => {
+            const next = new Set(prev);
+            next.delete(record.id);
+            return next;
+          });
+        }
+      },
+    });
   };
 
   const columns: ColumnsType<PresignRecord> = [
