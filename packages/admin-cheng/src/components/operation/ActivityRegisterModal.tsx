@@ -278,13 +278,12 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   ];
 
 
-  // 详情列（活动配置了报名信息才显示，点击查看报名信息；置于报名时间之前）
-  if (formConfig.length > 0) {
+  // 详情列（活动配置了报名信息才显示；审核模式由操作列的「审核/查看」覆盖，不再重复展示）
+  if (formConfig.length > 0 && !isFreeReview) {
     columns.push({
       title: '详情', key: 'form_info', width: 80,
       render: (_: any, r: RegisterRecord) => {
-        // 免报名入选记录：详情固定显示 -
-        if (!r.user_id || !r.form_data) return <span style={{ color: '#999' }}>-</span>;
+        if (!r.form_data) return <span style={{ color: '#999' }}>-</span>;
         return (
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)}>查看</Button>
         );
@@ -310,20 +309,24 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     );
   }
 
-  // 操作列（仅审核模式）：待审核可「审核」（弹窗内入选/退回），通过后显示「已入选」
+  // 操作列（仅审核模式）：待审核可「审核」（弹窗内入选/退回）；已审核记录显示状态标签 + 只读「查看」（详情列已由本列覆盖）
   if (isFreeReview) {
     columns.push({
-      title: '操作', key: 'action', width: 100, fixed: 'right' as const,
+      title: '操作', key: 'action', width: 160, fixed: 'right' as const,
       render: (_: any, r: RegisterRecord) => {
         if (r.audit_status === RegisterAuditStatus.PENDING) {
           return (
             <Button type="link" size="small" icon={<AuditOutlined />} onClick={() => handleOpenAudit(r)}>审核</Button>
           );
         }
-        if (r.audit_status === RegisterAuditStatus.APPROVED) {
-          return <Tag color="success" title="已入选">已入选</Tag>;
-        }
-        return <Tag color="default" title="已退回">已退回</Tag>;
+        return (
+          <Space size="small" className="action-buttons">
+            {r.audit_status === RegisterAuditStatus.APPROVED
+              ? <Tag color="success" title="已入选">已入选</Tag>
+              : <Tag color="default" title="已退回">已退回</Tag>}
+            <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)}>查看</Button>
+          </Space>
+        );
       },
     });
   }
