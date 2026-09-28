@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-09-28 22:29 | 0bccd0e | feat: 预报名列表状态区分「已免报名入选」——status 已报名且 user_id 为空（后台一键报名无用户绑定）显示「已免报名入选」processing 色，用户绑定报名的仍显示「已报名」success 色 |
 | 2026-09-28 22:11 | 46ee06a | feat: 活动新增 presign_enabled 字段——报名方式为审核筛选时创建/编辑提交自动传 true（预报名导入的准入门禁），其他报名方式显式传 false；Create/Update/Activity 类型同步补充 |
 | 2026-09-28 21:24 | 9485aca | fix: 报名导入模版去掉照片列（22 列）——导入解析同步移除，旧文件带照片列时自动忽略不影响解析 |
 | 2026-09-28 21:21 | 78f0acd | feat: 活动报名名单新增「导入报名」TAB——审核模式活动报名人数为 0 时也可点击查看报名名单（ActivityManagement / ZoneActivities）；报名名单弹窗（仅审核模式）分「用户报名」（原内容）与「导入报名」两个 TAB；导入报名 TAB 含预报名列表（状态/关键词筛选）、下载模版（23 列：姓名/手机号/性别映射接口字段，其余 20 列打包 JSON 写入 presign_data）、导入报名（100 条分片调 POST /admin/v1/bizops/activity/{id}/presign，提示新增/跳过条数）、免报名入选（调 POST .../presign/{pid}/register 一键转为报名记录并审核通过）；新增 PresignStatus 枚举与 activityApi.getPresigns/importPresigns/registerPresign |
