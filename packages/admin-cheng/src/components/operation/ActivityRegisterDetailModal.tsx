@@ -53,7 +53,7 @@ const ActivityRegisterDetailModal: React.FC<ActivityRegisterDetailModalProps> = 
 
   const handleSubmit = async () => {
     if (action === RegisterAuditStatus.REJECTED && !rejectReason.trim()) {
-      showError('请填写拒绝原因');
+      showError('请填写退回原因');
       return;
     }
     try {
@@ -62,7 +62,7 @@ const ActivityRegisterDetailModal: React.FC<ActivityRegisterDetailModalProps> = 
         approved: action === RegisterAuditStatus.APPROVED,
         reason: action === RegisterAuditStatus.REJECTED ? rejectReason : undefined,
       });
-      success(action === RegisterAuditStatus.APPROVED ? '已通过' : '已拒绝');
+      success(action === RegisterAuditStatus.APPROVED ? '已入选' : '已退回');
       onClose();
       onSuccess();
     } catch (err: any) {
@@ -134,13 +134,13 @@ const ActivityRegisterDetailModal: React.FC<ActivityRegisterDetailModalProps> = 
         <div style={{ paddingTop: 16, marginTop: 8, borderTop: formConfig.length > 0 ? '1px solid #e8e8e8' : 'none' }}>
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>审核</div>
           <Radio.Group value={action} onChange={e => setAction(e.target.value)} style={{ marginBottom: 12 }}>
-            <Radio value={RegisterAuditStatus.APPROVED}>通过</Radio>
-            <Radio value={RegisterAuditStatus.REJECTED}>拒绝</Radio>
+            <Radio value={RegisterAuditStatus.APPROVED}>入选</Radio>
+            <Radio value={RegisterAuditStatus.REJECTED}>退回</Radio>
           </Radio.Group>
           {action === RegisterAuditStatus.REJECTED && (
-            <Form.Item label="拒绝原因" required style={{ marginBottom: 0 }}>
+            <Form.Item label="退回原因" required style={{ marginBottom: 0 }}>
               <Input value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-                placeholder="请输入拒绝原因" maxLength={512} />
+                placeholder="请输入退回原因" maxLength={512} />
             </Form.Item>
           )}
         </div>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Tag, Space, Tabs, Avatar } from 'antd';
-import { UserAddOutlined, ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -48,8 +48,8 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailRecord, setDetailRecord] = useState<RegisterRecord | null>(null);
-  /** 正在执行「入选」操作的记录 id（按钮 loading） */
-  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
+  /** 详情弹窗是否只读（「查看」入口只读；「审核」入口开放审核操作区） */
+  const [detailReadonly, setDetailReadonly] = useState(true);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState<string>('');
   /** 当前查看用户对应的报名记录 ID（专区专用资料接口按报名记录读取） */
@@ -160,6 +160,14 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
 
   const openDetail = (record: RegisterRecord) => {
     setDetailRecord(record);
+    setDetailReadonly(true);
+    setDetailVisible(true);
+  };
+
+  /** 审核：打开报名详情弹窗并启用审核操作区（入选/退回） */
+  const handleOpenAudit = (record: RegisterRecord) => {
+    setDetailRecord(record);
+    setDetailReadonly(false);
     setDetailVisible(true);
   };
 
@@ -176,24 +184,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       showError(err?.response?.data?.message || '编号分配失败');
     } finally {
       setAssigning(false);
-    }
-  };
-
-  /** 入选：直接执行审核通过操作 */
-  const handleApprove = async (record: RegisterRecord) => {
-    setApprovingIds((prev) => new Set(prev).add(record.id));
-    try {
-      await activityApi.auditRegister(activityId, record.id, { approved: true });
-      success('已入选');
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '操作失败');
-    } finally {
-      setApprovingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(record.id);
-        return next;
-      });
     }
   };
 
@@ -320,21 +310,20 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     );
   }
 
-  // 操作列（仅审核模式）：待审核可「入选」直接审核通过，通过后显示「已入选」
+  // 操作列（仅审核模式）：待审核可「审核」（弹窗内入选/退回），通过后显示「已入选」
   if (isFreeReview) {
     columns.push({
       title: '操作', key: 'action', width: 100, fixed: 'right' as const,
       render: (_: any, r: RegisterRecord) => {
         if (r.audit_status === RegisterAuditStatus.PENDING) {
           return (
-            <Button type="link" size="small" icon={<UserAddOutlined />} loading={approvingIds.has(r.id)}
-              onClick={() => handleApprove(r)}>入选</Button>
+            <Button type="link" size="small" icon={<AuditOutlined />} onClick={() => handleOpenAudit(r)}>审核</Button>
           );
         }
         if (r.audit_status === RegisterAuditStatus.APPROVED) {
           return <Tag color="success" title="已入选">已入选</Tag>;
         }
-        return <Tag color="default" title="已拒绝">已拒绝</Tag>;
+        return <Tag color="default" title="已退回">已退回</Tag>;
       },
     });
   }
@@ -395,7 +384,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         record={detailRecord}
         formConfig={formConfig}
         activityType={activityType}
-        readonly
+        readonly={detailReadonly}
         onClose={() => { setDetailVisible(false); setDetailRecord(null); }}
         onSuccess={refresh}
       />
