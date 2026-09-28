@@ -527,7 +527,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询活动预报名信息（创建时间倒序）。筛选：status（0=未报名 1=已报名）/\nkeyword（姓名 ILIKE 包含 + 手机号精确）/ register_id（按关联报名记录反查——相互查询）。\n手机号明文返回（presign:read 权限面控制）。",
+                "description": "分页查询活动预报名信息（创建时间倒序）。筛选：status（0=未报名 1=已报名，缺省/空串=不筛选）/\nkeyword（姓名 ILIKE 包含 + 手机号精确）/ register_id（按关联报名记录反查——相互查询）。\n手机号明文返回（presign:read 权限面控制）。",
                 "produces": [
                     "application/json"
                 ],
@@ -545,7 +545,7 @@
                     },
                     {
                         "type": "integer",
-                        "description": "状态筛选（0=未报名 1=已报名，缺省=不筛选）",
+                        "description": "状态筛选（0=未报名 1=已报名，缺省/空串=不筛选）",
                         "name": "status",
                         "in": "query"
                     },
@@ -15182,7 +15182,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "按当前登录用户的手机号查询预报名信息（需 C 端 JWT 鉴权），跨活动、创建时间倒序。\n无手机号/无记录返回空列表；条目含预报名状态、姓名/性别/预报名数据与活动信息（activity_data）。",
+                "description": "按当前登录用户的手机号查询预报名信息（需 C 端 JWT 鉴权），跨活动、创建时间倒序。\n可按活动 ID 与状态筛选（均可选，缺省/空串=不筛选）。\n无手机号/无记录返回空列表；条目含预报名状态、姓名/性别/预报名数据与活动信息（activity_data）。",
                 "produces": [
                     "application/json"
                 ],
@@ -15201,6 +15201,18 @@
                         "type": "integer",
                         "description": "每页数量（默认 20，最大 100）",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "活动 ID 筛选（UUID，缺省/空串=不筛选）",
+                        "name": "activity_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选（0=未报名 1=已报名，缺省/空串=不筛选）",
+                        "name": "status",
                         "in": "query"
                     }
                 ],
@@ -15678,6 +15690,79 @@
                     },
                     "422": {
                         "description": "Unprocessable Entity",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/activity/{id}/register-users": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "分页查询本活动「已入选」报名用户的公开画像（需 C 端 JWT）。\n三重门禁：活动存在且启用（40501）→ 查看者已报名该活动（40519）→ 活动已开放报名列表（40518）。\n条目口径=现场口径镜像（完整公开画像优先、基础资料兜底，不过滤 visibility——报名成员互见）；\n资料缺失（已注销）不展示；gender 筛选不支持空串（空串返回 40001，「全部」省略参数）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "活动报名列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "性别筛选（1=男 2=女；缺省=全部）",
+                        "name": "gender",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -21257,6 +21342,10 @@
                 "register_end": {
                     "type": "string"
                 },
+                "register_list_enabled": {
+                    "description": "是否开放 C 端活动报名列表",
+                    "type": "boolean"
+                },
                 "register_start": {
                     "type": "string"
                 },
@@ -21380,6 +21469,10 @@
                 },
                 "register_end": {
                     "type": "string"
+                },
+                "register_list_enabled": {
+                    "description": "是否开放 C 端报名列表（2026-09-28 裁决点 5——C 端据此显隐入口）",
+                    "type": "boolean"
                 },
                 "register_start": {
                     "type": "string"
@@ -21568,6 +21661,10 @@
                 "register_end": {
                     "description": "RFC3339（可选）",
                     "type": "string"
+                },
+                "register_list_enabled": {
+                    "description": "RegisterListEnabled 是否开放 C 端活动报名列表（2026-09-28，裁决点 5）：默认 false（不开放）；\n进公开响应（C 端据此显隐入口）。",
+                    "type": "boolean"
                 },
                 "register_start": {
                     "description": "RFC3339（可选）",
@@ -22124,6 +22221,10 @@
                 },
                 "register_end": {
                     "type": "string"
+                },
+                "register_list_enabled": {
+                    "description": "是否开放 C 端活动报名列表（PATCH 指针语义，缺省不更新）",
+                    "type": "boolean"
                 },
                 "register_start": {
                     "type": "string"
