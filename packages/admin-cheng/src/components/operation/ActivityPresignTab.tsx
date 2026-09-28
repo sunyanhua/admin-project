@@ -184,9 +184,13 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 90,
-      render: (v: number | undefined) => {
-        const s = v ?? PresignStatus.NOT_REGISTERED;
+      width: 110,
+      render: (_: number | undefined, r: PresignRecord) => {
+        const s = r.status ?? PresignStatus.NOT_REGISTERED;
+        // 已免报名入选（后台一键报名，无用户绑定）：status 已报名但 user_id 为空，单独文案与颜色
+        if (s === PresignStatus.REGISTERED && !r.user_id) {
+          return <Tag color="processing" title="已免报名入选">已免报名入选</Tag>;
+        }
         return <Tag color={s === PresignStatus.REGISTERED ? 'success' : 'default'}>{PresignStatusLabels[s] ?? s}</Tag>;
       },
     },
