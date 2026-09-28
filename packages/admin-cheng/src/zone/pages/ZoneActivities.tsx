@@ -161,7 +161,8 @@ const ZoneActivities = () => {
         } else {
           content = `${count}/${r.slots ?? '-'}`;
         }
-        if (count > 0) {
+        // 审核模式 0 人也可进入报名名单（免报名导入）
+        if (count > 0 || r.activity_type === ActivityType.FREE_REVIEW) {
           return (
             <Button type="link" style={{ padding: 0, height: 'auto', whiteSpace: 'normal' }}
               onClick={() => handleShowRegisters(r)}>

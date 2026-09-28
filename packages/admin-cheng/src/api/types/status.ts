@@ -75,6 +75,21 @@ export const UploadStatus = {
 } as const;
 export type UploadStatus = (typeof UploadStatus)[keyof typeof UploadStatus];
 
+/** 预报名状态 */
+export const PresignStatus = {
+  /** 未报名 */
+  NOT_REGISTERED: 0,
+  /** 已报名（register_id 非空） */
+  REGISTERED: 1,
+} as const;
+export type PresignStatus = (typeof PresignStatus)[keyof typeof PresignStatus];
+
+/** 预报名状态文案 */
+export const PresignStatusLabels: Record<number, string> = {
+  [PresignStatus.NOT_REGISTERED]: '未报名',
+  [PresignStatus.REGISTERED]: '已报名',
+};
+
 /** 收入范围 */
 export const IncomeRange = {
   /** 5000 以下 */

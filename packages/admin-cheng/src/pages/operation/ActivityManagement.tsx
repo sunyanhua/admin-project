@@ -197,8 +197,8 @@ const ActivityManagement = () => {
         } else {
           content = `${count}/${r.slots ?? '-'}`;
         }
-        // 报名人数大于 0：整格内容成为链接，点击查看报名列表
-        if (count > 0) {
+        // 报名人数大于 0（审核模式 0 人也可进入，用于免报名导入）：整格内容成为链接，点击查看报名列表
+        if (count > 0 || r.activity_type === ActivityType.FREE_REVIEW) {
           return (
             <Button type="link" style={{ padding: 0, height: 'auto', whiteSpace: 'normal' }}
               onClick={() => handleShowRegisters(r)}>

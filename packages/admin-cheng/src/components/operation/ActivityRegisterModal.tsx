@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Tag, Space } from 'antd';
+import { Button, Tag, Space, Tabs } from 'antd';
 import { UserAddOutlined, ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
@@ -23,6 +23,7 @@ import RealNameWithTag from '@/components/user/RealNameWithTag';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
+import ActivityPresignTab from '@/components/operation/ActivityPresignTab';
 import { buildRegisterExportSheet } from './activityRegisterExport.utils';
 import { applyLinkColumns } from './excelExport.utils';
 
@@ -82,6 +83,9 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     formatResponse,
   });
 
+  /** 弹窗打开次数（传给预报名 TAB，重开时刷新列表） */
+  const [presignReloadKey, setPresignReloadKey] = useState(0);
+
   const prevKeyRef = useRef('');
   useEffect(() => {
     const key = `${visible}-${activityId}`;
@@ -89,6 +93,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       prevKeyRef.current = key;
       setSearchValues({});
       search({ _t: Date.now() });
+      setPresignReloadKey((k) => k + 1);
     }
   }, [visible, activityId, search]);
 
@@ -317,6 +322,23 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     });
   }
 
+  // 用户报名 TAB 内容（非审核模式活动不加 Tabs，直接渲染）
+  const registerContent = (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
+      <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+        {checkinEnabled && (
+          <Button icon={<OrderedListOutlined />} loading={assigning} onClick={handleAssignNumbers}>排序</Button>
+        )}
+        <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+        <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
+      </Space>
+      </div>
+      <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+    </div>
+  );
+
   return (
     <>
       <ScrollableModal
@@ -326,19 +348,17 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         width={1100}
         footer={false}
       >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
-          <Space style={{ marginLeft: 12, flexShrink: 0 }}>
-            {checkinEnabled && (
-              <Button icon={<OrderedListOutlined />} loading={assigning} onClick={handleAssignNumbers}>排序</Button>
-            )}
-            <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
-            <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
-          </Space>
-          </div>
-          <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
-        </div>
+        {isFreeReview ? (
+          <Tabs
+            defaultActiveKey="register"
+            items={[
+              { key: 'register', label: '用户报名', children: registerContent },
+              { key: 'presign', label: '导入报名', children: <ActivityPresignTab activityId={activityId} reloadKey={presignReloadKey} /> },
+            ]}
+          />
+        ) : (
+          registerContent
+        )}
       </ScrollableModal>
 
       <ActivityRegisterDetailModal

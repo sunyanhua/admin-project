@@ -207,6 +207,30 @@ export interface RegisterRecord {
   user_match_profile?: RegisterMatchProfile;
 }
 
+/** 预报名信息（审核模式活动导入的免报名用户） */
+export interface PresignRecord {
+  id: string;
+  activity_id: string;
+  user_id?: string;
+  real_name?: string;
+  phone?: string;
+  gender?: number;
+  presign_data?: string;
+  status?: number;
+  register_id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+/** 预报名导入条目（单批最多 100 条） */
+export interface ImportPresignItem {
+  /** 手机号（必填） */
+  phone: string;
+  real_name?: string;
+  gender?: number;
+  presign_data?: string;
+}
+
 export const activityApi = {
   /** 分页查询活动列表 */
   getList: (params?: { status?: number; keyword?: string; zone_id?: string; page?: number; size?: number }) => {
@@ -280,5 +304,24 @@ export const activityApi = {
   /** 心动配对信息列表（有现场心动的配对 loves_count>0，按现场心动次数倒序） */
   getOnsiteLovesCouples: (activityId: string, params?: { page?: number; size?: number }) => {
     return request.get(`/admin/v1/bizops/activity/${activityId}/onsite-loves-couples`, { params });
+  },
+
+  // ========================
+  // 预报名（presign）
+  // ========================
+
+  /** 预报名信息列表 */
+  getPresigns: (activityId: string, params?: { page?: number; size?: number; status?: number; keyword?: string; register_id?: string }) => {
+    return request.get(`/admin/v1/bizops/activity/${activityId}/presign`, { params });
+  },
+
+  /** 导入预报名信息（单批 1..100 条，同活动同手机号已存在则跳过） */
+  importPresigns: (activityId: string, items: ImportPresignItem[]) => {
+    return request.post(`/admin/v1/bizops/activity/${activityId}/presign`, { items });
+  },
+
+  /** 免报名入选：预报名信息一键转为报名记录并审核通过 */
+  registerPresign: (activityId: string, presignId: string) => {
+    return request.post(`/admin/v1/bizops/activity/${activityId}/presign/${presignId}/register`);
   },
 };
