@@ -309,24 +309,20 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     );
   }
 
-  // 操作列（仅审核模式）：待审核可「审核」（弹窗内入选/退回）；已审核记录显示状态标签 + 只读「查看」（详情列已由本列覆盖）
+  // 操作列（仅审核模式）：待审核可「审核」（弹窗内入选/退回）；已审核记录点击状态标签查看报名信息（详情列已由本列覆盖）
   if (isFreeReview) {
     columns.push({
-      title: '操作', key: 'action', width: 160, fixed: 'right' as const,
+      title: '操作', key: 'action', width: 100, fixed: 'right' as const,
       render: (_: any, r: RegisterRecord) => {
         if (r.audit_status === RegisterAuditStatus.PENDING) {
           return (
             <Button type="link" size="small" icon={<AuditOutlined />} onClick={() => handleOpenAudit(r)}>审核</Button>
           );
         }
-        return (
-          <Space size="small" className="action-buttons">
-            {r.audit_status === RegisterAuditStatus.APPROVED
-              ? <Tag color="success" title="已入选">已入选</Tag>
-              : <Tag color="default" title="已退回">已退回</Tag>}
-            <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => openDetail(r)}>查看</Button>
-          </Space>
-        );
+        if (r.audit_status === RegisterAuditStatus.APPROVED) {
+          return <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已入选</Tag>;
+        }
+        return <Tag color="default" title="已退回" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已退回</Tag>;
       },
     });
   }
