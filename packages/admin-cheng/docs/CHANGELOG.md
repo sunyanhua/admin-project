@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-09-28 22:11 | 46ee06a | feat: 活动新增 presign_enabled 字段——报名方式为审核筛选时创建/编辑提交自动传 true（预报名导入的准入门禁），其他报名方式显式传 false；Create/Update/Activity 类型同步补充 |
 | 2026-09-28 21:24 | 9485aca | fix: 报名导入模版去掉照片列（22 列）——导入解析同步移除，旧文件带照片列时自动忽略不影响解析 |
 | 2026-09-28 21:21 | 78f0acd | feat: 活动报名名单新增「导入报名」TAB——审核模式活动报名人数为 0 时也可点击查看报名名单（ActivityManagement / ZoneActivities）；报名名单弹窗（仅审核模式）分「用户报名」（原内容）与「导入报名」两个 TAB；导入报名 TAB 含预报名列表（状态/关键词筛选）、下载模版（23 列：姓名/手机号/性别映射接口字段，其余 20 列打包 JSON 写入 presign_data）、导入报名（100 条分片调 POST /admin/v1/bizops/activity/{id}/presign，提示新增/跳过条数）、免报名入选（调 POST .../presign/{pid}/register 一键转为报名记录并审核通过）；新增 PresignStatus 枚举与 activityApi.getPresigns/importPresigns/registerPresign |
 | 2026-09-27 21:36 | 2cd44f3 | feat: 脱单资料管理新增「导出本页」常备按钮（直接导出当前页数据），原隐藏导出按钮（Shift+1）改名「导出全部」；抽出公共 exportToExcel 函数，两种导出行内容完全一致（16 列、身份证号脱敏），文件名区分「脱单资料全部/本页_时间戳.xlsx」，无数据时 warning 提示 |
