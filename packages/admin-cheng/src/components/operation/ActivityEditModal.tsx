@@ -365,6 +365,9 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         payload.slots = 999;
       }
 
+      // 预报名：报名方式为审核筛选时自动启用（预报名导入的准入门禁）
+      payload.presign_enabled = activityType === ActivityType.FREE_REVIEW;
+
       if (activityType === ActivityType.PAID_FCFS && values.fee != null) {
         payload.fee = Math.round(values.fee * 100);
       } else {
