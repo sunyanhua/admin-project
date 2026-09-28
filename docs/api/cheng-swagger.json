@@ -520,6 +520,218 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/presign": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询活动预报名信息（创建时间倒序）。筛选：status（0=未报名 1=已报名）/\nkeyword（姓名 ILIKE 包含 + 手机号精确）/ register_id（按关联报名记录反查——相互查询）。\n手机号明文返回（presign:read 权限面控制）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "预报名信息列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选（0=未报名 1=已报名，缺省=不筛选）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字（姓名/手机号，缺省=不筛选）",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关联报名记录 ID 反查（缺省/空串=不筛选）",
+                        "name": "register_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.PresignAdminResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "批量导入预报名信息（1..100 条/批）；活动 presign_enabled=false 时拒绝（40517）。\n手机号逐条 trim + 格式校验（任一非法整批 40001 并指明第几条）；presign_data 服务端不校验。\n重复导入（同活动同手机号）静默跳过，响应返回新增/跳过计数。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "导入预报名信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "导入请求（items 1..100 条）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ImportPresignRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ImportPresignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/activity/{id}/presign/{pid}/register": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "将预报名信息转为真实报名记录并直接入选（不关联用户——user_id 取预报名表值，可为 null）。\n不进行名额限定判断（管理后台入选不受名额上限约束，计数照常）；\ngender 取预报名表 gender，未设置(0)不拦截；自动入选（audit_status=通过、approved_at=now）。\n已报名（status=1）或该用户已有本活动报名 → 40502；预报名不存在/不属于该活动 → 40515。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "一键报名并入选",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "预报名信息 ID（UUID）",
+                        "name": "pid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.RegisterAdminResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/register": {
             "get": {
                 "security": [
@@ -571,6 +783,12 @@
                         "type": "boolean",
                         "description": "现场签到筛选（true=已签到 false=未签到；缺省或空串=不筛选）",
                         "name": "checked_in",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关联预报名信息 ID 筛选（互相查询；缺省/空串=不筛选）",
+                        "name": "presign_id",
                         "in": "query"
                     },
                     {
@@ -14957,6 +15175,112 @@
                 }
             }
         },
+        "/api/v1/wxa/activity/presign": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "按当前登录用户的手机号查询预报名信息（需 C 端 JWT 鉴权），跨活动、创建时间倒序。\n无手机号/无记录返回空列表；条目含预报名状态、姓名/性别/预报名数据与活动信息（activity_data）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "我的预报名列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.PresignResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/activity/presign/{id}/bind": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "将本人手机号匹配的预报名信息绑定到当前账号（需 C 端 JWT 鉴权）；\n已一键报名的关联报名记录同步回填 user_id（同步更新性别等信息）。\n幂等：重复绑定同一人恒成功；已被他人绑定 40502；手机号不符 40516；不存在或不属于该活动 40515。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "预报名信息绑定",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "预报名信息 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.PresignResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/activity/register/{id}": {
             "delete": {
                 "security": [
@@ -20926,6 +21250,10 @@
                     "description": "现场心动机会数（与用户每日心动次数独立）",
                     "type": "integer"
                 },
+                "presign_enabled": {
+                    "description": "是否启用预报名（仅管理后台可见）",
+                    "type": "boolean"
+                },
                 "register_end": {
                     "type": "string"
                 },
@@ -21233,6 +21561,10 @@
                     "description": "现场心动机会数（默认 0，与用户每日心动次数独立）",
                     "type": "integer"
                 },
+                "presign_enabled": {
+                    "description": "PresignEnabled 是否启用预报名（2026-09-28）：预报名信息导入的准入门禁（默认 false）；\n仅管理端可见——不进 ActivityPublicResponse（裁决点 2）。",
+                    "type": "boolean"
+                },
                 "register_end": {
                     "description": "RFC3339（可选）",
                     "type": "string"
@@ -21287,6 +21619,61 @@
                 "zone_only": {
                     "description": "ZoneOnly 是否只允许专区用户报名。缺省时由服务端按默认口径落值：\n传 zone_id → true；未传 zone_id → false；显式传值（含 false）以传值为准。",
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.ImportPresignItem": {
+            "type": "object",
+            "required": [
+                "phone"
+            ],
+            "properties": {
+                "gender": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "presign_data": {
+                    "type": "string"
+                },
+                "real_name": {
+                    "type": "string",
+                    "maxLength": 64
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.ImportPresignRequest": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ImportPresignItem"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.ImportPresignResponse": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "description": "新增条数",
+                    "type": "integer"
+                },
+                "skipped": {
+                    "description": "跳过条数（同活动同手机号已存在）",
+                    "type": "integer"
                 }
             }
         },
@@ -21380,6 +21767,97 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.PresignAdminResponse": {
+            "type": "object",
+            "properties": {
+                "activity_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "presign_data": {
+                    "type": "string"
+                },
+                "real_name": {
+                    "type": "string"
+                },
+                "register_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PresignStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.PresignResponse": {
+            "type": "object",
+            "properties": {
+                "activity_data": {
+                    "description": "ActivityData 活动信息（免二次请求；活动行缺失（已删除）为 null）。\n复用公开活动 DTO——与公开列表/详情/我的报名同一形状，前端一套渲染。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityPublicResponse"
+                        }
+                    ]
+                },
+                "activity_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gender": {
+                    "description": "性别（0=未设置 1=男 2=女）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                        }
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "presign_data": {
+                    "description": "预报名数据（协商定义，服务端不解析）",
+                    "type": "string"
+                },
+                "real_name": {
+                    "description": "姓名（本人登记信息）",
+                    "type": "string"
+                },
+                "register_id": {
+                    "description": "关联报名记录 ID（未报名为 null）",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "0=未报名 1=已报名",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PresignStatus"
+                        }
+                    ]
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.RegisterAdminResponse": {
             "type": "object",
             "properties": {
@@ -21433,6 +21911,10 @@
                 "pay_status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.RegisterPayStatus"
                 },
+                "presign_id": {
+                    "description": "PresignID 关联的预报名信息 ID（2026-09-28，可空）——管理端与预报名列表相互查询\n（裁决点 11：条目互带对方 ID，不内嵌摘要）。",
+                    "type": "string"
+                },
                 "subscribed_audit": {
                     "description": "SubscribedAudit 活动报名审核场景订阅状态（Available 额度，B9——LEFT JOIN quota 账本口径）。",
                     "type": "boolean"
@@ -21453,6 +21935,7 @@
                     ]
                 },
                 "user_id": {
+                    "description": "UserID 报名用户 ID（2026-09-28 起可空）：后台「一键报名」产生的无用户报名记录为 null，\n绑定/认领回填后为本人（null 输出，硬约束 #10）。",
                     "type": "string"
                 },
                 "user_match_profile": {
@@ -21480,6 +21963,10 @@
                     "type": "string"
                 },
                 "form_data": {
+                    "type": "string"
+                },
+                "presign_id": {
+                    "description": "PresignID 预报名信息 ID（2026-09-28，可选）：提交时进行 ID 与手机号校验，\n校验通过的自动入选（免名额校验、无视活动类型）；缺省=常规报名。",
                     "type": "string"
                 },
                 "start_template": {
@@ -21553,6 +22040,7 @@
                     "type": "string"
                 },
                 "user_id": {
+                    "description": "UserID 报名用户 ID（2026-09-28 起可空）：后台「一键报名」产生的无用户报名记录为 null，\n绑定/认领回填后为本人（null 输出，硬约束 #10）。",
                     "type": "string"
                 }
             }
@@ -21629,6 +22117,10 @@
                 "onsite_loves_chances": {
                     "description": "现场心动机会数（与用户每日心动次数独立）",
                     "type": "integer"
+                },
+                "presign_enabled": {
+                    "description": "是否启用预报名（PATCH 指针语义，缺省不更新；仅管理端可见）",
+                    "type": "boolean"
                 },
                 "register_end": {
                     "type": "string"
@@ -31843,6 +32335,26 @@
             "x-enum-varnames": [
                 "OpinionTypeMatch",
                 "OpinionTypeSplit"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.PresignStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-comments": {
+                "PresignNotRegistered": "未报名",
+                "PresignRegistered": "已报名（register_id 非空）"
+            },
+            "x-enum-descriptions": [
+                "未报名",
+                "已报名（register_id 非空）"
+            ],
+            "x-enum-varnames": [
+                "PresignNotRegistered",
+                "PresignRegistered"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus": {
