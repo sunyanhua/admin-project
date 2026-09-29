@@ -39,6 +39,7 @@ export interface Activity {
   warm_up_enabled?: boolean; // 是否启用预热
   warm_up_config?: string; // 预热配置（小程序端自主内容，服务端透明存储）
   presign_enabled?: boolean; // 是否启用预报名（仅管理后台可见，审核筛选活动自动开启）
+  presign_bind_deadline?: string | null; // 预报名绑定截止时间（null=永不截止，RFC3339）
   registered_count: number;
   created_by?: string;
   updated_by?: string;
@@ -112,6 +113,7 @@ export interface UpdateActivityRequest {
   warm_up_enabled?: boolean; // 是否启用预热
   warm_up_config?: string; // 预热配置（前端自主控制内容，服务端透明存储）
   presign_enabled?: boolean; // 是否启用预报名（PATCH 指针语义：缺省不更新）
+  presign_bind_deadline?: string; // 预报名绑定截止时间（三态：缺省不更新；""=清除永不截止；RFC3339=设置）
 }
 
 // ========================

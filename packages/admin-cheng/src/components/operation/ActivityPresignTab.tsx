@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Button, Space, Tag, Upload, Modal } from 'antd';
-import { DownloadOutlined, ImportOutlined, UserAddOutlined } from '@ant-design/icons';
+import { Button, Space, Tag, Upload, Modal, DatePicker } from 'antd';
+import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
@@ -10,6 +11,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import { activityApi, PresignRecord, ImportPresignItem } from '@/api/services/activity-v1';
 import { PresignStatus, PresignStatusLabels, UserGender, UserGenderLabels } from '@/api/types/status';
+import { parseApiTime, dayjsToApi } from '@/utils/format';
 
 interface ActivityPresignTabProps {
   activityId: string;
@@ -51,6 +53,9 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
   const [importing, setImporting] = useState(false);
   /** 正在执行「免报名入选」的记录 id（按钮 loading） */
   const [registeringIds, setRegisteringIds] = useState<Set<string>>(new Set());
+  /** 报名截止时间（活动详情 presign_bind_deadline，null=永不截止） */
+  const [deadline, setDeadline] = useState<dayjs.Dayjs | undefined>(undefined);
+  const [savingDeadline, setSavingDeadline] = useState(false);
 
   const fetchPresigns = useCallback(async (params: any) => {
     if (!activityId) return { list: [], total: 0 };
@@ -79,8 +84,25 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
     if (activityId && key !== prevKeyRef.current) {
       prevKeyRef.current = key;
       search({ _t: Date.now() });
+      // 同步拉取活动详情的报名截止时间
+      activityApi.getDetail(activityId)
+        .then((res: any) => setDeadline(parseApiTime(res?.presign_bind_deadline)))
+        .catch(() => setDeadline(undefined));
     }
   }, [activityId, reloadKey, search]);
+
+  /** 保存报名截止时间（清空后保存 = 永不截止，提交空串走清除语义） */
+  const handleSaveDeadline = async () => {
+    setSavingDeadline(true);
+    try {
+      await activityApi.update(activityId, { presign_bind_deadline: deadline ? dayjsToApi(deadline) : '' });
+      success(deadline ? '报名截止时间已更新' : '已清除报名截止时间（永不截止）');
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '保存失败');
+    } finally {
+      setSavingDeadline(false);
+    }
+  };
 
   const handleSearchChange = (name: string, value: any) => setSearchValues(p => ({ ...p, [name]: value }));
   const handleSearch = (vals: Record<string, any>) => search(vals);
@@ -225,6 +247,8 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
 
   return (
     <div>
+      {/* ====== 第一部分：导入列表 ====== */}
+      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>导入列表</div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
         <Space style={{ marginLeft: 12, flexShrink: 0 }}>
@@ -235,6 +259,23 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
         </Space>
       </div>
       <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+
+      {/* ====== 第二部分：导入配置 ====== */}
+      <div style={{ height: 1, background: '#e8e8e8', margin: '16px 0' }} />
+      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>导入配置</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <span style={{ fontSize: 13, color: '#666' }}>报名截止时间</span>
+        <DatePicker
+          showTime
+          format="YYYY/MM/DD HH:mm"
+          value={deadline}
+          onChange={(v) => setDeadline(v ?? undefined)}
+          placeholder="选择报名截止时间"
+          style={{ width: 240 }}
+        />
+        <Button icon={<SaveOutlined />} loading={savingDeadline} onClick={handleSaveDeadline}>保存</Button>
+        <span style={{ fontSize: 12, color: '#999' }}>清空时间并保存 = 永不截止</span>
+      </div>
     </div>
   );
 };
