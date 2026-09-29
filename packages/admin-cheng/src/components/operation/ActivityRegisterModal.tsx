@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Tag, Space, Tabs, Avatar } from 'antd';
+import { Button, Tag, Space, Tabs, Avatar, InputNumber } from 'antd';
 import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
@@ -171,6 +171,17 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     setDetailVisible(true);
   };
 
+  /** 单条修改现场编号（≥1；接口不支持清空，重排由「一键分配」覆盖） */
+  const handleOnsiteNumberChange = async (record: RegisterRecord, num: number) => {
+    try {
+      await activityApi.updateOnsiteNumber(activityId, record.id, num);
+      success('序号已更新');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '序号更新失败');
+    }
+  };
+
   /** 现场编号一键分配（按性别 1..N 自动排序） */
   const handleAssignNumbers = async () => {
     setAssigning(true);
@@ -327,15 +338,29 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     });
   }
 
-  // 序号列（现场编号，一键分配后按性别 1..N；置于操作列之后，仅开启签到的活动显示；单条修改接口待后端补充后改为可输入）
+  // 序号列（现场编号，一键分配后按性别 1..N；置于操作列之后，仅开启签到的活动显示；失焦内联编辑单条修改）
   if (checkinEnabled) {
     columns.push({
       title: '序号',
       dataIndex: 'onsite_number',
       key: 'onsite_number',
-      width: 70,
+      width: 120,
       fixed: 'right' as const,
-      render: (v: number | null | undefined) => v != null ? v : <span style={{ color: '#999' }}>-</span>,
+      render: (v: number | null | undefined, r: RegisterRecord) => (
+        <InputNumber
+          min={1}
+          precision={0}
+          value={v ?? undefined}
+          style={{ width: 70 }}
+          onBlur={(e) => {
+            const val = e.target.value;
+            const num = val === '' ? undefined : parseInt(val, 10);
+            // 接口不支持清空：空值、<1 或未变化时不提交
+            if (num == null || num < 1 || num === (r.onsite_number ?? undefined)) return;
+            handleOnsiteNumberChange(r, num);
+          }}
+        />
+      ),
     });
   }
 

@@ -304,6 +304,11 @@ export const activityApi = {
     return request.post(`/admin/v1/bizops/activity/${activityId}/register/assign-numbers`);
   },
 
+  /** 更新现场编号（单条，≥1；不支持清空，重排/清除由「一键分配」整体覆盖） */
+  updateOnsiteNumber: (activityId: string, registerId: string, onsite_number: number) => {
+    return request.patch(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/onsite-number`, { onsite_number });
+  },
+
   /** 现场配对信息列表（双方均为入选+签到人员的全部配对，按匹配度倒序） */
   getOnsiteCouples: (activityId: string, params?: { page?: number; size?: number }) => {
     return request.get(`/admin/v1/bizops/activity/${activityId}/onsite-couples`, { params });
