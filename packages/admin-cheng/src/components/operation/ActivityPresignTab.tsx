@@ -84,19 +84,23 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
     if (activityId && key !== prevKeyRef.current) {
       prevKeyRef.current = key;
       search({ _t: Date.now() });
-      // 同步拉取活动详情的报名截止时间
-      activityApi.getDetail(activityId)
-        .then((res: any) => setDeadline(parseApiTime(res?.presign_bind_deadline)))
-        .catch(() => setDeadline(undefined));
     }
   }, [activityId, reloadKey, search]);
 
-  /** 保存报名截止时间（清空后保存 = 永不截止，提交空串走清除语义） */
+  // 回显已保存的导入用户报名截止时间（首次挂载、活动切换、弹窗重开都拉取）
+  useEffect(() => {
+    if (!activityId) return;
+    activityApi.getDetail(activityId)
+      .then((res: any) => setDeadline(parseApiTime(res?.presign_bind_deadline)))
+      .catch(() => setDeadline(undefined));
+  }, [activityId, reloadKey]);
+
+  /** 保存导入用户报名截止时间（清空后保存 = 永不截止，提交空串走清除语义） */
   const handleSaveDeadline = async () => {
     setSavingDeadline(true);
     try {
       await activityApi.update(activityId, { presign_bind_deadline: deadline ? dayjsToApi(deadline) : '' });
-      success(deadline ? '报名截止时间已更新' : '已清除报名截止时间（永不截止）');
+      success(deadline ? '导入用户报名截止时间已更新' : '已清除导入用户报名截止时间（永不截止）');
     } catch (err: any) {
       showError(err?.response?.data?.message || '保存失败');
     } finally {
@@ -264,13 +268,13 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
       <div style={{ height: 1, background: '#e8e8e8', margin: '16px 0' }} />
       <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>导入配置</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span style={{ fontSize: 13, color: '#666' }}>报名截止时间</span>
+        <span style={{ fontSize: 13, color: '#666' }}>导入用户报名截止时间</span>
         <DatePicker
           showTime
           format="YYYY/MM/DD HH:mm"
           value={deadline}
           onChange={(v) => setDeadline(v ?? undefined)}
-          placeholder="选择报名截止时间"
+          placeholder="选择截止时间"
           style={{ width: 240 }}
         />
         <Button icon={<SaveOutlined />} loading={savingDeadline} onClick={handleSaveDeadline}>保存</Button>
