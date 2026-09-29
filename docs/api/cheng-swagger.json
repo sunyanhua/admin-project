@@ -21651,7 +21651,7 @@
             ],
             "properties": {
                 "approved": {
-                    "description": "true=通过 false=拒绝",
+                    "description": "Approved true=通过 false=拒绝。使用 *bool 指针：binding:\"required\" 对 bool 零值 false\n判\"未提供\"，裸 bool 会让 {\"approved\":false}（审核拒绝）恒被 40001 拦截；\n指针的 required 只检查 non-nil，允许 JSON 显式传入 false。",
                     "type": "boolean"
                 },
                 "reason": {
@@ -27522,6 +27522,7 @@
             ],
             "properties": {
                 "sort_order": {
+                    "description": "SortOrder 新排序值。使用 *int 指针：binding:\"required\" 对数值零值 0 判\"未提供\"，\n裸 int 会让 {\"sort_order\":0}（DB 列 default:0，合法排序位）恒被 40001 拦截；\n指针的 required 只检查 non-nil，允许显式传入 0。\n同项目 activity/cms 三处同名 sort_order 字段均为 *int（2026-09-29 对齐）。",
                     "type": "integer"
                 }
             }
