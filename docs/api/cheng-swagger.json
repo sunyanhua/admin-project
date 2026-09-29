@@ -964,6 +964,83 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/register/{rid}/onsite-number": {
+            "patch": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "更新指定报名记录的现场编号（必填正整数 ≥1；不校验唯一性——管理端手工调整）。\n权限与一键分配相同；专区管理员活动不属于所属专区 → 40233。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "更新现场编号（单条）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "报名记录 ID（UUID）",
+                        "name": "rid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新现场编号请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateOnsiteNumberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateOnsiteNumberResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/register/{rid}/user": {
             "get": {
                 "security": [
@@ -21335,6 +21412,10 @@
                     "description": "现场心动机会数（与用户每日心动次数独立）",
                     "type": "integer"
                 },
+                "presign_bind_deadline": {
+                    "description": "预报名绑定截止时间（null=永不截止，2026-09-28）",
+                    "type": "string"
+                },
                 "presign_enabled": {
                     "description": "是否启用预报名（仅管理后台可见）",
                     "type": "boolean"
@@ -21466,6 +21547,10 @@
                 "onsite_loves_chances": {
                     "description": "现场心动机会数（与用户每日心动次数独立）",
                     "type": "integer"
+                },
+                "presign_bind_deadline": {
+                    "description": "预报名绑定截止时间（null=永不截止，2026-09-28 老大需求）",
+                    "type": "string"
                 },
                 "register_end": {
                     "type": "string"
@@ -21653,6 +21738,10 @@
                 "onsite_loves_chances": {
                     "description": "现场心动机会数（默认 0，与用户每日心动次数独立）",
                     "type": "integer"
+                },
+                "presign_bind_deadline": {
+                    "description": "PresignBindDeadline 预报名绑定截止时间（2026-09-28 老大需求）：RFC3339；\nnull/缺省/空串=永不截止（不设置）。",
+                    "type": "string"
                 },
                 "presign_enabled": {
                     "description": "PresignEnabled 是否启用预报名（2026-09-28）：预报名信息导入的准入门禁（默认 false）；\n仅管理端可见——不进 ActivityPublicResponse（裁决点 2）。",
@@ -22215,6 +22304,10 @@
                     "description": "现场心动机会数（与用户每日心动次数独立）",
                     "type": "integer"
                 },
+                "presign_bind_deadline": {
+                    "description": "PresignBindDeadline 预报名绑定截止时间（2026-09-28 老大需求）：三态语义——\nnull/缺省=不更新；\"\"=清除（恢复永不截止）；RFC3339=设置。",
+                    "type": "string"
+                },
                 "presign_enabled": {
                     "description": "是否启用预报名（PATCH 指针语义，缺省不更新；仅管理端可见）",
                     "type": "boolean"
@@ -22272,6 +22365,32 @@
                 "zone_only": {
                     "description": "是否只允许专区用户报名（PATCH 指针语义，缺省不更新）",
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateOnsiteNumberRequest": {
+            "type": "object",
+            "required": [
+                "onsite_number"
+            ],
+            "properties": {
+                "onsite_number": {
+                    "description": "OnsiteNumber 现场编号（必填正整数 ≥1——编号语义自 1 起）。\n不支持清空：需要重排/清除时由「一键分配」整体覆盖。",
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateOnsiteNumberResponse": {
+            "type": "object",
+            "properties": {
+                "onsite_number": {
+                    "description": "更新后的现场编号",
+                    "type": "integer"
+                },
+                "register_id": {
+                    "description": "报名记录 ID",
+                    "type": "string"
                 }
             }
         },
