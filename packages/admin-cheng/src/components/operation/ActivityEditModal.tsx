@@ -512,7 +512,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           rules={[{ required: true, message: '请上传活动图片' }]}
           extra="建议尺寸：600 × 480 像素，可上传多张"
         >
-          <MultiImageUpload maxCount={9} cropAspect={600 / 480} cropSizeHint="建议尺寸：600 × 480 像素" />
+          <MultiImageUpload maxCount={9} cropAspect={600 / 480} cropSizeHint="建议尺寸：600 × 480 像素" aiTargetSize={{ width: 600, height: 480 }} />
         </Form.Item>
 
         {/* ====== 8. 活动介绍 ====== */}

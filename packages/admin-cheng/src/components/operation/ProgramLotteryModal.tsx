@@ -432,7 +432,7 @@ const ProgramLotteryModal: React.FC<ProgramLotteryModalProps> = ({
               </div>
 
               <Form.Item label="奖品图标" required style={{ marginBottom: 0 }} extra="建议尺寸：200 × 200 像素">
-                <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素"
+                <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素" aiTargetSize={{ width: 200, height: 200 }}
                   value={prize.icon} onChange={v => handlePrizeChange(prize.key, 'icon', v)} />
               </Form.Item>
             </div>

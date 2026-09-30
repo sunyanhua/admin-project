@@ -118,7 +118,7 @@ const VoucherLibraryModal: React.FC<VoucherLibraryModalProps> = ({ visible, mode
         </Form.Item>
 
         <Form.Item label="券码库图标" name="icon" extra="建议尺寸：200 × 200 像素">
-          <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素" />
+          <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素" aiTargetSize={{ width: 200, height: 200 }} />
         </Form.Item>
 
         {isCreate ? (

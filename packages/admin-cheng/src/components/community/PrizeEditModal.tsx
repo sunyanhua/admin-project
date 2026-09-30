@@ -149,7 +149,7 @@ const PrizeEditModal: React.FC<PrizeEditModalProps> = ({ visible, mode, poolId, 
         <Form.Item label="奖品图标" name="icon" extra="建议尺寸：200 × 200 像素"
           rules={[{ required: true, message: '请上传奖品图标' }]}
         >
-          <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素" />
+          <CropperImageUpload aspect={1} sizeHint="建议尺寸：200 × 200 像素" aiTargetSize={{ width: 200, height: 200 }} />
         </Form.Item>
 
         {isVoucher && (

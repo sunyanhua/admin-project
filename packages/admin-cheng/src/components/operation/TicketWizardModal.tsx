@@ -144,11 +144,11 @@ const TicketWizardModal: React.FC<TicketWizardModalProps> = ({
         <Select placeholder="请选择分类" options={categoryOptions.map((c) => ({ label: c.name, value: c.id }))} />
       </Form.Item>
       <Form.Item label="门票封面" name="cover_image" rules={[{ required: true, message: '请上传门票封面' }]}>
-        <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
+        <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" aiTargetSize={{ width: 400, height: 400 }} />
       </Form.Item>
       <Form.Item label="门票图片" name="carousel_images"
         rules={[{ required: true, message: '请上传门票图片' }]}>
-        <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
+        <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" aiTargetSize={{ width: 800, height: 400 }} />
       </Form.Item>
       <Form.Item label="使用说明" name="usage_note"
         rules={[{ required: true, message: '请输入使用说明' }, { max: 512, message: '最多512个字符' }]}>

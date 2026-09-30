@@ -177,12 +177,12 @@ const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
         <Form.Item label="商品封面" name="cover_image"
           rules={[{ required: true, message: '请上传商品封面' }]}>
-          <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" />
+          <CropperImageUpload aspect={1} sizeHint="建议尺寸：400 × 400 像素" aiTargetSize={{ width: 400, height: 400 }} />
         </Form.Item>
 
         <Form.Item label="商品图片" name="carousel_images"
           rules={[{ required: true, message: '请上传商品图片' }]}>
-          <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" />
+          <MultiImageUpload cropAspect={800 / 400} cropSizeHint="建议尺寸：800 × 400 像素" aiTargetSize={{ width: 800, height: 400 }} />
         </Form.Item>
 
         <Form.Item label="商品介绍" name="detail"

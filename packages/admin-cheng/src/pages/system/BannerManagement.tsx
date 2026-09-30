@@ -308,7 +308,7 @@ const BannerManagement = () => {
             name="cover"
             rules={[{ required: true, message: '请上传封面图' }]}
           >
-            <CropperImageUpload aspect={600 / 200} sizeHint="建议尺寸：600 × 200 像素" />
+            <CropperImageUpload aspect={600 / 200} sizeHint="建议尺寸：600 × 200 像素" aiTargetSize={{ width: 600, height: 200 }} />
           </Form.Item>
 
           <Form.Item
