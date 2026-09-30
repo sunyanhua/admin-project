@@ -431,7 +431,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           rules={[{ required: true, message: '请上传活动封面' }]}
           extra="建议尺寸：600 × 300 像素"
         >
-          <CropperImageUpload aspect={600 / 300} sizeHint="建议尺寸：600 × 300 像素" />
+          <CropperImageUpload aspect={600 / 300} sizeHint="建议尺寸：600 × 300 像素" aiTargetSize={{ width: 600, height: 300 }} />
         </Form.Item>
 
         {/* ====== 3. 所属专区（锁定模式下固定显示、不可选） ====== */}
