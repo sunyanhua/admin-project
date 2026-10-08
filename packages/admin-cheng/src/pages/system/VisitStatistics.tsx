@@ -89,28 +89,28 @@ const VisitStatistics = () => {
       <Text type="secondary">小程序访问数据概览与趋势</Text>
 
       <Row gutter={[16, 16]} style={{ marginTop: 24, marginBottom: 24 }}>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="访问次数 PV" value={overview?.visit_pv ?? '-'} prefix={<EyeOutlined />} valueStyle={{ color: '#1890ff' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="访问人数 UV" value={overview?.visit_uv ?? '-'} prefix={<UserAddOutlined />} valueStyle={{ color: '#52c41a' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="新用户数" value={overview?.visit_uv_new ?? '-'} prefix={<UserAddOutlined />} valueStyle={{ color: '#722ed1' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="人均停留" value={fmtDuration(overview?.avg_stay_time_uv ?? 0)} prefix={<ClockCircleOutlined />} valueStyle={{ color: '#fa8c16' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="次均停留" value={fmtDuration(overview?.avg_stay_time_session ?? 0)} prefix={<ClockCircleOutlined />} valueStyle={{ color: '#eb2f96' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="平均深度" value={overview?.avg_visit_depth?.toFixed(1) ?? '-'} suffix="页" prefix={<BarChartOutlined />} valueStyle={{ color: '#13c2c2' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="转发次数" value={overview?.share_pv ?? '-'} prefix={<ShareAltOutlined />} valueStyle={{ color: '#722ed1' }} /></Card>
         </Col>
-        <Col xs={24} sm={12} md={8} lg={3}>
+        <Col xs={24} sm={12} md={8} lg={6}>
           <Card loading={loading}><Statistic title="转发人数" value={overview?.share_uv ?? '-'} prefix={<ShareAltOutlined />} valueStyle={{ color: '#fa8c16' }} /></Card>
         </Col>
       </Row>

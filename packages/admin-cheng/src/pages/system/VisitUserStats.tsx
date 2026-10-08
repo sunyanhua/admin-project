@@ -56,13 +56,17 @@ const VisitUserStats = () => {
   const nextDayRetain = retainUvNew.find((d) => d.key === 1)?.value;
 
   // 画像数据按 category 分组（生产环境 category 为 genders/ages/province/city，key 3 同时含省份与城市）
-  const toPercent = (v: number) => `${(v * 100).toFixed(1)}%`;
+  // 占比由前端按各组 value 总和自行计算，保证同表内占比之和为 100%（后端 percentage 口径按全量用户，直接展示会导致省内/市内占比之和不为 100%）
   const sortByValue = (a: PortraitItem, b: PortraitItem) => b.value - a.value;
-  const genderData = portrait.filter(p => p.category === 'genders').sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
-  const ageData = portrait.filter(p => p.category === 'ages').sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
+  const withPercent = (list: PortraitItem[]) => {
+    const total = list.reduce((s, p) => s + p.value, 0);
+    return list.map(p => ({ ...p, percent: total > 0 ? `${((p.value / total) * 100).toFixed(1)}%` : '0.0%' }));
+  };
+  const genderData = withPercent(portrait.filter(p => p.category === 'genders').sort(sortByValue));
+  const ageData = withPercent(portrait.filter(p => p.category === 'ages').sort(sortByValue));
   // 地域分布剔除 0 值行（生产数据含大量 value=0 的兜底城市）
-  const provinceData = portrait.filter(p => p.category === 'province' && p.value > 0).sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
-  const cityData = portrait.filter(p => p.category === 'city' && p.value > 0).sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
+  const provinceData = withPercent(portrait.filter(p => p.category === 'province' && p.value > 0).sort(sortByValue));
+  const cityData = withPercent(portrait.filter(p => p.category === 'city' && p.value > 0).sort(sortByValue));
   const genderChart = genderData.map(d => ({ name: d.name, UV: d.value }));
 
   return (
