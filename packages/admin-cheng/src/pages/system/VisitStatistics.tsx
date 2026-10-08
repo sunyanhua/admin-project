@@ -132,9 +132,9 @@ const VisitStatistics = () => {
             <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} label={{ value: '人数', angle: 90, position: 'insideRight', fontSize: 12 }} />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar yAxisId="left" dataKey="访问次数" fill="#1890ff" name="PV" />
-            <Line yAxisId="right" type="monotone" dataKey="访问人数" stroke="#52c41a" strokeWidth={2} dot={false} name="UV" />
-            <Line yAxisId="right" type="monotone" dataKey="新用户数" stroke="#722ed1" strokeWidth={2} dot={false} name="新用户" />
+            <Line yAxisId="left" type="monotone" dataKey="访问次数" stroke="#722ed1" strokeWidth={2} dot={false} name="访问次数" />
+            <Bar yAxisId="right" dataKey="访问人数" fill="#52c41a" name="访问人数" />
+            <Bar yAxisId="right" dataKey="新用户数" fill="#fa8c16" name="新用户数" />
           </ComposedChart>
         </ResponsiveContainer>
         <Table dataSource={chartData} rowKey="date" pagination={false} size="small" style={{ marginTop: 16 }}

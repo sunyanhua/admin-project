@@ -15,14 +15,11 @@ const { Title, Text } = Typography;
 
 const toDateStr = (d: Dayjs) => d.format('YYYYMMDD');
 
-const PORTRAIT_MAP: Record<number, string> = { 1: '性别分布', 2: '年龄分布', 3: '地域分布' };
-
 const VisitUserStats = () => {
   const { error: showError } = useAppNotification();
   const [loading, setLoading] = useState(false);
   const [retain, setRetain] = useState<RetainResponse | null>(null);
   const [portrait, setPortrait] = useState<PortraitItem[]>([]);
-  const [portraitTab, setPortraitTab] = useState('1');
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().subtract(7, 'day'), dayjs().subtract(1, 'day')]);
 
   const fetchData = useCallback(async () => {
@@ -56,9 +53,14 @@ const VisitUserStats = () => {
     月留存: +(retainMonthly[i]?.value ?? 0) * 100,
   }));
 
-  // 画像 Tab
-  const portraitByTab = portrait.filter(p => p.category === PORTRAIT_MAP[+portraitTab]);
-  const genderData = portrait.filter(p => p.category === '性别分布').map(p => ({ name: p.name, value: p.value, percentage: p.percentage }));
+  // 画像数据按 category 分组（生产环境 category 为 genders/ages/province/city，key 3 同时含省份与城市）
+  const toPercent = (v: number) => `${(v * 100).toFixed(1)}%`;
+  const sortByValue = (a: PortraitItem, b: PortraitItem) => b.value - a.value;
+  const genderData = portrait.filter(p => p.category === 'genders').sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
+  const ageData = portrait.filter(p => p.category === 'ages').sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
+  // 地域分布剔除 0 值行（生产数据含大量 value=0 的兜底城市）
+  const provinceData = portrait.filter(p => p.category === 'province' && p.value > 0).sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
+  const cityData = portrait.filter(p => p.category === 'city' && p.value > 0).sort(sortByValue).map(p => ({ ...p, percent: toPercent(p.percentage) }));
   const genderChart = genderData.map(d => ({ name: d.name, UV: d.value }));
 
   return (
@@ -120,8 +122,7 @@ const VisitUserStats = () => {
           }
         >
           <Tabs
-            activeKey={portraitTab}
-            onChange={setPortraitTab}
+            defaultActiveKey="1"
             items={[
               {
                 key: '1',
@@ -133,8 +134,7 @@ const VisitUserStats = () => {
                         columns={[
                           { title: '性别', dataIndex: 'name', key: 'name', width: 80 },
                           { title: 'UV', dataIndex: 'value', key: 'value', width: 100 },
-                          { title: '占比', dataIndex: 'percentage', key: 'percentage', width: 100,
-                            render: (v: number) => `${(v * 100).toFixed(1)}%` },
+                          { title: '占比', dataIndex: 'percent', key: 'percent', width: 100 },
                         ]}
                       />
                     </Col>
@@ -156,8 +156,7 @@ const VisitUserStats = () => {
                 key: '2',
                 label: '年龄分布',
                 children: (
-                  <Table dataSource={portrait.filter(p => p.category === '年龄分布').map(p => ({ ...p, percent: `${(p.percentage * 100).toFixed(1)}%` }))}
-                    rowKey="name" pagination={false} size="small"
+                  <Table dataSource={ageData} rowKey="name" pagination={false} size="small"
                     columns={[
                       { title: '年龄段', dataIndex: 'name', key: 'name' },
                       { title: 'UV', dataIndex: 'value', key: 'value', width: 120 },
@@ -170,14 +169,30 @@ const VisitUserStats = () => {
                 key: '3',
                 label: '地域分布',
                 children: (
-                  <Table dataSource={portrait.filter(p => p.category === '地域分布').map(p => ({ ...p, percent: `${(p.percentage * 100).toFixed(1)}%` }))}
-                    rowKey="key" pagination={false} size="small"
-                    columns={[
-                      { title: '地区', dataIndex: 'name', key: 'name' },
-                      { title: 'UV', dataIndex: 'value', key: 'value', width: 120 },
-                      { title: '占比', dataIndex: 'percent', key: 'percent', width: 120 },
-                    ]}
-                  />
+                  <Row gutter={24}>
+                    <Col xs={24} md={12}>
+                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>省份分布</div>
+                      <Table dataSource={provinceData} rowKey="name" size="small"
+                        pagination={{ pageSize: 10, size: 'small', showSizeChanger: false }}
+                        columns={[
+                          { title: '省份', dataIndex: 'name', key: 'name' },
+                          { title: 'UV', dataIndex: 'value', key: 'value', width: 100 },
+                          { title: '占比', dataIndex: 'percent', key: 'percent', width: 100 },
+                        ]}
+                      />
+                    </Col>
+                    <Col xs={24} md={12}>
+                      <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>城市分布</div>
+                      <Table dataSource={cityData} rowKey="name" size="small"
+                        pagination={{ pageSize: 10, size: 'small', showSizeChanger: false }}
+                        columns={[
+                          { title: '城市', dataIndex: 'name', key: 'name' },
+                          { title: 'UV', dataIndex: 'value', key: 'value', width: 100 },
+                          { title: '占比', dataIndex: 'percent', key: 'percent', width: 100 },
+                        ]}
+                      />
+                    </Col>
+                  </Row>
                 ),
               },
             ]}
