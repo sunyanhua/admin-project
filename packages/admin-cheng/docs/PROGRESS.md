@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-09-30**
+**2026-10-08**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-10-08 | 访问统计页趋势图对齐搭子计划版式（访问次数线/左轴，访问人数/新用户柱/右轴）；访问用户统计画像按生产接口实际 category（genders/ages/province/city）分组展示——地域分布分省份/城市两表（剔除 0 值行、UV 倒序、每页 10 条）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | VisitStatistics + VisitUserStats | dfdc5c9（构建产物未提交） |
 | 2026-09-30 | 报名名单序号列单条内联编辑（PATCH register/{rid}/onsite-number，失焦更新、≥1、不支持清空）；导入报名 TAB 分「导入列表」「导入配置」（导入用户报名截止时间 DatePicker+保存，走 presign_bind_deadline 三态字段，打开弹窗回显）；全站图片处理弹窗 AI 尺寸与建议尺寸统一（19 处显式 aiTargetSize）；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | ActivityRegisterModal + ActivityPresignTab + activity-v1 + 13 个上传位文件 | 54f168b、bc9041e、951fd40、b8483cf、518948b（构建产物未提交） |
 | 2026-09-29 | 报名审核流程完善——审核弹窗化（操作列「审核」→报名详情弹窗内入选/退回，退回必填原因）；免报名入选记录展示（user_id 空按 register_id 反查预报名补齐姓名/性别/手机号，用户名灰色人头+「未注册」不可点击，详情显示 -）；已免报名入选状态区分（processing 色）；免报名入选二次确认；已入选/已退回状态标签可点击查看报名信息；审核模式去掉冗余详情列；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterModal + ActivityRegisterDetailModal + ActivityPresignTab + activity-v1 | e975a01、8bcc1c0、e925d2a、0bccd0e、bbe902b、b942f5d、a163e96、6f802dc（构建产物未提交） |
 | 2026-09-28 | 活动报名名单「导入报名」TAB（免报名预报名导入）——审核模式活动 0 报名也可点击查看名单；报名名单弹窗（仅审核模式）分「用户报名/导入报名」两 TAB；导入 TAB 含预报名列表（状态/关键词筛选）、下载模版（22 列：姓名/手机号/性别映射接口字段，其余打包 JSON 进 presign_data）、导入报名（100 条分片调 POST presign，提示新增/跳过）、免报名入选（POST presign/{pid}/register 一键转报名记录并审核通过）；活动新增 presign_enabled 字段（报名方式审核筛选自动 true，其余 false）；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | activity-v1 + ActivityPresignTab + ActivityRegisterModal + ActivityEditModal + ActivityManagement + ZoneActivities + api/types/status | 78f0acd、9485aca、46ee06a（构建产物未提交） |
