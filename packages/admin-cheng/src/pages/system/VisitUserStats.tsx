@@ -41,17 +41,19 @@ const VisitUserStats = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // 留存图表数据
-  const retainDaily = retain?.retain_json?.daily || [];
-  const retainWeekly = retain?.retain_json?.weekly || [];
-  const retainMonthly = retain?.retain_json?.monthly || [];
-  const retainLabels = ['1天后', '2天后', '3天后', '4天后', '5天后', '6天后', '7天后', '14天后', '30天后'];
-  const retainChartData = retainDaily.map((d, i) => ({
-    name: retainLabels[i] || `第${d.key}天`,
-    日留存: +(d.value * 100).toFixed(1),
-    周留存: +(retainWeekly[i]?.value ?? 0) * 100,
-    月留存: +(retainMonthly[i]?.value ?? 0) * 100,
-  }));
+  // 留存数据（文档结构：retain_json.visit_uv / visit_uv_new，key=第 N 天，value=留存人数）
+  const retainUv = (retain?.retain_json?.visit_uv || []).slice().sort((a, b) => a.key - b.key);
+  const retainUvNew = (retain?.retain_json?.visit_uv_new || []).slice().sort((a, b) => a.key - b.key);
+  const retainChartData = retainUv.map((d) => {
+    const newItem = retainUvNew.find((n) => n.key === d.key);
+    return {
+      name: `第${d.key}天`,
+      活跃留存: d.value,
+      新用户留存: newItem?.value ?? 0,
+    };
+  });
+  /** 新用户次日留存人数（key=1） */
+  const nextDayRetain = retainUvNew.find((d) => d.key === 1)?.value;
 
   // 画像数据按 category 分组（生产环境 category 为 genders/ages/province/city，key 3 同时含省份与城市）
   const toPercent = (v: number) => `${(v * 100).toFixed(1)}%`;
@@ -77,7 +79,7 @@ const VisitUserStats = () => {
             <Card><Statistic title="新用户 UV" value={retain?.visit_uv_new ?? '-'} prefix={<UserAddOutlined />} valueStyle={{ color: '#52c41a' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
-            <Card><Statistic title="次日留存率" value={retainDaily[0] ? `${(retainDaily[0].value * 100).toFixed(1)}%` : '-'} prefix={<PercentageOutlined />} valueStyle={{ color: '#722ed1' }} /></Card>
+            <Card><Statistic title="次日留存（新用户）" value={nextDayRetain ?? '-'} prefix={<PercentageOutlined />} valueStyle={{ color: '#722ed1' }} /></Card>
           </Col>
           <Col xs={24} sm={12} md={6}>
             <Card><Statistic title="数据日期" value={retain?.ref_date || '-'} prefix={<UserOutlined />} valueStyle={{ fontSize: 16 }} /></Card>
@@ -91,20 +93,18 @@ const VisitUserStats = () => {
                 <BarChart data={retainChartData} barSize={30}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} unit="%" />
-                  <Tooltip formatter={(v: number) => `${v}%`} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="日留存" fill="#1890ff" name="日留存" />
-                  <Bar dataKey="周留存" fill="#52c41a" name="周留存" />
-                  <Bar dataKey="月留存" fill="#722ed1" name="月留存" />
+                  <Bar dataKey="活跃留存" fill="#1890ff" name="活跃留存" />
+                  <Bar dataKey="新用户留存" fill="#52c41a" name="新用户留存" />
                 </BarChart>
               </ResponsiveContainer>
               <Table dataSource={retainChartData} rowKey="name" pagination={false} size="small" style={{ marginTop: 16 }}
                 columns={[
                   { title: '指标', dataIndex: 'name', key: 'name', width: 120 },
-                  { title: '日留存', dataIndex: '日留存', key: 'd', width: 100, render: (v: number) => `${v}%` },
-                  { title: '周留存', dataIndex: '周留存', key: 'w', width: 100, render: (v: number) => `${v}%` },
-                  { title: '月留存', dataIndex: '月留存', key: 'm', width: 100, render: (v: number) => `${v}%` },
+                  { title: '活跃留存', dataIndex: '活跃留存', key: 'uv', width: 120 },
+                  { title: '新用户留存', dataIndex: '新用户留存', key: 'new', width: 120 },
                 ]}
               />
             </>

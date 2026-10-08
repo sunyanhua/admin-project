@@ -55,9 +55,10 @@ export interface RetainItem {
 }
 
 export interface RetainJSON {
-  daily: RetainItem[];
-  weekly: RetainItem[];
-  monthly: RetainItem[];
+  /** 活跃用户留存（key=第 N 天，value=留存人数） */
+  visit_uv: RetainItem[];
+  /** 新用户留存（key=第 N 天，value=留存人数） */
+  visit_uv_new: RetainItem[];
 }
 
 export interface RetainResponse {
