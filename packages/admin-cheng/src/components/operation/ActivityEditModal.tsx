@@ -106,7 +106,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const needsSlots = activityType === ActivityType.FREE_FCFS || activityType === ActivityType.PAID_FCFS;
 
   const initValues = useMemo(() => {
-    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, promise_ids: [], onsite_qrcode: '', checkin_enabled: false, onsite_loves_chances: 0, onsite_bg_screen: '', warm_up_enabled: false, warm_up_config: '', warm_up_page_id: '' };
+    if (!activity) return { activity_type: ActivityType.FREE_FCFS, sort_order: 0, gender_enabled: false, zone_id: lockedZone?.id ?? 0, zone_only: !!lockedZone, register_list_enabled: false, promise_ids: [], onsite_qrcode: '', checkin_enabled: false, onsite_loves_chances: 0, onsite_bg_screen: '', warm_up_enabled: false, warm_up_config: '', warm_up_page_id: '' };
     const type = activity.activity_type ?? ActivityType.FREE_FCFS;
     let locName = '';
     let locCoord = '';
@@ -119,6 +119,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
       zone_id: lockedZone?.id ?? (activity.zone_id || 0),
       zone_only: activity.zone_only ?? !!lockedZone,
       gender_enabled: activity.gender_enabled ?? false,
+      register_list_enabled: activity.register_list_enabled ?? false,
       image: imageUrls,
       time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
       register_range: activity.register_start && activity.register_end ? [parseApiTime(activity.register_start)!, parseApiTime(activity.register_end)!] : undefined,
@@ -182,6 +183,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
           zone_id: lockedZone?.id ?? (activity.zone_id || 0),
           zone_only: activity.zone_only ?? !!lockedZone,
           gender_enabled: activity.gender_enabled ?? false,
+          register_list_enabled: activity.register_list_enabled ?? false,
           image: imageUrls,
           time_range: activity.start_time && activity.end_time ? [parseApiTime(activity.start_time)!, parseApiTime(activity.end_time)!] : undefined,
           register_range: activity.register_start && activity.register_end ? [parseApiTime(activity.register_start)!, parseApiTime(activity.register_end)!] : undefined,
@@ -303,6 +305,8 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
         ? (values.zone_only ?? true)
         : (values.zone_id ? (values.zone_only ?? false) : false);
       if (values.gender_enabled != null) payload.gender_enabled = values.gender_enabled;
+      // 是否显示报名名单（显式提交，创建/编辑都覆盖为表单当前值）
+      payload.register_list_enabled = !!values.register_list_enabled;
       // 显示状态（Switch checked = 显示）
       payload.hidden = hidden;
 
@@ -533,6 +537,15 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
               options={ACTIVITY_TYPE_OPTIONS}
               onChange={(v) => setActivityType(v)}
             />
+          </Form.Item>
+
+          <Form.Item
+            label="显示报名名单"
+            name="register_list_enabled"
+            valuePropName="checked"
+            extra="开启后 C 端活动详情页显示报名名单入口"
+          >
+            <Switch checkedChildren="开启" unCheckedChildren="关闭" />
           </Form.Item>
 
           {activityType === ActivityType.PAID_FCFS && (
