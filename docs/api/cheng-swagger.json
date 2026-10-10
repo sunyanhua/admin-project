@@ -527,7 +527,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询活动预报名信息（创建时间倒序）。筛选：status（0=未报名 1=已报名，缺省/空串=不筛选）/\nkeyword（姓名 ILIKE 包含 + 手机号精确）/ register_id（按关联报名记录反查——相互查询）。\n手机号明文返回（presign:read 权限面控制）。",
+                "description": "分页查询活动预报名信息（创建时间倒序）。筛选：status（0=未报名；1=已报名含后台一键；2=仅后台一键；缺省/空串=不筛选）/\nkeyword（姓名 ILIKE 包含 + 手机号精确）/ register_id（按关联报名记录反查——相互查询）。\n手机号明文返回（presign:read 权限面控制）。",
                 "produces": [
                     "application/json"
                 ],
@@ -545,7 +545,7 @@
                     },
                     {
                         "type": "integer",
-                        "description": "状态筛选（0=未报名 1=已报名，缺省/空串=不筛选）",
+                        "description": "状态筛选（0=未报名；1=已报名含后台一键；2=仅后台一键；缺省/空串=不筛选）",
                         "name": "status",
                         "in": "query"
                     },
@@ -680,7 +680,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "将预报名信息转为真实报名记录并直接入选（不关联用户——user_id 取预报名表值，可为 null）。\n不进行名额限定判断（管理后台入选不受名额上限约束，计数照常）；\ngender 取预报名表 gender，未设置(0)不拦截；自动入选（audit_status=通过、approved_at=now）。\n已报名（status=1）或该用户已有本活动报名 → 40502；预报名不存在/不属于该活动 → 40515。",
+                "description": "将预报名信息转为真实报名记录并直接入选（不关联用户——user_id 取预报名表值，可为 null）。\n不进行名额限定判断（管理后台入选不受名额上限约束，计数照常）；\ngender 取预报名表 gender，未设置(0)不拦截；自动入选（audit_status=通过、approved_at=now）。\n手机号已存在注册用户 → 40521（一键报名仅限无账号手机号，含已绑定行；已有账号用户应由其本人自行报名）；\n已报名或该用户已有本活动报名 → 40502；预报名不存在/不属于该活动 → 40515。\n回写预报名 status=2（管理后台一键报名；用户认领/绑定后翻转为 1）。",
                 "produces": [
                     "application/json"
                 ],
@@ -739,7 +739,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询指定活动的报名记录，支持多维度组合筛选。\naudit_status: 0=待审核 1=通过 2=拒绝；pay_status: 0=待支付 1=已支付 2=已退款；\ngender: 0=未设置 1=男 2=女；keyword: 按用户昵称（模糊）、手机号（精确）、真实姓名（精确）搜索\nchecked_in: true=已签到 false=未签到；缺省或空串=不筛选",
+                "description": "分页查询指定活动的报名记录，支持多维度组合筛选。\n默认排序（2026-10-10 老大需求）：已分配现场编号的行在前（onsite_number 正序），未分配编号的行在后（组内创建时间倒序）。\naudit_status: 0=待审核 1=通过 2=拒绝；pay_status: 0=待支付 1=已支付 2=已退款；\ngender: 0=未设置 1=男 2=女；keyword: 按用户昵称（模糊）、手机号（精确）、真实姓名（精确）搜索\nchecked_in: true=已签到 false=未签到；缺省或空串=不筛选",
                 "produces": [
                     "application/json"
                 ],
@@ -15288,7 +15288,7 @@
                     },
                     {
                         "type": "integer",
-                        "description": "状态筛选（0=未报名 1=已报名，缺省/空串=不筛选）",
+                        "description": "状态筛选（0=未报名；1=已报名含后台一键；2=仅后台一键；缺省/空串=不筛选）",
                         "name": "status",
                         "in": "query"
                     }
@@ -15325,7 +15325,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "将本人手机号匹配的预报名信息绑定到当前账号（需 C 端 JWT 鉴权）；\n已一键报名的关联报名记录同步回填 user_id（同步更新性别等信息）。\n幂等：重复绑定同一人恒成功；已被他人绑定 40502；手机号不符 40516；不存在或不属于该活动 40515。",
+                "description": "将本人手机号匹配的预报名信息绑定到当前账号（需 C 端 JWT 鉴权）；\n已一键报名的关联报名记录同步回填 user_id（同步更新性别等信息），预报名状态由 2（后台一键）翻转为 1（视为用户已报名）。\n幂等：重复绑定同一人恒成功；已被他人绑定 40502；手机号不符 40516；不存在或不属于该活动 40515。",
                 "produces": [
                     "application/json"
                 ],
@@ -21981,7 +21981,12 @@
                     "type": "string"
                 },
                 "status": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PresignStatus"
+                    "description": "0=未报名 1=已报名（前端用户报名） 2=已报名（管理后台一键报名；用户认领/绑定后翻转为 1）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PresignStatus"
+                        }
+                    ]
                 },
                 "updated_at": {
                     "type": "string"
@@ -22032,7 +22037,7 @@
                     "type": "string"
                 },
                 "status": {
-                    "description": "0=未报名 1=已报名",
+                    "description": "0=未报名 1=已报名（前端用户报名） 2=已报名（管理后台一键报名；用户认领/绑定后翻转为 1）",
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PresignStatus"
@@ -32563,19 +32568,23 @@
             "format": "int32",
             "enum": [
                 0,
-                1
+                1,
+                2
             ],
             "x-enum-comments": {
                 "PresignNotRegistered": "未报名",
-                "PresignRegistered": "已报名（register_id 非空）"
+                "PresignRegistered": "已报名——前端用户主动报名（register_id 非空）",
+                "PresignRegisteredByAdmin": "已报名——管理后台一键报名（register_id 非空；用户认领/绑定后翻转为 1，2026-10-10 裁决）"
             },
             "x-enum-descriptions": [
                 "未报名",
-                "已报名（register_id 非空）"
+                "已报名——前端用户主动报名（register_id 非空）",
+                "已报名——管理后台一键报名（register_id 非空；用户认领/绑定后翻转为 1，2026-10-10 裁决）"
             ],
             "x-enum-varnames": [
                 "PresignNotRegistered",
-                "PresignRegistered"
+                "PresignRegistered",
+                "PresignRegisteredByAdmin"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.ProfileAuditStatus": {
