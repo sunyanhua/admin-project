@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button, Space, Tag, Upload, Modal, DatePicker } from 'antd';
-import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
@@ -42,6 +42,7 @@ const filters: FilterConfig[] = [
     options: [
       { label: '未报名', value: PresignStatus.NOT_REGISTERED },
       { label: '已报名', value: PresignStatus.REGISTERED },
+      { label: '已免报名入选', value: PresignStatus.REGISTERED_BY_ADMIN },
     ],
   },
   { name: 'keyword', placeholder: '搜索姓名、手机号', type: 'input' },
@@ -222,11 +223,13 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
       width: 110,
       render: (_: number | undefined, r: PresignRecord) => {
         const s = r.status ?? PresignStatus.NOT_REGISTERED;
-        // 已免报名入选（后台一键报名，无用户绑定）：status 已报名但 user_id 为空，单独文案与颜色
-        if (s === PresignStatus.REGISTERED && !r.user_id) {
+        if (s === PresignStatus.REGISTERED_BY_ADMIN) {
           return <Tag color="processing" title="已免报名入选">已免报名入选</Tag>;
         }
-        return <Tag color={s === PresignStatus.REGISTERED ? 'success' : 'default'}>{PresignStatusLabels[s] ?? s}</Tag>;
+        if (s === PresignStatus.REGISTERED) {
+          return <Tag color="success" title="已报名">已报名</Tag>;
+        }
+        return <Tag color="default" title="未报名">未报名</Tag>;
       },
     },
     dateTimeColumn<PresignRecord>('created_at', '导入时间'),
@@ -260,6 +263,7 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
           <Upload accept=".xlsx,.xls" showUploadList={false} beforeUpload={(file) => { handleImportFile(file); return false; }}>
             <Button icon={<ImportOutlined />} loading={importing}>导入报名</Button>
           </Upload>
+          <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
         </Space>
       </div>
       <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />

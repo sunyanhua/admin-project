@@ -79,8 +79,10 @@ export type UploadStatus = (typeof UploadStatus)[keyof typeof UploadStatus];
 export const PresignStatus = {
   /** 未报名 */
   NOT_REGISTERED: 0,
-  /** 已报名（register_id 非空） */
+  /** 已报名（前端用户主动报名，register_id 非空） */
   REGISTERED: 1,
+  /** 已免报名入选（管理后台一键报名，register_id 非空；用户认领/绑定后翻转为 1） */
+  REGISTERED_BY_ADMIN: 2,
 } as const;
 export type PresignStatus = (typeof PresignStatus)[keyof typeof PresignStatus];
 
@@ -88,6 +90,7 @@ export type PresignStatus = (typeof PresignStatus)[keyof typeof PresignStatus];
 export const PresignStatusLabels: Record<number, string> = {
   [PresignStatus.NOT_REGISTERED]: '未报名',
   [PresignStatus.REGISTERED]: '已报名',
+  [PresignStatus.REGISTERED_BY_ADMIN]: '已免报名入选',
 };
 
 /** 收入范围 */
