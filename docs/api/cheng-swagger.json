@@ -15554,6 +15554,73 @@
                 }
             }
         },
+        "/api/v1/wxa/activity/{id}/onsite-loves-couples": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "本活动有现场心动的配对（互心组优先 → 心动次数倒序），需 C 端 JWT；\n查看者须本活动「入选 + 已签到」（否则 40512）。\n条目 = 配对心动计数 + 双方现场编号与完整脱单档案卡片（现场口径，与现场用户列表同款）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "现场心动配对列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteLovesCoupleItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/activity/{id}/onsite-users": {
             "get": {
                 "security": [
@@ -21921,6 +21988,58 @@
                 "target_user_id": {
                     "description": "心动目标用户 ID",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteLovesCoupleItem": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "description": "配对 ID",
+                    "type": "string"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteLovesCoupleUser"
+                },
+                "female_loves_count": {
+                    "description": "女方发起的心动次数",
+                    "type": "integer"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteLovesCoupleUser"
+                },
+                "male_loves_count": {
+                    "description": "男方发起的心动次数",
+                    "type": "integer"
+                },
+                "matching": {
+                    "description": "配对匹配度",
+                    "type": "integer"
+                },
+                "onsite_loves_count": {
+                    "description": "现场心动次数（双向合计）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsiteLovesCoupleUser": {
+            "type": "object",
+            "properties": {
+                "match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo"
+                },
+                "match_stats": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.MatchStatsInfo"
+                },
+                "onsite_number": {
+                    "description": "现场活动编号（未分配为 null）",
+                    "type": "integer"
+                },
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
                 }
             }
         },
