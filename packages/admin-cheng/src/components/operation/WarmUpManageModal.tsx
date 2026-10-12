@@ -518,10 +518,13 @@ const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, act
   const handleExport = () => {
     setExporting(true);
     try {
-      const headers = ['昵称', '报名时间', '报名状态', '总积分', '状态'];
+      const headers = ['昵称', '姓名', '手机号', '报名时间', '报名状态', '总积分', '状态'];
       const rows = data.map((r) => {
         const up = r.register?.user_profile;
         const nickname = up?.nickname || r.register?.nickname || r.user_id;
+        // 姓名/手机号取自报名记录（未报名用户无报名资料，显示 -）
+        const realName = r.register?.user_match_profile?.real_name || '-';
+        const phone = r.register?.user_data?.phone || r.register?.phone || '-';
         let registerStatus = '未报名';
         if (r.register) {
           registerStatus = activityType === ActivityType.FREE_REVIEW
@@ -530,6 +533,8 @@ const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, act
         }
         return [
           nickname,
+          realName,
+          phone,
           r.register?.created_at ? formatDateTime(r.register.created_at) : '-',
           registerStatus,
           r.score ?? 0,
