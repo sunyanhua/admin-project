@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Empty, Form, Image, Space, Table, Tabs, Tag } from 'antd';
-import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, EditOutlined, ReloadOutlined, ExportOutlined } from '@ant-design/icons';
+import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
 import './WarmUpManageModal.css';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -510,6 +512,41 @@ const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, act
   const [loading, setLoading] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState<string>('');
+  const [exporting, setExporting] = useState(false);
+
+  /** 导出积分排行（当前全量列表，列与表格一致） */
+  const handleExport = () => {
+    setExporting(true);
+    try {
+      const headers = ['昵称', '报名时间', '报名状态', '总积分', '状态'];
+      const rows = data.map((r) => {
+        const up = r.register?.user_profile;
+        const nickname = up?.nickname || r.register?.nickname || r.user_id;
+        let registerStatus = '未报名';
+        if (r.register) {
+          registerStatus = activityType === ActivityType.FREE_REVIEW
+            ? (RegisterAuditStatusLabels[r.register.audit_status] ?? String(r.register.audit_status))
+            : '已报名';
+        }
+        return [
+          nickname,
+          r.register?.created_at ? formatDateTime(r.register.created_at) : '-',
+          registerStatus,
+          r.score ?? 0,
+          r.status === 0 ? '正常' : '屏蔽',
+        ];
+      });
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '积分排行');
+      XLSX.writeFile(wb, `积分排行_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
+      success('导出成功');
+    } catch (err: any) {
+      showError(err?.message || '导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   /** 状态切换：正常（0）/ 屏蔽（1） */
   const handleStatusToggle = async (record: ScoreRankRow, checked: boolean) => {
@@ -616,7 +653,10 @@ const ScoreRankPanel: React.FC<ScoreRankPanelProps> = ({ pageId, activityId, act
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-        <Button icon={<ReloadOutlined />} onClick={fetchAll} loading={loading}>刷新</Button>
+        <Space>
+          <Button icon={<ExportOutlined />} onClick={handleExport} loading={exporting}>导出</Button>
+          <Button icon={<ReloadOutlined />} onClick={fetchAll} loading={loading}>刷新</Button>
+        </Space>
       </div>
       <Table
         className="warm-up-submission-audit"
