@@ -520,6 +520,194 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/onsite-pairings": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "本活动全部现场活动配对（软删除外），支持排序：sort_by=seq（缺省，序号正序）/\ndiff（默契度差异正序，未完成计算 NULLS LAST）。\n条目 = 配对序号 + 双方基础公开资料与现场签到时间 + 默契答题提交状态 + 差异总分。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "现场活动配对列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序键：seq（缺省）/ diff",
+                        "name": "sort_by",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页数量（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsitePairingAdminItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "将本活动一男一女配成一对并分配配对序号（同活动内不允许重复）；同步更新双方报名现场序号（覆盖既有）。\n校验：双方均有本活动有效报名（40527）→ 男侧报名须为男/女侧须为女（40528）→ 双方均须入选（40530）→ 序号未占用（40525）→ 二人未在本活动配对中（40526）。\n创建不判断签到——配对在活动开始前创建（届时用户尚未签到）；签到仅用于 C 端读取门禁与对方状态展示（2026-10-16 确认）。\n响应回带覆盖前的双方编号（male_old_onsite_number / female_old_onsite_number）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "创建现场活动配对",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "创建配对请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.CreateOnsitePairingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.CreateOnsitePairingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/activity/{id}/onsite-pairings/{pid}": {
+            "delete": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "软删配对——释放配对序号与双方占用（删除后可原样重建）；不清除双方现有报名现场序号。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "删除现场活动配对",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "配对记录 ID（UUID）",
+                        "name": "pid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/presign": {
             "get": {
                 "security": [
@@ -848,7 +1036,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "对活动入选名单按性别各自 1..N 分配现场编号（组内按审核通过时间正序）。\n覆盖式幂等——重复分配结果一致，新通过者追加在组尾。响应返回各性别编号人数。",
+                "description": "对活动入选名单分配现场编号，按性别各自独立序列（组内按审核通过时间正序）。\nappend（默认）：仅补未分配的行，从各性别现存最大号向后续编——已有编号\n（含手工调整/现场配对同步号）一律不动；重复点击结果一致（响应计数=本次新编号数）。\nreset：清空本活动全部编号后对入选名单全量重排 1..N（旧行为；响应计数=重排总数）。\n权限与单条更新现场编号相同；专区管理员活动不属于所属专区 → 40233。",
                 "produces": [
                     "application/json"
                 ],
@@ -863,6 +1051,12 @@
                         "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "分配模式：append（缺省）/ reset",
+                        "name": "mode",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -965,6 +1159,51 @@
             }
         },
         "/admin/v1/bizops/activity/{id}/register/{rid}/onsite-number": {
+            "delete": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "清空指定报名记录的现场编号（onsite_number 置 NULL）——该行重新进入「一键分配 append」的补号池。\n不拦已配对成员（配对序号以配对行为事实源，清报名行编号不影响配对本身）。\n权限与单条更新/一键分配相同；专区管理员活动不属于所属专区 → 40233。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "清空现场编号（单条）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "报名记录 ID（UUID）",
+                        "name": "rid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
             "patch": {
                 "security": [
                     {
@@ -15621,6 +15860,128 @@
                 }
             }
         },
+        "/api/v1/wxa/activity/{id}/onsite-pairing": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "读取本人本活动的现场活动配对（需 C 端 JWT）。\n门禁：本人本活动「入选 + 已签到」（否则 40512）；无配对 → data=null。\n揭示分级：己方答题提交后可见己方；对方答题与默契度差异总分仅双方均提交后可见。\n返回对方现场签到状态与公开画像卡片（现场口径优先、基础资料兜底；资料缺失为 null）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "我的现场配对",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.MyOnsitePairingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/activity/{id}/onsite-pairing/answers": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "提交本人默契问答答题数据（int32 数组；一次性提交不可改——重复提交 40523）；需 C 端 JWT。\n门禁：本人本活动「入选 + 已签到」（40512）；无配对 40522；\n最后一方提交时双方题量不一致 → 40524（本次不落库）；双方齐后计算默契度差异总分。\n响应 = 我的现场配对同款数据（最后提交者一次往返拿到揭示后全量结果）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Activity-Wxa"
+                ],
+                "summary": "提交默契问答答题",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "答题请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.SubmitOnsitePairingAnswersRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.MyOnsitePairingResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/activity/{id}/onsite-users": {
             "get": {
                 "security": [
@@ -21875,6 +22236,54 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.CreateOnsitePairingRequest": {
+            "type": "object",
+            "required": [
+                "female_id",
+                "male_id",
+                "seq"
+            ],
+            "properties": {
+                "female_id": {
+                    "description": "FemaleID 女方用户 ID（须为本活动有效报名用户且报名性别为女）。",
+                    "type": "string"
+                },
+                "male_id": {
+                    "description": "MaleID 男方用户 ID（须为本活动有效报名用户且报名性别为男）。",
+                    "type": "string"
+                },
+                "seq": {
+                    "description": "Seq 配对序号（同活动内不允许重复；必填正整数 ≥1）。\n创建时同步写双方报名现场序号（覆盖既有编号——需求「同步更新」）。",
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.CreateOnsitePairingResponse": {
+            "type": "object",
+            "properties": {
+                "female_old_onsite_number": {
+                    "description": "覆盖前女方现场编号（未分配为 null）",
+                    "type": "integer"
+                },
+                "female_user_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "male_old_onsite_number": {
+                    "description": "覆盖前男方现场编号（未分配为 null）",
+                    "type": "integer"
+                },
+                "male_user_id": {
+                    "type": "string"
+                },
+                "seq": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.ImportPresignItem": {
             "type": "object",
             "required": [
@@ -21926,6 +22335,56 @@
                 },
                 "skipped": {
                     "description": "跳过条数（同活动同手机号已存在）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.MyOnsitePairingResponse": {
+            "type": "object",
+            "properties": {
+                "diff_total": {
+                    "description": "DiffTotal 默契度差异总分 Σ|a-b|（双方提交后计算；未完成为 null）。",
+                    "type": "integer"
+                },
+                "female_answers": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "male_answers": {
+                    "description": "MaleAnswers/FemaleAnswers 男方/女方答题数据（揭示分级见结构体注释；未可见为 null）。",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "my_side": {
+                    "description": "本人所在侧（1=男 2=女；由配对行判定）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                        }
+                    ]
+                },
+                "pairing_id": {
+                    "description": "配对记录 ID",
+                    "type": "string"
+                },
+                "partner": {
+                    "description": "Partner 对方公开画像卡片（现场口径优先、基础资料兜底；资料缺失为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                        }
+                    ]
+                },
+                "partner_checked_in": {
+                    "description": "PartnerCheckedIn 对方本活动现场签到状态（未签到/无有效报名为 false）。",
+                    "type": "boolean"
+                },
+                "seq": {
+                    "description": "配对序号（= 本人现场编号；配对行为唯一事实源）",
                     "type": "integer"
                 }
             }
@@ -22034,6 +22493,54 @@
                 "onsite_number": {
                     "description": "现场活动编号（未分配为 null）",
                     "type": "integer"
+                },
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsitePairingAdminItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "diff_total": {
+                    "description": "默契度差异总分（双方提交后计算；未完成为 null）",
+                    "type": "integer"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsitePairingUserAdmin"
+                },
+                "female_submitted": {
+                    "description": "女方默契答题是否已提交",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsitePairingUserAdmin"
+                },
+                "male_submitted": {
+                    "description": "男方默契答题是否已提交",
+                    "type": "boolean"
+                },
+                "seq": {
+                    "description": "配对序号（同活动唯一）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.OnsitePairingUserAdmin": {
+            "type": "object",
+            "properties": {
+                "checkin_at": {
+                    "description": "现场签到时间（未签到为 null）",
+                    "type": "string"
                 },
                 "profile": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
@@ -22355,6 +22862,23 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.SubmitOnsitePairingAnswersRequest": {
+            "type": "object",
+            "required": [
+                "answers"
+            ],
+            "properties": {
+                "answers": {
+                    "description": "Answers 默契问答答题数据（int32 数组）。一次性提交不可改（2026-10-16 裁决）。\n题面与元素取值域由前端定义，服务端不校验元素值域、仅约束长度 1..100\n（服务端解析数组计算差异为需求级例外，非硬约束 #11 适用范围）。",
+                    "type": "array",
+                    "maxItems": 100,
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateActivityRequest": {
             "type": "object",
             "properties": {
@@ -22499,7 +23023,7 @@
             ],
             "properties": {
                 "onsite_number": {
-                    "description": "OnsiteNumber 现场编号（必填正整数 ≥1——编号语义自 1 起）。\n不支持清空：需要重排/清除时由「一键分配」整体覆盖。",
+                    "description": "OnsiteNumber 现场编号（必填正整数 ≥1——编号语义自 1 起）。\n不支持清空：单条清空走 DELETE .../register/:rid/onsite-number（2026-10-16 追补裁决新增）；\n整体重排/清除走「一键分配」的 reset 模式。",
                     "type": "integer",
                     "minimum": 1
                 }
