@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
+import { Select } from 'antd';
 import { HeartFilled } from '@ant-design/icons';
 import { activityApi, RegisterRecord, OnsiteCouple } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
 import { getFullWidthUrl } from '@/utils/imageUtils';
+import { buildLuckyPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
 const mulberry32 = (seed: number) => {
@@ -105,10 +107,15 @@ const ActivityOnsite: React.FC = () => {
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
   /** 抽奖环节：cover=栏目封面 rolling=滚动中 slowing=减速中 done=已揭晓 */
   const [drawPhase, setDrawPhase] = useState<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
-  /** 幸运之星：静态长条带（洗牌后重复 5 份，内容固定）与滚动偏移、最终结果 */
-  const [luckyStrip, setLuckyStrip] = useState<WallUser[]>([]);
-  const [luckyOffset, setLuckyOffset] = useState(0);
-  const [drawWinner, setDrawWinner] = useState<WallUser | null>(null);
+  /** 幸运之星：每个转轮一条静态长条带（洗牌后重复 5 份，内容固定）与滚动偏移、最终结果 */
+  const [luckyStrips, setLuckyStrips] = useState<WallUser[][]>([]);
+  const [luckyOffsets, setLuckyOffsets] = useState<number[]>([]);
+  /** 各转轮回卷当帧的过渡禁用标记（仅回卷的转轮置位） */
+  const [luckySnaps, setLuckySnaps] = useState<boolean[]>([]);
+  const [drawWinners, setDrawWinners] = useState<WallUser[]>([]);
+  /** 幸运之星配置：人数=转轮数（1~5，默认 1）、性别要求（默认不限） */
+  const [luckyCount, setLuckyCount] = useState(1);
+  const [luckyGender, setLuckyGender] = useState<LuckyGender>('any');
   /** 能成时刻：男女条带与最终配对 */
   const [femaleStrip, setFemaleStrip] = useState<WallUser[]>([]);
   const [maleStrip, setMaleStrip] = useState<WallUser[]>([]);
@@ -119,14 +126,14 @@ const ActivityOnsite: React.FC = () => {
   const [reelSpeed, setReelSpeed] = useState(90);
   /** 回卷帧：禁用过渡（周期相同内容一致，视觉无缝） */
   const [snapFrame, setSnapFrame] = useState(false);
-  const luckyStripRef = useRef<WallUser[]>([]);
+  const luckyStripsRef = useRef<WallUser[][]>([]);
   const femaleStripRef = useRef<WallUser[]>([]);
   const maleStripRef = useRef<WallUser[]>([]);
   /** 每个条带的一个循环周期长度（洗牌列表长度） */
-  const luckyReelLenRef = useRef(1);
+  const luckyReelLensRef = useRef<number[]>([]);
   const femaleReelLenRef = useRef(1);
   const maleReelLenRef = useRef(1);
-  const luckyOffsetRef = useRef(0);
+  const luckyOffsetsRef = useRef<number[]>([]);
   const fOffsetRef = useRef(0);
   const mOffsetRef = useRef(0);
   const drawTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -430,7 +437,7 @@ const ActivityOnsite: React.FC = () => {
     return arr;
   }, []);
 
-  /** 回卷：滚动超过 4 圈后瞬间跳回（内容周期相同，禁用过渡做到视觉无缝） */
+  /** 回卷：滚动超过 4 圈后瞬间跳回（内容周期相同，禁用过渡做到视觉无缝）——能成时刻双转轮共用 */
   const wrapOffset = useCallback((len: number, offset: number): number => {
     if (offset >= len * 4) {
       setSnapFrame(true);
@@ -440,20 +447,57 @@ const ActivityOnsite: React.FC = () => {
     return offset;
   }, []);
 
+  /**
+   * 幸运之星各转轮偏移同步推进（ref 与 state 成对写入）。
+   * 某个转轮越界回卷时仅该转轮当帧禁用过渡（snapFrames[i]）——全局禁过渡会让其余转轮跟着整卡跳帧。
+   */
+  const advanceLuckyOffsets = useCallback((fn: (offset: number, i: number) => number) => {
+    luckyOffsetsRef.current = luckyOffsetsRef.current.map((o, i) => {
+      const next = fn(o, i);
+      const len = luckyReelLensRef.current[i];
+      if (next >= len * 4) {
+        setLuckySnaps((prev) => {
+          const snaps = [...prev];
+          snaps[i] = true;
+          return snaps;
+        });
+        setTimeout(() => {
+          setLuckySnaps((prev) => {
+            const snaps = [...prev];
+            snaps[i] = false;
+            return snaps;
+          });
+        }, 0);
+        return next - len * 4;
+      }
+      return next;
+    });
+    setLuckyOffsets([...luckyOffsetsRef.current]);
+  }, []);
+
   /** 进入幸运之星（快捷键 3）：先显示栏目封面，按 O 开始滚动 */
   const startLucky = useCallback(() => {
     clearDrawTimer();
-    const strip = buildStrip([...wall]);
-    luckyStripRef.current = strip;
-    luckyReelLenRef.current = wall.length || 1;
-    setLuckyStrip(strip);
-    luckyOffsetRef.current = 0;
-    setLuckyOffset(0);
+    const pools = buildLuckyPools(wall, luckyCount, luckyGender);
+    const strips = pools.map((pool) => buildStrip(pool));
+    luckyStripsRef.current = strips;
+    luckyReelLensRef.current = strips.map((_, i) => pools[i]?.length || 1);
+    setLuckyStrips(strips);
+    luckyOffsetsRef.current = strips.map(() => 0);
+    setLuckyOffsets(strips.map(() => 0));
+    setLuckySnaps(strips.map(() => false));
     setReelSpeed(90);
     setTab('lucky');
     setDrawPhase('cover');
-    setDrawWinner(null);
-  }, [clearDrawTimer, wall, buildStrip]);
+    setDrawWinners([]);
+  }, [clearDrawTimer, wall, luckyCount, luckyGender, buildStrip]);
+
+  // 配置变更时：若停留在幸运之星封面，立即按新配置重建转轮；滚动中/已揭晓时留到下次按 3 生效。
+  // 依赖仅取配置本身——wall 10s 轮询刷新不重建（避免封面反复洗牌），tab/drawPhase 在闭包中读取当前值
+  useEffect(() => {
+    if (tab === 'lucky' && drawPhase === 'cover') startLucky();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [luckyCount, luckyGender]);
 
   /** 进入能成时刻（快捷键 4） */
   const startCouple = useCallback(() => {
@@ -482,15 +526,14 @@ const ActivityOnsite: React.FC = () => {
   /** O：开始滚动（条带自上而下快速移动，照片首尾相连） */
   const beginRoll = useCallback(() => {
     if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'cover') return;
-    if (tab === 'lucky' && !luckyStripRef.current.length) return;
+    if (tab === 'lucky' && !luckyStripsRef.current.length) return;
     if (tab === 'couple' && (!femaleStripRef.current.length || !maleStripRef.current.length)) return;
     setDrawPhase('rolling');
     clearDrawTimer();
     setReelSpeed(90);
     const tick = () => {
       if (tab === 'lucky') {
-        luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + 1);
-        setLuckyOffset(luckyOffsetRef.current);
+        advanceLuckyOffsets((o) => o + 1);
       } else {
         fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
         mOffsetRef.current = wrapOffset(maleReelLenRef.current, mOffsetRef.current + 1);
@@ -500,7 +543,7 @@ const ActivityOnsite: React.FC = () => {
       drawTimerRef.current = setTimeout(tick, 90);
     };
     tick();
-  }, [tab, drawPhase, clearDrawTimer, wrapOffset]);
+  }, [tab, drawPhase, clearDrawTimer, wrapOffset, advanceLuckyOffsets]);
 
   /** P：减速并慢慢停下——减速步数预计算到恰好落在获奖者上，最后一步停稳即定格，不再额外跑牌 */
   const slowRoll = useCallback(() => {
@@ -508,10 +551,6 @@ const ActivityOnsite: React.FC = () => {
     setDrawPhase('slowing');
     clearDrawTimer();
     const isLucky = tab === 'lucky';
-    // 获奖者直接从条带（首周期）中抽取——轮询刷新 wall 后 winner 仍在条带内，findIndex 恒有效
-    const winner = randOf(luckyStripRef.current.slice(0, luckyReelLenRef.current)) || randOf(wall);
-    const maleWinner = randOf(maleStripRef.current.slice(0, maleReelLenRef.current)) || randOf(malesOf());
-    const femaleWinner = randOf(femaleStripRef.current.slice(0, femaleReelLenRef.current)) || randOf(femalesOf());
 
     // 距获奖者还需前进的步数（0=下一步即落在获奖者）。target 为偏移的目标余数
     const stepsTo = (offsetNow: number, target: number, len: number): number => {
@@ -520,20 +559,37 @@ const ActivityOnsite: React.FC = () => {
     };
 
     /**
-     * 各转轮解耦计算减速步数：nF/nM 各自恰好落在获奖者（不足 8 步时按各自周期补整圈），
-     * 总步数取两者较大值——先到先停，另一方继续滚到自己的获奖者。
-     * 避免两个转轮长度互质约束无解导致的死循环（能成时刻卡死根因）。
+     * 各转轮解耦计算减速步数：各自恰好落在获奖者（不足 8 步时按各自周期补整圈），
+     * 8 步减速序列各转轮同步推进——每步全体前进 1 张，8 步后各自恰好停在自己的获奖者。
+     * 避免多个转轮长度互质约束无解导致的死循环（能成时刻卡死根因）。
      * 可见项 = 条带长度 - 1 - 偏移，目标余数 = (条带长度 - 1 - 获奖者索引) % 周期。
      */
-    const calcSteps = (): { nF: number; nM: number; total: number; luckyTarget: number; fTarget: number; mTarget: number } => {
-      if (isLucky) {
-        const len = luckyReelLenRef.current;
-        const strip = luckyStripRef.current;
-        const idx = strip.findIndex((u) => u.userId === winner?.userId);
+    /** 幸运之星：各转轮独立抽奖——从各自池中无放回抽取，跨转轮不重复（池已按 userId 去重，转轮数 ≤ 池人数，候选恒非空） */
+    let luckyWinners: WallUser[] = [];
+    let luckySteps: number[] = [];
+    /** 能成时刻：双转轮获奖者与各自步数 */
+    let pairWinners: { male: WallUser | null; female: WallUser | null } | null = null;
+    let nF = 0;
+    let nM = 0;
+    if (isLucky) {
+      const picked = new Set<string>();
+      luckyWinners = [];
+      luckySteps = luckyStripsRef.current.map((strip, i) => {
+        const len = luckyReelLensRef.current[i];
+        const pool = strip.slice(0, len);
+        const cands = pool.filter((u) => !picked.has(u.userId));
+        const w = randOf(cands) as WallUser;
+        picked.add(w.userId);
+        luckyWinners.push(w);
+        const idx = strip.findIndex((u) => u.userId === w.userId);
         const target = (((strip.length - 1 - idx) % len) + len) % len;
-        const d = stepsTo(luckyOffsetRef.current, target, len);
-        return { nF: d + 1, nM: 0, total: d + 1, luckyTarget: target, fTarget: 0, mTarget: 0 };
-      }
+        return stepsTo(luckyOffsetsRef.current[i], target, len) + 1;
+      });
+    } else {
+      // 获奖者直接从条带（首周期）中抽取——轮询刷新 wall 后 winner 仍在条带内，findIndex 恒有效
+      const maleWinner = randOf(maleStripRef.current.slice(0, maleReelLenRef.current)) || randOf(malesOf());
+      const femaleWinner = randOf(femaleStripRef.current.slice(0, femaleReelLenRef.current)) || randOf(femalesOf());
+      pairWinners = { male: maleWinner, female: femaleWinner };
       const fLen = Math.max(1, femaleReelLenRef.current);
       const mLen = Math.max(1, maleReelLenRef.current);
       const fStrip = femaleStripRef.current;
@@ -542,14 +598,9 @@ const ActivityOnsite: React.FC = () => {
       const mIdx = mStrip.findIndex((u) => u.userId === maleWinner?.userId);
       const fTarget = (((fStrip.length - 1 - fIdx) % fLen) + fLen) % fLen;
       const mTarget = (((mStrip.length - 1 - mIdx) % mLen) + mLen) % mLen;
-      const dF = stepsTo(fOffsetRef.current, fTarget, fLen);
-      const dM = stepsTo(mOffsetRef.current, mTarget, mLen);
-      const nF = dF + 1;
-      const nM = dM + 1;
-      return { nF, nM, total: Math.max(nF, nM), luckyTarget: 0, fTarget, mTarget };
-    };
-
-    const { nF, nM, total, luckyTarget, fTarget, mTarget } = calcSteps();
+      nF = stepsTo(fOffsetRef.current, fTarget, fLen) + 1;
+      nM = stepsTo(mOffsetRef.current, mTarget, mLen) + 1;
+    }
     // 获奖者永远固定在第 8 张：以张为单位减速展示 8 张（第一张立即减速一半 180ms，之后每张比前一张慢 20%，封顶 1.5 秒）。
     // 总行程不足 8 张时补整圈，P 瞬间静默跳过 (总行程-8) 张，展示的 8 张最后一张必然是获奖者
     const MAX_SHOW = 8;
@@ -559,18 +610,14 @@ const ActivityOnsite: React.FC = () => {
       while (t < MAX_SHOW) t += l;
       return t;
     };
-    const showTotal = MAX_SHOW;
-    const durations = Array.from({ length: showTotal }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
-    const skipLucky = isLucky ? travel(total, luckyReelLenRef.current) - MAX_SHOW : 0;
+    const durations = Array.from({ length: MAX_SHOW }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
+    const luckySkips = isLucky ? luckySteps.map((n, i) => travel(n, luckyReelLensRef.current[i]) - MAX_SHOW) : [];
     const skipF = isLucky ? 0 : travel(nF, femaleReelLenRef.current) - MAX_SHOW;
     const skipM = isLucky ? 0 : travel(nM, maleReelLenRef.current) - MAX_SHOW;
 
     // 跳过部分在 P 瞬间静默完成（禁过渡，滚动快速期不可感知）
-    if (isLucky && skipLucky > 0) {
-      setSnapFrame(true);
-      luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + skipLucky);
-      setLuckyOffset(luckyOffsetRef.current);
-      setTimeout(() => setSnapFrame(false), 0);
+    if (isLucky && luckySkips.some((s) => s > 0)) {
+      advanceLuckyOffsets((o, i) => o + luckySkips[i]);
     } else if (!isLucky && (skipF > 0 || skipM > 0)) {
       setSnapFrame(true);
       fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + skipF);
@@ -582,10 +629,7 @@ const ActivityOnsite: React.FC = () => {
 
     const inc = (i: number) => {
       if (isLucky) {
-        if (i < showTotal) {
-          luckyOffsetRef.current = wrapOffset(luckyReelLenRef.current, luckyOffsetRef.current + 1);
-          setLuckyOffset(luckyOffsetRef.current);
-        }
+        if (i < MAX_SHOW) advanceLuckyOffsets((o) => o + 1);
       } else {
         if (i < MAX_SHOW) {
           fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
@@ -599,14 +643,13 @@ const ActivityOnsite: React.FC = () => {
     };
 
     const step = (i: number) => {
-      if (i >= showTotal) {
+      if (i >= MAX_SHOW) {
         // 最后一步滑动完成后进入「越过卡位再回弹停稳」的老虎机手感
         drawTimerRef.current = setTimeout(() => {
           // ① 在当前偏移上越过 0.3 格（不做跨周期坐标跳变，避免倒扫多张卡片）
           setReelSpeed(380);
           if (isLucky) {
-            luckyOffsetRef.current += 0.3;
-            setLuckyOffset(luckyOffsetRef.current);
+            advanceLuckyOffsets((o) => o + 0.3);
           } else {
             fOffsetRef.current += 0.3;
             mOffsetRef.current += 0.3;
@@ -617,8 +660,7 @@ const ActivityOnsite: React.FC = () => {
           drawTimerRef.current = setTimeout(() => {
             setReelSpeed(520);
             if (isLucky) {
-              luckyOffsetRef.current -= 0.3;
-              setLuckyOffset(luckyOffsetRef.current);
+              advanceLuckyOffsets((o) => o - 0.3);
             } else {
               fOffsetRef.current -= 0.3;
               mOffsetRef.current -= 0.3;
@@ -628,14 +670,14 @@ const ActivityOnsite: React.FC = () => {
             // ③ 回弹完成后再揭晓
             drawTimerRef.current = setTimeout(() => {
               if (isLucky) {
-                setDrawWinner(winner);
+                setDrawWinners(luckyWinners);
               } else {
-                setDrawPairWinner({ male: maleWinner, female: femaleWinner });
+                setDrawPairWinner(pairWinners);
               }
               setDrawPhase('done');
             }, 560);
           }, 400);
-        }, durations[showTotal - 1] + 60);
+        }, durations[MAX_SHOW - 1] + 60);
         return;
       }
       drawTimerRef.current = setTimeout(() => {
@@ -645,12 +687,14 @@ const ActivityOnsite: React.FC = () => {
       }, durations[i]);
     };
     step(0);
-  }, [tab, drawPhase, clearDrawTimer, wall, malesOf, femalesOf, wrapOffset]);
+  }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets]);
 
   // 键盘切换：0 演示 / 1 嘉宾一览 / 2 心动排名 / 3 幸运之星 / 4 能成时刻 / z 布局 / o 开始滚动 / p 减速停下
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
+      // 配置下拉框打开/聚焦期间不响应快捷键，避免误触开始、停止或重建转轮
+      if ((e.target as HTMLElement | null)?.closest('.ant-select, .ant-select-dropdown')) return;
       if (e.key === '0') toggleDemo();
       else if (e.key === '1') switchTab('list');
       else if (e.key === '2') switchTab('feeling');
@@ -676,6 +720,27 @@ const ActivityOnsite: React.FC = () => {
   /** 工作区按钮样式 */
   const toolBtn: React.CSSProperties = { background: 'rgba(255,255,255,.15)', color: '#fff', border: 'none', borderRadius: 5, padding: '3px 10px', cursor: 'pointer', fontSize: 12 };
   const toolBtnActive: React.CSSProperties = { ...toolBtn, background: '#e04d2c' };
+
+  /** 幸运之星转轮尺寸：并排自适应（1 个 18vw、5 个约 14.8vw），卡片保持 3:4 */
+  const luckyReelW = Math.min(18, (80 - (luckyStrips.length - 1) * 1.5) / Math.max(1, luckyStrips.length));
+  const luckyReelH = (luckyReelW * 4) / 3;
+
+  /** 幸运之星封面：实际可建转轮数（与 buildLuckyPools 同一算法，避免两处规则漂移） */
+  const luckyReelCount = tab === 'lucky' ? buildLuckyPools(wall, luckyCount, luckyGender).length : 0;
+  /** 封面人数不足提示（性别筛选后符合条件人数 < 所选人数时自动缩减转轮数） */
+  const luckyHint = (() => {
+    if (tab !== 'lucky' || luckyReelCount >= luckyCount) return '';
+    if (!luckyReelCount) {
+      if (luckyGender === 'male') return '暂无男嘉宾，无法抽取';
+      if (luckyGender === 'female') return '暂无女嘉宾，无法抽取';
+      if (luckyGender === 'mix') return '暂无嘉宾，无法抽取';
+      return '暂无签到嘉宾';
+    }
+    if (luckyGender === 'male') return `男嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
+    if (luckyGender === 'female') return `女嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
+    if (luckyGender === 'mix') return `符合条件嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
+    return `现场嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
+  })();
 
   const wallItems = buildWallItems(wall);
 
@@ -719,6 +784,28 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={() => setBgMode('stretch')} style={bgMode === 'stretch' ? toolBtnActive : toolBtn}>全屏铺满</button>
             </div>
           )}
+          {/* 幸运之星配置（仅幸运之星界面显示） */}
+          {tab === 'lucky' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>幸运之星</span>
+              <span>人数</span>
+              <Select
+                size="small"
+                value={luckyCount}
+                onChange={(v: number) => setLuckyCount(v)}
+                style={{ width: 62 }}
+                options={[1, 2, 3, 4, 5].map((n) => ({ value: n, label: `${n} 人` }))}
+              />
+              <span>性别</span>
+              <Select
+                size="small"
+                value={luckyGender}
+                onChange={(v: LuckyGender) => setLuckyGender(v)}
+                style={{ width: 78 }}
+                options={LUCKY_GENDER_OPTIONS}
+              />
+            </div>
+          )}
           {/* 界面切换（按钮注明快捷键，两行每行两个；展示切换为纯切换无高亮态） */}
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
@@ -737,35 +824,46 @@ const ActivityOnsite: React.FC = () => {
       {/* 内容区 */}
       <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
         {tab === 'lucky' ? (
-          /* ====== 幸运之星（3）：转轮式随机抽一人（照片自上而下滚动，首尾相连） ====== */
+          /* ====== 幸运之星（3）：并排转轮随机抽 N 人（照片自上而下滚动，首尾相连，获奖者不重复） ====== */
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
             {drawPhase === 'cover' ? (
               <>
                 <div className="draw-cover-title">幸运之星</div>
-                <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>从现场嘉宾中随机抽取一位幸运之星</div>
+                {luckyReelCount > 0 && (
+                  <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>
+                    从现场嘉宾中随机抽取 {luckyReelCount} 位幸运之星
+                  </div>
+                )}
+                {luckyHint && <div style={{ color: '#ffd700', fontSize: '2.8vh' }}>{luckyHint}</div>}
                 <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 减速停止</div>
               </>
             ) : (
               <>
-                {luckyStrip.length > 0 && (
-                  <div className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`}>
-                    <div className="draw-reel-window">
-                      <div className="draw-reel-strip" style={{ transform: `translateY(calc(24vw * (${luckyOffset} - ${luckyStrip.length} + 1)))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
-                        {luckyStrip.map((u, i) => (
-                          <div key={`${u.userId}-${i}`} className="draw-reel-item">
-                            <img src={u.photo} alt={u.nick} />
-                            <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
-                            <span className="draw-nick">{u.nick}</span>
+                {luckyStrips.length > 0 && (
+                  <div style={{ display: 'flex', gap: '1.5vw' }}>
+                    {luckyStrips.map((strip, i) => (
+                      <div key={i} className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`} style={{ width: `${luckyReelW}vw` }}>
+                        <div className="draw-reel-window" style={{ height: `${luckyReelH}vw` }}>
+                          <div className="draw-reel-strip" style={{ transform: `translateY(calc(${luckyReelH}vw * (${luckyOffsets[i]} - ${strip.length} + 1)))`, transition: luckySnaps[i] ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                            {strip.map((u, j) => (
+                              <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
+                                <img src={u.photo} alt={u.nick} />
+                                <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
+                                <span className="draw-nick">{u.nick}</span>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 )}
-                {drawPhase === 'done' && drawWinner && (
+                {drawPhase === 'done' && drawWinners.length > 0 && (
                   <>
-                    <div style={{ color: '#ffd700', fontSize: '4.5vh', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>
-                      恭喜 {drawWinner.number || ''} 号 {drawWinner.nick}
+                    <div style={{ color: '#ffd700', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)', textAlign: 'center', padding: '0 6vw', fontSize: drawWinners.length === 1 ? '4.5vh' : '3.4vh', lineHeight: 1.6 }}>
+                      {drawWinners.length === 1
+                        ? <>恭喜 {drawWinners[0].number || ''} 号 {drawWinners[0].nick}</>
+                        : <>恭喜 {drawWinners.length} 位幸运之星：{drawWinners.map((w) => `${w.number || ''}号 ${w.nick}`).join('、')}</>}
                     </div>
                     <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 3 重新开始</div>
                   </>
@@ -943,7 +1041,7 @@ const ActivityOnsite: React.FC = () => {
 
       {/* 照片墙样式（移植自旧系统 activscreen） */}
       <style>{`
-        .onsite-tools { position: fixed; top: 0; right: 0; width: 430px; height: 160px; z-index: 100; opacity: 0; transition: opacity .3s; display: flex; align-items: flex-start; justify-content: flex-end; padding: 10px 14px; }
+        .onsite-tools { position: fixed; top: 0; right: 0; width: 430px; z-index: 100; opacity: 0; transition: opacity .3s; display: flex; align-items: flex-start; justify-content: flex-end; padding: 10px 14px; }
         .onsite-tools:hover { opacity: 1; }
         .onsite-photo { position: absolute; transition: transform .5s, opacity .5s; opacity: .85; }
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
