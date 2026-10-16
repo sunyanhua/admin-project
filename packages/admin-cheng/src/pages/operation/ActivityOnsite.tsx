@@ -127,6 +127,8 @@ const ActivityOnsite: React.FC = () => {
   /** 回卷帧：禁用过渡（周期相同内容一致，视觉无缝） */
   const [snapFrame, setSnapFrame] = useState(false);
   const luckyStripsRef = useRef<WallUser[][]>([]);
+  /** 各转轮获奖候选池（按性别要求分配；条带始终滚全体嘉宾，性别要求只决定落定结果） */
+  const luckyWinnerPoolsRef = useRef<WallUser[][]>([]);
   const femaleStripRef = useRef<WallUser[]>([]);
   const maleStripRef = useRef<WallUser[]>([]);
   /** 每个条带的一个循环周期长度（洗牌列表长度） */
@@ -479,9 +481,12 @@ const ActivityOnsite: React.FC = () => {
   const startLucky = useCallback(() => {
     clearDrawTimer();
     const pools = buildLuckyPools(wall, luckyCount, luckyGender);
-    const strips = pools.map((pool) => buildStrip(pool));
+    // 滚动条带始终展示全体嘉宾（各种性别混合），性别要求不体现在候选滚动中，只控制最终落定的获奖者
+    const strip = buildStrip(wall);
+    const strips = pools.map(() => strip);
     luckyStripsRef.current = strips;
-    luckyReelLensRef.current = strips.map((_, i) => pools[i]?.length || 1);
+    luckyWinnerPoolsRef.current = pools;
+    luckyReelLensRef.current = strips.map(() => wall.length || 1);
     setLuckyStrips(strips);
     luckyOffsetsRef.current = strips.map(() => 0);
     setLuckyOffsets(strips.map(() => 0));
@@ -564,7 +569,7 @@ const ActivityOnsite: React.FC = () => {
      * 避免多个转轮长度互质约束无解导致的死循环（能成时刻卡死根因）。
      * 可见项 = 条带长度 - 1 - 偏移，目标余数 = (条带长度 - 1 - 获奖者索引) % 周期。
      */
-    /** 幸运之星：各转轮独立抽奖——从各自池中无放回抽取，跨转轮不重复（池已按 userId 去重，转轮数 ≤ 池人数，候选恒非空） */
+    /** 幸运之星：各转轮独立抽奖——获奖者从配置的性别候选池中无放回抽取，跨转轮不重复（池已按 userId 去重，转轮数 ≤ 池人数，候选恒非空）；条带展示全体嘉宾，仅落定结果体现性别要求 */
     let luckyWinners: WallUser[] = [];
     let luckySteps: number[] = [];
     /** 能成时刻：双转轮获奖者与各自步数 */
@@ -576,8 +581,7 @@ const ActivityOnsite: React.FC = () => {
       luckyWinners = [];
       luckySteps = luckyStripsRef.current.map((strip, i) => {
         const len = luckyReelLensRef.current[i];
-        const pool = strip.slice(0, len);
-        const cands = pool.filter((u) => !picked.has(u.userId));
+        const cands = luckyWinnerPoolsRef.current[i].filter((u) => !picked.has(u.userId));
         const w = randOf(cands) as WallUser;
         picked.add(w.userId);
         luckyWinners.push(w);
@@ -727,19 +731,16 @@ const ActivityOnsite: React.FC = () => {
 
   /** 幸运之星封面：实际可建转轮数（与 buildLuckyPools 同一算法，避免两处规则漂移） */
   const luckyReelCount = tab === 'lucky' ? buildLuckyPools(wall, luckyCount, luckyGender).length : 0;
-  /** 封面人数不足提示（性别筛选后符合条件人数 < 所选人数时自动缩减转轮数） */
+  /**
+   * 封面人数不足提示（性别筛选后符合条件人数 < 所选人数时自动缩减转轮数）。
+   * 措辞不带性别——性别要求只控制落定结果，大屏展示不能让观众看出要求。
+   */
   const luckyHint = (() => {
     if (tab !== 'lucky' || luckyReelCount >= luckyCount) return '';
-    if (!luckyReelCount) {
-      if (luckyGender === 'male') return '暂无男嘉宾，无法抽取';
-      if (luckyGender === 'female') return '暂无女嘉宾，无法抽取';
-      if (luckyGender === 'mix') return '暂无嘉宾，无法抽取';
-      return '暂无签到嘉宾';
-    }
-    if (luckyGender === 'male') return `男嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
-    if (luckyGender === 'female') return `女嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
-    if (luckyGender === 'mix') return `符合条件嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
-    return `现场嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
+    if (!luckyReelCount) return luckyGender === 'any' ? '暂无签到嘉宾' : '暂无符合条件的嘉宾，无法抽取';
+    return luckyGender === 'any'
+      ? `现场嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`
+      : `符合条件嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
   })();
 
   const wallItems = buildWallItems(wall);
