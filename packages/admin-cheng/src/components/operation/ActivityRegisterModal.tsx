@@ -180,7 +180,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     setDetailVisible(true);
   };
 
-  /** 单条修改现场编号（≥1；接口不支持清空，重排由「一键分配」覆盖） */
+  /** 单条修改现场编号（≥1；不校验唯一性——管理端手工调整） */
   const handleOnsiteNumberChange = async (record: RegisterRecord, num: number) => {
     try {
       await activityApi.updateOnsiteNumber(activityId, record.id, num);
@@ -188,6 +188,17 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       refresh();
     } catch (err: any) {
       showError(err?.response?.data?.message || '序号更新失败');
+    }
+  };
+
+  /** 单条清空现场编号（置 NULL，该行重新进入「一键分配」补号池） */
+  const handleOnsiteNumberClear = async (record: RegisterRecord) => {
+    try {
+      await activityApi.clearOnsiteNumber(activityId, record.id);
+      success('序号已清空');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '序号清空失败');
     }
   };
 
@@ -347,7 +358,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     });
   }
 
-  // 序号列（现场编号，一键分配后按性别 1..N；置于操作列之后，仅开启签到的活动显示；失焦内联编辑单条修改）
+  // 序号列（现场编号，一键分配后按性别 1..N；置于操作列之后，仅开启签到的活动显示；失焦内联编辑：改数单条更新、清空单条置 NULL）
   if (checkinEnabled) {
     columns.push({
       title: '序号',
@@ -362,10 +373,15 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           value={v ?? undefined}
           style={{ width: 70 }}
           onBlur={(e) => {
-            const val = e.target.value;
-            const num = val === '' ? undefined : parseInt(val, 10);
-            // 接口不支持清空：空值、<1 或未变化时不提交
-            if (num == null || num < 1 || num === (r.onsite_number ?? undefined)) return;
+            const val = e.target.value.trim();
+            // 清空：走 DELETE 置 NULL，仅原有序号时提交
+            if (val === '') {
+              if (r.onsite_number != null) handleOnsiteNumberClear(r);
+              return;
+            }
+            const num = parseInt(val, 10);
+            // 非法值（<1/非数字）或未变化时不提交
+            if (Number.isNaN(num) || num < 1 || num === (r.onsite_number ?? undefined)) return;
             handleOnsiteNumberChange(r, num);
           }}
         />
