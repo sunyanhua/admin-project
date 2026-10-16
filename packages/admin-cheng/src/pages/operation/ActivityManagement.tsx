@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Space, InputNumber, Tag, Image } from 'antd';
-import { EditOutlined, DeleteOutlined, FileTextOutlined, FireOutlined, MonitorOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, FileTextOutlined, FireOutlined, MonitorOutlined, FormOutlined } from '@ant-design/icons';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import type { ColumnsType } from 'antd/es/table';
 import { ActivityV1Status, ActivityTypeLabels, ActivityType } from '@shared/constants';
@@ -18,6 +18,7 @@ import ActivityEditModal from '@/components/operation/ActivityEditModal';
 import ActivityRegisterModal from '@/components/operation/ActivityRegisterModal';
 import WarmUpManageModal from '@/components/operation/WarmUpManageModal';
 import PromiseTemplateModal from '@/components/operation/PromiseTemplateModal';
+import QuizManageModal from '@/components/operation/QuizManageModal';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 
 const STATUS_OPTIONS = [
@@ -42,6 +43,7 @@ const ActivityManagement = () => {
   const [registerFormConfig, setRegisterFormConfig] = useState<FormField[]>([]);
   const [registerCheckinEnabled, setRegisterCheckinEnabled] = useState(false);
   const [promiseModalVisible, setPromiseModalVisible] = useState(false);
+  const [quizModalVisible, setQuizModalVisible] = useState(false);
   const [warmUpVisible, setWarmUpVisible] = useState(false);
   const [warmUpActivity, setWarmUpActivity] = useState<Activity | null>(null);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -288,9 +290,14 @@ const ActivityManagement = () => {
         onAdd={handleAdd}
         addButtonText="创建活动"
         extraAddActions={
-          <Button icon={<FileTextOutlined />} onClick={() => setPromiseModalVisible(true)}>
-            承诺书模版管理
-          </Button>
+          <Space>
+            <Button icon={<FileTextOutlined />} onClick={() => setPromiseModalVisible(true)}>
+              承诺书模版管理
+            </Button>
+            <Button icon={<FormOutlined />} onClick={() => setQuizModalVisible(true)}>
+              默契问答管理
+            </Button>
+          </Space>
         }
         searchArea={
           <SearchPanel
@@ -341,6 +348,11 @@ const ActivityManagement = () => {
       <PromiseTemplateModal
         open={promiseModalVisible}
         onClose={() => setPromiseModalVisible(false)}
+      />
+
+      <QuizManageModal
+        open={quizModalVisible}
+        onClose={() => setQuizModalVisible(false)}
       />
     </>
   );
