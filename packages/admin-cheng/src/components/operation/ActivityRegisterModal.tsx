@@ -24,6 +24,7 @@ import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
 import ActivityPresignTab from '@/components/operation/ActivityPresignTab';
+import ActivityCpTab from '@/components/operation/ActivityCpTab';
 import { buildRegisterExportSheet } from './activityRegisterExport.utils';
 import { applyLinkColumns } from './excelExport.utils';
 
@@ -104,15 +105,23 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
 
   /** 弹窗打开次数（传给预报名 TAB，重开时刷新列表） */
   const [presignReloadKey, setPresignReloadKey] = useState(0);
+  /** 当前 TAB（组CP TAB 按需挂载：切到才拉数据） */
+  const [tabKey, setTabKey] = useState('register');
 
   const prevKeyRef = useRef('');
   useEffect(() => {
-    const key = `${visible}-${activityId}`;
-    if (visible && activityId && key !== prevKeyRef.current) {
+    // 关闭时清空标记：同一活动重新打开也走重置（回到用户报名 TAB、列表刷新），只清 ref 不触发渲染
+    if (!visible) {
+      prevKeyRef.current = '';
+      return;
+    }
+    const key = `open-${activityId}`;
+    if (activityId && key !== prevKeyRef.current) {
       prevKeyRef.current = key;
       setSearchValues({});
       search({ _t: Date.now() });
       setPresignReloadKey((k) => k + 1);
+      setTabKey('register');
     }
   }, [visible, activityId, search]);
 
@@ -392,10 +401,13 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       >
         {isFreeReview ? (
           <Tabs
-            defaultActiveKey="register"
+            activeKey={tabKey}
+            onChange={setTabKey}
             items={[
               { key: 'register', label: '用户报名', children: registerContent },
               { key: 'presign', label: '导入报名', children: <ActivityPresignTab activityId={activityId} reloadKey={presignReloadKey} /> },
+              // 组CP按需挂载：切到该 TAB 才拉数据计算组合
+              { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
             ]}
           />
         ) : (
