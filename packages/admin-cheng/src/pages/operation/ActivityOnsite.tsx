@@ -481,15 +481,15 @@ const ActivityOnsite: React.FC = () => {
   const startLucky = useCallback(() => {
     clearDrawTimer();
     const pools = buildLuckyPools(wall, luckyCount, luckyGender);
-    // 滚动条带始终展示全体嘉宾（各种性别混合），性别要求不体现在候选滚动中，只控制最终落定的获奖者
-    const strip = buildStrip(wall);
-    const strips = pools.map(() => strip);
+    // 每个转轮独立洗牌（各转轮人组合随机、互不相同），但都滚动全体嘉宾——性别要求不体现在候选滚动中，只控制最终落定的获奖者
+    const strips = pools.map(() => buildStrip(wall));
     luckyStripsRef.current = strips;
     luckyWinnerPoolsRef.current = pools;
     luckyReelLensRef.current = strips.map(() => wall.length || 1);
     setLuckyStrips(strips);
-    luckyOffsetsRef.current = strips.map(() => 0);
-    setLuckyOffsets(strips.map(() => 0));
+    // 初始偏移随机错开：起转瞬间各转轮展示不同位置，避免开滚时几个转轮一模一样整齐转动
+    luckyOffsetsRef.current = strips.map(() => Math.floor(Math.random() * Math.max(1, wall.length)));
+    setLuckyOffsets([...luckyOffsetsRef.current]);
     setLuckySnaps(strips.map(() => false));
     setReelSpeed(90);
     setTab('lucky');
