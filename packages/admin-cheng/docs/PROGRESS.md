@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-10-12**
+**2026-10-16**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-10-16 | 幸运之星多人抽取——右上角新增配置（人数 1~5 默认 1、性别 男/女/不限/混搭 默认不限，下拉框）；人数=转轮数，并排 N 个转轮（宽度自适应、卡片 3:4）同时开滚/同步减速，各自停在不同获奖者（跨转轮不重复、同一用户多份报名去重）；性别要求只控制落定结果，滚动候选始终展示全体嘉宾（观众无法从展示看出要求），封面人数不足提示去性别化；各转轮独立洗牌 + 初始偏移随机错开（起转不整齐同步）；分池逻辑抽 luckyPools.utils 纯函数（随机源可注入）+ 11 个单元测试；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityOnsite + luckyPools.utils + tests | c32e253、60ecf84、f935ecd（构建产物未提交） |
 | 2026-10-12 | 导入报名 TAB 右上角刷新按钮 + 状态列按三值 status（0 未报名/1 已报名/2 已免报名入选）；活动报名要求「显示报名名单」开关（register_list_enabled）；预热弹窗积分排行 TAB 导出（昵称/姓名/手机号/报名时间/报名状态/总积分/状态）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityPresignTab + ActivityEditModal + WarmUpManageModal + activity-v1 + api/types/status | 3274ba2、5803bd8、a6930ab、402c707（构建产物未提交） |
 | 2026-10-08 | 访问统计页趋势图对齐搭子计划版式（访问次数线/左轴，访问人数/新用户柱/右轴）；访问用户统计画像按生产接口实际 category（genders/ages/province/city）分组展示——地域分布分省份/城市两表（剔除 0 值行、UV 倒序、每页 10 条）；用户留存展示按文档结构修正（retain_json.visit_uv/visit_uv_new 两组留存人数，活跃/新用户留存两序列，次日留存显示 key=1 新用户留存人数）；指标卡改两行显示（lg 4 列/行）；画像占比改前端按各组 value 总和自算（同表之和恒 100%）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | VisitStatistics + VisitUserStats + datacube 服务 | dfdc5c9、f6238c3、1308106（构建产物未提交） |
 | 2026-09-30 | 报名名单序号列单条内联编辑（PATCH register/{rid}/onsite-number，失焦更新、≥1、不支持清空）；导入报名 TAB 分「导入列表」「导入配置」（导入用户报名截止时间 DatePicker+保存，走 presign_bind_deadline 三态字段，打开弹窗回显）；全站图片处理弹窗 AI 尺寸与建议尺寸统一（19 处显式 aiTargetSize）；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | ActivityRegisterModal + ActivityPresignTab + activity-v1 + 13 个上传位文件 | 54f168b、bc9041e、951fd40、b8483cf、518948b（构建产物未提交） |
