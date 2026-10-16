@@ -1,12 +1,13 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button, Empty, Spin } from 'antd';
-import { ReloadOutlined, HeartFilled } from '@ant-design/icons';
+import { ReloadOutlined, HeartFilled, DeleteOutlined, CloudUploadOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
+import { activityApi, RegisterRecord, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
 import { RegisterAuditStatus, RegisterGender } from '@shared/constants';
 import { EducationLabels } from '@/api/types/status';
 import UserAvatar from '@/components/user/UserAvatar';
 import { getMediumUrl } from '@/utils/imageUtils';
+import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { matchCpPairs, CpCandidate } from './cpMatching.utils';
 
 interface ActivityCpTabProps {
@@ -47,99 +48,233 @@ const CpPersonCard: React.FC<{ person: CpPerson; showHeight?: boolean }> = ({ pe
 );
 
 /**
- * 组CP TAB：按本场活动所有已入选用户的资料做一男一女组合。
- * 条件：男生比女生大不超过 10 岁、女生比男生大不超过 5 岁、女生身高不高于男生、学历差 ≤2。
- * 匹配为二分图最大匹配（尽可能多组合）；缺年龄无法判断不参与，缺身高/学历视为满足。
+ * 组CP TAB：打开先检测活动是否已有保存的组CP数据——
+ * 有 → 按序号展示，每对可单独删除；无 → 按已入选用户资料自动组合（一男一女，尽可能多组），
+ * 下方「提交」按组顺序从序号 1 依次逐对提交到后端。
+ * 自动组合条件：男大女≤10岁、女大男≤5岁、女身高≤男身高、学历差≤2（二分图最大匹配）。
  */
 const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
-  const { error: showError } = useAppNotification();
-  const [pairs, setPairs] = useState<{ male: CpPerson; female: CpPerson }[]>([]);
+  const { success, error: showError } = useAppNotification();
+  /** auto=无已保存配对（本地自动组合待提交）；server=展示活动已保存配对（可删除） */
+  const [mode, setMode] = useState<'auto' | 'server'>('auto');
+  const [autoPairs, setAutoPairs] = useState<{ male: CpPerson; female: CpPerson }[]>([]);
+  const [serverPairs, setServerPairs] = useState<OnsitePairingAdminItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitProgress, setSubmitProgress] = useState(0);
+  /** 报名记录补充资料（配对接口只回基础公开资料，姓名/身高/学历/照片从报名记录补齐） */
+  const regMapRef = useRef<Map<string, CpPerson>>(new Map());
 
-  const fetchAndMatch = useCallback(async () => {
+  /** 拉取全部已入选报名记录并组装候选（同一用户去重；免报名入选与性别未知跳过） */
+  const fetchApproved = useCallback(async (): Promise<{ males: CpPerson[]; females: CpPerson[]; map: Map<string, CpPerson> }> => {
+    const regs: RegisterRecord[] = [];
+    let page = 1;
+    while (true) {
+      const res: any = await activityApi.getRegisters(activityId, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
+      const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+      if (!list.length) break;
+      regs.push(...list);
+      if (list.length < 100) break;
+      page++;
+    }
+    const seen = new Set<string>();
+    const males: CpPerson[] = [];
+    const females: CpPerson[] = [];
+    const map = new Map<string, CpPerson>();
+    regs.forEach((r) => {
+      if (!r.user_id || seen.has(r.user_id)) return;
+      seen.add(r.user_id);
+      const g = r.user_profile?.gender ?? r.gender;
+      if (g !== RegisterGender.MALE && g !== RegisterGender.FEMALE) return;
+      const person: CpPerson = {
+        userId: r.user_id,
+        gender: g === RegisterGender.MALE ? 'male' : 'female',
+        age: r.user_profile?.age ?? r.age,
+        height: r.user_match_profile?.height,
+        education: r.user_match_profile?.education,
+        number: r.onsite_number,
+        nickname: r.user_profile?.nickname || r.nickname || r.user_id,
+        realName: r.user_match_profile?.real_name || '',
+        avatar: r.user_profile?.avatar || r.avatar || '',
+        photo: r.user_match_profile?.photos?.[0] || '',
+      };
+      map.set(r.user_id, person);
+      (g === RegisterGender.MALE ? males : females).push(person);
+    });
+    // 现场序号稳定排序，保证每次组合结果一致
+    const byNumber = (a: CpPerson, b: CpPerson) =>
+      (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER) || a.userId.localeCompare(b.userId);
+    males.sort(byNumber);
+    females.sort(byNumber);
+    return { males, females, map };
+  }, [activityId]);
+
+  /** 拉取全部已保存配对（序号正序，size 上限 100 循环分页） */
+  const fetchPairings = useCallback(async (): Promise<OnsitePairingAdminItem[]> => {
+    const all: OnsitePairingAdminItem[] = [];
+    let page = 1;
+    while (true) {
+      const res: any = await activityApi.getOnsitePairings(activityId, { page, size: 100, sort_by: 'seq' });
+      const list: OnsitePairingAdminItem[] = Array.isArray(res) ? res : (res?.list || []);
+      if (!list.length) break;
+      all.push(...list);
+      if (list.length < 100) break;
+      page++;
+    }
+    return all;
+  }, [activityId]);
+
+  /** 打开/刷新：先检测已保存配对，有则读取展示，无则自动组合待提交 */
+  const load = useCallback(async () => {
     if (!activityId) return;
     setLoading(true);
     try {
-      // 循环分页拉取本场活动全部已入选报名记录（size 上限 100）
-      const regs: RegisterRecord[] = [];
-      let page = 1;
-      while (true) {
-        const res: any = await activityApi.getRegisters(activityId, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
-        const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
-        if (!list.length) break;
-        regs.push(...list);
-        if (list.length < 100) break;
-        page++;
+      const pairings = await fetchPairings();
+      if (pairings.length) {
+        // 已保存：读取展示；报名记录补齐资料失败不阻塞展示（回退基础公开资料）
+        let map = new Map<string, CpPerson>();
+        try { ({ map } = await fetchApproved()); } catch { /* 补充资料失败保持基础资料 */ }
+        regMapRef.current = map;
+        setServerPairs(pairings);
+        setAutoPairs([]);
+        setMode('server');
+      } else {
+        const { males, females } = await fetchApproved();
+        setAutoPairs(matchCpPairs(males, females));
+        setServerPairs([]);
+        setMode('auto');
       }
-      // 组装候选：同一用户多份记录只保留首个；免报名入选（无 user_id）与性别未知跳过
-      const seen = new Set<string>();
-      const males: CpPerson[] = [];
-      const females: CpPerson[] = [];
-      regs.forEach((r) => {
-        if (!r.user_id || seen.has(r.user_id)) return;
-        seen.add(r.user_id);
-        const g = r.user_profile?.gender ?? r.gender;
-        if (g !== RegisterGender.MALE && g !== RegisterGender.FEMALE) return;
-        const person: CpPerson = {
-          userId: r.user_id,
-          gender: g === RegisterGender.MALE ? 'male' : 'female',
-          age: r.user_profile?.age ?? r.age,
-          height: r.user_match_profile?.height,
-          education: r.user_match_profile?.education,
-          number: r.onsite_number,
-          nickname: r.user_profile?.nickname || r.nickname || r.user_id,
-          realName: r.user_match_profile?.real_name || '',
-          avatar: r.user_profile?.avatar || r.avatar || '',
-          photo: r.user_match_profile?.photos?.[0] || '',
-        };
-        (g === RegisterGender.MALE ? males : females).push(person);
-      });
-      // 现场序号稳定排序，保证每次组合结果一致
-      const byNumber = (a: CpPerson, b: CpPerson) =>
-        (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER) || a.userId.localeCompare(b.userId);
-      males.sort(byNumber);
-      females.sort(byNumber);
-      setPairs(matchCpPairs(males, females));
     } catch (err: any) {
       showError(err?.response?.data?.message || '组CP数据加载失败');
     } finally {
       setLoading(false);
     }
-  }, [activityId, showError]);
+  }, [activityId, fetchPairings, fetchApproved, showError]);
 
   useEffect(() => {
-    fetchAndMatch();
-  }, [fetchAndMatch]);
+    load();
+  }, [load]);
+
+  /** 提交：按组顺序从序号 1 起逐对提交；失败即停并提示第几组 */
+  const handleSubmit = async () => {
+    if (!autoPairs.length) return;
+    setSubmitting(true);
+    setSubmitProgress(0);
+    let submitted = 0;
+    try {
+      for (let i = 0; i < autoPairs.length; i++) {
+        const p = autoPairs[i];
+        await activityApi.createOnsitePairing(activityId, {
+          male_id: p.male.userId,
+          female_id: p.female.userId,
+          seq: i + 1,
+        });
+        submitted = i + 1;
+        setSubmitProgress(submitted);
+      }
+      success(`已提交 ${autoPairs.length} 组CP`);
+    } catch (err: any) {
+      showError(`第 ${submitted + 1} 组提交失败：${err?.response?.data?.message || err?.message || '未知错误'}`);
+    } finally {
+      setSubmitting(false);
+      setSubmitProgress(0);
+      // 部分提交后活动可能已有保存数据，重新检测模式
+      await load();
+    }
+  };
+
+  /** 删除单对（软删释放序号；全部删完后回到自动组合模式） */
+  const handleDelete = (item: OnsitePairingAdminItem) => {
+    const maleNick = item.male?.profile?.nickname || item.male?.user?.user_id || '-';
+    const femaleNick = item.female?.profile?.nickname || item.female?.user?.user_id || '-';
+    confirmDelete({
+      name: `第 ${item.seq} 组（${maleNick} × ${femaleNick}）`,
+      content: '删除后释放配对序号，双方报名现场序号保持不变。',
+      deleteFn: () => activityApi.deleteOnsitePairing(activityId, item.id),
+      onSuccess: () => { load(); },
+    });
+  };
+
+  /** 服务端配对成员的展示资料：报名记录补充优先，缺省用配对条目基础公开资料 */
+  const viewOf = (side: OnsitePairingUserAdmin | undefined, gender: 'male' | 'female'): CpPerson => {
+    const userId = side?.user?.user_id || '';
+    const enriched = regMapRef.current.get(userId);
+    return {
+      userId,
+      gender,
+      age: enriched?.age ?? side?.profile?.age,
+      height: enriched?.height,
+      education: enriched?.education,
+      nickname: enriched?.nickname || side?.profile?.nickname || userId || '-',
+      realName: enriched?.realName || '',
+      avatar: enriched?.avatar || side?.profile?.avatar || '',
+      photo: enriched?.photo || '',
+    };
+  };
+
+  const pairCount = mode === 'server' ? serverPairs.length : autoPairs.length;
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-        <span style={{ fontSize: 14, fontWeight: 600 }}>共 {pairs.length} 组</span>
-        <Button icon={<ReloadOutlined />} loading={loading} onClick={fetchAndMatch}>刷新</Button>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>
+          共 {pairCount} 组{mode === 'auto' ? '（待提交）' : '（已保存）'}
+        </span>
+        <Button icon={<ReloadOutlined />} loading={loading} onClick={load}>刷新</Button>
       </div>
       <Spin spinning={loading}>
-        {pairs.length === 0 ? (
-          <Empty description="暂无满足条件的CP组合" style={{ padding: '40px 0' }} />
+        {pairCount === 0 ? (
+          <Empty description={mode === 'server' ? '暂无已保存的CP组合' : '暂无满足条件的CP组合'} style={{ padding: '40px 0' }} />
         ) : (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-            {pairs.map((p, i) => (
-              <div
-                key={`${p.male.userId}-${p.female.userId}`}
-                style={{
-                  width: 'calc(50% - 6px)', minWidth: 400, boxSizing: 'border-box',
-                  border: 'solid 1px #f0f0f0', borderRadius: 8, background: '#fafafa',
-                  padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative',
-                }}
-              >
-                <span style={{ position: 'absolute', top: 4, left: 10, fontSize: 12, color: '#999' }}>{i + 1}</span>
-                <CpPersonCard person={p.male} showHeight />
-                <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0 }} />
-                <CpPersonCard person={p.female} />
-              </div>
-            ))}
+            {mode === 'auto' ? (
+              autoPairs.map((p, i) => (
+                <div
+                  key={`${p.male.userId}-${p.female.userId}`}
+                  style={{
+                    width: 'calc(50% - 6px)', minWidth: 400, boxSizing: 'border-box',
+                    border: 'solid 1px #f0f0f0', borderRadius: 8, background: '#fafafa',
+                    padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative',
+                  }}
+                >
+                  <span style={{ position: 'absolute', top: 4, left: 10, fontSize: 12, color: '#999' }}>{i + 1}</span>
+                  <CpPersonCard person={p.male} showHeight />
+                  <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0 }} />
+                  <CpPersonCard person={p.female} />
+                </div>
+              ))
+            ) : (
+              serverPairs.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    width: 'calc(50% - 6px)', minWidth: 400, boxSizing: 'border-box',
+                    border: 'solid 1px #f0f0f0', borderRadius: 8, background: '#fafafa',
+                    padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative',
+                  }}
+                >
+                  <span style={{ position: 'absolute', top: 4, left: 10, fontSize: 12, color: '#999' }}>第 {item.seq} 组</span>
+                  <CpPersonCard person={viewOf(item.male, 'male')} showHeight />
+                  <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0 }} />
+                  <CpPersonCard person={viewOf(item.female, 'female')} />
+                  <Button
+                    type="link" size="small" icon={<DeleteOutlined />}
+                    style={{ position: 'absolute', top: 2, right: 6 }}
+                    onClick={() => handleDelete(item)}
+                  >删除</Button>
+                </div>
+              ))
+            )}
           </div>
         )}
       </Spin>
+      {mode === 'auto' && autoPairs.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Button type="primary" icon={<CloudUploadOutlined />} loading={submitting} onClick={handleSubmit}>
+            {submitting ? `提交中 ${submitProgress}/${autoPairs.length}` : `提交（${autoPairs.length} 组）`}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

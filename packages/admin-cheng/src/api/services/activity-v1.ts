@@ -190,6 +190,31 @@ export interface OnsiteCouple {
   matching?: number; // 配对匹配度
 }
 
+// ========================
+// 现场配对（组CP，后台创建/删除）
+// ========================
+
+/** 现场配对成员（管理员视角，仅基础公开资料） */
+export interface OnsitePairingUserAdmin {
+  checkin_at?: string | null;
+  profile?: { age?: number; avatar?: string; gender?: number; nickname?: string; zodiac?: string };
+  user?: { user_id?: string };
+}
+
+/** 现场配对条目（管理员列表项） */
+export interface OnsitePairingAdminItem {
+  id: string;
+  /** 配对序号（同活动唯一） */
+  seq: number;
+  created_at?: string;
+  /** 默契度差异总分（双方提交后计算；未完成为 null） */
+  diff_total?: number | null;
+  male_submitted?: boolean;
+  female_submitted?: boolean;
+  male?: OnsitePairingUserAdmin;
+  female?: OnsitePairingUserAdmin;
+}
+
 export interface RegisterRecord {
   id: string;
   activity_id: string;
@@ -322,6 +347,25 @@ export const activityApi = {
   /** 心动配对信息列表（有现场心动的配对 loves_count>0，按现场心动次数倒序） */
   getOnsiteLovesCouples: (activityId: string, params?: { page?: number; size?: number }) => {
     return request.get(`/admin/v1/bizops/activity/${activityId}/onsite-loves-couples`, { params });
+  },
+
+  // ========================
+  // 现场配对（组CP）
+  // ========================
+
+  /** 现场配对列表（sort_by=seq 缺省序号正序；size 最大 100） */
+  getOnsitePairings: (activityId: string, params?: { page?: number; size?: number; sort_by?: 'seq' | 'diff' }) => {
+    return request.get(`/admin/v1/bizops/activity/${activityId}/onsite-pairings`, { params });
+  },
+
+  /** 创建现场配对（一男一女 + 序号，同活动序号不重复；同步覆盖双方报名现场序号） */
+  createOnsitePairing: (activityId: string, data: { male_id: string; female_id: string; seq: number }) => {
+    return request.post(`/admin/v1/bizops/activity/${activityId}/onsite-pairings`, data);
+  },
+
+  /** 删除现场配对（软删：释放配对序号与双方占用，不清除双方报名现场序号） */
+  deleteOnsitePairing: (activityId: string, pairingId: string) => {
+    return request.delete(`/admin/v1/bizops/activity/${activityId}/onsite-pairings/${pairingId}`);
   },
 
   // ========================
