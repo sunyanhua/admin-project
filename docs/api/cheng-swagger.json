@@ -861,6 +861,59 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/presign/{pid}": {
+            "delete": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "软删除指定预报名信息；仅「未报名（status=0）且未关联报名记录（register_id=null）」的行允许删除。\n已报名（status=1/2）或已关联报名记录 → 40531；预报名不存在/不属于该活动 → 40515。\n软删后同活动同手机号可重新导入。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "删除预报名信息",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "预报名信息 ID（UUID）",
+                        "name": "pid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/presign/{pid}/register": {
             "post": {
                 "security": [
@@ -1094,7 +1147,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "审核指定活动的报名申请（通过/拒绝）。审核通过仅变更状态；审核拒绝则变更状态并释放名额。\naudit_status 枚举：0=待审核 1=通过 2=拒绝；未设置性别的报名禁止通过（40511，2026-09-12 老大裁决）",
+                "description": "审核指定活动的报名申请（通过/拒绝），支持二次审核——已入选可改为未入选（拒绝并释放名额）、\n已拒绝可重新入选（补回名额）；同状态重复操作幂等成功（不重复计数、不重复发通知，2026-10-20）。\naudit_status 枚举：0=待审核 1=通过 2=拒绝；未设置性别的报名禁止通过（40511，2026-09-12 老大裁决）",
                 "consumes": [
                     "application/json"
                 ],

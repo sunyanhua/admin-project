@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button, Space, Tag, Upload, Modal, DatePicker } from 'antd';
-import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined, ReloadOutlined, CheckSquareOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined, ReloadOutlined, CheckSquareOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 import { useAppNotification } from '@/hooks/useAppNotification';
+import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
@@ -212,6 +213,16 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
     });
   };
 
+  /** 删除预报名（仅未报名且未关联报名记录可删；软删后同活动同手机号可重新导入） */
+  const handleDeletePresign = (record: PresignRecord) => {
+    confirmDelete({
+      name: record.real_name || record.phone || '该记录',
+      content: '删除后同活动同手机号可重新导入。',
+      deleteFn: () => activityApi.deletePresign(activityId, record.id),
+      onSuccess: () => { refresh(); },
+    });
+  };
+
   /** 免报名入选：预报名一键转为报名记录并审核通过（二次确认） */
   const handleRegisterPresign = (record: PresignRecord) => {
     const name = record.real_name || record.phone || '';
@@ -281,17 +292,21 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 200,
       fixed: 'right' as const,
       render: (_: any, r: PresignRecord) => {
-        // 已报名入选（register_id 非空或 status 已报名）：操作显示 -
+        // 已报名 / 已免报名入选（register_id 非空或 status 非未报名）：不可操作（后端 40531 也不允许删除）
         const isRegistered = !!r.register_id || (r.status ?? PresignStatus.NOT_REGISTERED) !== PresignStatus.NOT_REGISTERED;
         if (isRegistered) {
           return <span style={{ color: '#999' }}>-</span>;
         }
         return (
-          <Button type="link" size="small" icon={<UserAddOutlined />} loading={registeringIds.has(r.id)}
-            onClick={() => handleRegisterPresign(r)}>免报名入选</Button>
+          <Space size={0}>
+            <Button type="link" size="small" icon={<UserAddOutlined />} loading={registeringIds.has(r.id)}
+              onClick={() => handleRegisterPresign(r)}>免报名入选</Button>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}
+              onClick={() => handleDeletePresign(r)}>删除</Button>
+          </Space>
         );
       },
     },

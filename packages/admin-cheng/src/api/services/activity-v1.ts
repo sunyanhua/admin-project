@@ -391,4 +391,9 @@ export const activityApi = {
   registerPresign: (activityId: string, presignId: string) => {
     return request.post(`/admin/v1/bizops/activity/${activityId}/presign/${presignId}/register`);
   },
+
+  /** 删除预报名信息（软删；仅未报名且未关联报名记录可删，已报名/已免报名入选 → 40531） */
+  deletePresign: (activityId: string, presignId: string) => {
+    return request.delete(`/admin/v1/bizops/activity/${activityId}/presign/${presignId}`);
+  },
 };
