@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Button, Empty, Spin } from 'antd';
+import { Button, Empty, Spin, Tag } from 'antd';
 import { ReloadOutlined, HeartFilled, DeleteOutlined, CloudUploadOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, RegisterRecord, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
@@ -22,6 +22,8 @@ interface CpPerson extends CpCandidate {
   realName: string;
   avatar: string;
   photo: string;
+  /** 已完成现场签到（仅已保存配对展示用） */
+  checkedIn?: boolean;
 }
 
 /** 单人资料卡：图片 + 昵称、姓名、年龄、（身高）、学历 */
@@ -36,6 +38,7 @@ const CpPersonCard: React.FC<{ person: CpPerson; showHeight?: boolean }> = ({ pe
       <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         <span style={{ color: person.gender === 'male' ? '#0088cc' : '#eb5482', marginRight: 4 }}>{person.gender === 'male' ? '男' : '女'}</span>
         {person.nickname}
+        {person.checkedIn && <Tag color="green" style={{ fontSize: 10, lineHeight: '16px', marginLeft: 6 }}>已签到</Tag>}
       </div>
       <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>姓名：{person.realName || '-'}</div>
       <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
@@ -231,8 +234,12 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
     }
   };
 
-  /** 删除单对（软删释放序号；全部删完后回到自动组合模式） */
+  /** 删除单对（软删释放序号；全部删完后回到自动组合模式）；任一成员已签到则不可删除 */
   const handleDelete = (item: OnsitePairingAdminItem) => {
+    if (item.male?.checkin_at || item.female?.checkin_at) {
+      showError('该CP已有成员签到，不可删除');
+      return;
+    }
     const maleNick = item.male?.profile?.nickname || item.male?.user?.user_id || '-';
     const femaleNick = item.female?.profile?.nickname || item.female?.user?.user_id || '-';
     confirmDelete({
@@ -257,6 +264,7 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
       realName: enriched?.realName || '',
       avatar: enriched?.avatar || side?.profile?.avatar || '',
       photo: enriched?.photo || '',
+      checkedIn: !!side?.checkin_at,
     };
   };
 
@@ -308,6 +316,8 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
                   <Button
                     type="link" size="small" icon={<DeleteOutlined />}
                     style={{ position: 'absolute', top: 2, right: 6 }}
+                    disabled={!!item.male?.checkin_at || !!item.female?.checkin_at}
+                    title={(item.male?.checkin_at || item.female?.checkin_at) ? '已有成员签到，不可删除' : undefined}
                     onClick={() => handleDelete(item)}
                   >删除</Button>
                 </div>
