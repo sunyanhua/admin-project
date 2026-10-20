@@ -240,6 +240,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       options: [
         { label: '待审核', value: RegisterAuditStatus.PENDING },
         { label: '已通过', value: RegisterAuditStatus.APPROVED },
+        { label: '已退回', value: RegisterAuditStatus.REJECTED },
       ],
     });
   }
