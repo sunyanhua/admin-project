@@ -351,6 +351,10 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           );
         }
         if (r.audit_status === RegisterAuditStatus.APPROVED) {
+          // 已入选且已完成现场签到 → 操作列显示「已签到」（点击仍可查看报名信息）
+          if (r.checkin_at) {
+            return <Tag color="green" title="已签到" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已签到</Tag>;
+          }
           return <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已入选</Tag>;
         }
         return <Tag color="default" title="已退回" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已退回</Tag>;
