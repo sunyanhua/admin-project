@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button, Space, Tag, Upload, Modal, DatePicker } from 'antd';
-import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined, ReloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined, ReloadOutlined, CheckSquareOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
@@ -54,6 +54,8 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
   const [importing, setImporting] = useState(false);
   /** 正在执行「免报名入选」的记录 id（按钮 loading） */
   const [registeringIds, setRegisteringIds] = useState<Set<string>>(new Set());
+  /** 全部入选执行中（按钮 loading） */
+  const [bulkRegistering, setBulkRegistering] = useState(false);
   /** 报名截止时间（活动详情 presign_bind_deadline，null=永不截止） */
   const [deadline, setDeadline] = useState<dayjs.Dayjs | undefined>(undefined);
   const [savingDeadline, setSavingDeadline] = useState(false);
@@ -167,6 +169,49 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
     }
   };
 
+  /**
+   * 全部入选：轮询导入报名列表，对所有「未报名」数据执行免报名入选。
+   * 单条失败不报错仅计数，全部完成后弹窗汇总成功/失败条数并刷新列表。
+   */
+  const handleRegisterAll = () => {
+    Modal.confirm({
+      title: '确认全部入选',
+      content: '将对导入报名列表中所有「未报名」的数据执行免报名入选（生成报名记录并直接审核通过）。此过程不逐一提示，完成后汇总结果。',
+      okText: '确认入选',
+      cancelText: '取消',
+      onOk: async () => {
+        setBulkRegistering(true);
+        let okCount = 0;
+        let failCount = 0;
+        try {
+          let page = 1;
+          while (true) {
+            const res: any = await activityApi.getPresigns(activityId, { page, size: 100, status: PresignStatus.NOT_REGISTERED });
+            const list: PresignRecord[] = Array.isArray(res) ? res : (res?.list || []);
+            if (!list.length) break;
+            for (const item of list) {
+              try {
+                await activityApi.registerPresign(activityId, item.id);
+                okCount++;
+              } catch { failCount++; } // 单条失败静默，仅计数
+            }
+            if (list.length < 100) break;
+            page++;
+          }
+          Modal.success({
+            title: '全部入选完成',
+            content: `已成功执行 ${okCount} 条，失败 ${failCount} 条`,
+          });
+          refresh();
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '全部入选执行失败');
+        } finally {
+          setBulkRegistering(false);
+        }
+      },
+    });
+  };
+
   /** 免报名入选：预报名一键转为报名记录并审核通过（二次确认） */
   const handleRegisterPresign = (record: PresignRecord) => {
     const name = record.real_name || record.phone || '';
@@ -259,6 +304,7 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
         <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+          <Button icon={<CheckSquareOutlined />} loading={bulkRegistering} onClick={handleRegisterAll}>全部入选</Button>
           <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>下载模版</Button>
           <Upload accept=".xlsx,.xls" showUploadList={false} beforeUpload={(file) => { handleImportFile(file); return false; }}>
             <Button icon={<ImportOutlined />} loading={importing}>导入报名</Button>

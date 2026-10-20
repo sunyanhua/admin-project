@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Form, Input, Radio, Image } from 'antd';
+import { Button, Space, Form, Input, Radio, Image, Alert } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import {
   RegisterAuditStatus, ActivityType,
@@ -129,10 +129,18 @@ const ActivityRegisterDetailModal: React.FC<ActivityRegisterDetailModalProps> = 
         <div style={{ padding: 32, textAlign: 'center', color: '#999' }}>暂无报名信息</div>
       )}
 
-      {/* 审核操作（仅免费审核且待审核且非只读） */}
-      {isFreeReview && isPending && !readonly && (
+      {/* 审核操作（仅免费审核且非只读；已完成审核的记录可重新审核，并明确提示谨慎操作） */}
+      {isFreeReview && !readonly && (
         <div style={{ paddingTop: 16, marginTop: 8, borderTop: formConfig.length > 0 ? '1px solid #e8e8e8' : 'none' }}>
           <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>审核</div>
+          {!isPending && (
+            <Alert
+              type="warning"
+              showIcon
+              style={{ marginBottom: 12 }}
+              message="该用户报名已经完成审核，审核结果已通知用户。如无特殊原因，建议不要重新修改审核状态。"
+            />
+          )}
           <Radio.Group value={action} onChange={e => setAction(e.target.value)} style={{ marginBottom: 12 }}>
             <Radio value={RegisterAuditStatus.APPROVED}>入选</Radio>
             <Radio value={RegisterAuditStatus.REJECTED}>退回</Radio>

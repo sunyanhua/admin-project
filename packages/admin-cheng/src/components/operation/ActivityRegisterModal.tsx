@@ -351,13 +351,13 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           );
         }
         if (r.audit_status === RegisterAuditStatus.APPROVED) {
-          // 已入选且已完成现场签到 → 操作列显示「已签到」（点击仍可查看报名信息）
+          // 已入选且已完成现场签到 → 操作列显示「已签到」（点击打开审核界面，可重新审核并提示谨慎操作）
           if (r.checkin_at) {
-            return <Tag color="blue" icon={<CheckCircleOutlined />} title="已签到" style={{ cursor: 'pointer', borderRadius: 10 }} onClick={() => openDetail(r)}>已签到</Tag>;
+            return <Tag color="blue" icon={<CheckCircleOutlined />} title="已签到" style={{ cursor: 'pointer', borderRadius: 10 }} onClick={() => handleOpenAudit(r)}>已签到</Tag>;
           }
-          return <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已入选</Tag>;
+          return <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已入选</Tag>;
         }
-        return <Tag color="default" title="已退回" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已退回</Tag>;
+        return <Tag color="default" title="已退回" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已退回</Tag>;
       },
     });
   }
@@ -422,7 +422,12 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         {isFreeReview ? (
           <Tabs
             activeKey={tabKey}
-            onChange={setTabKey}
+            onChange={(key) => {
+              setTabKey(key);
+              // 切换 TAB 时执行对应列表的刷新：用户报名 → 刷新报名列表；导入报名 → 触发预报名列表重拉
+              if (key === 'register') refresh();
+              if (key === 'presign') setPresignReloadKey((k) => k + 1);
+            }}
             items={[
               { key: 'register', label: '用户报名', children: registerContent },
               { key: 'presign', label: '导入报名', children: <ActivityPresignTab activityId={activityId} reloadKey={presignReloadKey} /> },
