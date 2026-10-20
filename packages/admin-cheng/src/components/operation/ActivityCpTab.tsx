@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button, Empty, Spin, Tag } from 'antd';
-import { ReloadOutlined, HeartFilled, DeleteOutlined, CloudUploadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, HeartFilled, DeleteOutlined, CloudUploadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, RegisterRecord, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
 import { RegisterAuditStatus, RegisterGender } from '@shared/constants';
@@ -26,9 +26,9 @@ interface CpPerson extends CpCandidate {
   checkedIn?: boolean;
 }
 
-/** 单人资料卡：图片 + 昵称、姓名、年龄、（身高）、学历 */
+/** 单人资料卡：图片 + 昵称、姓名、年龄、（身高）、学历（图片与文字居上对齐） */
 const CpPersonCard: React.FC<{ person: CpPerson; showHeight?: boolean }> = ({ person, showHeight }) => (
-  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 10, alignItems: 'center' }}>
+  <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
     {person.photo ? (
       <img src={getMediumUrl(person.photo)} alt={person.nickname} style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
     ) : (
@@ -38,7 +38,7 @@ const CpPersonCard: React.FC<{ person: CpPerson; showHeight?: boolean }> = ({ pe
       <div style={{ fontWeight: 600, fontSize: 14, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         <span style={{ color: person.gender === 'male' ? '#0088cc' : '#eb5482', marginRight: 4 }}>{person.gender === 'male' ? '男' : '女'}</span>
         {person.nickname}
-        {person.checkedIn && <Tag color="green" style={{ fontSize: 10, lineHeight: '16px', marginLeft: 6 }}>已签到</Tag>}
+        {person.checkedIn && <Tag color="blue" icon={<CheckCircleOutlined />} style={{ fontSize: 10, lineHeight: '16px', marginLeft: 6 }}>已签到</Tag>}
       </div>
       <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>姓名：{person.realName || '-'}</div>
       <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
@@ -290,12 +290,12 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
                   style={{
                     width: 'calc(50% - 6px)', minWidth: 400, boxSizing: 'border-box',
                     border: 'solid 1px #f0f0f0', borderRadius: 8, background: '#fafafa',
-                    padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative',
+                    padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10, position: 'relative',
                   }}
                 >
                   <span style={{ position: 'absolute', top: 4, left: 10, fontSize: 12, color: '#999' }}>{i + 1}</span>
                   <CpPersonCard person={p.male} showHeight />
-                  <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0 }} />
+                  <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0, alignSelf: 'center' }} />
                   <CpPersonCard person={p.female} />
                 </div>
               ))
@@ -306,12 +306,12 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
                   style={{
                     width: 'calc(50% - 6px)', minWidth: 400, boxSizing: 'border-box',
                     border: 'solid 1px #f0f0f0', borderRadius: 8, background: '#fafafa',
-                    padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, position: 'relative',
+                    padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10, position: 'relative',
                   }}
                 >
                   <span style={{ position: 'absolute', top: 4, left: 10, fontSize: 12, color: '#999' }}>第 {item.seq} 组</span>
                   <CpPersonCard person={viewOf(item.male, 'male')} showHeight />
-                  <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0 }} />
+                  <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0, alignSelf: 'center' }} />
                   <CpPersonCard person={viewOf(item.female, 'female')} />
                   <Button
                     type="link" size="small" icon={<DeleteOutlined />}

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Tag, Space, Tabs, Avatar, InputNumber } from 'antd';
-import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -353,7 +353,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         if (r.audit_status === RegisterAuditStatus.APPROVED) {
           // 已入选且已完成现场签到 → 操作列显示「已签到」（点击仍可查看报名信息）
           if (r.checkin_at) {
-            return <Tag color="green" title="已签到" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已签到</Tag>;
+            return <Tag color="blue" icon={<CheckCircleOutlined />} title="已签到" style={{ cursor: 'pointer', borderRadius: 10 }} onClick={() => openDetail(r)}>已签到</Tag>;
           }
           return <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => openDetail(r)}>已入选</Tag>;
         }
