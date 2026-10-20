@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-10-20 10:35 | 9afc63c | feat: 组CP提交前先清空所有报名用户现场序号——点击提交先拉全部报名记录、对已有序号的记录逐条 DELETE 清空（分块并发 8，无批量接口），任一失败即终止提交并提示失败条数；清空成功后才按组顺序逐对提交配对；按钮分阶段提示（清空序号中…/提交中 x/N）+ 提交按钮下方注明清空行为 |
 | 2026-10-16 17:35 | b062354 | feat: 活动管理新增「默契问答管理」入口（承诺书模版管理旁）——打开拉取 settings keyword=activity_test 配置：分数范围（正整数 InputNumber）+ 题目（一句话一题，可添加/删除/拖动手柄排序）；保存将 { score_range, questions } JSON 化写回 setting（已存在 PATCH value、不存在 POST 创建 type=JSON group=activity）；解析/序列化/排序抽 quizConfig.utils 纯函数 + 11 单测 |
 | 2026-10-16 17:24 | e43d2ad | feat: 报名名单序号列支持清空——失焦清空输入走 DELETE /register/{rid}/onsite-number（置 NULL、重新进入「一键分配」补号池、不拦已配对成员），仅原有序号时提交；改数仍走 PATCH 单条更新；activity-v1 新增 clearOnsiteNumber |
 | 2026-10-16 17:15 | 72c0eaa | feat: 组CP TAB 接入 onsite-pairings 接口——打开先检测活动已保存配对（有：按序号「第 X 组」展示、每对可单独删除，删完自动回到组合模式；无：按已入选用户自动组合，下方「提交」按组顺序从序号 1 逐对提交、失败即停提示第几组、部分成功后重新检测模式）；已保存条目仅含基础公开资料，姓名/身高/学历/照片从报名记录补齐（补齐失败回退基础资料）；activity-v1 新增 getOnsitePairings/createOnsitePairing/deleteOnsitePairing 与配对类型 |
