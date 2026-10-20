@@ -90,7 +90,7 @@ const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?
         {number ?? '-'}
       </span>
       <span style={{ color: '#fff', fontSize: '3vh', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
-        {gender === 1 ? '♂ ' : gender === 2 ? '♀ ' : ''}{nick}
+        {nick}
       </span>
     </div>
   </div>
@@ -1120,8 +1120,8 @@ const ActivityOnsite: React.FC = () => {
                     <RankSide nick={male.nick} photo={male.photo} gender={male.gender} number={male.number} />
                     <div style={{ textAlign: 'center', minWidth: '11vw', flexShrink: 0 }}>
                       <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.4vh' }}>第 {i + 1} 名</div>
-                      <div style={{ fontSize: '5vh', color: '#ffd700', fontWeight: 'bold', lineHeight: 1.2 }}>{c.diff_total ?? '—'}</div>
-                      <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.2vh' }}>{c.diff_total == null ? '未完成答题' : '默契度'}</div>
+                      <div style={{ fontSize: '5vh', color: '#ffd700', fontWeight: 'bold', lineHeight: 1.2 }}>{c.diff_total != null ? 100 - c.diff_total : '—'}</div>
+                      <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.2vh' }}>默契度</div>
                     </div>
                     <RankSide nick={female.nick} photo={female.photo} gender={female.gender} number={female.number} right />
                   </div>
