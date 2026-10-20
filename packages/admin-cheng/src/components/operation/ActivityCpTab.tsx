@@ -61,6 +61,8 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
   const [serverPairs, setServerPairs] = useState<OnsitePairingAdminItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  /** 提交阶段：clear=清空序号中 pair=逐对提交中 */
+  const [submitPhase, setSubmitPhase] = useState<'clear' | 'pair'>('pair');
   const [submitProgress, setSubmitProgress] = useState(0);
   /** 报名记录补充资料（配对接口只回基础公开资料，姓名/身高/学历/照片从报名记录补齐） */
   const regMapRef = useRef<Map<string, CpPerson>>(new Map());
@@ -155,11 +157,56 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
     load();
   }, [load]);
 
-  /** 提交：按组顺序从序号 1 起逐对提交；失败即停并提示第几组 */
+  /**
+   * 清空全部报名记录的现场序号（提交组CP前置步骤）。
+   * 配对创建会按 seq 覆盖双方序号——先全部清空，保证未被配对的成员序号置空、配对成员由创建接口统一重排。
+   * 无批量清空接口：拉全部报名记录后对已有序号的记录逐条 DELETE（分块并发 8）。
+   * @returns 已清空条数与失败条数（失败不抛错，由调用方决定是否继续）
+   */
+  const clearAllOnsiteNumbers = useCallback(async (): Promise<{ cleared: number; failed: number }> => {
+    const regs: RegisterRecord[] = [];
+    let page = 1;
+    while (true) {
+      const res: any = await activityApi.getRegisters(activityId, { page, size: 100 });
+      const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+      if (!list.length) break;
+      regs.push(...list);
+      if (list.length < 100) break;
+      page++;
+    }
+    const targets = regs.filter((r) => r.onsite_number != null);
+    let failed = 0;
+    const BATCH = 8;
+    for (let i = 0; i < targets.length; i += BATCH) {
+      const chunk = targets.slice(i, i + BATCH);
+      const results = await Promise.allSettled(chunk.map((r) => activityApi.clearOnsiteNumber(activityId, r.id)));
+      failed += results.filter((x) => x.status === 'rejected').length;
+    }
+    return { cleared: targets.length - failed, failed };
+  }, [activityId]);
+
+  /** 提交：先清空所有报名用户序号，再按组顺序从序号 1 起逐对提交；任一步失败即停 */
   const handleSubmit = async () => {
     if (!autoPairs.length) return;
     setSubmitting(true);
+    setSubmitPhase('clear');
     setSubmitProgress(0);
+
+    // ① 清空所有报名用户序号（有失败即终止，不进入配对提交，避免编号混乱）
+    try {
+      const { cleared, failed } = await clearAllOnsiteNumbers();
+      if (failed > 0) {
+        showError(`序号清空失败 ${failed} 条，已终止提交`);
+        return;
+      }
+      if (cleared > 0) success(`已清空 ${cleared} 个现场序号`);
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '清空序号失败，已终止提交');
+      return;
+    }
+
+    // ② 逐对提交（seq 从 1 按组顺序）
+    setSubmitPhase('pair');
     let submitted = 0;
     try {
       for (let i = 0; i < autoPairs.length; i++) {
@@ -177,6 +224,7 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
       showError(`第 ${submitted + 1} 组提交失败：${err?.response?.data?.message || err?.message || '未知错误'}`);
     } finally {
       setSubmitting(false);
+      setSubmitPhase('pair');
       setSubmitProgress(0);
       // 部分提交后活动可能已有保存数据，重新检测模式
       await load();
@@ -271,8 +319,11 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
       {mode === 'auto' && autoPairs.length > 0 && (
         <div style={{ textAlign: 'center', marginTop: 16 }}>
           <Button type="primary" icon={<CloudUploadOutlined />} loading={submitting} onClick={handleSubmit}>
-            {submitting ? `提交中 ${submitProgress}/${autoPairs.length}` : `提交（${autoPairs.length} 组）`}
+            {submitting
+              ? (submitPhase === 'clear' ? '清空序号中…' : `提交中 ${submitProgress}/${autoPairs.length}`)
+              : `提交（${autoPairs.length} 组）`}
           </Button>
+          <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>提交前将先清空所有报名用户的现场序号</div>
         </div>
       )}
     </div>
