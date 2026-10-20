@@ -290,10 +290,10 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
                   style={{
                     width: 'calc(50% - 6px)', minWidth: 400, boxSizing: 'border-box',
                     border: 'solid 1px #f0f0f0', borderRadius: 8, background: '#fafafa',
-                    padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10, position: 'relative',
+                    padding: '28px 14px 12px', display: 'flex', alignItems: 'flex-start', gap: 10, position: 'relative',
                   }}
                 >
-                  <span style={{ position: 'absolute', top: 4, left: 10, fontSize: 12, color: '#999' }}>{i + 1}</span>
+                  <span style={{ position: 'absolute', top: 6, left: 10, fontSize: 12, color: '#999' }}>{i + 1}</span>
                   <CpPersonCard person={p.male} showHeight />
                   <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0, alignSelf: 'center' }} />
                   <CpPersonCard person={p.female} />
@@ -306,20 +306,20 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
                   style={{
                     width: 'calc(50% - 6px)', minWidth: 400, boxSizing: 'border-box',
                     border: 'solid 1px #f0f0f0', borderRadius: 8, background: '#fafafa',
-                    padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10, position: 'relative',
+                    padding: '28px 14px 12px', display: 'flex', alignItems: 'flex-start', gap: 10, position: 'relative',
                   }}
                 >
-                  <span style={{ position: 'absolute', top: 4, left: 10, fontSize: 12, color: '#999' }}>第 {item.seq} 组</span>
+                  <span style={{ position: 'absolute', top: 6, left: 10, fontSize: 12, color: '#999' }}>第 {item.seq} 组</span>
                   <CpPersonCard person={viewOf(item.male, 'male')} showHeight />
                   <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0, alignSelf: 'center' }} />
                   <CpPersonCard person={viewOf(item.female, 'female')} />
                   <Button
-                    type="link" size="small" icon={<DeleteOutlined />}
-                    style={{ position: 'absolute', top: 2, right: 6 }}
+                    type="text" size="small" icon={<DeleteOutlined style={{ fontSize: 12 }} />}
+                    style={{ position: 'absolute', top: 2, right: 8, height: 20, lineHeight: '20px', padding: '0 2px' }}
                     disabled={!!item.male?.checkin_at || !!item.female?.checkin_at}
-                    title={(item.male?.checkin_at || item.female?.checkin_at) ? '已有成员签到，不可删除' : undefined}
+                    title={(item.male?.checkin_at || item.female?.checkin_at) ? '已有成员签到，不可删除' : '删除该CP'}
                     onClick={() => handleDelete(item)}
-                  >删除</Button>
+                  />
                 </div>
               ))
             )}
