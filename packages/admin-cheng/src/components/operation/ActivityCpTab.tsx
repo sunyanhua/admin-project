@@ -26,8 +26,8 @@ interface CpPerson extends CpCandidate {
   checkedIn?: boolean;
 }
 
-/** 单人资料卡：图片 + 昵称、姓名、年龄、（身高）、学历（图片与文字居上对齐） */
-const CpPersonCard: React.FC<{ person: CpPerson; showHeight?: boolean }> = ({ person, showHeight }) => (
+/** 单人资料卡：图片 + 昵称、姓名、年龄、身高、学历（男女同款，图片与文字居上对齐） */
+const CpPersonCard: React.FC<{ person: CpPerson }> = ({ person }) => (
   <div style={{ flex: 1, minWidth: 0, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
     {person.photo ? (
       <img src={getMediumUrl(person.photo)} alt={person.nickname} style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
@@ -43,7 +43,7 @@ const CpPersonCard: React.FC<{ person: CpPerson; showHeight?: boolean }> = ({ pe
       <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>姓名：{person.realName || '-'}</div>
       <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
         年龄 {person.age && person.age > 0 ? person.age : '-'}
-        {showHeight && <> · 身高 {person.height && person.height > 0 ? `${person.height} cm` : '-'}</>}
+        {' · 身高 '}{person.height && person.height > 0 ? `${person.height} cm` : '-'}
         {' · 学历 '}{person.education && person.education > 0 ? (EducationLabels[person.education] || String(person.education)) : '-'}
       </div>
     </div>
@@ -294,7 +294,7 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
                   }}
                 >
                   <span style={{ position: 'absolute', top: 6, left: 10, fontSize: 12, color: '#999' }}>{i + 1}</span>
-                  <CpPersonCard person={p.male} showHeight />
+                  <CpPersonCard person={p.male} />
                   <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0, alignSelf: 'center' }} />
                   <CpPersonCard person={p.female} />
                 </div>
@@ -310,7 +310,7 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
                   }}
                 >
                   <span style={{ position: 'absolute', top: 6, left: 10, fontSize: 12, color: '#999' }}>第 {item.seq} 组</span>
-                  <CpPersonCard person={viewOf(item.male, 'male')} showHeight />
+                  <CpPersonCard person={viewOf(item.male, 'male')} />
                   <HeartFilled style={{ color: '#eb5482', fontSize: 18, flexShrink: 0, alignSelf: 'center' }} />
                   <CpPersonCard person={viewOf(item.female, 'female')} />
                   <Button
