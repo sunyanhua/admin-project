@@ -15989,7 +15989,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "查看本活动现场用户（仅入选+签到人员可见，需 C 端 JWT）。只展示入选+签到人员，\n可按性别筛选（1=男 2=女）；条目为基础公开资料+现场编号+签到时间。未入选/未签到报 40512。",
+                "description": "查看本活动现场用户（仅入选+签到人员可见，需 C 端 JWT）。只展示入选+签到人员，\n可按性别筛选（1=男 2=女）；条目为基础公开资料+现场编号+签到时间。未入选/未签到报 40512。\n默认按现场编号正序（未分配编号 NULLS LAST，同号以 id 兜底定序）。",
                 "produces": [
                     "application/json"
                 ],
@@ -22382,6 +22382,10 @@
                 "partner_checked_in": {
                     "description": "PartnerCheckedIn 对方本活动现场签到状态（未签到/无有效报名为 false）。",
                     "type": "boolean"
+                },
+                "partner_onsite_number": {
+                    "description": "PartnerOnsiteNumber 对方本活动现场编号（取自对方报名记录 onsite_number；\n未分配/无有效报名为 null）。与管理端单条编号调整同步——可与配对 seq 不同。",
+                    "type": "integer"
                 },
                 "seq": {
                     "description": "配对序号（= 本人现场编号；配对行为唯一事实源）",
