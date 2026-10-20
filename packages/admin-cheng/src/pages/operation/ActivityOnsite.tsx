@@ -229,9 +229,9 @@ const ActivityOnsite: React.FC = () => {
     }
   }, []);
 
-  /** 签到用户照片墙数据：报名记录全量过滤已签到 */
-  const fetchWall = useCallback(async () => {
-    if (!id) return;
+  /** 签到用户照片墙数据：报名记录全量过滤已签到；返回刷新后的照片墙（3/4 先查询再以此为筛选来源） */
+  const fetchWall = useCallback(async (): Promise<WallUser[] | null> => {
+    if (!id) return null;
     try {
       const regs: RegisterRecord[] = [];
       let page = 1;
@@ -256,11 +256,13 @@ const ActivityOnsite: React.FC = () => {
       });
       base.sort((a, b) => a.number - b.number);
       const ordered = interleaveGenders(base);
-      setWall(ordered);
       await upgradePhotos(ordered.map((u) => u.userId));
       // 用拉取到的照片重建（保持交错顺序）
-      setWall(ordered.map((u) => ({ ...u, photo: photoMapRef.current.get(u.userId) || u.photo })));
-    } catch { /* 轮询静默 */ }
+      const final = ordered.map((u) => ({ ...u, photo: photoMapRef.current.get(u.userId) || u.photo }));
+      setWall(final);
+      return final;
+    } catch { /* 查询失败静默，调用方回退现有数据 */ }
+    return null;
   }, [id, upgradePhotos]);
 
   /** 心动排名数据（有现场心动的配对，按现场心动次数倒序） */
@@ -281,7 +283,7 @@ const ActivityOnsite: React.FC = () => {
       const ids = all.flatMap((c) => [c.female?.user?.user_id, c.male?.user?.user_id]).filter(Boolean) as string[];
       await upgradePhotos(ids);
       setCouples([...all]); // 照片就绪后重建渲染
-    } catch { /* 轮询静默 */ }
+    } catch { /* 查询失败静默 */ }
   }, [id, upgradePhotos]);
 
   /** 默契度排名数据：未完成答题的配对不显示；现场序号从报名记录反查 */
@@ -319,7 +321,7 @@ const ActivityOnsite: React.FC = () => {
       const ids = ranked.flatMap((c) => [c.male?.user?.user_id, c.female?.user?.user_id]).filter(Boolean) as string[];
       await upgradePhotos(ids);
       setCpRanks([...ranked]);
-    } catch { /* 轮询静默 */ }
+    } catch { /* 查询失败静默 */ }
   }, [id, upgradePhotos]);
 
   useEffect(() => {
@@ -331,17 +333,10 @@ const ActivityOnsite: React.FC = () => {
         if (obj && typeof obj === 'object' && obj.bg_screen) setBgScreen(String(obj.bg_screen));
       } catch { /* 无配置保持默认渐变 */ }
     }).catch(() => {});
+    // 首次加载各数据源；之后不做轮询——每次按键先查询（1 签到 / 2 心动排名 / 3、4 先刷新签到 / 5 默契度）
     fetchWall();
     fetchCouples();
     fetchCpRank();
-    // 大屏轮询：10s 刷新（新签到/新配对实时上屏）；演示模式下跳过，避免覆盖演示数据
-    const timer = setInterval(() => {
-      if (demoRef.current) return;
-      fetchWall();
-      fetchCouples();
-      fetchCpRank();
-    }, 10000);
-    return () => clearInterval(timer);
   }, [id, fetchWall, fetchCouples, fetchCpRank]);
 
   /** 演示模式：按 0 键从系统随机抽 50 名左右男女用户模拟心形照片墙与配对 */
@@ -542,25 +537,26 @@ const ActivityOnsite: React.FC = () => {
     setLuckyOffsets([...luckyOffsetsRef.current]);
   }, []);
 
-  /** 进入幸运之星（快捷键 3）：先显示栏目封面，按 O 开始滚动 */
-  const startLucky = useCallback(() => {
+  /** 进入幸运之星（快捷键 3）：先查询最新签到数据作为转轮筛选来源，再显示栏目封面，按 O 开始滚动 */
+  const startLucky = useCallback(async () => {
     clearDrawTimer();
-    const pools = buildLuckyPools(wall, luckyCount, luckyGender);
+    const source = demoRef.current ? wall : ((await fetchWall()) ?? wall);
+    const pools = buildLuckyPools(source, luckyCount, luckyGender);
     // 每个转轮独立洗牌（各转轮人组合随机、互不相同），但都滚动全体嘉宾——性别要求不体现在候选滚动中，只控制最终落定的获奖者
-    const strips = pools.map(() => buildStrip(wall));
+    const strips = pools.map(() => buildStrip(source));
     luckyStripsRef.current = strips;
     luckyWinnerPoolsRef.current = pools;
-    luckyReelLensRef.current = strips.map(() => wall.length || 1);
+    luckyReelLensRef.current = strips.map(() => source.length || 1);
     setLuckyStrips(strips);
     // 初始偏移随机错开：起转瞬间各转轮展示不同位置，避免开滚时几个转轮一模一样整齐转动
-    luckyOffsetsRef.current = strips.map(() => Math.floor(Math.random() * Math.max(1, wall.length)));
+    luckyOffsetsRef.current = strips.map(() => Math.floor(Math.random() * Math.max(1, source.length)));
     setLuckyOffsets([...luckyOffsetsRef.current]);
     setLuckySnaps(strips.map(() => false));
     setReelSpeed(90);
     setTab('lucky');
     setDrawPhase('cover');
     setDrawWinners([]);
-  }, [clearDrawTimer, wall, luckyCount, luckyGender, buildStrip]);
+  }, [clearDrawTimer, wall, luckyCount, luckyGender, buildStrip, fetchWall]);
 
   /** 进入默契度排名（快捷键 5）：演示模式用演示配对生成随机差异分排名 */
   const startCpRank = useCallback(() => {
@@ -606,24 +602,25 @@ const ActivityOnsite: React.FC = () => {
   };
 
   // 配置变更时：若停留在幸运之星封面，立即按新配置重建转轮；滚动中/已揭晓时留到下次按 3 生效。
-  // 依赖仅取配置本身——wall 10s 轮询刷新不重建（避免封面反复洗牌），tab/drawPhase 在闭包中读取当前值
+  // 依赖仅取配置本身——wall 数据变化不重建（避免封面反复洗牌），tab/drawPhase 在闭包中读取当前值
   useEffect(() => {
     if (tab === 'lucky' && drawPhase === 'cover') startLucky();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [luckyCount, luckyGender]);
 
-  /** 进入能成时刻（快捷键 4） */
-  const startCouple = useCallback(() => {
+  /** 进入能成时刻（快捷键 4）：先查询最新签到数据作为转轮筛选来源 */
+  const startCouple = useCallback(async () => {
     clearDrawTimer();
-    const males = malesOf();
-    const females = femalesOf();
+    const source = demoRef.current ? wall : ((await fetchWall()) ?? wall);
+    const males = source.filter((u) => u.gender === 'male');
+    const females = source.filter((u) => u.gender === 'female');
     // 某一性别不足时退回全体嘉宾，保证转轮可用
-    const fStrip = buildStrip(females.length ? females : [...wall]);
-    const mStrip = buildStrip(males.length ? males : [...wall]);
+    const fStrip = buildStrip(females.length ? females : [...source]);
+    const mStrip = buildStrip(males.length ? males : [...source]);
     femaleStripRef.current = fStrip;
     maleStripRef.current = mStrip;
-    femaleReelLenRef.current = (females.length || wall.length) || 1;
-    maleReelLenRef.current = (males.length || wall.length) || 1;
+    femaleReelLenRef.current = (females.length || source.length) || 1;
+    maleReelLenRef.current = (males.length || source.length) || 1;
     setFemaleStrip(fStrip);
     setMaleStrip(mStrip);
     fOffsetRef.current = 0;
@@ -634,7 +631,7 @@ const ActivityOnsite: React.FC = () => {
     setTab('couple');
     setDrawPhase('cover');
     setDrawPairWinner(null);
-  }, [clearDrawTimer, malesOf, femalesOf, wall, buildStrip]);
+  }, [clearDrawTimer, wall, buildStrip, fetchWall]);
 
   /** O：开始滚动（条带自上而下快速移动，照片首尾相连） */
   const beginRoll = useCallback(() => {
@@ -801,7 +798,7 @@ const ActivityOnsite: React.FC = () => {
     step(0);
   }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets]);
 
-  // 键盘切换：0 演示 / 1 嘉宾一览 / 2 心动排名 / 3 幸运之星 / 4 能成时刻 / 5 默契度排名 / o 开始滚动 / p 减速停下
+  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 签到数据 / 2 心动排名 / 3、4 先刷新签到数据 / 5 默契度 / o 开始滚动 / p 减速停下
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
