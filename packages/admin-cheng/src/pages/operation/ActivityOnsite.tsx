@@ -2,9 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Select } from 'antd';
 import { HeartFilled } from '@ant-design/icons';
-import { activityApi, RegisterRecord, OnsiteCouple } from '@/api/services/activity-v1';
+import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
-import { getFullWidthUrl } from '@/utils/imageUtils';
+import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { buildLuckyPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -75,6 +75,22 @@ const buildWallItems = (photos: WallUser[]): WallItem[] => {
   });
 };
 
+/** 默契度排名单人侧：图片 + 昵称（right=女生侧，内容靠右对齐） */
+const RankSide: React.FC<{ nick: string; photo: string; gender?: number; right?: boolean }> = ({ nick, photo, gender, right }) => (
+  <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1.2vw', flexDirection: right ? 'row-reverse' : 'row' }}>
+    {photo ? (
+      <img src={photo} alt={nick} style={{ width: '9vh', height: '9vh', borderRadius: '1vh', objectFit: 'cover', border: 'solid 2px rgba(255,255,255,.6)', flexShrink: 0 }} />
+    ) : (
+      <div style={{ width: '9vh', height: '9vh', borderRadius: '1vh', background: 'rgba(255,255,255,.15)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.5)', fontSize: '3vh' }}>
+        {gender === 1 ? '男' : gender === 2 ? '女' : '?'}
+      </div>
+    )}
+    <div style={{ color: '#fff', fontSize: '3vh', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, textAlign: right ? 'right' : 'left' }}>
+      {gender === 1 ? '♂ ' : gender === 2 ? '♀ ' : ''}{nick}
+    </div>
+  </div>
+);
+
 /** 演示模式占位头像（SVG 数据 URI，无网络依赖） */
 const demoAvatar = (i: number, gender: 'male' | 'female') => {
   const palettes = ['#e04d2c', '#eb5482', '#0088cc', '#6c5ce7', '#00b894', '#f0932b', '#e056fd'];
@@ -86,10 +102,12 @@ const demoAvatar = (i: number, gender: 'male' | 'female') => {
 
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [tab, setTab] = useState<'list' | 'feeling' | 'lucky' | 'couple'>('list');
+  const [tab, setTab] = useState<'list' | 'feeling' | 'lucky' | 'couple' | 'cpRank'>('list');
   const [scale, setScale] = useState(1);
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
+  /** 默契度排名：现场配对按默契度差异正序（未完成计算排最后） */
+  const [cpRanks, setCpRanks] = useState<OnsitePairingAdminItem[]>([]);
   const [focusIdx, setFocusIdx] = useState(0);
   /** 胶片模式：交叉渐变的当前层/下一层 */
   const [current, setCurrent] = useState<WallUser | null>(null);
@@ -259,6 +277,28 @@ const ActivityOnsite: React.FC = () => {
     } catch { /* 轮询静默 */ }
   }, [id, upgradePhotos]);
 
+  /** 默契度排名数据（现场配对按默契度差异正序，未完成计算排最后） */
+  const fetchCpRank = useCallback(async () => {
+    if (!id) return;
+    try {
+      const all: OnsitePairingAdminItem[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await activityApi.getOnsitePairings(id, { page, size: 100, sort_by: 'diff' });
+        const list: OnsitePairingAdminItem[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        all.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      setCpRanks(all);
+      // 批量补拉脱单照片（配对接口只回基础头像）；照片就绪后重建渲染
+      const ids = all.flatMap((c) => [c.male?.user?.user_id, c.female?.user?.user_id]).filter(Boolean) as string[];
+      await upgradePhotos(ids);
+      setCpRanks([...all]);
+    } catch { /* 轮询静默 */ }
+  }, [id, upgradePhotos]);
+
   useEffect(() => {
     if (!id) return;
     // 活动详情：取现场大屏背景图（onsite_config.bg_screen）
@@ -270,14 +310,16 @@ const ActivityOnsite: React.FC = () => {
     }).catch(() => {});
     fetchWall();
     fetchCouples();
+    fetchCpRank();
     // 大屏轮询：10s 刷新（新签到/新配对实时上屏）；演示模式下跳过，避免覆盖演示数据
     const timer = setInterval(() => {
       if (demoRef.current) return;
       fetchWall();
       fetchCouples();
+      fetchCpRank();
     }, 10000);
     return () => clearInterval(timer);
-  }, [id, fetchWall, fetchCouples]);
+  }, [id, fetchWall, fetchCouples, fetchCpRank]);
 
   /** 演示模式：按 0 键从系统随机抽 50 名左右男女用户模拟心形照片墙与配对 */
   const toggleDemo = useCallback(async () => {
@@ -497,6 +539,41 @@ const ActivityOnsite: React.FC = () => {
     setDrawWinners([]);
   }, [clearDrawTimer, wall, luckyCount, luckyGender, buildStrip]);
 
+  /** 进入默契度排名（快捷键 5）：演示模式用演示配对生成随机差异分排名 */
+  const startCpRank = useCallback(() => {
+    clearDrawTimer();
+    if (demoRef.current) {
+      const demoRanks: OnsitePairingAdminItem[] = couples
+        .map((c, i) => ({
+          id: `demo-rank-${i}`,
+          seq: i + 1,
+          diff_total: 1 + Math.floor(Math.random() * 30),
+          male_submitted: true,
+          female_submitted: true,
+          male: { profile: { nickname: c.male?.profile?.nickname, avatar: c.male?.profile?.avatar, gender: 1 } },
+          female: { profile: { nickname: c.female?.profile?.nickname, avatar: c.female?.profile?.avatar, gender: 2 } },
+        }))
+        .sort((a, b) => (a.diff_total ?? 0) - (b.diff_total ?? 0));
+      setCpRanks(demoRanks);
+      setTab('cpRank');
+      return;
+    }
+    setTab('cpRank');
+    fetchCpRank();
+  }, [clearDrawTimer, couples, fetchCpRank]);
+
+  /** 默契度排名单人侧展示资料（脱单照片优先，缺失回退头像） */
+  const rankUserOf = (u?: OnsitePairingUserAdmin) => {
+    const userId = u?.user?.user_id || '';
+    const avatar = u?.profile?.avatar || '';
+    const raw = photoMapRef.current.get(userId) || avatar;
+    return {
+      nick: u?.profile?.nickname || userId || '-',
+      photo: raw ? getMediumUrl(raw) : '',
+      gender: u?.profile?.gender,
+    };
+  };
+
   // 配置变更时：若停留在幸运之星封面，立即按新配置重建转轮；滚动中/已揭晓时留到下次按 3 生效。
   // 依赖仅取配置本身——wall 10s 轮询刷新不重建（避免封面反复洗牌），tab/drawPhase 在闭包中读取当前值
   useEffect(() => {
@@ -693,7 +770,7 @@ const ActivityOnsite: React.FC = () => {
     step(0);
   }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets]);
 
-  // 键盘切换：0 演示 / 1 嘉宾一览 / 2 心动排名 / 3 幸运之星 / 4 能成时刻 / z 布局 / o 开始滚动 / p 减速停下
+  // 键盘切换：0 演示 / 1 嘉宾一览 / 2 心动排名 / 3 幸运之星 / 4 能成时刻 / 5 默契度排名 / o 开始滚动 / p 减速停下
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
@@ -704,13 +781,13 @@ const ActivityOnsite: React.FC = () => {
       else if (e.key === '2') switchTab('feeling');
       else if (e.key === '3') startLucky();
       else if (e.key === '4') startCouple();
-      else if (e.key === 'z' || e.key === 'Z') setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'));
+      else if (e.key === '5') startCpRank();
       else if (e.key === 'o' || e.key === 'O') beginRoll();
       else if (e.key === 'p' || e.key === 'P') slowRoll();
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, [toggleDemo, switchTab, startLucky, startCouple, beginRoll, slowRoll]);
+  }, [toggleDemo, switchTab, startLucky, startCouple, startCpRank, beginRoll, slowRoll]);
 
   // 离开抽奖环节时清理滚动定时器
   useEffect(() => {
@@ -807,7 +884,15 @@ const ActivityOnsite: React.FC = () => {
               />
             </div>
           )}
-          {/* 界面切换（按钮注明快捷键，两行每行两个；展示切换为纯切换无高亮态） */}
+          {/* 展示形式（仅嘉宾展示界面显示）：爱心放大=心形照片墙 电影播放=中央聚焦+底部胶片 */}
+          {tab === 'list' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>展示形式</span>
+              <button onClick={() => setWallMode('heart')} style={wallMode === 'heart' ? toolBtnActive : toolBtn}>爱心放大</button>
+              <button onClick={() => setWallMode('spotlight')} style={wallMode === 'spotlight' ? toolBtnActive : toolBtn}>电影播放</button>
+            </div>
+          )}
+          {/* 界面切换（按钮注明快捷键） */}
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 6 }}>
@@ -815,8 +900,8 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={() => switchTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名(2)</button>
               <button onClick={startLucky} style={tab === 'lucky' ? toolBtnActive : toolBtn}>幸运之星(3)</button>
               <button onClick={startCouple} style={tab === 'couple' ? toolBtnActive : toolBtn}>能成时刻(4)</button>
+              <button onClick={startCpRank} style={tab === 'cpRank' ? toolBtnActive : toolBtn}>默契度排名(5)</button>
               <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
-              <button onClick={() => setWallMode((m) => (m === 'heart' ? 'spotlight' : 'heart'))} style={toolBtn}>展示切换(z)</button>
             </div>
           </div>
         </div>
@@ -989,6 +1074,30 @@ const ActivityOnsite: React.FC = () => {
               ))}
             </div>
           )
+        ) : tab === 'cpRank' ? (
+          /* ====== 默契度排名（5）：CP组合按默契度差异正序排名（左男右女，中间默契度分数，未完成答题排最后） ====== */
+          <div style={{ height: '100%', overflowY: 'auto', padding: '5vh 6vw 10vh' }}>
+            <div className="draw-cover-title" style={{ textAlign: 'center', marginBottom: '4vh' }}>默契度排名</div>
+            {cpRanks.length === 0 ? (
+              <div style={{ textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无CP组合</div>
+            ) : (
+              cpRanks.map((c, i) => {
+                const male = rankUserOf(c.male);
+                const female = rankUserOf(c.female);
+                return (
+                  <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '2vw', background: 'rgba(0,0,0,.35)', borderRadius: '1.3vh', padding: '1.8vh 2.5vw', marginBottom: '1.5vh' }}>
+                    <RankSide nick={male.nick} photo={male.photo} gender={male.gender} />
+                    <div style={{ textAlign: 'center', minWidth: '11vw', flexShrink: 0 }}>
+                      <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.4vh' }}>第 {i + 1} 名</div>
+                      <div style={{ fontSize: '5vh', color: '#ffd700', fontWeight: 'bold', lineHeight: 1.2 }}>{c.diff_total ?? '—'}</div>
+                      <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.2vh' }}>{c.diff_total == null ? '未完成答题' : '默契度'}</div>
+                    </div>
+                    <RankSide nick={female.nick} photo={female.photo} gender={female.gender} right />
+                  </div>
+                );
+              })
+            )}
+          </div>
         ) : couples.length === 0 ? (
           <div style={{ paddingTop: '30vh', textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无配对</div>
         ) : (
