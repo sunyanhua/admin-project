@@ -75,8 +75,8 @@ const buildWallItems = (photos: WallUser[]): WallItem[] => {
   });
 };
 
-/** 默契度排名单人侧：图片 + 昵称（right=女生侧，内容靠右对齐） */
-const RankSide: React.FC<{ nick: string; photo: string; gender?: number; right?: boolean }> = ({ nick, photo, gender, right }) => (
+/** 默契度排名单人侧：现场序号 + 图片 + 昵称（right=女生侧，内容靠右对齐） */
+const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?: number; right?: boolean }> = ({ nick, photo, gender, number, right }) => (
   <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1.2vw', flexDirection: right ? 'row-reverse' : 'row' }}>
     {photo ? (
       <img src={photo} alt={nick} style={{ width: '9vh', height: '9vh', borderRadius: '1vh', objectFit: 'cover', border: 'solid 2px rgba(255,255,255,.6)', flexShrink: 0 }} />
@@ -85,8 +85,13 @@ const RankSide: React.FC<{ nick: string; photo: string; gender?: number; right?:
         {gender === 1 ? '男' : gender === 2 ? '女' : '?'}
       </div>
     )}
-    <div style={{ color: '#fff', fontSize: '3vh', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, textAlign: right ? 'right' : 'left' }}>
-      {gender === 1 ? '♂ ' : gender === 2 ? '♀ ' : ''}{nick}
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6vw', minWidth: 0, flexDirection: right ? 'row-reverse' : 'row' }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '4.5vh', height: '4.5vh', borderRadius: '50%', background: gender === 1 ? '#0088cc' : '#eb5482', color: '#fff', fontSize: '2.4vh', fontWeight: 'bold', padding: '0 0.8vh', boxSizing: 'border-box', flexShrink: 0 }}>
+        {number ?? '-'}
+      </span>
+      <span style={{ color: '#fff', fontSize: '3vh', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+        {gender === 1 ? '♂ ' : gender === 2 ? '♀ ' : ''}{nick}
+      </span>
     </div>
   </div>
 );
@@ -162,6 +167,8 @@ const ActivityOnsite: React.FC = () => {
   const wallRef = useRef<HTMLDivElement>(null);
   /** 用户照片缓存（脱单照片优先，缺失回退头像）；批量补拉后靠 setState 重建触发重渲染 */
   const photoMapRef = useRef<Map<string, string>>(new Map());
+  /** 报名用户现场序号映射（配对条目不带序号，默契度排名从报名记录反查） */
+  const onsiteNumMapRef = useRef<Map<string, number>>(new Map());
 
   /**
    * 按图片实际比例钳制位置：整卡（含旋转）完整落在墙内；
@@ -277,12 +284,27 @@ const ActivityOnsite: React.FC = () => {
     } catch { /* 轮询静默 */ }
   }, [id, upgradePhotos]);
 
-  /** 默契度排名数据（现场配对按默契度差异正序，未完成计算排最后） */
+  /** 默契度排名数据：未完成答题的配对不显示；现场序号从报名记录反查 */
   const fetchCpRank = useCallback(async () => {
     if (!id) return;
     try {
-      const all: OnsitePairingAdminItem[] = [];
+      // ① 报名记录反查现场序号（配对条目只回基础公开资料）
+      const numMap = new Map<string, number>();
       let page = 1;
+      while (true) {
+        const res: any = await activityApi.getRegisters(id, { page, size: 100 });
+        const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        list.forEach((r) => {
+          if (r.user_id && r.onsite_number != null) numMap.set(r.user_id, r.onsite_number);
+        });
+        if (list.length < 100) break;
+        page++;
+      }
+      onsiteNumMapRef.current = numMap;
+      // ② 配对列表（按默契度差异正序）；未完成答题（diff_total 为空）不参与排名
+      const all: OnsitePairingAdminItem[] = [];
+      page = 1;
       while (true) {
         const res: any = await activityApi.getOnsitePairings(id, { page, size: 100, sort_by: 'diff' });
         const list: OnsitePairingAdminItem[] = Array.isArray(res) ? res : (res?.list || []);
@@ -291,11 +313,12 @@ const ActivityOnsite: React.FC = () => {
         if (list.length < 100) break;
         page++;
       }
-      setCpRanks(all);
-      // 批量补拉脱单照片（配对接口只回基础头像）；照片就绪后重建渲染
-      const ids = all.flatMap((c) => [c.male?.user?.user_id, c.female?.user?.user_id]).filter(Boolean) as string[];
+      const ranked = all.filter((c) => c.diff_total != null);
+      setCpRanks(ranked);
+      // ③ 批量补拉脱单照片（配对接口只回基础头像）；照片就绪后重建渲染
+      const ids = ranked.flatMap((c) => [c.male?.user?.user_id, c.female?.user?.user_id]).filter(Boolean) as string[];
       await upgradePhotos(ids);
-      setCpRanks([...all]);
+      setCpRanks([...ranked]);
     } catch { /* 轮询静默 */ }
   }, [id, upgradePhotos]);
 
@@ -550,10 +573,17 @@ const ActivityOnsite: React.FC = () => {
           diff_total: 1 + Math.floor(Math.random() * 30),
           male_submitted: true,
           female_submitted: true,
-          male: { profile: { nickname: c.male?.profile?.nickname, avatar: c.male?.profile?.avatar, gender: 1 } },
-          female: { profile: { nickname: c.female?.profile?.nickname, avatar: c.female?.profile?.avatar, gender: 2 } },
+          male: { user: { user_id: `demo-rm-${i}` }, profile: { nickname: c.male?.profile?.nickname, avatar: c.male?.profile?.avatar, gender: 1 } },
+          female: { user: { user_id: `demo-rf-${i}` }, profile: { nickname: c.female?.profile?.nickname, avatar: c.female?.profile?.avatar, gender: 2 } },
         }))
         .sort((a, b) => (a.diff_total ?? 0) - (b.diff_total ?? 0));
+      // 演示现场序号 = 配对序号（与创建配对同步写序号的行为一致）
+      onsiteNumMapRef.current = new Map(
+        demoRanks.flatMap((c) => [
+          [c.male?.user?.user_id || '', c.seq],
+          [c.female?.user?.user_id || '', c.seq],
+        ] as [string, number][]),
+      );
       setCpRanks(demoRanks);
       setTab('cpRank');
       return;
@@ -562,7 +592,7 @@ const ActivityOnsite: React.FC = () => {
     fetchCpRank();
   }, [clearDrawTimer, couples, fetchCpRank]);
 
-  /** 默契度排名单人侧展示资料（脱单照片优先，缺失回退头像） */
+  /** 默契度排名单人侧展示资料（脱单照片优先，缺失回退头像；现场序号从报名记录反查） */
   const rankUserOf = (u?: OnsitePairingUserAdmin) => {
     const userId = u?.user?.user_id || '';
     const avatar = u?.profile?.avatar || '';
@@ -571,6 +601,7 @@ const ActivityOnsite: React.FC = () => {
       nick: u?.profile?.nickname || userId || '-',
       photo: raw ? getMediumUrl(raw) : '',
       gender: u?.profile?.gender,
+      number: userId ? onsiteNumMapRef.current.get(userId) : undefined,
     };
   };
 
@@ -1075,24 +1106,24 @@ const ActivityOnsite: React.FC = () => {
             </div>
           )
         ) : tab === 'cpRank' ? (
-          /* ====== 默契度排名（5）：CP组合按默契度差异正序排名（左男右女，中间默契度分数，未完成答题排最后） ====== */
+          /* ====== 默契度排名（5）：已完成答题的CP组合按默契度差异正序排名（左男右女带现场序号，中间默契度分数） ====== */
           <div style={{ height: '100%', overflowY: 'auto', padding: '5vh 6vw 10vh' }}>
             <div className="draw-cover-title" style={{ textAlign: 'center', marginBottom: '4vh' }}>默契度排名</div>
             {cpRanks.length === 0 ? (
-              <div style={{ textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无CP组合</div>
+              <div style={{ textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无已完成答题的CP组合</div>
             ) : (
               cpRanks.map((c, i) => {
                 const male = rankUserOf(c.male);
                 const female = rankUserOf(c.female);
                 return (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '2vw', background: 'rgba(0,0,0,.35)', borderRadius: '1.3vh', padding: '1.8vh 2.5vw', marginBottom: '1.5vh' }}>
-                    <RankSide nick={male.nick} photo={male.photo} gender={male.gender} />
+                    <RankSide nick={male.nick} photo={male.photo} gender={male.gender} number={male.number} />
                     <div style={{ textAlign: 'center', minWidth: '11vw', flexShrink: 0 }}>
                       <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.4vh' }}>第 {i + 1} 名</div>
                       <div style={{ fontSize: '5vh', color: '#ffd700', fontWeight: 'bold', lineHeight: 1.2 }}>{c.diff_total ?? '—'}</div>
                       <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.2vh' }}>{c.diff_total == null ? '未完成答题' : '默契度'}</div>
                     </div>
-                    <RankSide nick={female.nick} photo={female.photo} gender={female.gender} right />
+                    <RankSide nick={female.nick} photo={female.photo} gender={female.gender} number={female.number} right />
                   </div>
                 );
               })
