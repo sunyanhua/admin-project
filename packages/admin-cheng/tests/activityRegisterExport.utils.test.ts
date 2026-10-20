@@ -164,4 +164,38 @@ describe('buildRegisterExportSheet', () => {
     expect(sheet.photoColCount).toBe(0);
     expect(sheet.rows[0]).toHaveLength(sheet.headers.length);
   });
+
+  it('表头首列为现场序号，行首为 onsite_number（未分配为空串）', () => {
+    const sheet = buildRegisterExportSheet(
+      [sampleRecord({ onsite_number: 7 }), sampleRecord({ id: 'r2', user_id: 'u2' })],
+      { activityType: ActivityType.FREE_REVIEW, idCardMap: {}, formConfig: [] },
+    );
+    expect(sheet.headers[0]).toBe('现场序号');
+    expect(sheet.rows[0][0]).toBe('7');
+    expect(sheet.rows[1][0]).toBe('');
+  });
+
+  it('免报名入选（未注册）行：用户名显示未注册，姓名/性别/手机号取预报名反查字段', () => {
+    const record = sampleRecord({
+      id: 'r3',
+      user_id: '',
+      presign_id: 'p1',
+      presign_real_name: '张三',
+      presign_gender: 1,
+      presign_phone: '13800000000',
+    });
+    const sheet = buildRegisterExportSheet([record], {
+      activityType: ActivityType.FREE_REVIEW,
+      idCardMap: {},
+      formConfig: [],
+    });
+    const row = sheet.rows[0];
+    const idx = (name: string) => sheet.headers.indexOf(name);
+    expect(row[idx('现场序号')]).toBe('');
+    expect(row[idx('用户名')]).toBe('未注册');
+    expect(row[idx('姓名')]).toBe('张三');
+    expect(row[idx('性别')]).toBe('男');
+    expect(row[idx('手机号')]).toBe('13800000000');
+    expect(row[idx('个人主页')]).toBe('');
+  });
 });

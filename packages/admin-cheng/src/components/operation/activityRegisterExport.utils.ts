@@ -19,7 +19,7 @@ import { PROFILE_H5_URL_PREFIX, buildProfileUrl, splitPhotos } from './excelExpo
 export { PROFILE_H5_URL_PREFIX, buildProfileUrl, splitPhotos };
 
 /** 基础信息表头（照片列之前），照片列起始索引即其长度 */
-export const BASE_HEADERS = ['用户名', '姓名', '身份证号', '性别', '年龄', '手机号', '婚姻状况', '学历', '户籍', '单位'];
+export const BASE_HEADERS = ['现场序号', '用户名', '姓名', '身份证号', '性别', '年龄', '手机号', '婚姻状况', '学历', '户籍', '单位'];
 
 /**
  * 导出表头：基础列 + 照片（仅第一张，全名单有照片时）+ 类型相关状态列 + 表单配置列 + 个人主页
@@ -71,16 +71,18 @@ export function buildRegisterExportSheet(items: RegisterRecord[], ctx: RegisterE
 export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext & { photoCount: number }): string[] {
   const up = item.user_profile;
   const mp = item.user_match_profile as any;
-  const nickname = up?.nickname || item.nickname || item.user_id;
-  const name = mp?.real_name || '';
-  const gender = up?.gender ?? item.gender;
+  // 免报名入选（未注册，无 user_id）：导出预报名反查补齐的可用信息（姓名/性别/手机号），与列表展示一致
+  const nickname = item.user_id ? (up?.nickname || item.nickname || item.user_id) : '未注册';
+  const name = item.presign_real_name || mp?.real_name || '';
+  const gender = item.presign_gender ?? up?.gender ?? item.gender;
   const genderLabel = gender != null ? (RegisterGenderLabels[gender] ?? String(gender)) : '';
   const age = up?.age ?? item.age ?? '';
-  const phone = (item.user_data as any)?.phone || item.phone || '';
+  const phone = item.presign_phone || (item.user_data as any)?.phone || item.phone || '';
   const marital = mp?.marital_status != null ? (MaritalStatusLabels[mp.marital_status] || String(mp.marital_status)) : '';
   const edu = mp?.education != null ? (EducationLabels[mp.education] || String(mp.education)) : '';
   const household = mp?.household_registration || '';
   const workplace = mp?.workplace || '';
+  const onsite = item.onsite_number != null ? String(item.onsite_number) : '';
   const createdAt = item.created_at ? item.created_at.replace('T', ' ').substring(0, 19) : '';
   const completedAt = item.completed_at ? item.completed_at.replace('T', ' ').substring(0, 19) : '';
   let formDataMap: Record<string, any> = {};
@@ -92,7 +94,7 @@ export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext 
     attsByField[tag].push(att.url);
   }
 
-  const row = [nickname, name, ctx.idCardMap[item.user_id] || '', genderLabel, String(age), phone, marital, edu, household, workplace];
+  const row = [onsite, nickname, name, ctx.idCardMap[item.user_id] || '', genderLabel, String(age), phone, marital, edu, household, workplace];
   // 照片只导出第一张
   const photoUrls = splitPhotos(item.user_match_profile?.photos).slice(0, 1);
   row.push(...photoUrls, ...new Array(Math.max(0, ctx.photoCount - photoUrls.length)).fill(''));

@@ -149,9 +149,12 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         ? await privacyBatchFetcher(allData, activityId)
         : (userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {});
 
+      // 免报名入选（未注册）记录反查预报名补齐姓名/性别/手机号——导出与列表展示一致
+      const enriched = await enrichAdminRecords(allData);
+
       // 组装导出数据：表头 + 数据行 + 照片列/个人主页列位置
       const { headers, rows, photoColStart, photoColCount, profileCol } =
-        buildRegisterExportSheet(allData, { activityType, idCardMap, formConfig });
+        buildRegisterExportSheet(enriched, { activityType, idCardMap, formConfig });
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
       // 照片列/个人主页列：列宽 + 单元格链接（照片=超链接，个人主页=HYPERLINK 公式）
