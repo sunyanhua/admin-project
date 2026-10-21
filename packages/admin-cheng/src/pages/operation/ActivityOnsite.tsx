@@ -124,8 +124,8 @@ const ActivityOnsite: React.FC = () => {
   const [demo, setDemo] = useState(false);
   /** 现场大屏背景图（活动 onsite_config.bg_screen，未配置用默认渐变） */
   const [bgScreen, setBgScreen] = useState('');
-  /** 背景模式：cover=等比铺满（不裁剪比例填满，裁掉溢出） stretch=全屏铺满（拉伸 100%×100%） */
-  const [bgMode, setBgMode] = useState<'cover' | 'stretch'>('cover');
+  /** 背景模式：cover=等比铺满（裁掉溢出） stretch=全屏铺满（拉伸 100%×100%） contain=等比完整（图片完整显示，超出部分黑色底） */
+  const [bgMode, setBgMode] = useState<'cover' | 'stretch' | 'contain'>('cover');
   /** 照片墙布局：heart=心形（默认） spotlight=中央聚焦+底部胶片 */
   const [wallMode, setWallMode] = useState<'heart' | 'spotlight'>('heart');
   /** 抽奖环节：cover=栏目封面 rolling=滚动中 slowing=减速中 done=已揭晓 */
@@ -858,7 +858,9 @@ const ActivityOnsite: React.FC = () => {
         background: bgScreen
           ? (bgMode === 'stretch'
             ? `url(${bgScreen}) center / 100% 100% no-repeat`
-            : `url(${bgScreen}) center / cover no-repeat`)
+            : bgMode === 'contain'
+              ? `#000 url(${bgScreen}) center / contain no-repeat`
+              : `url(${bgScreen}) center / cover no-repeat`)
           : 'linear-gradient(160deg,#2b0a3d 0%,#4a1030 45%,#7a1a2e 100%)',
         overflow: 'hidden',
         position: 'relative',
@@ -888,6 +890,7 @@ const ActivityOnsite: React.FC = () => {
               <span style={{ marginRight: 4 }}>背景模式</span>
               <button onClick={() => setBgMode('cover')} style={bgMode === 'cover' ? toolBtnActive : toolBtn}>等比铺满</button>
               <button onClick={() => setBgMode('stretch')} style={bgMode === 'stretch' ? toolBtnActive : toolBtn}>全屏铺满</button>
+              <button onClick={() => setBgMode('contain')} style={bgMode === 'contain' ? toolBtnActive : toolBtn}>等比完整</button>
             </div>
           )}
           {/* 幸运之星配置（仅幸运之星界面显示） */}
