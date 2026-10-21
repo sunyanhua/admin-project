@@ -320,7 +320,7 @@ export const activityApi = {
   // ========================
 
   /** 活动报名记录列表 */
-  getRegisters: (activityId: string, params?: { page?: number; size?: number; audit_status?: number; pay_status?: number; gender?: number; keyword?: string }) => {
+  getRegisters: (activityId: string, params?: { page?: number; size?: number; audit_status?: number; pay_status?: number; gender?: number; keyword?: string; checked_in?: boolean }) => {
     return request.get(`/admin/v1/bizops/activity/${activityId}/register`, { params });
   },
 

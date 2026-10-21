@@ -42,6 +42,9 @@ interface ActivityRegisterModalProps {
 }
 
 
+/** 审核状态筛选中「已签到」的哨兵值（非真实 audit_status，映射到 checked_in 查询参数） */
+const CHECKED_FILTER = 'checked';
+
 const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   visible, activityId, activityTitle, activityType, formConfig, onClose, checkinEnabled = false, privacyBatchFetcher,
 }) => {
@@ -80,9 +83,12 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
 
   const fetchRegisters = useCallback(async (params: any) => {
     if (!activityId) return { list: [], total: 0 };
+    // 审核状态筛选中「已签到」为哨兵值：走 checked_in 参数（后端：true=已签到）
+    const checkedOnly = params.audit_status === CHECKED_FILTER;
     const res: any = await activityApi.getRegisters(activityId, {
       page: params.page, size: params.page_size,
-      audit_status: params.audit_status,
+      audit_status: checkedOnly ? undefined : params.audit_status,
+      checked_in: checkedOnly ? true : undefined,
       pay_status: params.pay_status,
       gender: params.gender,
       keyword: params.keyword,
@@ -239,11 +245,12 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       ],
     });
   } else if (isFreeReview) {
-    filters.push({ name: 'audit_status', placeholder: '全部审核状态', type: 'select',
+    filters.push({ name: 'audit_status', placeholder: '全部状态', type: 'select',
       options: [
         { label: '待审核', value: RegisterAuditStatus.PENDING },
         { label: '已通过', value: RegisterAuditStatus.APPROVED },
         { label: '已退回', value: RegisterAuditStatus.REJECTED },
+        { label: '已签到', value: CHECKED_FILTER },
       ],
     });
   }
