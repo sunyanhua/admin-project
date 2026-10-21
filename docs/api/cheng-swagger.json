@@ -1211,6 +1211,65 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/register/{rid}/checkin": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "为指定报名记录写入现场签到时间（checkin_at）。仅入选人员可代签到（否则 40508）；\n已签到重复调用返回 40502；不校验活动签到开关与时间窗口（补签场景，活动结束后也可补录）。\n专区管理员活动不属于所属专区 → 40233。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "后台代签到",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "报名记录 ID（UUID）",
+                        "name": "rid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/register/{rid}/onsite-number": {
             "delete": {
                 "security": [
@@ -15801,7 +15860,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "对现场人员执行心动（需 C 端 JWT，操作者与目标均须本活动入选+签到）。\n与常规心动语义完整一致（配对/匹配度/互心等），次数限制为活动 onsite_loves_chances\n（已用=报名 onsite_loves_count）；40512/40514 门禁、40513 次数用完。",
+                "description": "对现场人员执行心动（需 C 端 JWT，操作者与目标均须本活动入选+签到）。\n与常规心动语义完整一致（配对/匹配度/互心等），次数限制为活动 onsite_loves_chances\n（已用=报名 onsite_loves_count）；40512/40514 门禁、40513 次数用完。\n资格检查为现场口径：取消基础资料/脱单档案审核状态限定（2026-10-21），\n仅保留账户未注销、未退出脱单、性别已设置、异性配对校验。",
                 "consumes": [
                     "application/json"
                 ],
