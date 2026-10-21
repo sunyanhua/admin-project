@@ -250,7 +250,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
             return (
               <Space size={4}>
                 <Tag color={i?.color || 'default'}>{i?.text || '-'}</Tag>
-                {matchProfile.audit_status === MatchProfileAuditStatus.PENDING && onAuditProfile && (
+                {onAuditProfile && matchProfile.audit_status !== MatchProfileAuditStatus.REVOKED && (
                   <Button type="link" size="small" icon={<AuditOutlined />} style={{ fontSize: 12, padding: 0 }} onClick={onAuditProfile}>
                     审核
                   </Button>
