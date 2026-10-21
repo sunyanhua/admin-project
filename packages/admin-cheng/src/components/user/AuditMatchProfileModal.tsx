@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Form, Radio, Input, Button, Space } from 'antd';
+import { Form, Radio, Input, Button, Space, Alert } from 'antd';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { userApi } from '@/api/services/user';
+import { MatchProfileAuditStatus } from '@/api/types/status';
 
 const { TextArea } = Input;
 
 interface Props {
   open: boolean;
   userId: string;
+  /** 当前脱单档案审核状态（已通过/已拒绝时显示重新审核提醒） */
+  auditStatus?: number;
   onClose: () => void;
   onSuccess: (action: 1 | 2) => void;
 }
 
-const AuditMatchProfileModal: React.FC<Props> = ({ open, userId, onClose, onSuccess }) => {
+const AuditMatchProfileModal: React.FC<Props> = ({ open, userId, auditStatus, onClose, onSuccess }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   // 审核操作从表单值派生（单一数据源）：重置表单后自动回到"通过"，避免拒绝状态串到下一个用户
@@ -62,6 +65,15 @@ const AuditMatchProfileModal: React.FC<Props> = ({ open, userId, onClose, onSucc
         </Space>
       }
     >
+      {/* 已审核（通过/拒绝）后再次审核：明确提醒谨慎操作 */}
+      {(auditStatus === MatchProfileAuditStatus.APPROVED || auditStatus === MatchProfileAuditStatus.REJECTED) && (
+        <Alert
+          type="warning"
+          showIcon
+          style={{ marginBottom: 12 }}
+          message="该用户资料已经进行审核，审核结果已发送给用户，如果没有特殊原因，不建议重新审核。"
+        />
+      )}
       <Form form={form} layout="vertical" initialValues={{ action: 1, reason: '' }}>
         <Form.Item name="action" label="审核操作" rules={[{ required: true, message: '请选择审核操作' }]}>
           <Radio.Group>

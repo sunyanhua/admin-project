@@ -297,6 +297,7 @@ const UserList = () => {
       <AuditMatchProfileModal
         open={auditProfileOpen}
         userId={detailItem?.user.user_id || ''}
+        auditStatus={detailItem?.match_profile?.audit_status}
         onClose={() => setAuditProfileOpen(false)}
         onSuccess={(action) => {
           setDetailItem((prev) => {
