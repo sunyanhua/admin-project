@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-10-22 | 报名名单已入选用户新增「签到」操作（POST /register/{rid}/checkin 后台代签到，仅入选可签/重复 40502/支持补签，操作列加宽）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterModal + activity-v1 | 6de5a6c（构建产物未提交） |
 | 2026-10-22 | 脱单资料重新审核提醒（已审核资料再次审核弹窗警示）；用户资料卡片弹窗内置审核入口（审核按钮对已通过/已拒绝同样显示）；报名名单导出按当前筛选条件 + 审核模式报名状态列（待审核/已入选/已签到/已退回）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | AuditMatchProfileModal + UserDetailCardModal + UserDetailSections + activityRegisterExport.utils + ActivityRegisterModal + tests | 901482b、b36ac5f、435b320（构建产物未提交） |
 | 2026-10-21 | 报名名单审核状态筛选新增「已签到」（哨兵值映射 checked_in=true，占位改为「全部状态」）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterModal + activity-v1 | 55087a0（构建产物未提交） |
 | 2026-10-21 | 现场背景模式新增「等比完整」——背景图等比例完整显示、屏幕超出部分黑色底（等比铺满/全屏铺满/等比完整三种）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityOnsite | 872244a、98dfbd6（构建产物未提交） |
