@@ -7561,7 +7561,7 @@
         },
         "/admin/v1/bizops/user/match-profile/{id}/audit": {
             "put": {
-                "description": "管理员审核用户的脱单档案，支持 approve（通过）和 reject（拒绝）两种操作。",
+                "description": "管理员审核用户的脱单档案，支持 approve（通过）和 reject（拒绝）两种操作。待审核/已通过/已拒绝三态可互转（通过 ⇄ 拒绝），同状态重复操作幂等成功且不重复通知；已撤销（用户已退出脱单）不可审核。",
                 "consumes": [
                     "application/json"
                 ],
@@ -8250,7 +8250,7 @@
         },
         "/admin/v1/bizops/user/{id}/profile": {
             "put": {
-                "description": "管理后台修改 C 端用户的基础资料（昵称、头像、性别、出生日期、星座），变更原因必填。Zodiac 可提交指定值，为 nil 时自动计算。变更同时写入管理员操作日志和数据变更日志。",
+                "description": "管理后台修改 C 端用户的基础资料（昵称、头像、性别、出生日期、星座），变更原因必填。Zodiac 可提交指定值，为 nil 时自动计算。携带 audit_status 时同步维护 Redis 全局拦截集合（通过移出、待审核/拒绝加入）。变更同时写入管理员操作日志和数据变更日志。",
                 "consumes": [
                     "application/json"
                 ],
@@ -8321,7 +8321,7 @@
         },
         "/admin/v1/bizops/user/{id}/profile/auditstatus": {
             "patch": {
-                "description": "管理后台单独设置 C 端用户基础资料的审核状态：0=待审核 1=审核通过 2=审核拒绝。",
+                "description": "管理后台单独设置 C 端用户基础资料的审核状态：0=待审核 1=审核通过 2=审核拒绝。状态可任意互转（通过 ⇄ 拒绝），并同步维护 Redis 全局拦截集合。",
                 "consumes": [
                     "application/json"
                 ],

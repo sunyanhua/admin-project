@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Tag, Space, Tabs, Avatar, InputNumber } from 'antd';
-import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined, CheckSquareOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -197,6 +197,26 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     setDetailVisible(true);
   };
 
+  /** 后台代签到：为已入选报名写入现场签到时间（重复签到由后端 40502 拦截） */
+  const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
+
+  const handleCheckin = async (record: RegisterRecord) => {
+    setCheckingIds((prev) => new Set(prev).add(record.id));
+    try {
+      await activityApi.checkinRegister(activityId, record.id);
+      success('签到成功');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '签到失败');
+    } finally {
+      setCheckingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(record.id);
+        return next;
+      });
+    }
+  };
+
   /** 单条修改现场编号（≥1；不校验唯一性——管理端手工调整） */
   const handleOnsiteNumberChange = async (record: RegisterRecord, num: number) => {
     try {
@@ -359,10 +379,10 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     );
   }
 
-  // 操作列（仅审核模式）：待审核可「审核」（弹窗内入选/退回）；已审核记录点击状态标签查看报名信息（详情列已由本列覆盖）
+  // 操作列（仅审核模式）：待审核可「审核」（弹窗内入选/退回）；已入选未签到可「签到」（后台代签到）；已审核记录点击状态标签可重新审核
   if (isFreeReview) {
     columns.push({
-      title: '操作', key: 'action', width: 100, fixed: 'right' as const,
+      title: '操作', key: 'action', width: 170, fixed: 'right' as const,
       render: (_: any, r: RegisterRecord) => {
         if (r.audit_status === RegisterAuditStatus.PENDING) {
           return (
@@ -374,7 +394,12 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           if (r.checkin_at) {
             return <Tag color="blue" icon={<CheckCircleOutlined />} title="已签到" style={{ cursor: 'pointer', borderRadius: 10 }} onClick={() => handleOpenAudit(r)}>已签到</Tag>;
           }
-          return <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已入选</Tag>;
+          return (
+            <Space size={0}>
+              <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已入选</Tag>
+              <Button type="link" size="small" icon={<CheckSquareOutlined />} loading={checkingIds.has(r.id)} onClick={() => handleCheckin(r)}>签到</Button>
+            </Space>
+          );
         }
         return <Tag color="default" title="已退回" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已退回</Tag>;
       },

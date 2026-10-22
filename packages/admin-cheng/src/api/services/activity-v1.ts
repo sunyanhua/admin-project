@@ -329,6 +329,11 @@ export const activityApi = {
     return request.put(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/audit`, data);
   },
 
+  /** 后台代签到：为指定报名记录写入现场签到时间（仅入选人员可签 40508；重复 40502；不校验签到开关与时间窗口） */
+  checkinRegister: (activityId: string, registerId: string) => {
+    return request.post(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/checkin`);
+  },
+
   /** 现场编号一键分配（按性别各自 1..N，组内按审核通过时间正序；覆盖式幂等，新通过者追加组尾） */
   assignOnsiteNumbers: (activityId: string) => {
     return request.post(`/admin/v1/bizops/activity/${activityId}/register/assign-numbers`);
