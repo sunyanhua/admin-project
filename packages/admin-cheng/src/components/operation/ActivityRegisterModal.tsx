@@ -138,11 +138,19 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const handleExport = async () => {
     setExporting(true);
     try {
-      // 循环分页拉取全部数据
+      // 按当前筛选条件循环分页拉取数据（与列表筛选一致：审核状态含已签到哨兵值/支付状态/性别/关键词）
+      const checkedOnly = searchValues.audit_status === CHECKED_FILTER;
       const allData: RegisterRecord[] = [];
       let page = 1;
       while (true) {
-        const res: any = await activityApi.getRegisters(activityId, { page, size: 100 });
+        const res: any = await activityApi.getRegisters(activityId, {
+          page, size: 100,
+          audit_status: checkedOnly ? undefined : searchValues.audit_status,
+          checked_in: checkedOnly ? true : undefined,
+          pay_status: searchValues.pay_status,
+          gender: searchValues.gender,
+          keyword: searchValues.keyword || undefined,
+        });
         const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
         if (!list.length) break;
         allData.push(...list);

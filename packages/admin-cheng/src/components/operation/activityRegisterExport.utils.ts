@@ -8,9 +8,9 @@ import type { FormField } from './FormConfigEditor';
 import {
   ActivityType,
   RegisterGenderLabels,
+  RegisterAuditStatus,
   FreeFCFSStatusLabels,
   RegisterPayStatusLabels,
-  RegisterAuditStatusLabels,
 } from '@shared/constants';
 import { MaritalStatusLabels, EducationLabels } from '@/api/types/status';
 
@@ -29,7 +29,7 @@ export function buildExportHeaders(activityType: number, formConfig: FormField[]
   if (photoCount > 0) headers.push('照片');
   if (activityType === ActivityType.FREE_FCFS) headers.push('报名状态');
   else if (activityType === ActivityType.PAID_FCFS) headers.push('支付状态', '完成时间');
-  else if (activityType === ActivityType.FREE_REVIEW) headers.push('审核状态', '拒绝原因', '报名时间');
+  else if (activityType === ActivityType.FREE_REVIEW) headers.push('报名状态', '拒绝原因', '报名时间');
   if (activityType !== ActivityType.FREE_REVIEW) headers.push('报名时间');
   formConfig.forEach((f) => headers.push(f.label));
   headers.push('个人主页');
@@ -100,7 +100,15 @@ export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext 
   row.push(...photoUrls, ...new Array(Math.max(0, ctx.photoCount - photoUrls.length)).fill(''));
   if (ctx.activityType === ActivityType.FREE_FCFS) { row.push(FreeFCFSStatusLabels[item.pay_status] || String(item.pay_status)); }
   else if (ctx.activityType === ActivityType.PAID_FCFS) { row.push(RegisterPayStatusLabels[item.pay_status] || String(item.pay_status), completedAt); }
-  else if (ctx.activityType === ActivityType.FREE_REVIEW) { row.push(RegisterAuditStatusLabels[item.audit_status] || String(item.audit_status), item.audit_reason || '', createdAt); }
+  else if (ctx.activityType === ActivityType.FREE_REVIEW) {
+    // 报名状态与列表操作列规则一致：待审核 / 已入选 / 已签到（已通过且已签到）/ 已退回
+    const auditLabel = item.audit_status === RegisterAuditStatus.APPROVED
+      ? (item.checkin_at ? '已签到' : '已入选')
+      : item.audit_status === RegisterAuditStatus.REJECTED
+        ? '已退回'
+        : '待审核';
+    row.push(auditLabel, item.audit_reason || '', createdAt);
+  }
   if (ctx.activityType !== ActivityType.FREE_REVIEW) row.push(createdAt);
   ctx.formConfig.forEach((f) => {
     const val = formDataMap[f.id];

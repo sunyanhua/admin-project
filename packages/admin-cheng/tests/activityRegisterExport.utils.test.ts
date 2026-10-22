@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ActivityType } from '@shared/constants';
+import { ActivityType, RegisterAuditStatus } from '@shared/constants';
 import type { RegisterRecord } from '@/api/services/activity-v1';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import {
@@ -8,6 +8,7 @@ import {
   PROFILE_H5_URL_PREFIX,
   BASE_HEADERS,
   buildExportHeaders,
+  buildExportRow,
   buildRegisterExportSheet,
 } from '@/components/operation/activityRegisterExport.utils';
 
@@ -92,9 +93,9 @@ describe('buildExportHeaders', () => {
     ]);
   });
 
-  it('免费审核筛选：审核状态 + 拒绝原因 + 报名时间（不重复报名时间）', () => {
+  it('免费审核筛选：报名状态 + 拒绝原因 + 报名时间（不重复报名时间）', () => {
     expect(buildExportHeaders(ActivityType.FREE_REVIEW, [], 0)).toEqual([
-      ...BASE_HEADERS, '审核状态', '拒绝原因', '报名时间', '个人主页',
+      ...BASE_HEADERS, '报名状态', '拒绝原因', '报名时间', '个人主页',
     ]);
   });
 
@@ -173,6 +174,18 @@ describe('buildRegisterExportSheet', () => {
     expect(sheet.headers[0]).toBe('现场序号');
     expect(sheet.rows[0][0]).toBe('7');
     expect(sheet.rows[1][0]).toBe('');
+  });
+
+  it('审核模式报名状态列与列表规则一致：待审核/已入选/已签到/已退回', () => {
+    const headers = buildExportHeaders(ActivityType.FREE_REVIEW, [], 0);
+    const labelIdx = headers.indexOf('报名状态');
+    const rowOf = (over: Partial<RegisterRecord>) => buildExportRow(sampleRecord(over), {
+      activityType: ActivityType.FREE_REVIEW, idCardMap: {}, formConfig: [], photoCount: 0,
+    });
+    expect(rowOf({ audit_status: RegisterAuditStatus.PENDING })[labelIdx]).toBe('待审核');
+    expect(rowOf({ audit_status: RegisterAuditStatus.APPROVED })[labelIdx]).toBe('已入选');
+    expect(rowOf({ audit_status: RegisterAuditStatus.APPROVED, checkin_at: '2026-10-20 10:00:00' })[labelIdx]).toBe('已签到');
+    expect(rowOf({ audit_status: RegisterAuditStatus.REJECTED })[labelIdx]).toBe('已退回');
   });
 
   it('免报名入选（未注册）行：用户名显示未注册，姓名/性别/手机号取预报名反查字段', () => {
