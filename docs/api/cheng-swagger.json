@@ -921,7 +921,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "将预报名信息转为真实报名记录并直接入选；不进行名额限定判断（管理后台入选不受名额上限约束，计数照常）。\n手机号无账号：报名记录 user_id 保持 null（gender 取预报名表），回写预报名 status=2（后台一键报名）。\n手机号有账号且已提交脱单档案：关联该用户创建/认领报名记录并直接入选（gender 档案性别优先、预报名兜底），\n回写预报名 status=1（与 C 端用户报名一致）；用户 C 端已自主报名时不新建记录——未入选更新为已入选、已入选保持，并同步预报名数据表。\n手机号有账号但未提交脱单档案 → 40521；预报名已绑定他人、残留无用户报名记录与用户自主报名并存 → 40502；\n预报名不存在/不属于该活动 → 40515。",
+                "description": "将预报名信息转为真实报名记录并直接入选；不进行名额限定判断（管理后台入选不受名额上限约束，计数照常）。\n手机号无账号，或已注册但未提交脱单档案（视同无账号）：报名记录 user_id 取预报名表绑定值（未绑定为 null，gender 取账号档案性别优先、预报名表兜底），回写预报名 status=2（后台一键报名）。\n手机号有账号但未提交脱单档案且已有本活动有效报名：复用下方用户报名口径（关联既有报名、补入选），不新建第二条记录（2026-10-23）。\n手机号有账号且已提交脱单档案：关联该用户创建/认领报名记录并直接入选（gender 档案性别优先、预报名兜底），\n回写预报名 status=1（与 C 端用户报名一致）；用户 C 端已自主报名时不新建记录——未入选更新为已入选、已入选保持，并同步预报名数据表。\n预报名已绑定他人、残留无用户报名记录与用户自主报名并存、用户已有本活动有效报名 → 40502；预报名不存在/不属于该活动 → 40515。\n同一预报名行 5 秒内重复一键报名 → 40533（事件锁防抖，2026-10-23）。",
                 "produces": [
                     "application/json"
                 ],
@@ -1147,7 +1147,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "审核指定活动的报名申请（通过/拒绝），支持二次审核——已入选可改为未入选（拒绝并释放名额）、\n已拒绝可重新入选（补回名额）；同状态重复操作幂等成功（不重复计数、不重复发通知，2026-10-20）。\n二次审核改为拒绝时同步清理该报名的现场关联数据：签到时间、现场编号、现场心动已用次数\n置空/归零，approved_at 置 NULL（2026-10-21）。\naudit_status 枚举：0=待审核 1=通过 2=拒绝；未设置性别的报名禁止通过（40511，2026-09-12 老大裁决）",
+                "description": "审核指定活动的报名申请（通过/拒绝），支持二次审核——已入选可改为未入选（拒绝并释放名额）、\n已拒绝可重新入选（补回名额）；同状态重复操作幂等成功（不重复计数、不重复发通知，2026-10-20）。\n二次审核改为拒绝时同步清理该报名的现场关联数据：签到时间、现场编号、现场心动已用次数\n置空/归零，approved_at 置 NULL（2026-10-21）。\naudit_status 枚举：0=待审核 1=通过 2=拒绝；未设置性别的报名禁止通过（40511，2026-09-12 老大裁决）。\n同一报名记录 5 秒内重复审核 → 40533（事件锁防抖，2026-10-23）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -4518,6 +4518,291 @@
                     },
                     "404": {
                         "description": "条目不存在（code=41107）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation": {
+            "get": {
+                "description": "管理后台分页查询报喜列表，支持按状态/隐藏标记筛选与双方昵称关键字搜索。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "报喜列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "报喜状态：0=已提交 1=已通过 2=未通过",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "隐藏筛选：0=未隐藏 1=已隐藏",
+                        "name": "hidden",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字（双方昵称模糊匹配）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/{id}": {
+            "get": {
+                "description": "查询报喜完整信息，含报喜照片、结婚证（仅管理后台可见）与提交人/男女双方用户数据。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "报喜详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "报喜不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/{id}/audit": {
+            "post": {
+                "description": "审核报喜（通过/未通过），通过时可在同一请求提交官方随份子标记与金额（分）；随份子信息一经提交不可变更。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "审核报喜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "审核请求参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminAuditCongratulationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "审核成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或状态不允许",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/{id}/gift": {
+            "put": {
+                "description": "对已通过的报喜独立提交官方随份子标记与金额（分）；提交后不可变更。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "设置官方随份子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "随份子参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminSetCongratulationGiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或已提交",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/{id}/hidden": {
+            "patch": {
+                "description": "设置报喜隐藏标记；置 true 后 C 端不再读取与展示该报喜。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "设置报喜隐藏",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "隐藏参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminSetCongratulationHiddenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -14241,6 +14526,108 @@
                 }
             }
         },
+        "/api/v1/congratulation": {
+            "get": {
+                "description": "分页查询已审核通过且未隐藏的报喜记录，按审核通过时间倒序；仅返回双方昵称/头像等完全公开数据，隐藏用户 ID 与结婚证。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "公开报喜列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/congratulation/{id}": {
+            "get": {
+                "description": "按 ID 查询已审核通过且未隐藏的报喜记录；未通过/已隐藏/不存在统一返回报喜不存在。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "公开报喜详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "报喜不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/gifts": {
             "get": {
                 "description": "无需认证。返回全部启用状态的礼物，按 sort_order 降序、created_at 升序排列。",
@@ -15676,7 +16063,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "将本人手机号匹配的预报名信息绑定到当前账号（需 C 端 JWT 鉴权）；\n已一键报名的关联报名记录同步回填 user_id（同步更新性别等信息），预报名状态由 2（后台一键）翻转为 1（视为用户已报名）。\n幂等：重复绑定同一人恒成功；已被他人绑定 40502；手机号不符 40516；不存在或不属于该活动 40515。",
+                "description": "将本人手机号匹配的预报名信息绑定到当前账号（需 C 端 JWT 鉴权）；\n已一键报名的关联报名记录同步回填 user_id（同步更新性别等信息），预报名状态由 2（后台一键）翻转为 1（视为用户已报名）。\n幂等：重复绑定同一人恒成功；已被他人绑定 40502；手机号不符 40516；不存在或不属于该活动 40515。\n本人已有本活动有效报名 → 40502（不认领，防止同一人两条报名记录——2026-10-23）。\n同一预报名行 5 秒内重复绑定 → 40533（事件锁防抖，2026-10-23）。",
                 "produces": [
                     "application/json"
                 ],
@@ -15728,7 +16115,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "取消指定报名记录（:id 为报名记录 ID，需 C 端 JWT 鉴权）",
+                "description": "取消指定报名记录（:id 为报名记录 ID，需 C 端 JWT 鉴权）。\n仅未入选可取消：待审核/已拒绝可取消，已入选 → 40532（须管理后台二次审核改为未入选，2026-10-23）。\n取消时清理现场关联字段（签到/现场编号/现场心动次数/审核通过时间）；已拒绝的记录取消不再递减计数；\n关联的预报名行回置为未报名（status=0、register_id=null，保留 user_id 绑定）。\n同一报名记录 5 秒内重复操作 → 40533（事件锁防抖）。",
                 "produces": [
                     "application/json"
                 ],
@@ -16468,6 +16855,167 @@
                     },
                     "401": {
                         "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation": {
+            "post": {
+                "description": "脱单用户提交与自己配对 reached_1314=true 的异性报喜；报喜照片必填，结婚证/喜讯选填。任何一方已有已提交/已通过记录时拒绝；同一配对存在未通过记录须编辑重提。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "提交报喜",
+                "parameters": [
+                    {
+                        "description": "报喜提交参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SubmitCongratulationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.MyCongratulationResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/mine": {
+            "get": {
+                "description": "查询当前用户（男女任一方）最近一条报喜记录；无记录返回 data:null。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "我的报喜记录",
+                "responses": {
+                    "200": {
+                        "description": "查询成功，无记录时 data 为 null",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.MyCongratulationResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/{id}": {
+            "put": {
+                "description": "仅记录提交人本人、且状态为未通过时可编辑；重新提交后状态回到已提交。对方用户不可变更。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "编辑并重新提交报喜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "报喜修改参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.ResubmitCongratulationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.MyCongratulationResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -24981,6 +25529,400 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminAuditCongratulationRequest": {
+            "type": "object",
+            "required": [
+                "approved"
+            ],
+            "properties": {
+                "approved": {
+                    "description": "Approved true=通过 false=未通过。必须使用 *bool 指针：required 对 bool 零值 false\n判为「未提供」，裸 bool 会让「未通过」分支恒 40001（2026-09-29 教训）。",
+                    "type": "boolean"
+                },
+                "gift_amount": {
+                    "description": "GiftAmount 随份子金额（分；is_official_gift=true 时必填且 >0）。",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "is_official_gift": {
+                    "description": "IsOfficialGift 是否官方随份子（可选；与 GiftAmount 一并提交，提交后不可变更）。",
+                    "type": "boolean"
+                },
+                "reason": {
+                    "description": "Reason 未通过原因（approved=false 时必填）。",
+                    "type": "string",
+                    "maxLength": 1000
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationDetailResponse": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "audit_reason": {
+                    "type": "string"
+                },
+                "audited_at": {
+                    "type": "string"
+                },
+                "audited_by": {
+                    "type": "string"
+                },
+                "couple_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationUserData"
+                },
+                "female_avatar": {
+                    "type": "string"
+                },
+                "female_id": {
+                    "type": "string"
+                },
+                "female_nickname": {
+                    "type": "string"
+                },
+                "gift_amount": {
+                    "type": "integer"
+                },
+                "gift_set_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "is_official_gift": {
+                    "type": "boolean"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationUserData"
+                },
+                "male_avatar": {
+                    "type": "string"
+                },
+                "male_id": {
+                    "type": "string"
+                },
+                "male_nickname": {
+                    "type": "string"
+                },
+                "marriage_certificate": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
+                    }
+                },
+                "matching": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus"
+                },
+                "submitter": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationUserData"
+                },
+                "submitter_id": {
+                    "type": "string"
+                },
+                "submitter_nickname": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationItem": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "audit_reason": {
+                    "type": "string"
+                },
+                "audited_at": {
+                    "type": "string"
+                },
+                "audited_by": {
+                    "type": "string"
+                },
+                "couple_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "female_avatar": {
+                    "type": "string"
+                },
+                "female_id": {
+                    "type": "string"
+                },
+                "female_nickname": {
+                    "type": "string"
+                },
+                "gift_amount": {
+                    "type": "integer"
+                },
+                "gift_set_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_hidden": {
+                    "type": "boolean"
+                },
+                "is_official_gift": {
+                    "type": "boolean"
+                },
+                "male_avatar": {
+                    "type": "string"
+                },
+                "male_id": {
+                    "type": "string"
+                },
+                "male_nickname": {
+                    "type": "string"
+                },
+                "matching": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus"
+                },
+                "submitter_id": {
+                    "type": "string"
+                },
+                "submitter_nickname": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationUserData": {
+            "type": "object",
+            "properties": {
+                "match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserMatchProfileDataForAdmin"
+                },
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserProfileDataForAdmin"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserDataForAdmin"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminSetCongratulationGiftRequest": {
+            "type": "object",
+            "required": [
+                "is_official_gift"
+            ],
+            "properties": {
+                "gift_amount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "is_official_gift": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminSetCongratulationHiddenRequest": {
+            "type": "object",
+            "required": [
+                "is_hidden"
+            ],
+            "properties": {
+                "is_hidden": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationUserCard": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.MyCongratulationResponse": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "audit_reason": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_amount": {
+                    "type": "integer"
+                },
+                "has_marriage_certificate": {
+                    "description": "HasMarriageCertificate 是否已上传结婚证（仅告知有无；结婚证本身仅管理后台可见）。",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_official_gift": {
+                    "type": "boolean"
+                },
+                "matching": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "partner_avatar": {
+                    "type": "string"
+                },
+                "partner_nickname": {
+                    "type": "string"
+                },
+                "partner_user_id": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.PrivateAttachmentInfo"
+                    }
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationItem": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationUserCard"
+                },
+                "gift_amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_official_gift": {
+                    "type": "boolean"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationUserCard"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.ResubmitCongratulationRequest": {
+            "type": "object",
+            "required": [
+                "photos"
+            ],
+            "properties": {
+                "marriage_certificate": {
+                    "type": "array",
+                    "maxItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "maxLength": 5000
+                },
+                "photos": {
+                    "type": "array",
+                    "maxItems": 9,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SubmitCongratulationRequest": {
+            "type": "object",
+            "required": [
+                "partner_user_id",
+                "photos"
+            ],
+            "properties": {
+                "marriage_certificate": {
+                    "description": "MarriageCertificate 结婚证（选填，最多 1 张；仅管理后台可见）。",
+                    "type": "array",
+                    "maxItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
+                    }
+                },
+                "message": {
+                    "description": "Message 喜讯文本（选填，审核通过后公开展示）。",
+                    "type": "string",
+                    "maxLength": 5000
+                },
+                "partner_user_id": {
+                    "description": "PartnerUserID 对方用户 ID（须与当前用户为异性，且配对 reached_1314=true）。",
+                    "type": "string"
+                },
+                "photos": {
+                    "description": "Photos 报喜照片（必填，1-9 张图片）。",
+                    "type": "array",
+                    "maxItems": 9,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
+                    }
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_dead_letter_model.AdminDeadLetterReplayResponse": {
             "type": "object",
             "properties": {
@@ -30482,6 +31424,10 @@
                 "cn_zodiac": {
                     "type": "string"
                 },
+                "congratulation_id": {
+                    "description": "CongratulationID 报喜记录 ID（审核通过后写入，2026-10-23）。",
+                    "type": "string"
+                },
                 "current_city": {
                     "type": "string"
                 },
@@ -30516,6 +31462,10 @@
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
                 "is_active": {
+                    "type": "boolean"
+                },
+                "is_congratulated": {
+                    "description": "IsCongratulated 是否已报喜（NULL 等效 false，2026-10-23）。",
                     "type": "boolean"
                 },
                 "is_org_certified": {
@@ -30593,6 +31543,10 @@
                 "cn_zodiac": {
                     "type": "string"
                 },
+                "congratulation_id": {
+                    "description": "CongratulationID 报喜记录 ID（审核通过后写入，2026-10-23 报喜功能）。",
+                    "type": "string"
+                },
                 "created_at": {
                     "description": "CreatedAt 创建时间（RFC3339 秒精度）。",
                     "type": "string"
@@ -30633,6 +31587,10 @@
                 },
                 "income_range": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
+                },
+                "is_congratulated": {
+                    "description": "IsCongratulated 是否已报喜（NULL 等效 false，2026-10-23 报喜功能）。",
+                    "type": "boolean"
                 },
                 "is_org_certified": {
                     "type": "boolean"
@@ -32822,6 +33780,30 @@
             "x-enum-varnames": [
                 "CommonStatusEnabled",
                 "CommonStatusDisabled"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "CongratulationStatusApproved": "已通过",
+                "CongratulationStatusRejected": "未通过",
+                "CongratulationStatusSubmitted": "已提交"
+            },
+            "x-enum-descriptions": [
+                "已提交",
+                "已通过",
+                "未通过"
+            ],
+            "x-enum-varnames": [
+                "CongratulationStatusSubmitted",
+                "CongratulationStatusApproved",
+                "CongratulationStatusRejected"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.CreditsLogSource": {
