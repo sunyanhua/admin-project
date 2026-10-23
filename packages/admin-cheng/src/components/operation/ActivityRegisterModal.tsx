@@ -239,14 +239,49 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     }
   };
 
-  /** 现场编号一键分配（按性别 1..N 自动排序） */
+  /**
+   * 现场编号一键分配（按性别 1..N 自动排序）。
+   * 批量分配完成后补号：拉取全部已入选报名，对仍无现场序号的按男女性别各自的
+   * 最大序号 +1 递增，逐条执行单条排序操作（性别未设置的不补号）。
+   */
   const handleAssignNumbers = async () => {
     setAssigning(true);
     try {
       const res: any = await activityApi.assignOnsiteNumbers(activityId);
       const male = res?.male_count ?? 0;
       const female = res?.female_count ?? 0;
-      success(`编号分配完成：男 ${male} 人，女 ${female} 人`);
+
+      // 补号：批量分配后仍无序号（onsite_number 为空）的已入选用户
+      const regs: RegisterRecord[] = [];
+      let page = 1;
+      while (true) {
+        const listRes: any = await activityApi.getRegisters(activityId, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
+        const list: RegisterRecord[] = Array.isArray(listRes) ? listRes : (listRes?.list || []);
+        if (!list.length) break;
+        regs.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      const genderOf = (r: RegisterRecord) => r.user_profile?.gender ?? r.gender;
+      let maxM = Math.max(0, ...regs.filter((r) => genderOf(r) === RegisterGender.MALE).map((r) => r.onsite_number ?? 0));
+      let maxF = Math.max(0, ...regs.filter((r) => genderOf(r) === RegisterGender.FEMALE).map((r) => r.onsite_number ?? 0));
+      const unnumbered = regs.filter((r) => r.onsite_number == null &&
+        (genderOf(r) === RegisterGender.MALE || genderOf(r) === RegisterGender.FEMALE));
+      let filled = 0;
+      for (let i = 0; i < unnumbered.length; i++) {
+        const r = unnumbered[i];
+        try {
+          if (genderOf(r) === RegisterGender.MALE) { maxM++; await activityApi.updateOnsiteNumber(activityId, r.id, maxM); }
+          else { maxF++; await activityApi.updateOnsiteNumber(activityId, r.id, maxF); }
+          filled++;
+        } catch (err: any) {
+          showError(`补号第 ${i + 1} 条失败：${err?.response?.data?.message || err?.message || '未知错误'}`);
+          break;
+        }
+      }
+
+      const extra = filled > 0 ? `，补号 ${filled} 人` : '';
+      success(`编号分配完成：男 ${male} 人，女 ${female} 人${extra}`);
       refresh();
     } catch (err: any) {
       showError(err?.response?.data?.message || '编号分配失败');
@@ -276,7 +311,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     filters.push({ name: 'audit_status', placeholder: '全部状态', type: 'select',
       options: [
         { label: '待审核', value: RegisterAuditStatus.PENDING },
-        { label: '已通过', value: RegisterAuditStatus.APPROVED },
+        { label: '已筛选', value: RegisterAuditStatus.APPROVED },
         { label: '已退回', value: RegisterAuditStatus.REJECTED },
         { label: '已签到', value: CHECKED_FILTER },
       ],
