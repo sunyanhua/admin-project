@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Tag, Space, Tabs, Avatar, InputNumber } from 'antd';
-import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined, CheckSquareOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined, CheckSquareOutlined, PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -25,6 +25,7 @@ import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
 import ActivityPresignTab from '@/components/operation/ActivityPresignTab';
 import ActivityCpTab from '@/components/operation/ActivityCpTab';
+import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
 import { buildRegisterExportSheet } from './activityRegisterExport.utils';
 import { applyLinkColumns } from './excelExport.utils';
 
@@ -60,6 +61,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   const [userDetailRegisterId, setUserDetailRegisterId] = useState<string>('');
   const [exporting, setExporting] = useState(false);
   const [assigning, setAssigning] = useState(false);
+  const [addVisible, setAddVisible] = useState(false);
 
   const isFreeFCFS = activityType === ActivityType.FREE_FCFS;
   const isPaidFCFS = activityType === ActivityType.PAID_FCFS;
@@ -478,6 +480,9 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
       <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+        {isFreeReview && (
+          <Button icon={<PlusOutlined />} onClick={() => setAddVisible(true)}>添加</Button>
+        )}
         {checkinEnabled && (
           <Button icon={<OrderedListOutlined />} loading={assigning} onClick={handleAssignNumbers}>排序</Button>
         )}
@@ -527,6 +532,16 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         readonly={detailReadonly}
         onClose={() => { setDetailVisible(false); setDetailRecord(null); }}
         onSuccess={refresh}
+      />
+
+      <ActivityRegisterAddModal
+        open={addVisible}
+        activityId={activityId}
+        onClose={() => setAddVisible(false)}
+        onSuccess={() => {
+          refresh();
+          setPresignReloadKey((k) => k + 1);
+        }}
       />
 
       <UserDetailCardModal
