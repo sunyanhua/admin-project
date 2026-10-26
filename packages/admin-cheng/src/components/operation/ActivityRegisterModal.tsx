@@ -434,7 +434,10 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           return (
             <Space size={0}>
               <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已入选</Tag>
-              <Button type="link" size="small" icon={<CheckSquareOutlined />} loading={checkingIds.has(r.id)} onClick={() => handleCheckin(r)}>签到</Button>
+              {/* 未注册用户（免报名入选，无 user_id）不提供签到操作 */}
+              {r.user_id && (
+                <Button type="link" size="small" icon={<CheckSquareOutlined />} loading={checkingIds.has(r.id)} onClick={() => handleCheckin(r)}>签到</Button>
+              )}
             </Space>
           );
         }
