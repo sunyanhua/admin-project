@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Form, Input, Select, Space, Switch } from 'antd';
+import { Button, Form, Input, Radio, Space, Switch } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
@@ -106,20 +106,17 @@ const ActivityRegisterAddModal: React.FC<ActivityRegisterAddModalProps> = ({ ope
         id="register-add-form"
         form={form}
         layout="vertical"
-        initialValues={{ gender: RegisterGender.MALE, auto_register: true }}
+        initialValues={{ auto_register: true }}
         onFinish={handleSubmit}
       >
         <Form.Item name="real_name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
           <Input placeholder="请输入姓名" maxLength={64} />
         </Form.Item>
         <Form.Item name="gender" label="性别" rules={[{ required: true, message: '请选择性别' }]}>
-          <Select
-            placeholder="请选择性别"
-            options={[
-              { label: '男', value: RegisterGender.MALE },
-              { label: '女', value: RegisterGender.FEMALE },
-            ]}
-          />
+          <Radio.Group>
+            <Radio value={RegisterGender.MALE}>男</Radio>
+            <Radio value={RegisterGender.FEMALE}>女</Radio>
+          </Radio.Group>
         </Form.Item>
         <Form.Item
           name="phone"
