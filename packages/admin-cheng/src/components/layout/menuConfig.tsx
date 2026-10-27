@@ -18,6 +18,7 @@ import {
   TagOutlined,
   QuestionCircleOutlined,
   ShoppingCartOutlined,
+  SmileOutlined,
   DollarOutlined,
   SoundOutlined,
   SendOutlined,
@@ -124,6 +125,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
         { key: '/operation/gifts', icon: <GiftOutlined />, label: '礼物管理' },
         { key: '/operation/lottery', icon: <TrophyOutlined />, label: '抽奖管理' },
         { key: '/operation/subscribe-notification', icon: <BellOutlined />, label: '订阅通知发送' },
+        { key: '/operation/congratulations', icon: <SmileOutlined />, label: '报喜管理' },
       ],
     },
 

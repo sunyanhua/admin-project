@@ -47,6 +47,8 @@ import LotteryManagement from '@/pages/community/LotteryManagement';
 import ProgramSubmission from '@/pages/operation/ProgramSubmission';
 // 订阅通知发送
 import SubscribeNotificationSend from '@/pages/operation/SubscribeNotificationSend';
+// 报喜管理
+import CongratulationManagement from '@/pages/operation/CongratulationManagement';
 // 广播节目管理
 import ProgramManagement from '@/pages/operation/ProgramManagement';
 // 平台数据统计
@@ -119,6 +121,7 @@ const router = createHashRouter([
           { path: 'gifts', element: <GiftManagement /> },
           { path: 'lottery', element: <LotteryManagement /> },
           { path: 'subscribe-notification', element: <SubscribeNotificationSend /> },
+          { path: 'congratulations', element: <CongratulationManagement /> },
           // 社区统计（原社区管理）
           { path: 'stats', element: <PlatformStats /> },
           { path: 'trends', element: <TrendStats /> },
