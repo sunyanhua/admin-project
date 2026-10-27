@@ -4598,6 +4598,352 @@
                 }
             }
         },
+        "/admin/v1/bizops/congratulation/gifts": {
+            "get": {
+                "description": "管理后台分页查询报喜虚拟礼物配置，支持状态筛选与名称关键字搜索。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "报喜礼物配置列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=停用；不传返回全部",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字（礼物名称模糊匹配）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationGiftItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "创建报喜站内礼物配置；金币价格 ≥0（0=免费），名称在未删除行中唯一；不接微信支付/无需道具 ID。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "创建报喜礼物配置",
+                "parameters": [
+                    {
+                        "description": "礼物配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateCongratulationGiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationGiftItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "礼物名称已存在（41822）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/gifts/{id}": {
+            "put": {
+                "description": "编辑礼物配置（PATCH 语义——仅更新请求中出现的字段）；金币价格 ≥0（0=免费）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "编辑报喜礼物配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "礼物配置 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "礼物配置",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.UpdateCongratulationGiftRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "保存成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationGiftItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "礼物配置不存在（41821）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "409": {
+                        "description": "礼物名称已存在（41822）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "软删除礼物配置；已购随份子使用快照展示，不受影响。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "删除报喜礼物配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "礼物配置 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "删除成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "礼物配置不存在（41821）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/gifts/{id}/status": {
+            "patch": {
+                "description": "启用或停用礼物配置；停用后不可购买，已购记录不受影响。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "设置报喜礼物状态",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "礼物配置 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "状态参数（0=启用 1=停用）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationGiftStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationGiftItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "礼物配置不存在（41821）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/congratulation/{id}": {
             "get": {
                 "description": "查询报喜完整信息，含报喜照片、结婚证（仅管理后台可见）与提交人/男女双方用户数据。",
@@ -14606,7 +14952,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationItem"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationDetail"
                                         }
                                     }
                                 }
@@ -14617,6 +14963,68 @@
                         "description": "参数错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "报喜不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/congratulation/{id}/tributes": {
+            "get": {
+                "description": "分页查询某已通过报喜的随份子记录（仅已完成）；返回赠送人昵称/头像与礼物快照，不返回 user_id 与任何金额。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "公开随份子列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicTributeItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
@@ -16920,6 +17328,47 @@
                 }
             }
         },
+        "/api/v1/wxa/congratulation/gifts": {
+            "get": {
+                "description": "返回启用且在可购买窗口内的站内礼物；price_coins=0 表示免费。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "可送站内礼物列表",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationGift"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/congratulation/mine": {
             "get": {
                 "description": "查询当前用户（男女任一方）最近一条报喜记录；无记录返回 data:null。",
@@ -16951,6 +17400,114 @@
                     },
                     "401": {
                         "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/mine/tributes": {
+            "get": {
+                "description": "分页查询本人送出的随份子记录。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "我的随份子列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationTributeItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/tributes/{id}": {
+            "get": {
+                "description": "查询本人某条随份子记录（站内礼物直接已完成；现金红包状态随支付）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "我的随份子详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "随份子 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationTributeItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "随份子记录不存在（41823）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -17016,6 +17573,71 @@
                     },
                     "401": {
                         "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/{id}/tribute": {
+            "post": {
+                "description": "kind=1：扣钱包金币（0=免费）并直接完成；kind=2 现金红包本期未开放（40704）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "送站内礼物",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "礼物参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SendCongratulationTributeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "赠送成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationTributeItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -25650,6 +26272,56 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationGiftItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "valid_from": {
+                    "type": "string"
+                },
+                "valid_to": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationGiftStatusRequest": {
+            "type": "object",
+            "required": [
+                "status"
+            ],
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationItem": {
             "type": "object",
             "properties": {
@@ -25761,13 +26433,121 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationPartyInfo": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "joined_at": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationTributeItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "amount_coins": {
+                    "type": "integer"
+                },
+                "congratulation_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_id": {
+                    "type": "string"
+                },
+                "gift_image": {
+                    "type": "string"
+                },
+                "gift_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeKind"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeStatus"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationUserCard": {
             "type": "object",
             "properties": {
                 "avatar": {
                     "type": "string"
                 },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "joined_at": {
+                    "description": "JoinedAt 加入时间（用户注册日期，格式 \"2006-01-02\"；数据缺失为 null）。",
+                    "type": "string"
+                },
                 "nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateCongratulationGiftRequest": {
+            "type": "object",
+            "required": [
+                "image",
+                "name",
+                "price_coins"
+            ],
+            "properties": {
+                "image": {
+                    "description": "Image 图片 URL（VARCHAR(512)）。",
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "price_coins": {
+                    "description": "PriceCoins 礼物金币价格（0=免费；*int 允许显式传 0，required 只校验 non-nil）。",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "sort_order": {
+                    "description": "SortOrder 排序值；*int 可选（缺省 0），显式 0 合法。",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "Status 0=启用 1=停用；不传默认启用。",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                },
+                "valid_from": {
+                    "description": "ValidFrom / ValidTo 可购买窗口；均可空（NULL=不限）。",
+                    "type": "string"
+                },
+                "valid_to": {
                     "type": "string"
                 }
             }
@@ -25803,14 +26583,8 @@
                 "message": {
                     "type": "string"
                 },
-                "partner_avatar": {
-                    "type": "string"
-                },
-                "partner_nickname": {
-                    "type": "string"
-                },
-                "partner_user_id": {
-                    "type": "string"
+                "partner": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationPartyInfo"
                 },
                 "photos": {
                     "type": "array",
@@ -25818,11 +26592,66 @@
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.PrivateAttachmentInfo"
                     }
                 },
+                "self": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationPartyInfo"
+                },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus"
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationDetail": {
+            "type": "object",
+            "properties": {
+                "approved_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationUserCard"
+                },
+                "gift_amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_official_gift": {
+                    "type": "boolean"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationUserCard"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCongratulationGift": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_coins": {
+                    "type": "integer"
                 }
             }
         },
@@ -25858,6 +26687,29 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
+                },
+                "tribute_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicTributeItem": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_image": {
+                    "type": "string"
+                },
+                "gift_name": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
                 }
             }
         },
@@ -25885,6 +26737,32 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
                     }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SendCongratulationTributeRequest": {
+            "type": "object",
+            "required": [
+                "kind"
+            ],
+            "properties": {
+                "amount_cents": {
+                    "description": "AmountCents kind=2 现金红包金额（1–520 分）；kind=1 不使用。",
+                    "type": "integer",
+                    "maximum": 520,
+                    "minimum": 1
+                },
+                "gift_id": {
+                    "description": "GiftID kind=1 必填；kind=2 不使用。",
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "Kind 1=站内礼物 2=现金红包（P2 仅 1，2 返回 40704）；*int 允许显式 1。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
                 }
             }
         },
@@ -25920,6 +26798,32 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
                     }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.UpdateCongratulationGiftRequest": {
+            "type": "object",
+            "properties": {
+                "image": {
+                    "type": "string",
+                    "maxLength": 512
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "price_coins": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "valid_from": {
+                    "type": "string"
+                },
+                "valid_to": {
+                    "type": "string"
                 }
             }
         },
@@ -33806,6 +34710,54 @@
                 "CongratulationStatusRejected"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeKind": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "CongratulationTributeKindCash": "现金红包",
+                "CongratulationTributeKindGift": "虚拟礼物"
+            },
+            "x-enum-descriptions": [
+                "虚拟礼物",
+                "现金红包"
+            ],
+            "x-enum-varnames": [
+                "CongratulationTributeKindGift",
+                "CongratulationTributeKindCash"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "CongratulationTributeStatusClosed": "已关闭",
+                "CongratulationTributeStatusCompleted": "已完成",
+                "CongratulationTributeStatusPending": "待支付",
+                "CongratulationTributeStatusRefunded": "已退款"
+            },
+            "x-enum-descriptions": [
+                "待支付",
+                "已完成",
+                "已退款",
+                "已关闭"
+            ],
+            "x-enum-varnames": [
+                "CongratulationTributeStatusPending",
+                "CongratulationTributeStatusCompleted",
+                "CongratulationTributeStatusRefunded",
+                "CongratulationTributeStatusClosed"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.CreditsLogSource": {
             "type": "integer",
             "format": "int32",
@@ -34208,6 +35160,7 @@
                 102,
                 103,
                 104,
+                105,
                 200,
                 201,
                 202,
@@ -34220,6 +35173,7 @@
             "x-enum-comments": {
                 "NotificationSceneActivityAudit": "活动报名审核",
                 "NotificationSceneActivityStartReminder": "活动开始提醒（调度器触发）",
+                "NotificationSceneCongratulationTribute": "收到报喜站内礼物",
                 "NotificationSceneCouple1314": "达成 1314",
                 "NotificationSceneFollow": "关注",
                 "NotificationSceneGift": "礼物",
@@ -34238,6 +35192,7 @@
                 "专区申请审核",
                 "活动报名审核",
                 "活动开始提醒（调度器触发）",
+                "收到报喜站内礼物",
                 "心动",
                 "关注",
                 "私信",
@@ -34254,6 +35209,7 @@
                 "NotificationSceneZoneApplyAudit",
                 "NotificationSceneActivityAudit",
                 "NotificationSceneActivityStartReminder",
+                "NotificationSceneCongratulationTribute",
                 "NotificationSceneHeartbeat",
                 "NotificationSceneFollow",
                 "NotificationSceneMessage",
