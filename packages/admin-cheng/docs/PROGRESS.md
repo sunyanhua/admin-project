@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-10-27 | 互动管理新增「报喜管理」页面——报喜信息管理（筛选列表 + 详情弹窗 + 审核含官方随份子）+ 礼物管理（列表 CRUD/状态/排序 + 添加编辑弹窗）；**测试版构建发布**（build:zone-test 合并产物，待上传测试服务器 /cheng/ 目录） | congratulation 服务 + CongratulationManagement + 两个弹窗 + 路由/菜单 | fb945aa（构建产物未提交） |
 | 2026-10-26 | 报名名单右上角新增「添加」按钮（姓名/性别 Radio/手机号/单位，直接入选并分配编号默认勾选：导入名单→免报名入选→按性别最大号+1 自动排序）；未注册用户不显示签到操作；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | ActivityRegisterAddModal + ActivityRegisterModal | 56cdefa、e7db894、980de7e（构建产物未提交） |
 | 2026-10-22 | 报名名单已入选用户新增「签到」操作（POST /register/{rid}/checkin 后台代签到，仅入选可签/重复 40502/支持补签，操作列加宽）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterModal + activity-v1 | 6de5a6c（构建产物未提交） |
 | 2026-10-22 | 脱单资料重新审核提醒（已审核资料再次审核弹窗警示）；用户资料卡片弹窗内置审核入口（审核按钮对已通过/已拒绝同样显示）；报名名单导出按当前筛选条件 + 审核模式报名状态列（待审核/已入选/已签到/已退回）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | AuditMatchProfileModal + UserDetailCardModal + UserDetailSections + activityRegisterExport.utils + ActivityRegisterModal + tests | 901482b、b36ac5f、435b320（构建产物未提交） |
