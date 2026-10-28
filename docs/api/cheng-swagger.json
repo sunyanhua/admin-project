@@ -4598,6 +4598,189 @@
                 }
             }
         },
+        "/admin/v1/bizops/congratulation/finance/bills": {
+            "post": {
+                "description": "管理后台分页查询随份子记录（站内礼物/现金红包共用），支持报喜、赠送人、礼物、类型、状态、时间区间与赠送人昵称筛选。财务读取留痕：POST 承载查询条件 + 审计上报。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "查询报喜赠送账单",
+                "parameters": [
+                    {
+                        "description": "查询条件（page/size 可选，默认 1/20）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeBillListRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeBillItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/finance/bills/export": {
+            "post": {
+                "description": "按筛选条件导出随份子记录 CSV（UTF-8 BOM）；单次上限 10000 条，超出返回 41824。导出动作产生审计日志。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/csv"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "导出报喜赠送账单 CSV",
+                "parameters": [
+                    {
+                        "description": "筛选条件",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeExportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV 文件流",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/finance/summary": {
+            "post": {
+                "description": "按筛选条件返回记录总数、已完成数、已完成赠送人数/金币/现金合计、状态分布与类型+礼物分组。金额仅统计已完成记录。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "报喜赠送账单汇总",
+                "parameters": [
+                    {
+                        "description": "筛选条件",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeSummaryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeSummaryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/congratulation/gifts": {
             "get": {
                 "description": "管理后台分页查询报喜虚拟礼物配置，支持状态筛选与名称关键字搜索。",
@@ -26430,6 +26613,296 @@
             "properties": {
                 "is_hidden": {
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeBillItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "amount_coins": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "congratulation_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_id": {
+                    "type": "string"
+                },
+                "gift_image": {
+                    "type": "string"
+                },
+                "gift_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeKind"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeStatus"
+                },
+                "submitter_id": {
+                    "type": "string"
+                },
+                "submitter_nickname": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeBillListRequest": {
+            "type": "object",
+            "properties": {
+                "congratulation_id": {
+                    "description": "CongratulationID 报喜 ID（可选）。",
+                    "type": "string"
+                },
+                "end_at": {
+                    "description": "EndAt 创建时间上界（RFC3339，含）；空=不限。",
+                    "type": "string",
+                    "maxLength": 40
+                },
+                "gift_id": {
+                    "description": "GiftID 礼物配置 ID（可选）。",
+                    "type": "string"
+                },
+                "keyword": {
+                    "description": "关键字模糊搜索（可选；业务上限 service 层二次甄别）",
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "kind": {
+                    "description": "Kind 随份子类型：1=站内礼物 2=现金红包；空=全部。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "page": {
+                    "description": "页码，1-based，默认 1",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "size": {
+                    "description": "每页条数，默认 20，最大 100",
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 1
+                },
+                "start_at": {
+                    "description": "StartAt 创建时间下界（RFC3339，含）；空=不限。",
+                    "type": "string",
+                    "maxLength": 40
+                },
+                "status": {
+                    "description": "Status 随份子状态：0=待支付 1=已完成 2=已退款 3=已关闭；空=全部。",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "user_id": {
+                    "description": "UserID 赠送人 ID（可选）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeExportRequest": {
+            "type": "object",
+            "properties": {
+                "congratulation_id": {
+                    "description": "CongratulationID 报喜 ID（可选）。",
+                    "type": "string"
+                },
+                "end_at": {
+                    "description": "EndAt 创建时间上界（RFC3339，含）；空=不限。",
+                    "type": "string",
+                    "maxLength": 40
+                },
+                "gift_id": {
+                    "description": "GiftID 礼物配置 ID（可选）。",
+                    "type": "string"
+                },
+                "keyword": {
+                    "description": "Keyword 赠送人昵称模糊匹配（可选）。",
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "kind": {
+                    "description": "Kind 随份子类型：1=站内礼物 2=现金红包；空=全部。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "start_at": {
+                    "description": "StartAt 创建时间下界（RFC3339，含）；空=不限。",
+                    "type": "string",
+                    "maxLength": 40
+                },
+                "status": {
+                    "description": "Status 随份子状态：0=待支付 1=已完成 2=已退款 3=已关闭；空=全部。",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "user_id": {
+                    "description": "UserID 赠送人 ID（可选）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeGroup": {
+            "type": "object",
+            "properties": {
+                "cents": {
+                    "type": "integer"
+                },
+                "coins": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "gift_id": {
+                    "type": "string"
+                },
+                "gift_image": {
+                    "type": "string"
+                },
+                "gift_name": {
+                    "type": "string"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeKind"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeStatusCount": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeSummaryRequest": {
+            "type": "object",
+            "properties": {
+                "congratulation_id": {
+                    "description": "CongratulationID 报喜 ID（可选）。",
+                    "type": "string"
+                },
+                "end_at": {
+                    "description": "EndAt 创建时间上界（RFC3339，含）；空=不限。",
+                    "type": "string",
+                    "maxLength": 40
+                },
+                "gift_id": {
+                    "description": "GiftID 礼物配置 ID（可选）。",
+                    "type": "string"
+                },
+                "keyword": {
+                    "description": "Keyword 赠送人昵称模糊匹配（可选）。",
+                    "type": "string",
+                    "maxLength": 256
+                },
+                "kind": {
+                    "description": "Kind 随份子类型：1=站内礼物 2=现金红包；空=全部。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                },
+                "start_at": {
+                    "description": "StartAt 创建时间下界（RFC3339，含）；空=不限。",
+                    "type": "string",
+                    "maxLength": 40
+                },
+                "status": {
+                    "description": "Status 随份子状态：0=待支付 1=已完成 2=已退款 3=已关闭；空=全部。",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2,
+                        3
+                    ]
+                },
+                "user_id": {
+                    "description": "UserID 赠送人 ID（可选）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "completed_count": {
+                    "description": "CompletedCount 其中已完成记录数。",
+                    "type": "integer"
+                },
+                "groups": {
+                    "description": "Groups 筛选结果按类型 + 礼物快照分组（记录数降序）。",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeGroup"
+                    }
+                },
+                "status_counts": {
+                    "description": "StatusCounts 筛选结果的状态分布（按状态升序）。",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminTributeStatusCount"
+                    }
+                },
+                "total_cents": {
+                    "description": "TotalCents 已完成现金红包的金额合计（分）。",
+                    "type": "integer"
+                },
+                "total_coins": {
+                    "description": "TotalCoins 已完成站内礼物的金币合计。",
+                    "type": "integer"
+                },
+                "total_count": {
+                    "description": "TotalCount 符合筛选条件的记录总数（含各状态）。",
+                    "type": "integer"
+                },
+                "total_users": {
+                    "description": "TotalUsers 已完成记录的赠送人去重人数。",
+                    "type": "integer"
                 }
             }
         },
