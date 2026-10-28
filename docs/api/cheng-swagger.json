@@ -15106,7 +15106,7 @@
         },
         "/api/v1/congratulation/{id}": {
             "get": {
-                "description": "按 ID 查询已审核通过且未隐藏的报喜记录；未通过/已隐藏/不存在统一返回报喜不存在。",
+                "description": "按 ID 查询已审核通过且未隐藏的报喜记录；未通过/已隐藏/不存在统一返回报喜不存在。含双方公开资料卡片与这对男女的公开配对数据（无配对 ID / 男女 ID）。",
                 "produces": [
                     "application/json"
                 ],
@@ -17554,7 +17554,7 @@
         },
         "/api/v1/wxa/congratulation/mine": {
             "get": {
-                "description": "查询当前用户（男女任一方）最近一条报喜记录；无记录返回 data:null。",
+                "description": "查询当前用户（男女任一方）最近一条报喜记录；无记录返回 data:null。含双方资料卡片与这对男女的公开配对数据（无配对 ID / 男女 ID）。",
                 "produces": [
                     "application/json"
                 ],
@@ -26906,6 +26906,111 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationCoupleData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_source": {
+                    "description": "── 溯源（仅来源枚举与首次时间，无操作人 ID）──",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.MatchingChangeSource"
+                        }
+                    ]
+                },
+                "created_user_data": {
+                    "description": "── 牵线人卡片（created_source 为牵线操作时返回；否则 null）──",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                        }
+                    ]
+                },
+                "divine_at": {
+                    "description": "── 神助攻（时间与提升量，无牵线人 ID）──",
+                    "type": "string"
+                },
+                "divine_matching_delta": {
+                    "type": "integer"
+                },
+                "divine_matchmaker_data": {
+                    "description": "── 最近一次神助攻牵线人卡片（未被神助攻过为 null）──",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                        }
+                    ]
+                },
+                "feeling_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingBitMask"
+                },
+                "female_assist_at": {
+                    "type": "string"
+                },
+                "female_feeling_at": {
+                    "type": "string"
+                },
+                "female_feeling_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType"
+                },
+                "female_love_at": {
+                    "type": "string"
+                },
+                "female_loves_count": {
+                    "type": "integer"
+                },
+                "first_match_at": {
+                    "type": "string"
+                },
+                "first_split_at": {
+                    "type": "string"
+                },
+                "loves_status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.LovesBitMask"
+                },
+                "male_assist_at": {
+                    "type": "string"
+                },
+                "male_feeling_at": {
+                    "description": "── 心动（方向 + 次数）──",
+                    "type": "string"
+                },
+                "male_feeling_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.FeelingType"
+                },
+                "male_love_at": {
+                    "type": "string"
+                },
+                "male_loves_count": {
+                    "type": "integer"
+                },
+                "matching": {
+                    "description": "── 匹配统计 ──",
+                    "type": "integer"
+                },
+                "matching_weekly": {
+                    "type": "integer"
+                },
+                "opinion_match_count": {
+                    "type": "integer"
+                },
+                "opinion_split_count": {
+                    "type": "integer"
+                },
+                "reached_1314": {
+                    "description": "── 达标 1314 / 求助攻 ──",
+                    "type": "boolean"
+                },
+                "reached_1314_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationPartyInfo": {
             "type": "object",
             "properties": {
@@ -27034,6 +27139,14 @@
                 "audit_reason": {
                     "type": "string"
                 },
+                "couple": {
+                    "description": "Couple 这对男女的公开配对数据（与公开详情同形状：不含配对 ID / 男女 ID；\n实时取自 v6_pair_couple，配对行缺失为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationCoupleData"
+                        }
+                    ]
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -27081,6 +27194,14 @@
             "properties": {
                 "approved_at": {
                     "type": "string"
+                },
+                "couple": {
+                    "description": "Couple 这对男女的公开配对数据（实时取自 v6_pair_couple；配对行缺失为 null）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationCoupleData"
+                        }
+                    ]
                 },
                 "created_at": {
                     "type": "string"
