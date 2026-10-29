@@ -222,6 +222,26 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
       },
     },
     {
+      title: '序号',
+      dataIndex: 'onsite_number',
+      key: 'onsite_number',
+      width: 120,
+      render: (v: number | null | undefined, r: RegisterRecord) => (
+        <InputNumber
+          min={1}
+          precision={0}
+          value={v ?? undefined}
+          style={{ width: 70 }}
+          onBlur={(e) => {
+            const val = e.target.value.trim();
+            const num = parseInt(val, 10);
+            if (Number.isNaN(num) || num < 1 || num === (r.onsite_number ?? undefined)) return;
+            handleOnsiteNumberChange(r, num);
+          }}
+        />
+      ),
+    },
+    {
       title: '状态',
       key: 'checkin',
       width: 160,
@@ -237,27 +257,6 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
             </Button>
           )}
         </Space>
-      ),
-    },
-    {
-      title: '序号',
-      dataIndex: 'onsite_number',
-      key: 'onsite_number',
-      width: 120,
-      fixed: 'right' as const,
-      render: (v: number | null | undefined, r: RegisterRecord) => (
-        <InputNumber
-          min={1}
-          precision={0}
-          value={v ?? undefined}
-          style={{ width: 70 }}
-          onBlur={(e) => {
-            const val = e.target.value.trim();
-            const num = parseInt(val, 10);
-            if (Number.isNaN(num) || num < 1 || num === (r.onsite_number ?? undefined)) return;
-            handleOnsiteNumberChange(r, num);
-          }}
-        />
       ),
     },
     {
