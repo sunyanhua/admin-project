@@ -158,20 +158,17 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
       width={1100}
       footer={false}
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <Tabs
-          style={{ flex: 1 }}
-          activeKey={tabKey}
-          onChange={setTabKey}
-          items={[
-            { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} /> },
-            { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
-          ]}
-        />
-        <Button type="primary" icon={<DesktopOutlined />} style={{ marginLeft: 16, flexShrink: 0, marginBottom: 16 }} onClick={openBigScreen}>
-          大屏
-        </Button>
-      </div>
+      <Tabs
+        activeKey={tabKey}
+        onChange={setTabKey}
+        tabBarExtraContent={{
+          right: <Button type="primary" icon={<DesktopOutlined />} onClick={openBigScreen}>大屏</Button>,
+        }}
+        items={[
+          { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} /> },
+          { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
+        ]}
+      />
     </ScrollableModal>
   );
 };
