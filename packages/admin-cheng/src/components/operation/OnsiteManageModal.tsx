@@ -99,6 +99,17 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
     }
   };
 
+  /** 单条清空现场编号（置 NULL，该行重新进入「一键分配」补号池） */
+  const handleOnsiteNumberClear = async (record: RegisterRecord) => {
+    try {
+      await activityApi.clearOnsiteNumber(activityId, record.id);
+      success('序号已清空');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '序号清空失败');
+    }
+  };
+
   /**
    * 现场编号一键分配（按性别 1..N 自动排序）。
    * 批量分配完成后补号：对仍无现场序号的已入选用户按男女性别各自最大序号 +1 递增逐条分配（性别未设置不补号）。
@@ -234,7 +245,13 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
           style={{ width: 70 }}
           onBlur={(e) => {
             const val = e.target.value.trim();
+            // 清空：走 DELETE 置 NULL，仅原有序号时提交
+            if (val === '') {
+              if (r.onsite_number != null) handleOnsiteNumberClear(r);
+              return;
+            }
             const num = parseInt(val, 10);
+            // 非法值（<1/非数字）或未变化时不提交
             if (Number.isNaN(num) || num < 1 || num === (r.onsite_number ?? undefined)) return;
             handleOnsiteNumberChange(r, num);
           }}
