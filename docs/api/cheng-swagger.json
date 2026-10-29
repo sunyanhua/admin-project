@@ -17592,7 +17592,7 @@
         },
         "/api/v1/wxa/congratulation/mine/tributes": {
             "get": {
-                "description": "分页查询本人送出的随份子记录。",
+                "description": "分页查询本人送出的随份子记录；可按报喜 ID 筛选。",
                 "produces": [
                     "application/json"
                 ],
@@ -17611,6 +17611,12 @@
                         "type": "integer",
                         "description": "每页条数（默认 20，最大 100）",
                         "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（可选；空串/缺省=不筛选）",
+                        "name": "congratulation_id",
                         "in": "query"
                     }
                 ],
