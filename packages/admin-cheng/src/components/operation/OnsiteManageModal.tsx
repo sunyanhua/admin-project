@@ -12,9 +12,9 @@ import RealNameWithTag from '@/components/user/RealNameWithTag';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
-import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import ActivityCpTab from '@/components/operation/ActivityCpTab';
 import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
+import { formatDateTime } from '@/utils/format';
 
 interface OnsiteManageModalProps {
   visible: boolean;
@@ -224,11 +224,19 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
     {
       title: '状态',
       key: 'checkin',
-      width: 100,
+      width: 160,
       render: (_: any, r: RegisterRecord) => (
-        r.checkin_at
-          ? <Tag color="blue" icon={<CheckCircleOutlined />} style={{ borderRadius: 10 }}>已签到</Tag>
-          : <Tag color="default">未签到</Tag>
+        <Space size={4}>
+          {r.checkin_at
+            ? <Tag color="blue" icon={<CheckCircleOutlined />} style={{ borderRadius: 10 }}>已签到</Tag>
+            : <Tag color="default">未签到</Tag>}
+          {/* 签到操作内置于状态列：仅注册用户且未签到时显示 */}
+          {!r.checkin_at && r.user_id && (
+            <Button type="link" size="small" icon={<CheckSquareOutlined />} loading={checkingIds.has(r.id)} onClick={() => handleCheckin(r)}>
+              签到
+            </Button>
+          )}
+        </Space>
       ),
     },
     {
@@ -252,19 +260,20 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
         />
       ),
     },
-    dateTimeColumn<RegisterRecord>('created_at', '报名时间'),
     {
-      title: '操作',
-      key: 'action',
-      width: 90,
-      fixed: 'right' as const,
-      render: (_: any, r: RegisterRecord) => {
-        // 仅已入选注册用户且未签到时提供签到；未注册用户不提供
-        if (!r.user_id || r.checkin_at) return <span style={{ color: '#999' }}>-</span>;
+      title: '签到时间',
+      dataIndex: 'checkin_at',
+      key: 'checkin_at',
+      width: 120,
+      render: (v: string | null | undefined) => {
+        // 有签到时间才显示，未签到不显示
+        if (!v) return null;
+        const t = formatDateTime(v);
         return (
-          <Button type="link" size="small" icon={<CheckSquareOutlined />} loading={checkingIds.has(r.id)} onClick={() => handleCheckin(r)}>
-            签到
-          </Button>
+          <div style={{ fontSize: 12, lineHeight: 1.6 }}>
+            <div>{t.slice(0, 10)}</div>
+            <div>{t.slice(11)}</div>
+          </div>
         );
       },
     },
