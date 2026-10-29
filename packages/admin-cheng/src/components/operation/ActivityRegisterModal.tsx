@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Tag, Space, Tabs, Avatar, InputNumber } from 'antd';
-import { ReloadOutlined, EyeOutlined, ExportOutlined, OrderedListOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined, CheckSquareOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Tag, Space, Tabs, Avatar } from 'antd';
+import { ReloadOutlined, EyeOutlined, ExportOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -24,7 +24,6 @@ import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
 import ActivityPresignTab from '@/components/operation/ActivityPresignTab';
-import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
 import { buildRegisterExportSheet } from './activityRegisterExport.utils';
 import { applyLinkColumns } from './excelExport.utils';
 
@@ -35,8 +34,6 @@ interface ActivityRegisterModalProps {
   activityType: number;
   formConfig: FormField[];
   onClose: () => void;
-  /** 活动是否开启现场签到（开启时显示自动排序按钮与序号列） */
-  checkinEnabled?: boolean;
   /** 自定义批量隐私拉取（专区管理员无批量隐私接口数据权限，逐条走报名专用隐私接口）；缺省用通用批量接口 */
   privacyBatchFetcher?: (records: RegisterRecord[], activityId: string) => Promise<Record<string, string>>;
 }
@@ -46,7 +43,7 @@ interface ActivityRegisterModalProps {
 const CHECKED_FILTER = 'checked';
 
 const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
-  visible, activityId, activityTitle, activityType, formConfig, onClose, checkinEnabled = false, privacyBatchFetcher,
+  visible, activityId, activityTitle, activityType, formConfig, onClose, privacyBatchFetcher,
 }) => {
   const { success, error: showError } = useAppNotification();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -59,8 +56,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   /** 当前查看用户对应的报名记录 ID（专区专用资料接口按报名记录读取） */
   const [userDetailRegisterId, setUserDetailRegisterId] = useState<string>('');
   const [exporting, setExporting] = useState(false);
-  const [assigning, setAssigning] = useState(false);
-  const [addVisible, setAddVisible] = useState(false);
 
   const isFreeFCFS = activityType === ActivityType.FREE_FCFS;
   const isPaidFCFS = activityType === ActivityType.PAID_FCFS;
@@ -198,98 +193,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     setDetailVisible(true);
   };
 
-  /** 后台代签到：为已入选报名写入现场签到时间（重复签到由后端 40502 拦截） */
-  const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
-
-  const handleCheckin = async (record: RegisterRecord) => {
-    setCheckingIds((prev) => new Set(prev).add(record.id));
-    try {
-      await activityApi.checkinRegister(activityId, record.id);
-      success('签到成功');
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '签到失败');
-    } finally {
-      setCheckingIds((prev) => {
-        const next = new Set(prev);
-        next.delete(record.id);
-        return next;
-      });
-    }
-  };
-
-  /** 单条修改现场编号（≥1；不校验唯一性——管理端手工调整） */
-  const handleOnsiteNumberChange = async (record: RegisterRecord, num: number) => {
-    try {
-      await activityApi.updateOnsiteNumber(activityId, record.id, num);
-      success('序号已更新');
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '序号更新失败');
-    }
-  };
-
-  /** 单条清空现场编号（置 NULL，该行重新进入「一键分配」补号池） */
-  const handleOnsiteNumberClear = async (record: RegisterRecord) => {
-    try {
-      await activityApi.clearOnsiteNumber(activityId, record.id);
-      success('序号已清空');
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '序号清空失败');
-    }
-  };
-
-  /**
-   * 现场编号一键分配（按性别 1..N 自动排序）。
-   * 批量分配完成后补号：拉取全部已入选报名，对仍无现场序号的按男女性别各自的
-   * 最大序号 +1 递增，逐条执行单条排序操作（性别未设置的不补号）。
-   */
-  const handleAssignNumbers = async () => {
-    setAssigning(true);
-    try {
-      const res: any = await activityApi.assignOnsiteNumbers(activityId);
-      const male = res?.male_count ?? 0;
-      const female = res?.female_count ?? 0;
-
-      // 补号：批量分配后仍无序号（onsite_number 为空）的已入选用户
-      const regs: RegisterRecord[] = [];
-      let page = 1;
-      while (true) {
-        const listRes: any = await activityApi.getRegisters(activityId, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
-        const list: RegisterRecord[] = Array.isArray(listRes) ? listRes : (listRes?.list || []);
-        if (!list.length) break;
-        regs.push(...list);
-        if (list.length < 100) break;
-        page++;
-      }
-      const genderOf = (r: RegisterRecord) => r.user_profile?.gender ?? r.gender;
-      let maxM = Math.max(0, ...regs.filter((r) => genderOf(r) === RegisterGender.MALE).map((r) => r.onsite_number ?? 0));
-      let maxF = Math.max(0, ...regs.filter((r) => genderOf(r) === RegisterGender.FEMALE).map((r) => r.onsite_number ?? 0));
-      const unnumbered = regs.filter((r) => r.onsite_number == null &&
-        (genderOf(r) === RegisterGender.MALE || genderOf(r) === RegisterGender.FEMALE));
-      let filled = 0;
-      for (let i = 0; i < unnumbered.length; i++) {
-        const r = unnumbered[i];
-        try {
-          if (genderOf(r) === RegisterGender.MALE) { maxM++; await activityApi.updateOnsiteNumber(activityId, r.id, maxM); }
-          else { maxF++; await activityApi.updateOnsiteNumber(activityId, r.id, maxF); }
-          filled++;
-        } catch (err: any) {
-          showError(`补号第 ${i + 1} 条失败：${err?.response?.data?.message || err?.message || '未知错误'}`);
-          break;
-        }
-      }
-
-      const extra = filled > 0 ? `，补号 ${filled} 人` : '';
-      success(`编号分配完成：男 ${male} 人，女 ${female} 人${extra}`);
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '编号分配失败');
-    } finally {
-      setAssigning(false);
-    }
-  };
+  /** 现场签到/序号/排序/添加等现场管理操作已迁移至「现场管理」弹窗（OnsiteManageModal） */
 
   // 筛选
   const filters: FilterConfig[] = [];
@@ -430,49 +334,10 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
           if (r.checkin_at) {
             return <Tag color="blue" icon={<CheckCircleOutlined />} title="已签到" style={{ cursor: 'pointer', borderRadius: 10 }} onClick={() => handleOpenAudit(r)}>已签到</Tag>;
           }
-          return (
-            <Space size={0}>
-              <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已入选</Tag>
-              {/* 未注册用户（免报名入选，无 user_id）不提供签到操作 */}
-              {r.user_id && (
-                <Button type="link" size="small" icon={<CheckSquareOutlined />} loading={checkingIds.has(r.id)} onClick={() => handleCheckin(r)}>签到</Button>
-              )}
-            </Space>
-          );
+          return <Tag color="success" title="已入选" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已入选</Tag>;
         }
         return <Tag color="default" title="已退回" style={{ cursor: 'pointer' }} onClick={() => handleOpenAudit(r)}>已退回</Tag>;
       },
-    });
-  }
-
-  // 序号列（现场编号，一键分配后按性别 1..N；置于操作列之后，仅开启签到的活动显示；失焦内联编辑：改数单条更新、清空单条置 NULL）
-  if (checkinEnabled) {
-    columns.push({
-      title: '序号',
-      dataIndex: 'onsite_number',
-      key: 'onsite_number',
-      width: 120,
-      fixed: 'right' as const,
-      render: (v: number | null | undefined, r: RegisterRecord) => (
-        <InputNumber
-          min={1}
-          precision={0}
-          value={v ?? undefined}
-          style={{ width: 70 }}
-          onBlur={(e) => {
-            const val = e.target.value.trim();
-            // 清空：走 DELETE 置 NULL，仅原有序号时提交
-            if (val === '') {
-              if (r.onsite_number != null) handleOnsiteNumberClear(r);
-              return;
-            }
-            const num = parseInt(val, 10);
-            // 非法值（<1/非数字）或未变化时不提交
-            if (Number.isNaN(num) || num < 1 || num === (r.onsite_number ?? undefined)) return;
-            handleOnsiteNumberChange(r, num);
-          }}
-        />
-      ),
     });
   }
 
@@ -482,12 +347,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
       <Space style={{ marginLeft: 12, flexShrink: 0 }}>
-        {isFreeReview && (
-          <Button icon={<PlusOutlined />} onClick={() => setAddVisible(true)}>添加</Button>
-        )}
-        {checkinEnabled && (
-          <Button icon={<OrderedListOutlined />} loading={assigning} onClick={handleAssignNumbers}>排序</Button>
-        )}
         <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
         <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
       </Space>
@@ -532,16 +391,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         readonly={detailReadonly}
         onClose={() => { setDetailVisible(false); setDetailRecord(null); }}
         onSuccess={refresh}
-      />
-
-      <ActivityRegisterAddModal
-        open={addVisible}
-        activityId={activityId}
-        onClose={() => setAddVisible(false)}
-        onSuccess={() => {
-          refresh();
-          setPresignReloadKey((k) => k + 1);
-        }}
       />
 
       <UserDetailCardModal

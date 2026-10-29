@@ -42,7 +42,6 @@ const ActivityManagement = () => {
   const [registerActivityTitle, setRegisterActivityTitle] = useState('');
   const [registerActivityType, setRegisterActivityType] = useState<number>(0);
   const [registerFormConfig, setRegisterFormConfig] = useState<FormField[]>([]);
-  const [registerCheckinEnabled, setRegisterCheckinEnabled] = useState(false);
   const [promiseModalVisible, setPromiseModalVisible] = useState(false);
   const [quizModalVisible, setQuizModalVisible] = useState(false);
   const [onsiteModalVisible, setOnsiteModalVisible] = useState(false);
@@ -138,7 +137,6 @@ const ActivityManagement = () => {
     setRegisterActivityId(record.id);
     setRegisterActivityTitle(record.title);
     setRegisterActivityType(record.activity_type);
-    setRegisterCheckinEnabled(record.checkin_enabled ?? false);
     try {
       const fc = typeof record.form_config === 'string' ? JSON.parse(record.form_config) : record.form_config;
       setRegisterFormConfig(Array.isArray(fc) ? fc.map((f: any) => ({ id: f.id, label: f.label, type: f.type, required: f.required, options: f.options })) : []);
@@ -337,7 +335,6 @@ const ActivityManagement = () => {
         activityTitle={registerActivityTitle}
         activityType={registerActivityType}
         formConfig={registerFormConfig}
-        checkinEnabled={registerCheckinEnabled}
         onClose={() => setRegisterModalVisible(false)}
       />
 
