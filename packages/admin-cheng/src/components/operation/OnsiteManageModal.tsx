@@ -14,6 +14,7 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import ActivityCpTab from '@/components/operation/ActivityCpTab';
 import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
+import OnsiteConfigTab from '@/components/operation/OnsiteConfigTab';
 import { formatDateTime } from '@/utils/format';
 
 interface OnsiteManageModalProps {
@@ -332,7 +333,7 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
  * - TAB 行右侧「大屏」按钮：新窗口打开现场大屏页面
  */
 const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activityId, activityTitle, onClose }) => {
-  const [tabKey, setTabKey] = useState('list');
+  const [tabKey, setTabKey] = useState('config');
 
   const openBigScreen = () => {
     const base = window.location.href.split('#')[0];
@@ -354,6 +355,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           right: <Button type="primary" icon={<DesktopOutlined />} onClick={openBigScreen}>大屏</Button>,
         }}
         items={[
+          { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} /> },
           { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
         ]}
