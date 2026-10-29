@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Button, Space, Tag, Tabs, Avatar, InputNumber } from 'antd';
 import { DesktopOutlined, CheckCircleOutlined, ReloadOutlined, PlusOutlined, OrderedListOutlined, CheckSquareOutlined, UserOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -15,7 +15,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import ActivityCpTab from '@/components/operation/ActivityCpTab';
 import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
 import OnsiteConfigTab from '@/components/operation/OnsiteConfigTab';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, parseApiTime } from '@/utils/format';
 
 interface OnsiteManageModalProps {
   visible: boolean;
@@ -335,7 +335,18 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
  * - TAB 行右侧「大屏」按钮：新窗口打开现场大屏页面
  */
 const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activityId, activityTitle, activity, onClose }) => {
-  const [tabKey, setTabKey] = useState('config');
+  /** 默认 TAB：当前时间已进入签到开始时间 → 入选名单；否则现场配置 */
+  const defaultTabKey = (() => {
+    if (!activity?.checkin_start) return 'config';
+    const start = parseApiTime(activity.checkin_start);
+    return start && start.valueOf() <= Date.now() ? 'list' : 'config';
+  })();
+  const [tabKey, setTabKey] = useState(defaultTabKey);
+
+  // 每次打开弹窗按当前时间重新决定默认 TAB（签到时间到了自动落在入选名单）
+  useEffect(() => {
+    if (visible) setTabKey(defaultTabKey);
+  }, [visible, defaultTabKey]);
 
   const openBigScreen = () => {
     const base = window.location.href.split('#')[0];
