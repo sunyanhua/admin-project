@@ -4,7 +4,7 @@ import { DesktopOutlined, CheckCircleOutlined, ReloadOutlined, PlusOutlined, Ord
 import { useAppNotification } from '@/hooks/useAppNotification';
 import type { ColumnsType } from 'antd/es/table';
 import ScrollableModal from '@/components/templates/ScrollableModal';
-import { activityApi, RegisterRecord, PresignRecord } from '@/api/services/activity-v1';
+import { activityApi, RegisterRecord, PresignRecord, Activity } from '@/api/services/activity-v1';
 import { RegisterAuditStatus, RegisterGender, RegisterGenderLabels } from '@shared/constants';
 import UserAvatar from '@/components/user/UserAvatar';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
@@ -21,6 +21,8 @@ interface OnsiteManageModalProps {
   visible: boolean;
   activityId: string;
   activityTitle: string;
+  /** 列表行数据（现场配置回填同源，与编辑弹窗一致） */
+  activity?: Activity | null;
   onClose: () => void;
 }
 
@@ -332,7 +334,7 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
  * - 组CP：原报名名单中的组CP TAB 完整功能
  * - TAB 行右侧「大屏」按钮：新窗口打开现场大屏页面
  */
-const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activityId, activityTitle, onClose }) => {
+const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activityId, activityTitle, activity, onClose }) => {
   const [tabKey, setTabKey] = useState('config');
 
   const openBigScreen = () => {
@@ -355,7 +357,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           right: <Button type="primary" icon={<DesktopOutlined />} onClick={openBigScreen}>大屏</Button>,
         }}
         items={[
-          { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} /> },
+          { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} activity={activity} /> },
           { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
         ]}

@@ -45,7 +45,7 @@ const ActivityManagement = () => {
   const [promiseModalVisible, setPromiseModalVisible] = useState(false);
   const [quizModalVisible, setQuizModalVisible] = useState(false);
   const [onsiteModalVisible, setOnsiteModalVisible] = useState(false);
-  const [onsiteActivity, setOnsiteActivity] = useState<{ id: string; title: string } | null>(null);
+  const [onsiteActivity, setOnsiteActivity] = useState<Activity | null>(null);
   const [warmUpVisible, setWarmUpVisible] = useState(false);
   const [warmUpActivity, setWarmUpActivity] = useState<Activity | null>(null);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -128,8 +128,8 @@ const ActivityManagement = () => {
   };
 
   const handleOpenOnsite = (record: Activity) => {
-    // 打开现场管理弹窗（入选名单 / 组CP），弹窗内「大屏」按钮再新窗口打开现场大屏
-    setOnsiteActivity({ id: record.id, title: record.title });
+    // 打开现场管理弹窗（现场配置/入选名单/组CP），弹窗内「大屏」按钮再新窗口打开现场大屏
+    setOnsiteActivity(record);
     setOnsiteModalVisible(true);
   };
 
@@ -359,6 +359,7 @@ const ActivityManagement = () => {
         visible={onsiteModalVisible}
         activityId={onsiteActivity?.id || ''}
         activityTitle={onsiteActivity?.title || ''}
+        activity={onsiteActivity}
         onClose={() => { setOnsiteModalVisible(false); setOnsiteActivity(null); }}
       />
     </>

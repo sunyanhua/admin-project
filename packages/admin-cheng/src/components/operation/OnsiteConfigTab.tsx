@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button, Space, Form, Switch, InputNumber, DatePicker } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { activityApi } from '@/api/services/activity-v1';
+import { activityApi, Activity } from '@/api/services/activity-v1';
 import ImageUpload from '@/components/common/ImageUpload';
 import { parseApiTime, dayjsToApi } from '@/utils/format';
 
 interface OnsiteConfigTabProps {
   activityId: string;
+  /** 列表行数据（与编辑弹窗回填同源）；缺省时用详情接口兜底 */
+  activity?: Activity | null;
 }
 
 /** 现场图片二维码：解析 extra_params 顶层 onsite_qrcode 键（与编辑表单一致） */
@@ -22,48 +24,63 @@ const parseOnsiteQrcodeFromExtra = (extraParams?: string): string => {
 /**
  * 现场配置 TAB：与活动编辑表单中的现场内容完全一致——
  * 现场签到开关、签到开始时间、现场心动机会数、现场大屏背景图、现场图片二维码。
+ * 回填与编辑弹窗同源（列表数据优先），详情接口仅作兜底与保存后刷新。
  */
-const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId }) => {
+const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId, activity: activityProp }) => {
   const { success, error: showError } = useAppNotification();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   /** 最近一次读取的活动原始数据（保存时原对象透传 extra_params / onsite_config） */
-  const [activity, setActivity] = useState<any>(null);
+  const [activity, setActivity] = useState<any>(activityProp || null);
 
   const checkinEnabled = Form.useWatch('checkin_enabled', form);
 
-  /** 拉取活动详情并回填现场字段（与编辑表单 pickOnsiteFields 一致） */
+  /** 回填现场字段（与编辑表单 pickOnsiteFields 一致） */
+  const fillForm = useCallback((data: any) => {
+    const checkinStart = data?.checkin_start ? parseApiTime(data.checkin_start) : undefined;
+    let onsiteBgScreen = '';
+    try {
+      const obj = JSON.parse(data?.onsite_config || '{}');
+      if (obj && typeof obj === 'object') onsiteBgScreen = obj.bg_screen || '';
+    } catch { /* 原值非法则留空 */ }
+    form.setFieldsValue({
+      checkin_enabled: data?.checkin_enabled ?? false,
+      // 防御后端 time.Time 零值（0001-01-01T00:00:00Z）被回显为异常日期
+      checkin_start: checkinStart && checkinStart.year() >= 1970 ? checkinStart : undefined,
+      onsite_loves_chances: data?.onsite_loves_chances ?? 0,
+      onsite_bg_screen: onsiteBgScreen,
+      onsite_qrcode: parseOnsiteQrcodeFromExtra(data?.extra_params),
+    });
+  }, [form]);
+
+  // 列表数据优先：延迟回填（等表单挂载，与编辑弹窗一致）
+  useEffect(() => {
+    if (!activityProp) return;
+    setActivity(activityProp);
+    const timer = setTimeout(() => fillForm(activityProp), 50);
+    return () => clearTimeout(timer);
+  }, [activityProp, fillForm]);
+
+  /** 详情接口兜底（列表未传数据时）+ 保存后刷新 */
   const fetchConfig = useCallback(async () => {
     if (!activityId) return;
     setLoading(true);
     try {
       const res: any = await activityApi.getDetail(activityId);
       setActivity(res);
-      const checkinStart = res?.checkin_start ? parseApiTime(res.checkin_start) : undefined;
-      let onsiteBgScreen = '';
-      try {
-        const obj = JSON.parse(res?.onsite_config || '{}');
-        if (obj && typeof obj === 'object') onsiteBgScreen = obj.bg_screen || '';
-      } catch { /* 原值非法则留空 */ }
-      form.setFieldsValue({
-        checkin_enabled: res?.checkin_enabled ?? false,
-        // 防御后端 time.Time 零值（0001-01-01T00:00:00Z）被回显为异常日期
-        checkin_start: checkinStart && checkinStart.year() >= 1970 ? checkinStart : undefined,
-        onsite_loves_chances: res?.onsite_loves_chances ?? 0,
-        onsite_bg_screen: onsiteBgScreen,
-        onsite_qrcode: parseOnsiteQrcodeFromExtra(res?.extra_params),
-      });
+      fillForm(res);
     } catch (err: any) {
       showError(err?.response?.data?.message || '获取现场配置失败');
     } finally {
       setLoading(false);
     }
-  }, [activityId, form, showError]);
+  }, [activityId, fillForm, showError]);
 
   useEffect(() => {
+    if (activityProp) return; // 有列表数据时不走详情兜底（保存后仍会刷新）
     fetchConfig();
-  }, [fetchConfig]);
+  }, [activityProp, fetchConfig]);
 
   /** 保存：与编辑表单提交逻辑完全一致 */
   const handleSave = async () => {
