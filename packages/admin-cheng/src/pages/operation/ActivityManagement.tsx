@@ -19,6 +19,7 @@ import ActivityRegisterModal from '@/components/operation/ActivityRegisterModal'
 import WarmUpManageModal from '@/components/operation/WarmUpManageModal';
 import PromiseTemplateModal from '@/components/operation/PromiseTemplateModal';
 import QuizManageModal from '@/components/operation/QuizManageModal';
+import OnsiteManageModal from '@/components/operation/OnsiteManageModal';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 
 const STATUS_OPTIONS = [
@@ -44,6 +45,8 @@ const ActivityManagement = () => {
   const [registerCheckinEnabled, setRegisterCheckinEnabled] = useState(false);
   const [promiseModalVisible, setPromiseModalVisible] = useState(false);
   const [quizModalVisible, setQuizModalVisible] = useState(false);
+  const [onsiteModalVisible, setOnsiteModalVisible] = useState(false);
+  const [onsiteActivity, setOnsiteActivity] = useState<{ id: string; title: string } | null>(null);
   const [warmUpVisible, setWarmUpVisible] = useState(false);
   const [warmUpActivity, setWarmUpActivity] = useState<Activity | null>(null);
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
@@ -126,9 +129,9 @@ const ActivityManagement = () => {
   };
 
   const handleOpenOnsite = (record: Activity) => {
-    // 新标签页打开现场大屏（全屏独立页，不带后台布局）
-    const base = window.location.href.split('#')[0];
-    window.open(`${base}#/activity-onsite/${record.id}`, '_blank');
+    // 打开现场管理弹窗（入选名单 / 组CP），弹窗内「大屏」按钮再新窗口打开现场大屏
+    setOnsiteActivity({ id: record.id, title: record.title });
+    setOnsiteModalVisible(true);
   };
 
   const handleShowRegisters = (record: Activity) => {
@@ -353,6 +356,13 @@ const ActivityManagement = () => {
       <QuizManageModal
         open={quizModalVisible}
         onClose={() => setQuizModalVisible(false)}
+      />
+
+      <OnsiteManageModal
+        visible={onsiteModalVisible}
+        activityId={onsiteActivity?.id || ''}
+        activityTitle={onsiteActivity?.title || ''}
+        onClose={() => { setOnsiteModalVisible(false); setOnsiteActivity(null); }}
       />
     </>
   );

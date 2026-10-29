@@ -24,7 +24,6 @@ import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import ActivityRegisterDetailModal from '@/components/operation/ActivityRegisterDetailModal';
 import ActivityPresignTab from '@/components/operation/ActivityPresignTab';
-import ActivityCpTab from '@/components/operation/ActivityCpTab';
 import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
 import { buildRegisterExportSheet } from './activityRegisterExport.utils';
 import { applyLinkColumns } from './excelExport.utils';
@@ -518,8 +517,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
             items={[
               { key: 'register', label: '用户报名', children: registerContent },
               { key: 'presign', label: '导入报名', children: <ActivityPresignTab activityId={activityId} reloadKey={presignReloadKey} /> },
-              // 组CP按需挂载：切到该 TAB 才拉数据计算组合
-              { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
             ]}
           />
         ) : (
