@@ -1270,6 +1270,89 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/register/{rid}/extra-data": {
+            "patch": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "独立编辑指定报名记录的 extra_data（JSONB，透传）。\n三态语义：非空字符串=覆盖（必须是合法 JSON，否则 40001）；空串=清空（置 NULL）；\n缺省 / null = 40001（必须显式指定，避免空 body 误清空）。\n报名记录须属于该活动且未删除（否则 40505）；专区管理员活动不属于所属专区 → 40233。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "编辑报名扩展数据",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "报名记录 ID（UUID）",
+                        "name": "rid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "编辑报名扩展数据请求",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateRegisterExtraDataRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateRegisterExtraDataResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/register/{rid}/onsite-number": {
             "delete": {
                 "security": [
@@ -5173,6 +5256,45 @@
                     },
                     "404": {
                         "description": "报喜不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "软删除报喜记录（任意状态）：撤销后 C 端与管理后台均不可见，并清除双方脱单档案的报喜标记；已收到的随份子记录保留。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "撤销报喜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "撤销成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "报喜不存在或已撤销",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -17651,6 +17773,47 @@
                 }
             }
         },
+        "/api/v1/wxa/congratulation/reached-1314-partners": {
+            "get": {
+                "description": "返回与当前用户配对 reached_1314=true 的全部异性（含已退出脱单/审核状态非通过/账户非正常/已有报喜者）；当前用户须为脱单用户且已设置性别，不校验审核状态与退出状态。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "报喜达标 1314 异性列表",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.Reached1314PartnerItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/congratulation/tributes/{id}": {
             "get": {
                 "description": "查询本人某条随份子记录（站内礼物直接已完成；现金红包状态随支付）。",
@@ -24517,6 +24680,31 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateRegisterExtraDataRequest": {
+            "type": "object",
+            "required": [
+                "extra_data"
+            ],
+            "properties": {
+                "extra_data": {
+                    "description": "ExtraData 扩展数据（JSONB，透传）。使用 *string：binding:\"required\" 对字符串零值 \"\"\n判\"未提供\"，指针的 required 只检查 non-nil，允许显式传入 \"\" 表达清空。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.UpdateRegisterExtraDataResponse": {
+            "type": "object",
+            "properties": {
+                "extra_data": {
+                    "description": "更新后的扩展数据（清空为 null）",
+                    "type": "string"
+                },
+                "register_id": {
+                    "description": "报名记录 ID",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_admin_model.AdminChangePasswordRequest": {
             "type": "object",
             "required": [
@@ -27309,6 +27497,35 @@
                     "type": "string"
                 },
                 "nickname": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.Reached1314PartnerItem": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "joined_at": {
+                    "description": "JoinedAt 加入时间（用户注册日期，格式 \"2006-01-02\"；数据缺失为 null）。",
+                    "type": "string"
+                },
+                "matching": {
+                    "description": "Matching 该配对当前匹配度。",
+                    "type": "integer"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "reached_1314_at": {
+                    "description": "Reached1314At 首次达到 1314 的时间（RFC3339 UTC；历史数据缺失为 null）。",
+                    "type": "string"
+                },
+                "user_id": {
                     "type": "string"
                 }
             }
