@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Tag, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { EyeOutlined, ExportOutlined } from '@ant-design/icons';
+import { EyeOutlined, ExportOutlined, ReloadOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -277,10 +277,11 @@ const UserList = () => {
       <StandardPage
         title="基础资料管理"
         description="查看和管理平台注册用户的基础资料、脱单档案及账户信息，支持按用户类型和状态筛选。"
-        showRefreshButton
-        onRefresh={refresh}
         extraActions={
-          <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+          <Space>
+            <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+            <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
+          </Space>
         }
         searchArea={
           <SearchPanel
