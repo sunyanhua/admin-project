@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-10-30 | 分组管理完整实现（现场弹窗 TAB：分组名称配置/竖向分组列表/拖拽移动/自动分组男女均衡/保存分组写 extra_data）；报喜管理调整（男女昵称头像可点资料卡片、重新审核提醒、撤销）；基础资料管理新增全量导出（并发分页+失败重试）；现场弹窗默认 TAB 随签到时间切换；现场配置图片回填修复；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | OnsiteGroupTab + onsiteGrouping.utils + CongratulationManagement/DetailModal + UserList + OnsiteManageModal + activity-v1 | 9a640a1、dc94e3b、6572662、685c18a、884498a、4995d7c、afff494、fa02c16、779904b、ec59286、b3d08e4（构建产物未提交） |
 | 2026-10-27 | 互动管理新增「报喜管理」页面——报喜信息管理（筛选列表 + 详情弹窗 + 审核含官方随份子）+ 礼物管理（列表 CRUD/状态/排序 + 添加编辑弹窗）；**测试版构建发布**（build:zone-test 合并产物，待上传测试服务器 /cheng/ 目录） | congratulation 服务 + CongratulationManagement + 两个弹窗 + 路由/菜单 | fb945aa（构建产物未提交） |
 | 2026-10-26 | 报名名单右上角新增「添加」按钮（姓名/性别 Radio/手机号/单位，直接入选并分配编号默认勾选：导入名单→免报名入选→按性别最大号+1 自动排序）；未注册用户不显示签到操作；**测试版+正式版构建发布**（build:zone-test / build:zone-prod 合并产物） | ActivityRegisterAddModal + ActivityRegisterModal | 56cdefa、e7db894、980de7e（构建产物未提交） |
 | 2026-10-22 | 报名名单已入选用户新增「签到」操作（POST /register/{rid}/checkin 后台代签到，仅入选可签/重复 40502/支持补签，操作列加宽）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityRegisterModal + activity-v1 | 6de5a6c（构建产物未提交） |
