@@ -1,7 +1,10 @@
 import { useState, useCallback } from 'react';
 import { Tag, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { EyeOutlined } from '@ant-design/icons';
+import { EyeOutlined, ExportOutlined } from '@ant-design/icons';
+import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import { useAppNotification } from '@/hooks/useAppNotification';
 import { userApi } from '../../api/services/user';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
@@ -52,7 +55,9 @@ function calcAge(birthDate: string): string {
 }
 
 const UserList = () => {
+  const { success, error: showError } = useAppNotification();
   const [values, setValues] = useState<Record<string, any>>({});
+  const [exporting, setExporting] = useState(false);
 
   // Detail modal state — 直接用列表数据，无需额外接口
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -61,6 +66,45 @@ const UserList = () => {
   const [auditProfileOpen, setAuditProfileOpen] = useState(false);
   // 审核完成后触发资料卡片重新拉取
   const [auditReloadKey, setAuditReloadKey] = useState(0);
+
+  /** 一键导出全部注册用户基础资料（循环分页拉全量） */
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const all: CommunityUserItem[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await userApi.getUsers({ page, size: 100 });
+        const list: CommunityUserItem[] = res?.list || (Array.isArray(res) ? res : []);
+        if (!list.length) break;
+        all.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      const headers = ['昵称', '手机号', '性别', '年龄', '注册时间', '脱单资料', '状态', '嗑学分', '金币'];
+      const rows = all.map((r) => [
+        r.profile?.nickname || '-',
+        r.user?.phone || '-',
+        GENDER_LABEL[r.profile?.gender] || '-',
+        calcAge(r.profile?.birth_date || ''),
+        r.profile?.created_at ? formatDateTime(r.profile.created_at) : '-',
+        r.match_profile ? '已登记' : '未登记',
+        r.user?.status !== AdminUserStatus.DISABLED ? '正常' : '屏蔽',
+        r.user?.credits ?? '-',
+        r.wallet?.coins ?? '-',
+      ]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = headers.map(() => ({ wch: 16 }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '基础资料');
+      XLSX.writeFile(wb, `基础资料_${dayjs().format('YYYYMMDD_HHmmss')}.xlsx`);
+      success(`导出成功（${all.length} 条）`);
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const fetchUsers = useCallback(async (params: any) => {
     const apiParams: any = {
@@ -235,6 +279,9 @@ const UserList = () => {
         description="查看和管理平台注册用户的基础资料、脱单档案及账户信息，支持按用户类型和状态筛选。"
         showRefreshButton
         onRefresh={refresh}
+        extraAddActions={
+          <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
+        }
         searchArea={
           <SearchPanel
             filters={filters}
