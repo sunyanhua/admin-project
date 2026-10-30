@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Space, Form, Input } from 'antd';
+import { Button, Form, Input, Select, InputNumber } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity } from '@/api/services/activity-v1';
@@ -33,6 +33,21 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
   const [saving, setSaving] = useState(false);
   /** 最近一次读取的活动原始数据（保存时 onsite_config 原对象透传） */
   const [activity, setActivity] = useState<any>(activityProp || null);
+  /** 快速设置：组名类型（字母/数字）与组数 */
+  const [quickType, setQuickType] = useState<'letter' | 'number'>('letter');
+  const [quickCount, setQuickCount] = useState<number | null>(null);
+
+  /** 快速设置：按类型与组数自动生成分组名称（字母 A|B|C… 或数字 1|2|3…） */
+  const applyQuickSet = () => {
+    if (quickCount == null || quickCount < 1 || quickCount > 26) {
+      showError('请输入 1~26 的组数');
+      return;
+    }
+    const names = Array.from({ length: quickCount }, (_, i) =>
+      quickType === 'letter' ? String.fromCharCode(65 + i) : String(i + 1),
+    );
+    form.setFieldValue('groups', names.join('|'));
+  };
 
   const fillForm = useCallback((data: any) => {
     form.setFieldsValue({ groups: parseGroups(data?.onsite_config) });
@@ -102,21 +117,49 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
   };
 
   return (
-    <div style={{ maxWidth: 560 }}>
+    <div style={{ maxWidth: 720 }}>
       <Form form={form} layout="vertical">
-        <Form.Item
-          label="分组名称"
-          name="groups"
-          rules={[{ required: true, message: '请输入分组名称' }]}
-          extra='用「|」分隔，例如：A|B|C|D|E|F|G；保存后原有 onsite_config 其他内容保留'
-        >
-          <Input placeholder="A|B|C|D|E|F|G" maxLength={512} />
-        </Form.Item>
-        <Space>
-          <Button type="primary" icon={<SaveOutlined />} loading={saving || loading} onClick={handleSave}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <Form.Item
+            label="分组名称"
+            name="groups"
+            rules={[{ required: true, message: '请输入分组名称' }]}
+            extra='用「|」分隔，例如：A|B|C|D|E|F|G；保存后原有 onsite_config 其他内容保留'
+            style={{ flex: 1, marginBottom: 0 }}
+          >
+            <Input placeholder="A|B|C|D|E|F|G" maxLength={512} />
+          </Form.Item>
+          <Button type="primary" icon={<SaveOutlined />} loading={saving || loading} onClick={handleSave} style={{ marginTop: 30 }}>
             保存
           </Button>
-        </Space>
+        </div>
+
+        {/* 快速设置：按类型与组数自动生成分组名称 */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 14, fontSize: 13, color: '#666' }}>
+          <span>快速设置</span>
+          <Select
+            size="small"
+            value={quickType}
+            onChange={(v) => setQuickType(v)}
+            style={{ width: 84 }}
+            options={[
+              { label: '字母', value: 'letter' },
+              { label: '数字', value: 'number' },
+            ]}
+          />
+          <InputNumber
+            size="small"
+            min={1}
+            max={26}
+            precision={0}
+            value={quickCount ?? undefined}
+            onChange={(v) => setQuickCount(v ?? null)}
+            placeholder="组数"
+            style={{ width: 84 }}
+          />
+          <Button size="small" onClick={applyQuickSet}>应用</Button>
+          <span style={{ color: '#999' }}>如字母 + 7 → A|B|C|D|E|F|G</span>
+        </div>
       </Form>
     </div>
   );

@@ -50,6 +50,22 @@ describe('OnsiteGroupTab', () => {
     });
   });
 
+  it('快速设置：字母 + 组数自动生成分组名称', async () => {
+    render(
+      <App>
+        <OnsiteGroupTab activityId="a1" activity={ACTIVITY as any} />
+      </App>,
+    );
+    const input = await screen.findByPlaceholderText('A|B|C|D|E|F|G') as HTMLInputElement;
+    const countInput = screen.getByPlaceholderText('组数') as HTMLInputElement;
+    await userEvent.clear(countInput);
+    await userEvent.type(countInput, '3');
+    await userEvent.click(screen.getByRole('button', { name: '应 用' }));
+    await waitFor(() => {
+      expect(input.value).toBe('A|B|C');
+    });
+  });
+
   it('保存时 onsite_config 原对象透传——仅更新 groups 键，其他内容保留', async () => {
     render(
       <App>
