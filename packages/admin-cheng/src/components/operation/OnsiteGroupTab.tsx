@@ -124,7 +124,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
             label="分组名称"
             name="groups"
             rules={[{ required: true, message: '请输入分组名称' }]}
-            extra='用「|」分隔，例如：A|B|C|D|E|F|G；保存后原有 onsite_config 其他内容保留'
+            extra='用「|」分隔，例如：A|B|C|D|E|F|G'
             style={{ flex: 1, marginBottom: 0 }}
           >
             <Input placeholder="A|B|C|D|E|F|G" maxLength={512} />
