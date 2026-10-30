@@ -67,19 +67,33 @@ const UserList = () => {
   // 审核完成后触发资料卡片重新拉取
   const [auditReloadKey, setAuditReloadKey] = useState(0);
 
-  /** 一键导出全部注册用户基础资料（循环分页拉全量） */
+  /** 单页拉取（失败自动重试一次，网络抖动不中断导出） */
+  const fetchUserPage = async (page: number): Promise<CommunityUserItem[]> => {
+    try {
+      const res: any = await userApi.getUsers({ page, size: 100 });
+      return res?.list || (Array.isArray(res) ? res : []);
+    } catch {
+      const res: any = await userApi.getUsers({ page, size: 100 });
+      return res?.list || (Array.isArray(res) ? res : []);
+    }
+  };
+
+  /** 一键导出全部注册用户基础资料（并发分页拉全量，8 页/批） */
   const handleExport = async () => {
     setExporting(true);
     try {
-      const all: CommunityUserItem[] = [];
-      let page = 1;
-      while (true) {
-        const res: any = await userApi.getUsers({ page, size: 100 });
-        const list: CommunityUserItem[] = res?.list || (Array.isArray(res) ? res : []);
-        if (!list.length) break;
-        all.push(...list);
-        if (list.length < 100) break;
-        page++;
+      const first: any = await userApi.getUsers({ page: 1, size: 100 });
+      const firstList: CommunityUserItem[] = first?.list || (Array.isArray(first) ? first : []);
+      const total: number = first?.total ?? firstList.length;
+      const all: CommunityUserItem[] = [...firstList];
+      // 并发分页：3 万+用户 300 页，串行需数分钟；并发 8 约十几秒
+      const CONCURRENCY = 8;
+      const totalPages = Math.ceil(total / 100);
+      for (let p = 2; p <= totalPages; p += CONCURRENCY) {
+        const batch: number[] = [];
+        for (let i = 0; i < CONCURRENCY && p + i <= totalPages; i++) batch.push(p + i);
+        const results = await Promise.all(batch.map((page) => fetchUserPage(page)));
+        results.forEach((list) => all.push(...list));
       }
       const headers = ['昵称', '手机号', '性别', '年龄', '注册时间', '脱单资料', '状态', '嗑学分', '金币'];
       const rows = all.map((r) => [
