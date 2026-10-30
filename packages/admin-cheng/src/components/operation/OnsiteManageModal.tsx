@@ -15,6 +15,7 @@ import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import ActivityCpTab from '@/components/operation/ActivityCpTab';
 import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
 import OnsiteConfigTab from '@/components/operation/OnsiteConfigTab';
+import OnsiteGroupTab from '@/components/operation/OnsiteGroupTab';
 import { formatDateTime, parseApiTime } from '@/utils/format';
 
 interface OnsiteManageModalProps {
@@ -371,6 +372,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} activity={activity} /> },
           { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
+          { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={activity} /> },
         ]}
       />
     </ScrollableModal>
