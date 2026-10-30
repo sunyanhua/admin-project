@@ -24,10 +24,10 @@ interface MemberRow extends RegisterRecord {
   groupIdx: number | null;
 }
 
-/** 成员卡片（拖拽移动分组）：序号 + 昵称（性别）+ 姓名 · 年龄 */
+/** 成员卡片（拖拽移动分组）：序号 + 昵称（性别）+ 姓名 · 年龄；序号标签男蓝女红 */
 const MemberCard: React.FC<{
   uid: string;
-  info: { number: number | null; nickname: string; realName: string; genderLabel: string; age: number | null };
+  info: { number: number | null; nickname: string; realName: string; genderLabel: string; age: number | null; genderColor: string };
   dragUid: string | null;
   onDragStart: (uid: string) => void;
   onDragEnd: () => void;
@@ -49,7 +49,7 @@ const MemberCard: React.FC<{
     }}
   >
     <HolderOutlined style={{ color: '#bbb', flexShrink: 0 }} />
-    <span style={{ minWidth: 22, height: 22, borderRadius: '50%', background: '#e04d2c', color: '#fff', fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <span style={{ minWidth: 22, height: 22, borderRadius: '50%', background: info.genderColor, color: '#fff', fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       {info.number ?? '-'}
     </span>
     <div style={{ minWidth: 0 }}>
@@ -308,17 +308,18 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     return { total: list.length, males, females };
   };
 
-  /** 成员卡片展示资料（未注册用户昵称「未注册」，姓名取预报名反查） */
-  const infoOf = (m: RegisterRecord) => ({
-    number: m.onsite_number ?? null,
-    nickname: m.user_id ? (m.user_profile?.nickname || m.nickname || m.user_id) : '未注册',
-    realName: m.user_match_profile?.real_name || m.presign_real_name || '',
-    genderLabel: (() => {
-      const g = m.user_profile?.gender ?? m.gender ?? m.presign_gender;
-      return g != null ? (RegisterGenderLabels[g] ?? '-') : '-';
-    })(),
-    age: m.user_profile?.age ?? m.age ?? null,
-  });
+  /** 成员卡片展示资料（未注册用户昵称「未注册」，姓名取预报名反查；序号标签男蓝女红） */
+  const infoOf = (m: RegisterRecord) => {
+    const g = m.user_profile?.gender ?? m.gender ?? m.presign_gender;
+    return {
+      number: m.onsite_number ?? null,
+      nickname: m.user_id ? (m.user_profile?.nickname || m.nickname || m.user_id) : '未注册',
+      realName: m.user_match_profile?.real_name || m.presign_real_name || '',
+      genderLabel: g != null ? (RegisterGenderLabels[g] ?? '-') : '-',
+      genderColor: g === 1 ? '#0088cc' : g === 2 ? '#eb5482' : '#e04d2c',
+      age: m.user_profile?.age ?? m.age ?? null,
+    };
+  };
 
   return (
     <div>
