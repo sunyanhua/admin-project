@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Input, Select, InputNumber, Space, Empty, Spin } from 'antd';
 import { SaveOutlined, TeamOutlined, HolderOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { activityApi, Activity, RegisterRecord } from '@/api/services/activity-v1';
+import { activityApi, Activity, RegisterRecord, PresignRecord } from '@/api/services/activity-v1';
 import { RegisterAuditStatus, RegisterGenderLabels } from '@shared/constants';
 import {
   parseGroupNames,
@@ -23,6 +23,45 @@ interface MemberRow extends RegisterRecord {
   /** 当前分组序号（0 起；null=未分组） */
   groupIdx: number | null;
 }
+
+/** 成员卡片（拖拽移动分组）：序号 + 昵称（性别）+ 姓名 · 年龄 */
+const MemberCard: React.FC<{
+  uid: string;
+  info: { number: number | null; nickname: string; realName: string; genderLabel: string; age: number | null };
+  dragUid: string | null;
+  onDragStart: (uid: string) => void;
+  onDragEnd: () => void;
+}> = ({ uid, info, dragUid, onDragStart, onDragEnd }) => (
+  <div
+    draggable
+    onDragStart={(e) => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', uid);
+      onDragStart(uid);
+    }}
+    onDragEnd={onDragEnd}
+    title="拖拽可移动到其他组"
+    style={{
+      width: 210, display: 'flex', alignItems: 'center', gap: 8, boxSizing: 'border-box',
+      border: '1px solid #f0f0f0', borderRadius: 6, background: '#fff',
+      padding: '6px 8px', cursor: 'grab',
+      opacity: dragUid === uid ? 0.5 : 1,
+    }}
+  >
+    <HolderOutlined style={{ color: '#bbb', flexShrink: 0 }} />
+    <span style={{ minWidth: 22, height: 22, borderRadius: '50%', background: '#e04d2c', color: '#fff', fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      {info.number ?? '-'}
+    </span>
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {info.nickname}（{info.genderLabel}）
+      </div>
+      <div style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        {info.realName || '-'} · {info.age != null ? `${info.age}岁` : '年龄-'}
+      </div>
+    </div>
+  </div>
+);
 
 /**
  * 分组管理 TAB：
@@ -103,7 +142,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     fetchConfig();
   }, [activityProp, fetchConfig]);
 
-  /** 拉取全部已入选报名并读取各自分组（extra_data.group_index） */
+  /** 拉取全部已入选报名并读取各自分组（extra_data.group_index）；免报名入选记录反查预报名补齐姓名/性别/手机号 */
   const fetchMembers = useCallback(async () => {
     if (!activityId) return;
     setMembersLoading(true);
@@ -117,6 +156,23 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
         all.push(...list);
         if (list.length < 100) break;
         page++;
+      }
+      // 免报名入选（user_id 为空）反查预报名补齐姓名/性别/手机号（与入选名单一致）
+      const adminRecords = all.filter((r) => !r.user_id && r.presign_id);
+      if (adminRecords.length) {
+        const enriched = await Promise.all(adminRecords.map(async (r) => {
+          try {
+            const res: any = await activityApi.getPresigns(activityId, { register_id: r.id, page: 1, size: 20 });
+            const p: PresignRecord | undefined = Array.isArray(res) ? res[0] : (res?.list || [])[0];
+            if (!p) return r;
+            return { ...r, presign_real_name: p.real_name, presign_phone: p.phone, presign_gender: p.gender };
+          } catch { return r; } // 反查失败不阻塞列表展示
+        }));
+        const map = new Map(enriched.map((r) => [r.id, r]));
+        for (let i = 0; i < all.length; i++) {
+          const hit = map.get(all[i].id);
+          if (hit) all[i] = hit;
+        }
       }
       // user_id 可为 null（免报名入选），空安全比较避免排序崩溃
       const byNumber = (a: RegisterRecord, b: RegisterRecord) =>
@@ -252,11 +308,11 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     return { total: list.length, males, females };
   };
 
-  /** 成员卡片展示资料 */
+  /** 成员卡片展示资料（未注册用户昵称「未注册」，姓名取预报名反查） */
   const infoOf = (m: RegisterRecord) => ({
     number: m.onsite_number ?? null,
-    nickname: m.user_profile?.nickname || m.nickname || m.user_id,
-    realName: m.user_match_profile?.real_name || '',
+    nickname: m.user_id ? (m.user_profile?.nickname || m.nickname || m.user_id) : '未注册',
+    realName: m.user_match_profile?.real_name || m.presign_real_name || '',
     genderLabel: (() => {
       const g = m.user_profile?.gender ?? m.gender ?? m.presign_gender;
       return g != null ? (RegisterGenderLabels[g] ?? '-') : '-';
@@ -326,9 +382,10 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
         {!groups.length ? (
           <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请先保存分组名称" style={{ padding: '24px 0' }} />
         ) : (
-          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {groups.map((name, idx) => {
               const stats = statsOf(idx);
+              const list = members.filter((m) => m.groupIdx === idx);
               return (
                 <div
                   key={`${name}-${idx}`}
@@ -344,8 +401,6 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                   }}
                   onDrop={() => handleDrop(idx)}
                   style={{
-                    minWidth: 210,
-                    flex: '0 0 210px',
                     border: dragOverIdx === idx && dragUid !== null ? '1px dashed #1677ff' : '1px solid #e8e8e8',
                     borderRadius: 8,
                     background: '#fafafa',
@@ -358,49 +413,27 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                       男{stats.males} 女{stats.females} 共{stats.total}
                     </span>
                   </div>
-                  {members.filter((m) => m.groupIdx === idx).map((m) => {
-                    const info = infoOf(m);
-                    return (
-                      <div
-                        key={uidOf(m)}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.effectAllowed = 'move';
-                          e.dataTransfer.setData('text/plain', uidOf(m));
-                          setDragUid(uidOf(m));
-                        }}
-                        onDragEnd={resetDrag}
-                        title="拖拽可移动到其他组"
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: 8,
-                          border: '1px solid #f0f0f0', borderRadius: 6, background: '#fff',
-                          padding: '6px 8px', marginBottom: 6, cursor: 'grab',
-                          opacity: dragUid === m.user_id ? 0.5 : 1,
-                        }}
-                      >
-                        <HolderOutlined style={{ color: '#bbb', flexShrink: 0 }} />
-                        <span style={{ minWidth: 22, height: 22, borderRadius: '50%', background: '#e04d2c', color: '#fff', fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {info.number ?? '-'}
-                        </span>
-                        <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {info.nickname}（{info.genderLabel}）
-                          </div>
-                          <div style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {info.realName || '-'} · {info.age != null ? `${info.age}岁` : '年龄-'}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {members.filter((m) => m.groupIdx === idx).length === 0 && (
+                  {list.length === 0 ? (
                     <div style={{ fontSize: 12, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>暂无成员（可拖入）</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {list.map((m) => (
+                        <MemberCard
+                          key={uidOf(m)}
+                          uid={uidOf(m)}
+                          info={infoOf(m)}
+                          dragUid={dragUid}
+                          onDragStart={setDragUid}
+                          onDragEnd={resetDrag}
+                        />
+                      ))}
+                    </div>
                   )}
                 </div>
               );
             })}
 
-            {/* 未分组列 */}
+            {/* 未分组 */}
             <div
               onDragOver={(e) => {
                 e.preventDefault();
@@ -409,12 +442,10 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
               }}
               onDrop={() => {
                 if (dragUid == null) return;
-                setMembers((prev) => prev.map((m) => (m.user_id === dragUid ? { ...m, groupIdx: null } : m)));
+                setMembers((prev) => prev.map((m) => (uidOf(m) === dragUid ? { ...m, groupIdx: null } : m)));
                 resetDrag();
               }}
               style={{
-                minWidth: 210,
-                flex: '0 0 210px',
                 border: dragOverIdx === -1 && dragUid !== null ? '1px dashed #1677ff' : '1px solid #e8e8e8',
                 borderRadius: 8,
                 background: '#f5f5f5',
@@ -425,41 +456,22 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                 <span>未分组</span>
                 <span style={{ fontSize: 12, color: '#666', fontWeight: 400 }}>共{statsOf(null).total}</span>
               </div>
-              {members.filter((m) => m.groupIdx === null).map((m) => {
-                const info = infoOf(m);
-                return (
-                  <div
-                    key={uidOf(m)}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.effectAllowed = 'move';
-                      e.dataTransfer.setData('text/plain', uidOf(m));
-                      setDragUid(uidOf(m));
-                    }}
-                    onDragEnd={resetDrag}
-                    title="拖拽可移动到其他组"
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 8,
-                      border: '1px solid #f0f0f0', borderRadius: 6, background: '#fff',
-                      padding: '6px 8px', marginBottom: 6, cursor: 'grab',
-                      opacity: dragUid === m.user_id ? 0.5 : 1,
-                    }}
-                  >
-                    <HolderOutlined style={{ color: '#bbb', flexShrink: 0 }} />
-                    <span style={{ minWidth: 22, height: 22, borderRadius: '50%', background: '#e04d2c', color: '#fff', fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {info.number ?? '-'}
-                    </span>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {info.nickname}（{info.genderLabel}）
-                      </div>
-                      <div style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {info.realName || '-'} · {info.age != null ? `${info.age}岁` : '年龄-'}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {members.filter((m) => m.groupIdx === null).length === 0 ? (
+                <div style={{ fontSize: 12, color: '#bbb', textAlign: 'center', padding: '12px 0' }}>暂无成员</div>
+              ) : (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {members.filter((m) => m.groupIdx === null).map((m) => (
+                    <MemberCard
+                      key={uidOf(m)}
+                      uid={uidOf(m)}
+                      info={infoOf(m)}
+                      dragUid={dragUid}
+                      onDragStart={setDragUid}
+                      onDragEnd={resetDrag}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
