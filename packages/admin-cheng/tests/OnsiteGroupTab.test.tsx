@@ -38,6 +38,21 @@ const REGISTERS = vi.hoisted(() => [
     pay_status: 0,
     gender: 2,
   },
+  {
+    // 免报名入选：user_id 为 null（后端「可取 null」），验证排序与分配不崩溃
+    id: 'r3',
+    user_id: null,
+    onsite_number: 3,
+    user_profile: undefined,
+    user_match_profile: undefined,
+    extra_data: '',
+    form_data: '{}',
+    attachments: [],
+    audit_status: 1,
+    pay_status: 0,
+    gender: 1,
+    presign_real_name: '王五',
+  },
 ]);
 
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
@@ -124,6 +139,25 @@ describe('OnsiteGroupTab', () => {
     });
   });
 
+  it('点击自动分组后成员卡片进入各组列（不再留在未分组）', async () => {
+    render(
+      <App>
+        <OnsiteGroupTab activityId="a1" activity={ACTIVITY as any} />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0);
+    });
+    // 分组前：张三在「未分组」列
+    expect(screen.getByText('未分组').parentElement?.parentElement?.textContent).toContain('张三');
+    await userEvent.click(btnByText('自动分组'));
+    await waitFor(() => {
+      // 分组后：未分组列不再包含张三
+      const ungrouped = screen.getByText('未分组').parentElement?.parentElement?.textContent || '';
+      expect(ungrouped).not.toContain('张三');
+    });
+  });
+
   it('自动分组后保存分组：逐条更新 extra_data 且原有键保留', async () => {
     render(
       <App>
@@ -138,7 +172,7 @@ describe('OnsiteGroupTab', () => {
     await userEvent.click(btnByText('保存分组'));
 
     await waitFor(() => {
-      expect(updateExtraMock).toHaveBeenCalledTimes(2);
+      expect(updateExtraMock).toHaveBeenCalledTimes(3);
     });
     const first = updateExtraMock.mock.calls[0];
     expect(first[0]).toBe('a1');

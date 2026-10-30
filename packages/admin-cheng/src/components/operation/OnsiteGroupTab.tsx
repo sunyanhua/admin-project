@@ -118,8 +118,10 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
         if (list.length < 100) break;
         page++;
       }
+      // user_id 可为 null（免报名入选），空安全比较避免排序崩溃
       const byNumber = (a: RegisterRecord, b: RegisterRecord) =>
-        (a.onsite_number ?? Number.MAX_SAFE_INTEGER) - (b.onsite_number ?? Number.MAX_SAFE_INTEGER) || a.user_id.localeCompare(b.user_id);
+        (a.onsite_number ?? Number.MAX_SAFE_INTEGER) - (b.onsite_number ?? Number.MAX_SAFE_INTEGER)
+        || String(a.user_id || '').localeCompare(String(b.user_id || ''));
       all.sort(byNumber);
       const rows: MemberRow[] = all.map((r) => {
         const idx = parseGroupIndex(r.extra_data);
