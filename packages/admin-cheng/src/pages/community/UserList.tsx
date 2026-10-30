@@ -279,7 +279,7 @@ const UserList = () => {
         description="查看和管理平台注册用户的基础资料、脱单档案及账户信息，支持按用户类型和状态筛选。"
         showRefreshButton
         onRefresh={refresh}
-        extraAddActions={
+        extraActions={
           <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
         }
         searchArea={
