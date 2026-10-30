@@ -334,6 +334,11 @@ export const activityApi = {
     return request.post(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/checkin`);
   },
 
+  /** 编辑报名扩展数据（extra_data JSONB 透传；非空=覆盖须合法 JSON，空串=清空） */
+  updateRegisterExtraData: (activityId: string, registerId: string, extra_data: string) => {
+    return request.patch(`/admin/v1/bizops/activity/${activityId}/register/${registerId}/extra-data`, { extra_data });
+  },
+
   /** 现场编号一键分配（按性别各自 1..N，组内按审核通过时间正序；覆盖式幂等，新通过者追加组尾） */
   assignOnsiteNumbers: (activityId: string) => {
     return request.post(`/admin/v1/bizops/activity/${activityId}/register/assign-numbers`);

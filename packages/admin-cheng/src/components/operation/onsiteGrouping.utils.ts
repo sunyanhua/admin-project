@@ -1,0 +1,56 @@
+/**
+ * 现场分组管理 — 纯逻辑工具
+ *
+ * 分组名称：onsite_config.groups（"|" 分隔字符串，如 "A|B|C"）。
+ * 用户分组：报名记录 extra_data（JSONB 透传）顶层键 group_index（1 起）+ group_name。
+ */
+
+/** extra_data 中分组信息的键 */
+export const GROUP_INDEX_KEY = 'group_index';
+export const GROUP_NAME_KEY = 'group_name';
+
+/** 解析分组名称（"A|B|C" → ['A','B','C']；过滤空段） */
+export function parseGroupNames(raw: string): string[] {
+  return String(raw || '')
+    .split('|')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/** 从报名记录 extra_data 读取分组序号（1 起），未分组/非法返回 null */
+export function parseGroupIndex(extraData?: string): number | null {
+  if (!extraData) return null;
+  try {
+    const obj = JSON.parse(extraData);
+    if (obj && typeof obj === 'object' && Number.isInteger(obj[GROUP_INDEX_KEY]) && obj[GROUP_INDEX_KEY] >= 1) {
+      return obj[GROUP_INDEX_KEY];
+    }
+  } catch { /* 非法 JSON 视为未分组 */ }
+  return null;
+}
+
+/** 按现场序号稳定排序（未分配序号排后，userId 兜底） */
+const byNumber = <T extends { userId: string; number?: number | null }>(a: T, b: T): number =>
+  (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER) || a.userId.localeCompare(b.userId);
+
+/**
+ * 自动分组：把所有用户分配到各组的序号（0 起）。
+ * 男女分别按现场序号排序后轮询分配——各组人数平均、各组男女人数平均；
+ * 女方从末组反向轮询，使两性余数落在不同组，总人数差异最小。
+ * 性别未设置的用户按顺序轮询分配。
+ */
+export function autoAssignGroups<T extends { userId: string; gender: 'male' | 'female' | ''; number?: number | null }>(
+  users: T[],
+  groupCount: number,
+): Map<string, number> {
+  const result = new Map<string, number>();
+  if (groupCount < 1) return result;
+  const males = users.filter((u) => u.gender === 'male').sort(byNumber);
+  const females = users.filter((u) => u.gender === 'female').sort(byNumber);
+  const others = users.filter((u) => u.gender !== 'male' && u.gender !== 'female').sort(byNumber);
+  males.forEach((u, i) => result.set(u.userId, i % groupCount));
+  // 女方从末组开始反向轮询（余数分散到不同组）
+  females.forEach((u, i) => result.set(u.userId, (groupCount - 1 - (i % groupCount) + groupCount) % groupCount));
+  others.forEach((u, i) => result.set(u.userId, i % groupCount));
+  return result;
+}
