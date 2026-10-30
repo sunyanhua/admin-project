@@ -171,24 +171,37 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     }
   };
 
-  /** 自动分组：全部已入选用户按人数平均 + 男女人数平均分配 */
+  /** 成员唯一键：免报名入选记录 user_id 为空串，退化为报名记录 id 避免键冲突 */
+  const uidOf = (m: RegisterRecord) => m.user_id || m.id;
+
+  /** 自动分组：全部已入选用户按人数平均 + 男女人数平均分配（基于最新成员状态计算） */
   const handleAutoAssign = () => {
     if (!groups.length) {
       showError('请先保存分组名称');
       return;
     }
-    const map = autoAssignGroups(
-      members.map((m) => ({ userId: m.user_id, gender: (m.user_profile?.gender ?? m.gender) === 1 ? 'male' : (m.user_profile?.gender ?? m.gender) === 2 ? 'female' : '', number: m.onsite_number })),
-      groups.length,
-    );
-    setMembers((prev) => prev.map((m) => ({ ...m, groupIdx: map.get(m.user_id) ?? null })));
+    if (!members.length) {
+      showError('成员列表尚未加载完成，请稍后重试');
+      return;
+    }
+    setMembers((prev) => {
+      const map = autoAssignGroups(
+        prev.map((m) => ({
+          userId: uidOf(m),
+          gender: (m.user_profile?.gender ?? m.gender) === 1 ? 'male' : (m.user_profile?.gender ?? m.gender) === 2 ? 'female' : '',
+          number: m.onsite_number,
+        })),
+        groups.length,
+      );
+      return prev.map((m) => ({ ...m, groupIdx: map.get(uidOf(m)) ?? null }));
+    });
     success('自动分组完成，可继续手动拖拽调整');
   };
 
   /** 拖拽落组：把被拖动成员移动到目标组 */
   const handleDrop = (targetIdx: number) => {
     if (dragUid == null) { resetDrag(); return; }
-    setMembers((prev) => prev.map((m) => (m.user_id === dragUid ? { ...m, groupIdx: targetIdx } : m)));
+    setMembers((prev) => prev.map((m) => (uidOf(m) === dragUid ? { ...m, groupIdx: targetIdx } : m)));
     resetDrag();
   };
 
@@ -300,7 +313,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <div style={{ fontWeight: 600, fontSize: 14 }}>分组列表</div>
         <Space>
-          <Button icon={<TeamOutlined />} onClick={handleAutoAssign}>自动分组</Button>
+          <Button icon={<TeamOutlined />} disabled={membersLoading} onClick={handleAutoAssign}>自动分组</Button>
           <Button type="primary" loading={savingAssign} onClick={handleSaveAssign}>
             {savingAssign ? `保存分组中 ${savingProgress}/${members.filter((m) => m.groupIdx != null).length}` : '保存分组'}
           </Button>
@@ -347,12 +360,12 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                     const info = infoOf(m);
                     return (
                       <div
-                        key={m.user_id || m.id}
+                        key={uidOf(m)}
                         draggable
                         onDragStart={(e) => {
                           e.dataTransfer.effectAllowed = 'move';
-                          e.dataTransfer.setData('text/plain', m.user_id);
-                          setDragUid(m.user_id);
+                          e.dataTransfer.setData('text/plain', uidOf(m));
+                          setDragUid(uidOf(m));
                         }}
                         onDragEnd={resetDrag}
                         title="拖拽可移动到其他组"
@@ -414,12 +427,12 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                 const info = infoOf(m);
                 return (
                   <div
-                    key={m.user_id || m.id}
+                    key={uidOf(m)}
                     draggable
                     onDragStart={(e) => {
                       e.dataTransfer.effectAllowed = 'move';
-                      e.dataTransfer.setData('text/plain', m.user_id);
-                      setDragUid(m.user_id);
+                      e.dataTransfer.setData('text/plain', uidOf(m));
+                      setDragUid(uidOf(m));
                     }}
                     onDragEnd={resetDrag}
                     title="拖拽可移动到其他组"
