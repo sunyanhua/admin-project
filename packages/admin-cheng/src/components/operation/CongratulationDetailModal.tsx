@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Spin, Tag, Radio, Input, Checkbox, InputNumber, Image } from 'antd';
+import { Button, Space, Spin, Tag, Radio, Input, Checkbox, InputNumber, Image, Alert } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
@@ -75,7 +75,8 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
     }
   };
 
-  const canAudit = detail?.status === CongratulationStatus.SUBMITTED;
+  /** 任意状态均可审核（已通过/未通过支持重新审核，界面给出提醒） */
+  const canAudit = detail != null;
 
   return (
     <ScrollableModal
@@ -164,10 +165,18 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
               </div>
             )}
 
-            {/* 审核操作（仅已提交状态） */}
+            {/* 审核操作（任意状态可审核；已完成审核的给出重新审核提醒） */}
             {canAudit && (
               <div style={{ borderTop: '1px solid #e8e8e8', paddingTop: 12, marginTop: 4 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>审核</div>
+                {detail.status !== CongratulationStatus.SUBMITTED && (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    style={{ marginBottom: 12 }}
+                    message="该报喜已经完成审核，审核结果已通知用户。如无特殊原因，建议不要重新修改审核状态。"
+                  />
+                )}
                 <Radio.Group value={action} onChange={(e) => setAction(e.target.value)} style={{ marginBottom: 12 }}>
                   <Radio value={1}>通过</Radio>
                   <Radio value={2}>未通过</Radio>
@@ -178,15 +187,27 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
                 )}
                 {action === 1 && (
                   <div style={{ marginBottom: 12 }}>
-                    <Checkbox checked={officialGift} onChange={(e) => setOfficialGift(e.target.checked)}>
+                    <Checkbox
+                      checked={officialGift || !!detail.is_official_gift}
+                      disabled={!!detail.is_official_gift}
+                      onChange={(e) => setOfficialGift(e.target.checked)}
+                    >
                       官方随份子
                     </Checkbox>
-                    {officialGift && (
+                    {(officialGift || detail.is_official_gift) && (
                       <span style={{ marginLeft: 12 }}>
-                        金额
-                        <InputNumber min={0.01} precision={2} value={giftYuan ?? undefined} onChange={(v) => setGiftYuan(v ?? null)}
-                          placeholder="元" style={{ width: 120, marginLeft: 6 }} />
-                        <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>提交后不可变更</span>
+                        {detail.is_official_gift ? (
+                          <span style={{ fontSize: 12, color: '#999' }}>
+                            已设置 ¥{((detail.gift_amount ?? 0) / 100).toFixed(2)}，一经提交不可变更
+                          </span>
+                        ) : (
+                          <>
+                            金额
+                            <InputNumber min={0.01} precision={2} value={giftYuan ?? undefined} onChange={(v) => setGiftYuan(v ?? null)}
+                              placeholder="元" style={{ width: 120, marginLeft: 6 }} />
+                            <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>提交后不可变更</span>
+                          </>
+                        )}
                       </span>
                     )}
                   </div>

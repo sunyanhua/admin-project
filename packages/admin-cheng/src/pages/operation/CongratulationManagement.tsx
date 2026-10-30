@@ -5,6 +5,8 @@ import { EyeOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined
 import type { ColumnsType } from 'antd/es/table';
 import { GiftStatus, CongratulationStatus, CongratulationStatusLabels, CongratulationStatusColors } from '@shared/constants';
 import { getAvatarUrl, getSmallUrl } from '@/utils/imageUtils';
+import UserAvatar from '@/components/user/UserAvatar';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import { congratulationApi, AdminCongratulationItem, CongratulationGiftItem } from '@/api/services/congratulation';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
@@ -39,6 +41,8 @@ const CongratulationListTab: React.FC<{ onRefreshRef: (fn: () => void) => void }
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailId, setDetailId] = useState('');
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState('');
 
   const fetchList = useCallback(async (params: any) => {
     return congratulationApi.getList({
@@ -76,23 +80,38 @@ const CongratulationListTab: React.FC<{ onRefreshRef: (fn: () => void) => void }
     }
   };
 
+  const handleRevoke = (record: AdminCongratulationItem) => {
+    confirmDelete({
+      name: `「${record.male_nickname || '-'} × ${record.female_nickname || '-'}」的报喜`,
+      content: '撤销后 C 端与管理后台均不可见，并清除双方脱单档案的报喜标记；已收到的随份子记录保留。',
+      deleteFn: () => congratulationApi.revoke(record.id),
+      onSuccess: refresh,
+    });
+  };
+
   const columns: ColumnsType<AdminCongratulationItem> = [
     {
       title: '男方', key: 'male', width: 150,
       render: (_: any, r: AdminCongratulationItem) => (
-        <Space size={4}>
-          <Image src={getAvatarUrl(r.male_avatar)} alt="" preview={false} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
-          <span style={{ fontSize: 14 }}>{r.male_nickname || '-'}</span>
-        </Space>
+        <Button type="link" style={{ padding: 0, height: 'auto' }}
+          onClick={() => { setUserDetailUserId(r.male_id || ''); setUserDetailVisible(true); }}>
+          <Space size={4}>
+            <UserAvatar src={r.male_avatar} nick={r.male_nickname || '-'} />
+            <span style={{ fontSize: 14 }}>{r.male_nickname || '-'}</span>
+          </Space>
+        </Button>
       ),
     },
     {
       title: '女方', key: 'female', width: 150,
       render: (_: any, r: AdminCongratulationItem) => (
-        <Space size={4}>
-          <Image src={getAvatarUrl(r.female_avatar)} alt="" preview={false} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
-          <span style={{ fontSize: 14 }}>{r.female_nickname || '-'}</span>
-        </Space>
+        <Button type="link" style={{ padding: 0, height: 'auto' }}
+          onClick={() => { setUserDetailUserId(r.female_id || ''); setUserDetailVisible(true); }}>
+          <Space size={4}>
+            <UserAvatar src={r.female_avatar} nick={r.female_nickname || '-'} />
+            <span style={{ fontSize: 14 }}>{r.female_nickname || '-'}</span>
+          </Space>
+        </Button>
       ),
     },
     {
@@ -120,12 +139,17 @@ const CongratulationListTab: React.FC<{ onRefreshRef: (fn: () => void) => void }
       ),
     },
     {
-      title: '操作', key: 'action', width: 110, fixed: 'right' as const,
+      title: '操作', key: 'action', width: 160, fixed: 'right' as const,
       render: (_: any, r: AdminCongratulationItem) => (
-        <Button type="link" size="small" icon={<EyeOutlined />}
-          onClick={() => { setDetailId(r.id); setDetailVisible(true); }}>
-          {r.status === CongratulationStatus.SUBMITTED ? '审核' : '详情'}
-        </Button>
+        <Space size={0}>
+          <Button type="link" size="small" icon={<EyeOutlined />}
+            onClick={() => { setDetailId(r.id); setDetailVisible(true); }}>
+            {r.status === CongratulationStatus.SUBMITTED ? '审核' : '详情'}
+          </Button>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleRevoke(r)}>
+            撤销
+          </Button>
+        </Space>
       ),
     },
   ];
@@ -142,6 +166,12 @@ const CongratulationListTab: React.FC<{ onRefreshRef: (fn: () => void) => void }
         congratulationId={detailId}
         onClose={() => { setDetailVisible(false); setDetailId(''); }}
         onSuccess={refresh}
+      />
+
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
       />
     </div>
   );

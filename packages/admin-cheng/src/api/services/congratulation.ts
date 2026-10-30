@@ -88,9 +88,14 @@ export const congratulationApi = {
     return request.get(`/admin/v1/bizops/congratulation/${id}`);
   },
 
-  /** 审核报喜（通过时可一并提交官方随份子标记与金额，提交后不可变更） */
+  /** 审核报喜（通过时可一并提交官方随份子标记与金额，提交后不可变更；支持重新审核） */
   audit: (id: string, data: { approved: boolean; reason?: string; is_official_gift?: boolean; gift_amount?: number }) => {
     return request.post(`/admin/v1/bizops/congratulation/${id}/audit`, data);
+  },
+
+  /** 撤销报喜（任意状态软删，清除双方脱单档案报喜标记；已收随份子保留） */
+  revoke: (id: string) => {
+    return request.delete(`/admin/v1/bizops/congratulation/${id}`);
   },
 
   /** 设置报喜隐藏标记 */
