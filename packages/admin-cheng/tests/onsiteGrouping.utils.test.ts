@@ -95,6 +95,35 @@ describe('autoAssignGroups', () => {
     expect(Math.max(...totals) - Math.min(...totals)).toBeLessThanOrEqual(1);
   });
 
+  it('CP 同组 + 人数平均 + 男女平均综合场景', () => {
+    // 2 对 CP + 7 单身（4 男 3 女）→ 4 组，总人数 11 人
+    const users = [
+      user('m1', 'male', 1), user('f1', 'female', 1),
+      user('m2', 'male', 2), user('f2', 'female', 2),
+      user('m3', 'male', 3), user('m4', 'male', 4), user('m5', 'male', 5), user('m6', 'male', 6),
+      user('f3', 'female', 3), user('f4', 'female', 4), user('f5', 'female', 5),
+    ];
+    const map = autoAssignGroups(users, 4, [
+      { maleId: 'm1', femaleId: 'f1' },
+      { maleId: 'm2', femaleId: 'f2' },
+    ]);
+    // CP 同组
+    expect(map.get('m1')).toBe(map.get('f1'));
+    expect(map.get('m2')).toBe(map.get('f2'));
+    // 全部分配
+    expect(map.size).toBe(11);
+    // 人数平均：11 人 4 组 → 3/3/3/2
+    const totals = [0, 1, 2, 3].map((g) => [...map.values()].filter((v) => v === g).length);
+    expect(Math.max(...totals) - Math.min(...totals)).toBeLessThanOrEqual(1);
+    // 男女平均：男 6 人 → 2/2/1/1，女 5 人 → 2/1/1/1
+    const countOf = (g: number, prefix: string) =>
+      [...map.entries()].filter(([uid, v]) => v === g && uid.startsWith(prefix)).length;
+    const maleCounts = [0, 1, 2, 3].map((g) => countOf(g, 'm'));
+    const femaleCounts = [0, 1, 2, 3].map((g) => countOf(g, 'f'));
+    expect(Math.max(...maleCounts) - Math.min(...maleCounts)).toBeLessThanOrEqual(1);
+    expect(Math.max(...femaleCounts) - Math.min(...femaleCounts)).toBeLessThanOrEqual(1);
+  });
+
   it('stripGroupInfo 移除分组键并保留其他内容', () => {
     const stripped = stripGroupInfo(JSON.stringify({ foo: 'bar', [GROUP_INDEX_KEY]: 1, [GROUP_NAME_KEY]: 'A' }));
     expect(JSON.parse(stripped)).toEqual({ foo: 'bar' });

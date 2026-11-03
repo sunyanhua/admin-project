@@ -35,10 +35,10 @@ const byNumber = <T extends { userId: string; number?: number | null }>(a: T, b:
 
 /**
  * 自动分组：把所有用户分配到各组的序号（0 起）。
- * - 已组CP的男女必须分到同一组（pairs 按顺序轮询分配，组CP男女同组）；
- * - 未配对用户：男女分别按现场序号排序后轮询分配——各组人数平均、各组男女人数平均；
- *   女方从末组反向轮询，使两性余数落在不同组，总人数差异最小。
- * 性别未设置的用户按顺序轮询分配。
+ * - 已组CP的男女必须分到同一组（配对单元优先分配）；
+ * - 各组人数尽量平均：配对与单身用户均采用贪心分配——当前人数最少的组优先，
+ *   人数相同时选该性别人数更少的组（男女人数也尽量平均）。
+ * 性别未设置的用户按当前人数最少分配。
  */
 export function autoAssignGroups<T extends { userId: string; gender: 'male' | 'female' | ''; number?: number | null }>(
   users: T[],
@@ -47,23 +47,53 @@ export function autoAssignGroups<T extends { userId: string; gender: 'male' | 'f
 ): Map<string, number> {
   const result = new Map<string, number>();
   if (groupCount < 1) return result;
-  // 组CP男女同组：配对单元按顺序轮询分配
+  const totals = new Array(groupCount).fill(0);
+  const maleCounts = new Array(groupCount).fill(0);
+  const femaleCounts = new Array(groupCount).fill(0);
   const malePairIdx = new Map(pairs.map((p, i) => [p.maleId, i]));
   const femalePairIdx = new Map(pairs.map((p, i) => [p.femaleId, i]));
-  pairs.forEach((p, i) => {
-    const g = i % groupCount;
+
+  /** 当前人数最少的组（人数相同取下标小者，保证确定性） */
+  const minTotalGroup = () => {
+    let best = 0;
+    for (let g = 1; g < groupCount; g++) if (totals[g] < totals[best]) best = g;
+    return best;
+  };
+
+  // ① 组CP男女同组：配对单元（2 人）优先贪心分配到人数最少的组
+  pairs.forEach((p) => {
+    const g = minTotalGroup();
     result.set(p.maleId, g);
     result.set(p.femaleId, g);
+    totals[g] += 2;
+    maleCounts[g] += 1;
+    femaleCounts[g] += 1;
   });
-  // 未配对用户：男女分别轮询；起始组偏移配对数量，使余数不与配对余数聚在同组
-  const maleStart = pairs.length % groupCount;
-  const femaleStart = (groupCount - 1 - (pairs.length % groupCount) + groupCount) % groupCount;
+
+  // ② 单身用户：按现场序号排序后贪心分配——人数最少优先，人数相同选该性别人数更少的组
+  const assignSingle = (u: { userId: string }, gender: 'male' | 'female') => {
+    let best = 0;
+    for (let g = 1; g < groupCount; g++) {
+      const curGenderCnt = gender === 'male' ? maleCounts[g] : femaleCounts[g];
+      const bestGenderCnt = gender === 'male' ? maleCounts[best] : femaleCounts[best];
+      if (totals[g] < totals[best] || (totals[g] === totals[best] && curGenderCnt < bestGenderCnt)) best = g;
+    }
+    result.set(u.userId, best);
+    totals[best] += 1;
+    if (gender === 'male') maleCounts[best] += 1;
+    else femaleCounts[best] += 1;
+  };
+
   const males = users.filter((u) => u.gender === 'male' && !malePairIdx.has(u.userId)).sort(byNumber);
   const females = users.filter((u) => u.gender === 'female' && !femalePairIdx.has(u.userId)).sort(byNumber);
   const others = users.filter((u) => u.gender !== 'male' && u.gender !== 'female').sort(byNumber);
-  males.forEach((u, i) => result.set(u.userId, (maleStart + i) % groupCount));
-  females.forEach((u, i) => result.set(u.userId, (femaleStart + i) % groupCount));
-  others.forEach((u, i) => result.set(u.userId, i % groupCount));
+  males.forEach((u) => assignSingle(u, 'male'));
+  females.forEach((u) => assignSingle(u, 'female'));
+  others.forEach((u) => {
+    const g = minTotalGroup();
+    result.set(u.userId, g);
+    totals[g] += 1;
+  });
   return result;
 }
 
