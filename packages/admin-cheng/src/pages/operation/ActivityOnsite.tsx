@@ -1292,7 +1292,7 @@ const ActivityOnsite: React.FC = () => {
                     style={{
                       left: isActive ? '50%' : `${p.left}%`,
                       top: isActive ? '50%' : `${p.top}%`,
-                      width: isActive ? '22vw' : `${p.size}vw`,
+                      width: isActive ? '26vw' : `${p.size}vw`,
                       zIndex: isActive ? 60 : p.z,
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
@@ -1322,7 +1322,7 @@ const ActivityOnsite: React.FC = () => {
                 </div>
               ) : (
                 <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh', textAlign: 'center' }}>
-                  {heartNoMore ? '暂无更多互相心动的CP' : '按 ↓ 展示下一对心动组合'}
+                  {heartNoMore ? '暂无更多互相心动的CP' : null}
                 </div>
               )}
             </div>
@@ -1339,7 +1339,7 @@ const ActivityOnsite: React.FC = () => {
                     style={{
                       left: isActive ? '50%' : `${p.left}%`,
                       top: isActive ? '50%' : `${p.top}%`,
-                      width: isActive ? '22vw' : `${p.size}vw`,
+                      width: isActive ? '26vw' : `${p.size}vw`,
                       zIndex: isActive ? 60 : p.z,
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
