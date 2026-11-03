@@ -101,6 +101,42 @@ const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?
   </div>
 );
 
+/** 组中抽组/单组抽人的展示块 */
+interface BlockItem {
+  key: string;
+  label: string;
+  photo?: string;
+  number?: number | null;
+  gender?: 'male' | 'female' | '';
+  group?: string;
+}
+
+/** 组中抽组/单组抽人展示块：组名方块或用户卡片（与全站卡片样式一致） */
+const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' | 'drawn' }> = ({ item, state }) => {
+  const border = state === 'active' || state === 'win' ? '3px solid #ffd700' : '1px solid rgba(255,255,255,.4)';
+  const opacity = state === 'drawn' ? 0.3 : 1;
+  const shadow = state === 'win' ? '0 0 28px rgba(255,215,0,.8)' : state === 'active' ? '0 0 18px rgba(255,215,0,.7)' : 'none';
+  if (item.photo) {
+    return (
+      <div style={{ position: 'relative', width: '10vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, opacity, background: '#fff', boxSizing: 'border-box' }}>
+        <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block' }} />
+        <span className={`onsite-number gender-${item.gender}`}>{item.number || '-'}</span>
+        {item.group && <span className="onsite-group onsite-group-corner">{item.group}组</span>}
+        <span className="onsite-nick">{item.label}</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{
+      width: '10vw', height: '10vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: '4vw', fontWeight: 'bold', color: '#fff', borderRadius: '1vh', border, boxShadow: shadow, opacity, boxSizing: 'border-box',
+      background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : 'rgba(255,255,255,.12)',
+    }}>
+      {item.label}
+    </div>
+  );
+};
+
 /** 演示模式占位头像（SVG 数据 URI，无网络依赖） */
 const demoAvatar = (i: number, gender: 'male' | 'female') => {
   const palettes = ['#e04d2c', '#eb5482', '#0088cc', '#6c5ce7', '#00b894', '#f0932b', '#e056fd'];
@@ -113,7 +149,7 @@ const demoAvatar = (i: number, gender: 'male' | 'female') => {
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { error: showError } = useAppNotification();
-  const [tab, setTab] = useState<'list' | 'feeling' | 'likeMe' | 'lucky' | 'couple' | 'cpRank'>('list');
+  const [tab, setTab] = useState<'list' | 'feeling' | 'likeMe' | 'lucky' | 'couple' | 'cpRank' | 'groupRep' | 'groupDraw' | 'personDraw'>('list');
   const [scale, setScale] = useState(1);
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
@@ -134,6 +170,21 @@ const ActivityOnsite: React.FC = () => {
   const [heartNoMore, setHeartNoMore] = useState(false);
   /** 配对切换过渡定时器（单一实例：新操作先取消旧的，避免快速连按时旧定时器覆盖新展示） */
   const heartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** 组中抽组：每轮抽取组数（右上角配置） */
+  const [groupDrawCount, setGroupDrawCount] = useState(1);
+  /** 单组抽人：指定组与每轮抽取人数（右上角配置） */
+  const [personGroup, setPersonGroup] = useState('');
+  const [personDrawCount, setPersonDrawCount] = useState(1);
+  /** 组中抽组/单组抽人：剩余候选池与已抽（累计） */
+  const [blockPool, setBlockPool] = useState<BlockItem[]>([]);
+  const [blockDrawn, setBlockDrawn] = useState<BlockItem[]>([]);
+  /** 本轮定格 key 列表 */
+  const [blockRoundWinners, setBlockRoundWinners] = useState<string[]>([]);
+  /** 滚动高亮索引（相对剩余池） */
+  const [blockHighlight, setBlockHighlight] = useState(-1);
+  const [blockPhase, setBlockPhase] = useState<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
+  const blockPoolRef = useRef<BlockItem[]>([]);
+  const blockPhaseRef = useRef<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
   const [focusIdx, setFocusIdx] = useState(0);
   /** 胶片模式：交叉渐变的当前层/下一层 */
   const [current, setCurrent] = useState<WallUser | null>(null);
@@ -192,6 +243,8 @@ const ActivityOnsite: React.FC = () => {
   const onsiteNumMapRef = useRef<Map<string, number>>(new Map());
   /** 分组名称（onsite_config.groups，照片墙与默契度排名展示用） */
   const groupsRef = useRef<string[]>([]);
+  /** 活动是否已配置分组（驱动各组代表/组中抽组/单组抽人入口显隐） */
+  const [hasGroups, setHasGroups] = useState(false);
   /** 报名用户分组名映射（默契度排名从报名记录反查） */
   const groupMapRef = useRef<Map<string, string>>(new Map());
 
@@ -372,6 +425,7 @@ const ActivityOnsite: React.FC = () => {
           if (typeof obj.groups === 'string') {
             groupsRef.current = obj.groups.split('|').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
           }
+          setHasGroups(groupsRef.current.length > 0);
         }
       } catch { /* 无配置保持默认渐变 */ }
     }).catch(() => {}).finally(() => {
@@ -750,6 +804,115 @@ const ActivityOnsite: React.FC = () => {
     };
   };
 
+  /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（滚动形式与幸运之星完全一致） */
+  const startGroupRep = useCallback(() => {
+    clearDrawTimer();
+    const pools = groupsRef.current
+      .map((g) => wall.filter((u) => u.group === g))
+      .filter((p) => p.length > 0);
+    const strips = pools.map((pool) => buildStrip(pool));
+    luckyStripsRef.current = strips;
+    luckyWinnerPoolsRef.current = pools;
+    luckyReelLensRef.current = strips.map((_, i) => pools[i]?.length || 1);
+    setLuckyStrips(strips);
+    luckyOffsetsRef.current = strips.map((_, i) => Math.floor(Math.random() * Math.max(1, pools[i]?.length || 1)));
+    setLuckyOffsets([...luckyOffsetsRef.current]);
+    setLuckySnaps(strips.map(() => false));
+    setReelSpeed(90);
+    setTab('groupRep');
+    setDrawPhase('cover');
+    setDrawWinners([]);
+  }, [clearDrawTimer, wall, buildStrip]);
+
+  /** 进入组中抽组（7）/ 单组抽人（8）：重置候选池与抽取状态（完全重抽入口） */
+  const startBlockDraw = useCallback((kind: 'group' | 'person') => {
+    clearDrawTimer();
+    if (kind === 'group') {
+      const blocks: BlockItem[] = groupsRef.current.map((g) => ({ key: g, label: g }));
+      blockPoolRef.current = blocks;
+      setBlockPool(blocks);
+    } else {
+      const g = personGroup || groupsRef.current[0] || '';
+      const blocks: BlockItem[] = wall
+        .filter((u) => u.group === g)
+        .map((u) => ({ key: u.userId, label: u.nick, photo: u.photo, number: u.number, gender: u.gender, group: u.group }));
+      blockPoolRef.current = blocks;
+      setBlockPool(blocks);
+    }
+    setBlockDrawn([]);
+    setBlockRoundWinners([]);
+    setBlockHighlight(-1);
+    setBlockPhase('cover');
+    blockPhaseRef.current = 'cover';
+    setTab(kind === 'group' ? 'groupDraw' : 'personDraw');
+  }, [clearDrawTimer, wall, personGroup]);
+
+  /** O：方块高亮轮扫开始（组中抽组/单组抽人；done 后按 O 继续下一轮） */
+  const beginBlock = useCallback(() => {
+    if (tab !== 'groupDraw' && tab !== 'personDraw') return;
+    if (blockPhaseRef.current === 'rolling' || blockPhaseRef.current === 'slowing') return;
+    if (!blockPoolRef.current.length) return;
+    clearDrawTimer();
+    setBlockRoundWinners([]);
+    setBlockPhase('rolling');
+    blockPhaseRef.current = 'rolling';
+    let idx = 0;
+    const tick = () => {
+      idx = (idx + 1) % blockPoolRef.current.length;
+      setBlockHighlight(idx);
+      drawTimerRef.current = setTimeout(tick, 90);
+    };
+    tick();
+  }, [tab, clearDrawTimer]);
+
+  /** P：减速定格（组中抽组/单组抽人）——逐块减速定格本轮抽取目标，已抽的不再参与 */
+  const slowBlock = useCallback(() => {
+    if ((tab !== 'groupDraw' && tab !== 'personDraw') || blockPhaseRef.current !== 'rolling') return;
+    clearDrawTimer();
+    setBlockPhase('slowing');
+    blockPhaseRef.current = 'slowing';
+    const pool = blockPoolRef.current;
+    const poolLen = pool.length;
+    const count = tab === 'groupDraw' ? groupDrawCount : personDrawCount;
+    const take = Math.min(Math.max(1, count), poolLen);
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, take);
+    const durations = Array.from({ length: 8 }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
+    const winners: string[] = [];
+    const landNext = (wi: number) => {
+      if (wi >= shuffled.length) {
+        // 本轮完成：定格块移入已抽池
+        setBlockRoundWinners(winners);
+        setBlockDrawn((prev) => [...prev, ...pool.filter((b) => winners.includes(b.key))]);
+        const rest = pool.filter((b) => !winners.includes(b.key));
+        blockPoolRef.current = rest;
+        setBlockPool(rest);
+        setBlockPhase('done');
+        blockPhaseRef.current = 'done';
+        return;
+      }
+      const winner = shuffled[wi];
+      const winIdx = pool.findIndex((b) => b.key === winner.key);
+      const step = (i: number) => {
+        if (i >= 8) {
+          winners.push(winner.key);
+          drawTimerRef.current = setTimeout(() => landNext(wi + 1), 420);
+          return;
+        }
+        const hl = (((winIdx - (7 - i)) % poolLen) + poolLen) % poolLen;
+        setBlockHighlight(hl);
+        drawTimerRef.current = setTimeout(() => step(i + 1), durations[i]);
+      };
+      step(0);
+    };
+    landNext(0);
+  }, [tab, clearDrawTimer, groupDrawCount, personDrawCount]);
+
+  // 单组抽人：切换指定组时重置抽取
+  useEffect(() => {
+    if (tab === 'personDraw') startBlockDraw('person');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [personGroup]);
+
   // 配置变更时：若停留在幸运之星封面，立即按新配置重建转轮；滚动中/已揭晓时留到下次按 3 生效。
   // 依赖仅取配置本身——wall 数据变化不重建（避免封面反复洗牌），tab/drawPhase 在闭包中读取当前值
   useEffect(() => {
@@ -782,16 +945,20 @@ const ActivityOnsite: React.FC = () => {
     setDrawPairWinner(null);
   }, [clearDrawTimer, wall, buildStrip, fetchWall]);
 
-  /** O：开始滚动（条带自上而下快速移动，照片首尾相连） */
+  /** O：开始滚动（条带自上而下快速移动，照片首尾相连；组中抽组/单组抽人为方块高亮轮扫） */
   const beginRoll = useCallback(() => {
-    if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'cover') return;
-    if (tab === 'lucky' && !luckyStripsRef.current.length) return;
+    if (tab === 'groupDraw' || tab === 'personDraw') {
+      beginBlock();
+      return;
+    }
+    if ((tab !== 'lucky' && tab !== 'couple' && tab !== 'groupRep') || drawPhase !== 'cover') return;
+    if ((tab === 'lucky' || tab === 'groupRep') && !luckyStripsRef.current.length) return;
     if (tab === 'couple' && (!femaleStripRef.current.length || !maleStripRef.current.length)) return;
     setDrawPhase('rolling');
     clearDrawTimer();
     setReelSpeed(90);
     const tick = () => {
-      if (tab === 'lucky') {
+      if (tab === 'lucky' || tab === 'groupRep') {
         advanceLuckyOffsets((o) => o + 1);
       } else {
         fOffsetRef.current = wrapOffset(femaleReelLenRef.current, fOffsetRef.current + 1);
@@ -802,14 +969,18 @@ const ActivityOnsite: React.FC = () => {
       drawTimerRef.current = setTimeout(tick, 90);
     };
     tick();
-  }, [tab, drawPhase, clearDrawTimer, wrapOffset, advanceLuckyOffsets]);
+  }, [tab, drawPhase, clearDrawTimer, wrapOffset, advanceLuckyOffsets, beginBlock]);
 
   /** P：减速并慢慢停下——减速步数预计算到恰好落在获奖者上，最后一步停稳即定格，不再额外跑牌 */
   const slowRoll = useCallback(() => {
-    if ((tab !== 'lucky' && tab !== 'couple') || drawPhase !== 'rolling') return;
+    if (tab === 'groupDraw' || tab === 'personDraw') {
+      slowBlock();
+      return;
+    }
+    if ((tab !== 'lucky' && tab !== 'couple' && tab !== 'groupRep') || drawPhase !== 'rolling') return;
     setDrawPhase('slowing');
     clearDrawTimer();
-    const isLucky = tab === 'lucky';
+    const isLucky = tab === 'lucky' || tab === 'groupRep';
 
     // 距获奖者还需前进的步数（0=下一步即落在获奖者）。target 为偏移的目标余数
     const stepsTo = (offsetNow: number, target: number, len: number): number => {
@@ -945,9 +1116,9 @@ const ActivityOnsite: React.FC = () => {
       }, durations[i]);
     };
     step(0);
-  }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets]);
+  }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets, slowBlock]);
 
-  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 嘉宾展示 / 2 心动互选 / 3 我钟意你 / 4 幸运之星 / 5 默契度 / ↓↑ 切换配对 / o 开始滚动 / p 减速停下
+  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 嘉宾展示 / 2 心动互选 / 3 我钟意你 / 4 幸运之星 / 5 默契度 / 6 各组代表 / 7 组中抽组 / 8 单组抽人 / ↓↑ 切换配对 / o 开始滚动 / p 减速停下
   // 能成时刻入口已隐藏（2026-11-03，功能保留）：恢复时把 4 改回 startCouple 并在工具区加回按钮
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
@@ -960,6 +1131,9 @@ const ActivityOnsite: React.FC = () => {
       else if (e.key === '3') enterHeartTab('likeMe');
       else if (e.key === '4') startLucky();
       else if (e.key === '5') startCpRank();
+      else if (e.key === '6') startGroupRep();
+      else if (e.key === '7') startBlockDraw('group');
+      else if (e.key === '8') startBlockDraw('person');
       else if (e.key === 'o' || e.key === 'O') beginRoll();
       else if (e.key === 'p' || e.key === 'P') slowRoll();
       else if (e.key === 'ArrowDown') showNextHeart();
@@ -967,7 +1141,7 @@ const ActivityOnsite: React.FC = () => {
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, [toggleDemo, switchTab, enterHeartTab, startLucky, startCpRank, beginRoll, slowRoll, showNextHeart, showPrevHeart]);
+  }, [toggleDemo, switchTab, enterHeartTab, startLucky, startCpRank, startGroupRep, startBlockDraw, beginRoll, slowRoll, showNextHeart, showPrevHeart]);
 
   // 离开抽奖环节时清理滚动定时器
   useEffect(() => {
@@ -1008,6 +1182,13 @@ const ActivityOnsite: React.FC = () => {
     items.map((p) => ({ ...p, top: 50 + (p.top - 50) * 0.5 }));
   const heartMaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'male'), 9));
   const heartFemaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'female'), 9));
+
+  /** 单组抽人：指定组的成员数（配置人数上限） */
+  const personGroupName = personGroup || groupsRef.current[0] || '';
+  const personCountOptions = Array.from(
+    { length: Math.min(26, Math.max(1, wall.filter((u) => u.group === personGroupName).length)) },
+    (_, i) => i + 1,
+  );
 
   const wallItems = buildWallItems(wall);
 
@@ -1064,6 +1245,14 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={startLucky} style={tab === 'lucky' ? toolBtnActive : toolBtn}>幸运之星(4)</button>
               <button onClick={startCpRank} style={tab === 'cpRank' ? toolBtnActive : toolBtn}>默契度排名(5)</button>
               <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
+              {/* 分组抽取功能：仅活动已配置分组时显示 */}
+              {hasGroups && (
+                <>
+                  <button onClick={startGroupRep} style={tab === 'groupRep' ? toolBtnActive : toolBtn}>各组代表(6)</button>
+                  <button onClick={() => startBlockDraw('group')} style={tab === 'groupDraw' ? toolBtnActive : toolBtn}>组中抽组(7)</button>
+                  <button onClick={() => startBlockDraw('person')} style={tab === 'personDraw' ? toolBtnActive : toolBtn}>单组抽人(8)</button>
+                </>
+              )}
             </div>
           </div>
           {/* 幸运之星配置（仅幸运之星界面显示） */}
@@ -1088,6 +1277,40 @@ const ActivityOnsite: React.FC = () => {
               />
             </div>
           )}
+          {/* 组中抽组配置（仅该界面显示）：每轮抽取组数 */}
+          {tab === 'groupDraw' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>抽取组数</span>
+              <Select
+                size="small"
+                value={groupDrawCount}
+                onChange={(v: number) => setGroupDrawCount(v)}
+                style={{ width: 62 }}
+                options={groupsRef.current.map((_, i) => ({ value: i + 1, label: String(i + 1) }))}
+              />
+            </div>
+          )}
+          {/* 单组抽人配置（仅该界面显示）：指定组 + 每轮抽取人数 */}
+          {tab === 'personDraw' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>指定组</span>
+              <Select
+                size="small"
+                value={personGroup || groupsRef.current[0]}
+                onChange={(v: string) => setPersonGroup(v)}
+                style={{ width: 88 }}
+                options={groupsRef.current.map((g) => ({ value: g, label: `${g}组` }))}
+              />
+              <span>抽取人数</span>
+              <Select
+                size="small"
+                value={personDrawCount}
+                onChange={(v: number) => setPersonDrawCount(v)}
+                style={{ width: 62 }}
+                options={personCountOptions.map((n) => ({ value: n, label: String(n) }))}
+              />
+            </div>
+          )}
           {/* 用户切换（心动互选/我钟意你界面显示） */}
           {(tab === 'feeling' || tab === 'likeMe') && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1109,18 +1332,23 @@ const ActivityOnsite: React.FC = () => {
 
       {/* 内容区 */}
       <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
-        {tab === 'lucky' ? (
-          /* ====== 幸运之星（4）：并排转轮随机抽 N 人（照片自上而下滚动，首尾相连，获奖者不重复） ====== */
+        {tab === 'lucky' || tab === 'groupRep' ? (
+          /* ====== 幸运之星（4）/ 各组代表（6）：并排转轮随机抽 N 人（照片自上而下滚动，首尾相连，获奖者不重复） ====== */
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
             {drawPhase === 'cover' ? (
               <>
-                <div className="draw-cover-title">幸运之星</div>
-                {luckyReelCount > 0 && (
+                <div className="draw-cover-title">{tab === 'lucky' ? '幸运之星' : '各组代表'}</div>
+                {tab === 'lucky' && luckyReelCount > 0 && (
                   <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>
                     从现场嘉宾中随机抽取 {luckyReelCount} 位幸运之星
                   </div>
                 )}
-                {luckyHint && <div style={{ color: '#ffd700', fontSize: '2.8vh' }}>{luckyHint}</div>}
+                {tab === 'groupRep' && (
+                  <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>
+                    每组转轮由其组员组成，定格即各组代表
+                  </div>
+                )}
+                {tab === 'lucky' && luckyHint && <div style={{ color: '#ffd700', fontSize: '2.8vh' }}>{luckyHint}</div>}
                 <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 减速停止</div>
               </>
             ) : (
@@ -1145,14 +1373,53 @@ const ActivityOnsite: React.FC = () => {
                     ))}
                   </div>
                 )}
-                {drawPhase === 'done' && drawWinners.length > 0 && (
-                  <>
-                    <div style={{ color: '#ffd700', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)', textAlign: 'center', padding: '0 6vw', fontSize: drawWinners.length === 1 ? '4.5vh' : '3.4vh', lineHeight: 1.6 }}>
-                      {drawWinners.length === 1
-                        ? <>恭喜 {drawWinners[0].number || ''} 号 {drawWinners[0].nick}</>
-                        : <>恭喜 {drawWinners.length} 位幸运之星：{drawWinners.map((w) => `${w.number || ''}号 ${w.nick}`).join('、')}</>}
-                    </div>
-                  </>
+                {drawPhase === 'done' && tab === 'lucky' && drawWinners.length > 0 && (
+                  <div style={{ color: '#ffd700', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)', textAlign: 'center', padding: '0 6vw', fontSize: drawWinners.length === 1 ? '4.5vh' : '3.4vh', lineHeight: 1.6 }}>
+                    {drawWinners.length === 1
+                      ? <>恭喜 {drawWinners[0].number || ''} 号 {drawWinners[0].nick}</>
+                      : <>恭喜 {drawWinners.length} 位幸运之星：{drawWinners.map((w) => `${w.number || ''}号 ${w.nick}`).join('、')}</>}
+                  </div>
+                )}
+                {drawPhase === 'done' && tab === 'groupRep' && (
+                  <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.6vh' }}>各组代表已定格 · 按 6 重新开始</div>
+                )}
+              </>
+            )}
+          </div>
+        ) : tab === 'groupDraw' || tab === 'personDraw' ? (
+          /* ====== 组中抽组（7）/ 单组抽人（8）：方块/卡片高亮轮扫，P 减速定格，已抽不再参与 ====== */
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh' }}>
+            {blockPhase === 'cover' ? (
+              <>
+                <div className="draw-cover-title">{tab === 'groupDraw' ? '组中抽组' : '单组抽人'}</div>
+                <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '2.8vh' }}>
+                  {tab === 'groupDraw'
+                    ? `共 ${blockPool.length} 组 · 每轮抽取 ${groupDrawCount} 组`
+                    : `「${personGroupName}」组 · 每轮抽取 ${personDrawCount} 人`}
+                </div>
+                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>
+                  按 O 开始 · 按 P 减速停止{blockDrawn.length > 0 ? ' · 按 O 继续下一轮' : ''}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="draw-cover-title" style={{ fontSize: '4.5vh' }}>{tab === 'groupDraw' ? '组中抽组' : '单组抽人'}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.2vw', maxWidth: '84vw', justifyContent: 'center' }}>
+                  {/* 已抽历史：本轮定格金色、更早灰色 */}
+                  {blockDrawn.map((b) => (
+                    <BlockCard key={b.key} item={b} state={blockRoundWinners.includes(b.key) ? 'win' : 'drawn'} />
+                  ))}
+                  {/* 剩余候选：滚动高亮 */}
+                  {blockPool.map((b, i) => (
+                    <BlockCard key={b.key} item={b} state={blockHighlight === i && blockPhase !== 'done' ? 'active' : 'normal'} />
+                  ))}
+                </div>
+                {blockPhase === 'done' && (
+                  <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.6vh' }}>
+                    {blockPool.length
+                      ? '按 O 继续下一轮 · 按 7/8 重新开始'
+                      : '已全部抽出 · 按 7/8 重新开始'}
+                  </div>
                 )}
               </>
             )}
