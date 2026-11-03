@@ -7,7 +7,6 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
-import { RegisterAuditStatus } from '@shared/constants';
 import { buildLuckyPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -196,8 +195,6 @@ const ActivityOnsite: React.FC = () => {
   /** 当前候选 key（保持原始顺序；逐格锁定后从候选中移除，后续跳动跳过） */
   const blockCandidatesRef = useRef<string[]>([]);
   const blockPhaseRef = useRef<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
-  /** 全部已入选成员按分组（各组代表/单组选人候选池——不限签到） */
-  const groupMembersRef = useRef<Map<string, BlockItem[]>>(new Map());
   const [focusIdx, setFocusIdx] = useState(0);
   /** 胶片模式：交叉渐变的当前层/下一层 */
   const [current, setCurrent] = useState<WallUser | null>(null);
@@ -817,58 +814,12 @@ const ActivityOnsite: React.FC = () => {
     };
   };
 
-  /** 拉取全部已入选报名按分组构建候选池（不限签到；照片批量补拉） */
-  const fetchGroupMembers = useCallback(async () => {
-    if (!id) return;
-    try {
-      const regs: RegisterRecord[] = [];
-      let page = 1;
-      while (true) {
-        const res: any = await activityApi.getRegisters(id, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
-        const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
-        if (!list.length) break;
-        regs.push(...list);
-        if (list.length < 100) break;
-        page++;
-      }
-      const ids = regs.map((r) => r.user_id).filter(Boolean) as string[];
-      await upgradePhotos(ids);
-      const map = new Map<string, BlockItem[]>();
-      regs.forEach((r) => {
-        const gIdx = parseGroupIndex(r.extra_data);
-        const gName = gIdx != null ? (groupsRef.current[gIdx - 1] || '') : '';
-        if (!gName) return;
-        const uid = r.user_id || r.id;
-        const item: BlockItem = {
-          key: uid,
-          label: r.user_profile?.nickname || r.nickname || uid,
-          photo: photoMapRef.current.get(r.user_id || '') || getFullWidthUrl(r.user_profile?.avatar || r.avatar || ''),
-          number: r.onsite_number,
-          gender: (r.user_profile?.gender ?? r.gender) === 1 ? 'male' : (r.user_profile?.gender ?? r.gender) === 2 ? 'female' : '',
-          group: gName,
-        };
-        if (!map.has(gName)) map.set(gName, []);
-        map.get(gName)!.push(item);
-      });
-      groupMembersRef.current = map;
-    } catch { /* 静默 */ }
-  }, [id, upgradePhotos]);
-
-  /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（全部已入选成员，滚动形式与幸运之星完全一致） */
-  const startGroupRep = useCallback(async () => {
+  /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（仅已签到成员，滚动形式与幸运之星完全一致） */
+  const startGroupRep = useCallback(() => {
     clearDrawTimer();
-    if (!groupMembersRef.current.size) await fetchGroupMembers();
     const pools = groupsRef.current
-      .map((g) => groupMembersRef.current.get(g) || [])
-      .filter((p) => p.length > 0)
-      .map((p) => p.map((m) => ({
-        number: m.number ?? 0,
-        nick: m.label,
-        gender: m.gender === 'female' ? 'female' as const : m.gender === 'male' ? 'male' as const : '' as const,
-        userId: m.key,
-        photo: m.photo || '',
-        group: m.group,
-      })));
+      .map((g) => wall.filter((u) => u.group === g))
+      .filter((p) => p.length > 0);
     const strips = pools.map((pool) => buildStrip(pool));
     luckyStripsRef.current = strips;
     luckyWinnerPoolsRef.current = pools;
@@ -881,19 +832,20 @@ const ActivityOnsite: React.FC = () => {
     setTab('groupRep');
     setDrawPhase('cover');
     setDrawWinners([]);
-  }, [clearDrawTimer, fetchGroupMembers, buildStrip]);
+  }, [clearDrawTimer, wall, buildStrip]);
 
-  /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口） */
-  const startBlockDraw = useCallback(async (kind: 'group' | 'person') => {
+  /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员） */
+  const startBlockDraw = useCallback((kind: 'group' | 'person') => {
     clearDrawTimer();
     if (kind === 'group') {
       const blocks: BlockItem[] = groupsRef.current.map((g) => ({ key: g, label: g }));
       setBlockAll(blocks);
       blockCandidatesRef.current = blocks.map((b) => b.key);
     } else {
-      if (!groupMembersRef.current.size) await fetchGroupMembers();
       const g = personGroup || groupsRef.current[0] || '';
-      const blocks = groupMembersRef.current.get(g) || [];
+      const blocks: BlockItem[] = wall
+        .filter((u) => u.group === g)
+        .map((u) => ({ key: u.userId, label: u.nick, photo: u.photo, number: u.number, gender: u.gender, group: u.group }));
       setBlockAll(blocks);
       blockCandidatesRef.current = blocks.map((b) => b.key);
     }
@@ -903,7 +855,7 @@ const ActivityOnsite: React.FC = () => {
     setBlockPhase('cover');
     blockPhaseRef.current = 'cover';
     setTab(kind === 'group' ? 'groupDraw' : 'personDraw');
-  }, [clearDrawTimer, fetchGroupMembers, personGroup]);
+  }, [clearDrawTimer, wall, personGroup]);
 
   /** O：方块高亮轮扫开始（组中抽组/单组选人；done 后按 O 继续下一轮） */
   const beginBlock = useCallback(() => {
@@ -1244,12 +1196,10 @@ const ActivityOnsite: React.FC = () => {
   const heartMaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'male'), 9));
   const heartFemaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'female'), 9));
 
-  /** 单组选人：指定组的成员数（配置人数上限，取全部已入选成员不限签到） */
+  /** 单组选人：指定组的已签到成员数（配置人数上限） */
   const personGroupName = personGroup || groupsRef.current[0] || '';
   const personCountOptions = Array.from(
-    {
-      length: Math.min(26, Math.max(1, groupMembersRef.current.get(personGroupName)?.length || wall.filter((u) => u.group === personGroupName).length)),
-    },
+    { length: Math.min(26, Math.max(1, wall.filter((u) => u.group === personGroupName).length)) },
     (_, i) => i + 1,
   );
 
