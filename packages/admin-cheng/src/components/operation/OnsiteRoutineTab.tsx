@@ -166,7 +166,7 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
   return (
     <div>
       <div style={{ fontSize: 13, color: '#666', background: '#fafafa', border: '1px solid #eee', borderRadius: 8, padding: '10px 14px', marginBottom: 14, lineHeight: 1.8 }}>
-        提前编排现场大屏的操作步骤，活动现场无需再切换模式与配置：大屏按 <b>9</b> 进入编排执行，<b>空格</b> 开始/下一步 · <b>P</b> 停止 · <b>R</b> 重抽本步 · <b>←/→</b> 切换步骤 · 按 <b>9</b> 退出。
+        提前编排现场大屏的操作步骤，活动现场无需再切换模式与配置：大屏按 <b>9</b> 进入编排执行，<b>O</b> 开始 · <b>P</b> 停止 · <b>R</b> 重抽本步 · <b>←/→</b> 切换步骤 · 按 <b>9</b> 退出。
       </div>
 
       <Spin spinning={loading}>
