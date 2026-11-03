@@ -1135,7 +1135,8 @@ const ActivityOnsite: React.FC = () => {
                               <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
                                 <img src={u.photo} alt={u.nick} />
                                 <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
-                                <span className="draw-nick">{u.group ? <><span className="onsite-group">{u.group}组</span>{u.nick}</> : u.nick}</span>
+                                {u.group && <span className="onsite-group onsite-group-corner">{u.group}组</span>}
+                                <span className="draw-nick">{u.nick}</span>
                               </div>
                             ))}
                           </div>
@@ -1177,7 +1178,8 @@ const ActivityOnsite: React.FC = () => {
                             <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
                               <span className="onsite-number gender-female">{u.number || '-'}</span>
-                              <span className="draw-nick">{u.group ? `${u.group}组 ${u.nick}` : u.nick}</span>
+                              {u.group && <span className="onsite-group onsite-group-corner">{u.group}组</span>}
+                              <span className="draw-nick">{u.nick}</span>
                             </div>
                           ))}
                         </div>
@@ -1193,7 +1195,8 @@ const ActivityOnsite: React.FC = () => {
                             <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
                               <span className="onsite-number gender-male">{u.number || '-'}</span>
-                              <span className="draw-nick">{u.group ? `${u.group}组 ${u.nick}` : u.nick}</span>
+                              {u.group && <span className="onsite-group onsite-group-corner">{u.group}组</span>}
+                              <span className="draw-nick">{u.nick}</span>
                             </div>
                           ))}
                         </div>
