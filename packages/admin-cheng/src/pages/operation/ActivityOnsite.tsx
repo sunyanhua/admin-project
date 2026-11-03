@@ -990,9 +990,14 @@ const ActivityOnsite: React.FC = () => {
       : `符合条件嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
   })();
 
-  /** 心动排名左右心形：全部签到嘉宾按性别分组（含分组名） */
-  const heartMaleItems = buildWallItems(wall.filter((u) => u.gender === 'male'), 9);
-  const heartFemaleItems = buildWallItems(wall.filter((u) => u.gender === 'female'), 9);
+  /**
+   * 心动排名左右心形：全部签到嘉宾按性别分组（含分组名）。
+   * 容器为竖长半屏，纵向压缩（top 向中线收拢 50%）让堆叠更像心形比例。
+   */
+  const compressHeart = (items: WallItem[]): WallItem[] =>
+    items.map((p) => ({ ...p, top: 50 + (p.top - 50) * 0.5 }));
+  const heartMaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'male'), 9));
+  const heartFemaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'female'), 9));
 
   const wallItems = buildWallItems(wall);
 
