@@ -551,7 +551,8 @@ const ActivityOnsite: React.FC = () => {
     let idx = tryFind(heartPoolRef.current);
     if (idx === -1) {
       if (demoRef.current) {
-        // 演示模式不重拉真实数据，直接提示耗尽
+        // 演示模式不重拉真实数据，直接提示耗尽（先恢复当前展示）
+        setHeartCurrent(null);
         setHeartNoMore(true);
         return;
       }
@@ -562,6 +563,7 @@ const ActivityOnsite: React.FC = () => {
       setHeartPool(freshPool);
       idx = tryFind(freshPool);
       if (idx === -1) {
+        setHeartCurrent(null);
         setHeartNoMore(true);
         return;
       }
@@ -571,14 +573,18 @@ const ActivityOnsite: React.FC = () => {
     heartIdsOf(c).forEach((uid) => shownHeartIdsRef.current.add(uid));
     heartHistoryRef.current.push(c);
     heartCursorRef.current = heartHistoryRef.current.length - 1;
-    setHeartCurrent(c);
+    // 先把当前展示的一对恢复原状（卡片缩回、中间次数消失），再加载下一对
+    setHeartCurrent(null);
+    setTimeout(() => setHeartCurrent(c), 520);
   }, [tab, fetchCouples]);
 
-  /** ↑：展示上一对（回看历史，不越过最早一条） */
+  /** ↑：展示上一对（回看历史，不越过最早一条；先恢复原状再展示） */
   const showPrevHeart = useCallback(() => {
     if (tab !== 'feeling' || heartCursorRef.current <= 0) return;
     heartCursorRef.current -= 1;
-    setHeartCurrent(heartHistoryRef.current[heartCursorRef.current]);
+    const prev = heartHistoryRef.current[heartCursorRef.current];
+    setHeartCurrent(null);
+    setTimeout(() => setHeartCurrent(prev), 520);
   }, [tab]);
 
   const clearDrawTimer = useCallback(() => {
@@ -958,28 +964,9 @@ const ActivityOnsite: React.FC = () => {
       : `符合条件嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
   })();
 
-  /** 互相心动池中的男女嘉宾（按 userId 去重），组成左右两个心形 */
-  const heartUsersOf = (gender: 'male' | 'female'): WallUser[] => {
-    const seen = new Set<string>();
-    const list: WallUser[] = [];
-    heartPool.forEach((c) => {
-      const side = gender === 'male' ? c.male : c.female;
-      if (!side) return;
-      const uid = side.user?.user_id || '';
-      if (!uid || seen.has(uid)) return;
-      seen.add(uid);
-      list.push({
-        number: side.onsite_number ?? 0,
-        nick: side.profile?.nickname || '-',
-        gender,
-        userId: uid,
-        photo: photoOf(uid, side.profile?.avatar || ''),
-      });
-    });
-    return list;
-  };
-  const heartMaleItems = buildWallItems(heartUsersOf('male'), 10);
-  const heartFemaleItems = buildWallItems(heartUsersOf('female'), 10);
+  /** 心动排名左右心形：全部签到嘉宾按性别分组（含分组名） */
+  const heartMaleItems = buildWallItems(wall.filter((u) => u.gender === 'male'), 9);
+  const heartFemaleItems = buildWallItems(wall.filter((u) => u.gender === 'female'), 9);
 
   const wallItems = buildWallItems(wall);
 
@@ -1269,31 +1256,42 @@ const ActivityOnsite: React.FC = () => {
           <div style={{ height: '100%', display: 'flex' }}>
             {/* 左：男生心形 */}
             <div style={{ flex: 1, position: 'relative', height: '100%', overflow: 'hidden' }}>
-              {heartMaleItems.map((p) => (
-                <div
-                  key={p.userId}
-                  data-rot={p.rotate}
-                  className={`onsite-photo${heartCurrent && p.userId === heartCurrent.male?.user?.user_id ? ' heart-active' : ''}`}
-                  style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: heartCurrent && p.userId === heartCurrent.male?.user?.user_id ? 60 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
-                >
-                  <span className="onsite-number gender-male">{p.number || '-'}</span>
-                  <img src={p.photo} alt={p.nick} />
-                  <span className="onsite-nick">{p.nick}</span>
-                </div>
-              ))}
+              {heartMaleItems.map((p) => {
+                const isActive = !!heartCurrent && p.userId === heartCurrent.male?.user?.user_id;
+                return (
+                  <div
+                    key={p.userId}
+                    data-rot={p.rotate}
+                    className={`onsite-photo${isActive ? ' heart-active' : ''}`}
+                    style={{
+                      left: isActive ? '50%' : `${p.left}%`,
+                      top: isActive ? '50%' : `${p.top}%`,
+                      width: isActive ? '19vw' : `${p.size}vw`,
+                      zIndex: isActive ? 60 : p.z,
+                      transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
+                    }}
+                  >
+                    <span className="onsite-number gender-male">{p.number || '-'}</span>
+                    {p.group && <span className="onsite-group onsite-group-corner">{p.group}组</span>}
+                    <img src={p.photo} alt={p.nick} />
+                    <span className="onsite-nick">{p.nick}</span>
+                  </div>
+                );
+              })}
               {heartMaleItems.length === 0 && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', fontSize: '3vh' }}>暂无男嘉宾</div>
               )}
             </div>
 
-            {/* 中：互相心动次数 */}
-            <div style={{ width: '16vw', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* 中：双方心动次数（桃心形式：粉=女方发起、蓝=男方发起） */}
+            <div style={{ width: '14vw', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {heartCurrent ? (
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '7vh', color: '#ff5b8f', fontWeight: 'bold', lineHeight: 1.1 }}>{heartCurrent.onsite_loves_count ?? 0}</div>
-                  <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '2.6vh', marginTop: '1vh' }}>互相心动</div>
-                  <div style={{ color: 'rgba(255,255,255,.45)', fontSize: '2.2vh', marginTop: '3vh' }}>
-                    {heartNoMore ? '暂无更多互相心动的CP' : '↓ 下一对 · ↑ 上一对'}
+                  <div style={{ marginBottom: '2.5vh', color: '#ff5b8f' }}>
+                    {Array.from({ length: Math.min(heartCurrent.female_loves_count ?? 0, 3) }).map((_, i) => <HeartFilled key={`hf${i}`} style={{ width: '3vw', fontSize: '3vw' }} />)}
+                  </div>
+                  <div style={{ color: '#4da3ff' }}>
+                    {Array.from({ length: Math.min(heartCurrent.male_loves_count ?? 0, 3) }).map((_, i) => <HeartFilled key={`hm${i}`} style={{ width: '3vw', fontSize: '3vw' }} />)}
                   </div>
                 </div>
               ) : (
@@ -1305,18 +1303,28 @@ const ActivityOnsite: React.FC = () => {
 
             {/* 右：女生心形 */}
             <div style={{ flex: 1, position: 'relative', height: '100%', overflow: 'hidden' }}>
-              {heartFemaleItems.map((p) => (
-                <div
-                  key={p.userId}
-                  data-rot={p.rotate}
-                  className={`onsite-photo${heartCurrent && p.userId === heartCurrent.female?.user?.user_id ? ' heart-active' : ''}`}
-                  style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: heartCurrent && p.userId === heartCurrent.female?.user?.user_id ? 60 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
-                >
-                  <span className="onsite-number gender-female">{p.number || '-'}</span>
-                  <img src={p.photo} alt={p.nick} />
-                  <span className="onsite-nick">{p.nick}</span>
-                </div>
-              ))}
+              {heartFemaleItems.map((p) => {
+                const isActive = !!heartCurrent && p.userId === heartCurrent.female?.user?.user_id;
+                return (
+                  <div
+                    key={p.userId}
+                    data-rot={p.rotate}
+                    className={`onsite-photo${isActive ? ' heart-active' : ''}`}
+                    style={{
+                      left: isActive ? '50%' : `${p.left}%`,
+                      top: isActive ? '50%' : `${p.top}%`,
+                      width: isActive ? '19vw' : `${p.size}vw`,
+                      zIndex: isActive ? 60 : p.z,
+                      transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
+                    }}
+                  >
+                    <span className="onsite-number gender-female">{p.number || '-'}</span>
+                    {p.group && <span className="onsite-group onsite-group-corner">{p.group}组</span>}
+                    <img src={p.photo} alt={p.nick} />
+                    <span className="onsite-nick">{p.nick}</span>
+                  </div>
+                );
+              })}
               {heartFemaleItems.length === 0 && (
                 <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', fontSize: '3vh' }}>暂无女嘉宾</div>
               )}
@@ -1329,12 +1337,12 @@ const ActivityOnsite: React.FC = () => {
       <style>{`
         .onsite-tools { position: fixed; top: 0; right: 0; width: 430px; z-index: 100; opacity: 0; transition: opacity .3s; display: flex; align-items: flex-start; justify-content: flex-end; padding: 10px 14px; }
         .onsite-tools:hover { opacity: 1; }
-        .onsite-photo { position: absolute; transition: transform .5s, opacity .5s; opacity: .85; }
+        .onsite-photo { position: absolute; transition: transform .5s, opacity .5s, left .5s ease, top .5s ease, width .5s ease; opacity: .85; }
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
         .onsite-photo.focus { transform: translate(calc(-50% + var(--fx,0px)), calc(-50% + var(--fy,0px))) scale(var(--fscale,2)) rotate(0deg) !important; opacity: 1; }
         .onsite-photo.focus img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-        /* 心动排名：当前配对的心形卡片放大高亮 */
-        .onsite-photo.heart-active { transform: translate(-50%,-50%) scale(1.4) rotate(0deg) !important; opacity: 1; }
+        /* 心动排名：当前配对的心形卡片（居中放大由行内样式控制）金色高亮 */
+        .onsite-photo.heart-active { opacity: 1; }
         .onsite-photo.heart-active img { border-color: #ffd700; box-shadow: 0 0 32px rgba(255,215,0,.85); }
         .onsite-photo.heart-active .onsite-nick { background: rgba(255,215,0,.85); color: #3d2a00; }
         .onsite-number { position: absolute; left: 5%; top: 4%; min-width: 2.4vw; height: 2.4vw; padding: 0 .4vw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e04d2c; color: #fff; font-size: 1.2vw; font-weight: bold; line-height: 1; white-space: nowrap; z-index: 2; }
