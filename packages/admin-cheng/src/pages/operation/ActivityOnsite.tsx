@@ -113,7 +113,7 @@ const demoAvatar = (i: number, gender: 'male' | 'female') => {
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { error: showError } = useAppNotification();
-  const [tab, setTab] = useState<'list' | 'feeling' | 'lucky' | 'couple' | 'cpRank'>('list');
+  const [tab, setTab] = useState<'list' | 'feeling' | 'likeMe' | 'lucky' | 'couple' | 'cpRank'>('list');
   const [scale, setScale] = useState(1);
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
@@ -293,9 +293,6 @@ const ActivityOnsite: React.FC = () => {
     } catch { /* 查询失败静默，调用方回退现有数据 */ }
     return null;
   }, [id, upgradePhotos]);
-
-  /** 互相心动：双方均有现场心动 */
-  const isMutual = (c: OnsiteCouple) => (c.female_loves_count ?? 0) > 0 && (c.male_loves_count ?? 0) > 0;
 
   /** 心动排名数据（有现场心动的配对，按现场心动次数倒序）；返回拉取到的列表（↓ 耗尽重拉用） */
   const fetchCouples = useCallback(async (): Promise<OnsiteCouple[]> => {
@@ -517,24 +514,35 @@ const ActivityOnsite: React.FC = () => {
   /** 切换界面并立即拉取对应最新数据（演示模式下保持演示数据不刷新） */
   const switchTab = useCallback((next: 'list' | 'feeling') => {
     setTab(next);
-    if (next === 'feeling') {
-      // 心动排名：重置展示状态（跳过原则与历史清零）
-      shownHeartIdsRef.current = new Set();
-      heartHistoryRef.current = [];
-      heartCursorRef.current = -1;
-      heartDisplayedRef.current = false;
-      setHeartCurrent(null);
-      setHeartNoMore(false);
-    }
     if (demoRef.current) return;
     if (next === 'list') fetchWall();
     else fetchCouples();
   }, [fetchWall, fetchCouples]);
 
-  // 互相心动配对池：互心组按心动次数倒序（接口已排，兜底再排）
+  /** 进入心动互选（2）/ 我钟意你（3）：重置展示状态（跳过原则与历史清零）并拉取最新心动数据 */
+  const enterHeartTab = useCallback((next: 'feeling' | 'likeMe') => {
+    setTab(next);
+    shownHeartIdsRef.current = new Set();
+    heartHistoryRef.current = [];
+    heartCursorRef.current = -1;
+    heartDisplayedRef.current = false;
+    setHeartCurrent(null);
+    setHeartNoMore(false);
+    if (!demoRef.current) fetchCouples();
+  }, [fetchCouples]);
+
+  /** 心动配对筛选：feeling=互相心动（双方均有），likeMe=单方心动（仅一方有） */
+  const isHeartPair = (c: OnsiteCouple, mode: 'mutual' | 'single') => {
+    const f = c.female_loves_count ?? 0;
+    const m = c.male_loves_count ?? 0;
+    return mode === 'mutual' ? (f > 0 && m > 0) : ((f > 0) !== (m > 0));
+  };
+
+  // 心动配对池：按模式筛选后按心动次数倒序（接口已排，兜底再排）
   useEffect(() => {
-    if (tab !== 'feeling') return;
-    const pool = couples.filter(isMutual).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
+    if (tab !== 'feeling' && tab !== 'likeMe') return;
+    const mode: 'mutual' | 'single' = tab === 'likeMe' ? 'single' : 'mutual';
+    const pool = couples.filter((c) => isHeartPair(c, mode)).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
     setHeartPool(pool);
     heartPoolRef.current = pool;
   }, [couples, tab]);
@@ -556,9 +564,10 @@ const ActivityOnsite: React.FC = () => {
     }, 520);
   };
 
-  /** ↓：展示下一对互相心动组合——双方任一已展示过则跳过；池耗尽再拉取一次，仍无则提示 */
+  /** ↓：展示下一对心动组合——双方任一已展示过则跳过；池耗尽再拉取一次，仍无则提示 */
   const showNextHeart = useCallback(async () => {
-    if (tab !== 'feeling') return;
+    if (tab !== 'feeling' && tab !== 'likeMe') return;
+    const mode: 'mutual' | 'single' = tab === 'likeMe' ? 'single' : 'mutual';
     const tryFind = (pool: OnsiteCouple[]): number => {
       for (let i = 0; i < pool.length; i++) {
         const ids = heartIdsOf(pool[i]);
@@ -575,9 +584,9 @@ const ActivityOnsite: React.FC = () => {
         setHeartNoMore(true);
         return;
       }
-      // 池中无可展示：再拉取一次匹配接口，看是否有新的互相心动组合
+      // 池中无可展示：再拉取一次匹配接口，看是否有新的心动组合
       const fresh = await fetchCouples();
-      const freshPool = fresh.filter(isMutual).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
+      const freshPool = fresh.filter((c) => isHeartPair(c, mode)).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
       heartPoolRef.current = freshPool;
       setHeartPool(freshPool);
       idx = tryFind(freshPool);
@@ -599,7 +608,7 @@ const ActivityOnsite: React.FC = () => {
 
   /** ↑：展示上一对（回看历史，不越过最早一条；耗尽隐藏后 ↑ 重新显示最后一条） */
   const showPrevHeart = useCallback(() => {
-    if (tab !== 'feeling' || heartHistoryRef.current.length === 0) return;
+    if ((tab !== 'feeling' && tab !== 'likeMe') || heartHistoryRef.current.length === 0) return;
     if (!heartDisplayedRef.current) {
       // 当前无展示（如耗尽后被隐藏）：重新显示历史最后一条，游标不动
       heartDisplayedRef.current = true;
@@ -938,7 +947,8 @@ const ActivityOnsite: React.FC = () => {
     step(0);
   }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets]);
 
-  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 签到数据 / 2 心动排名 / 3、4 先刷新签到数据 / 5 默契度 / o 开始滚动 / p 减速停下
+  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 嘉宾展示 / 2 心动互选 / 3 我钟意你 / 4 幸运之星 / 5 默契度 / ↓↑ 切换配对 / o 开始滚动 / p 减速停下
+  // 能成时刻入口已隐藏（2026-11-03，功能保留）：恢复时把 4 改回 startCouple 并在工具区加回按钮
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
@@ -946,9 +956,9 @@ const ActivityOnsite: React.FC = () => {
       if ((e.target as HTMLElement | null)?.closest('.ant-select, .ant-select-dropdown')) return;
       if (e.key === '0') toggleDemo();
       else if (e.key === '1') switchTab('list');
-      else if (e.key === '2') switchTab('feeling');
-      else if (e.key === '3') startLucky();
-      else if (e.key === '4') startCouple();
+      else if (e.key === '2') enterHeartTab('feeling');
+      else if (e.key === '3') enterHeartTab('likeMe');
+      else if (e.key === '4') startLucky();
       else if (e.key === '5') startCpRank();
       else if (e.key === 'o' || e.key === 'O') beginRoll();
       else if (e.key === 'p' || e.key === 'P') slowRoll();
@@ -957,7 +967,7 @@ const ActivityOnsite: React.FC = () => {
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, [toggleDemo, switchTab, startLucky, startCouple, startCpRank, beginRoll, slowRoll, showNextHeart, showPrevHeart]);
+  }, [toggleDemo, switchTab, enterHeartTab, startLucky, startCpRank, beginRoll, slowRoll, showNextHeart, showPrevHeart]);
 
   // 离开抽奖环节时清理滚动定时器
   useEffect(() => {
@@ -1066,6 +1076,26 @@ const ActivityOnsite: React.FC = () => {
               />
             </div>
           )}
+          {/* 界面切换（按钮注明快捷键）；能成时刻入口已隐藏（2026-11-03），功能保留：恢复时加回「能成时刻(4)」按钮并把键盘 4 改回 startCouple */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 6 }}>
+              <button onClick={() => switchTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示(1)</button>
+              <button onClick={() => enterHeartTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动互选(2)</button>
+              <button onClick={() => enterHeartTab('likeMe')} style={tab === 'likeMe' ? toolBtnActive : toolBtn}>我钟意你(3)</button>
+              <button onClick={startLucky} style={tab === 'lucky' ? toolBtnActive : toolBtn}>幸运之星(4)</button>
+              <button onClick={startCpRank} style={tab === 'cpRank' ? toolBtnActive : toolBtn}>默契度排名(5)</button>
+              <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
+            </div>
+          </div>
+          {/* 用户切换（心动互选/我钟意你界面显示） */}
+          {(tab === 'feeling' || tab === 'likeMe') && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>用户切换</span>
+              <button onClick={() => showNextHeart()} style={toolBtn}>下一对↓</button>
+              <button onClick={() => showPrevHeart()} style={toolBtn}>上一对↑</button>
+            </div>
+          )}
           {/* 展示形式（仅嘉宾展示界面显示）：爱心放大=心形照片墙 电影播放=中央聚焦+底部胶片 */}
           {tab === 'list' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1074,25 +1104,13 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={() => setWallMode('spotlight')} style={wallMode === 'spotlight' ? toolBtnActive : toolBtn}>电影播放</button>
             </div>
           )}
-          {/* 界面切换（按钮注明快捷键） */}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'auto auto auto', gap: 6 }}>
-              <button onClick={() => switchTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示(1)</button>
-              <button onClick={() => switchTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动排名(2)</button>
-              <button onClick={startLucky} style={tab === 'lucky' ? toolBtnActive : toolBtn}>幸运之星(3)</button>
-              <button onClick={startCouple} style={tab === 'couple' ? toolBtnActive : toolBtn}>能成时刻(4)</button>
-              <button onClick={startCpRank} style={tab === 'cpRank' ? toolBtnActive : toolBtn}>默契度排名(5)</button>
-              <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* 内容区 */}
       <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
         {tab === 'lucky' ? (
-          /* ====== 幸运之星（3）：并排转轮随机抽 N 人（照片自上而下滚动，首尾相连，获奖者不重复） ====== */
+          /* ====== 幸运之星（4）：并排转轮随机抽 N 人（照片自上而下滚动，首尾相连，获奖者不重复） ====== */
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
             {drawPhase === 'cover' ? (
               <>
@@ -1140,7 +1158,7 @@ const ActivityOnsite: React.FC = () => {
             )}
           </div>
         ) : tab === 'couple' ? (
-          /* ====== 能成时刻（4）：双转轮随机抽一对（左女右男） ====== */
+          /* ====== 能成时刻：双转轮随机抽一对（左女右男）——入口已隐藏（2026-11-03，功能保留），恢复时加回键盘 4 与工具按钮 ====== */
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
             {drawPhase === 'cover' ? (
               <>
