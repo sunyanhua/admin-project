@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Select } from 'antd';
 import { HeartFilled } from '@ant-design/icons';
+import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
@@ -53,9 +54,9 @@ const interleaveGenders = (users: WallUser[]): WallUser[] => {
   return [...result, ...others];
 };
 
-const buildWallItems = (photos: WallUser[]): WallItem[] => {
+const buildWallItems = (photos: WallUser[], sizeOverride?: number): WallItem[] => {
   const n = photos.length;
-  const size = n <= 30 ? 16 : n <= 60 ? 13 : 10;
+  const size = sizeOverride ?? (n <= 30 ? 16 : n <= 60 ? 13 : 10);
   return photos.map((p, i) => {
     const rnd = mulberry32(p.number || i + 1);
     const u = (i + 0.5) / n + (rnd() - 0.5) * 0.04; // 绕心一周的位置（含微抖）
@@ -111,12 +112,24 @@ const demoAvatar = (i: number, gender: 'male' | 'female') => {
 
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { error: showError } = useAppNotification();
   const [tab, setTab] = useState<'list' | 'feeling' | 'lucky' | 'couple' | 'cpRank'>('list');
   const [scale, setScale] = useState(1);
   const [wall, setWall] = useState<WallUser[]>([]);
   const [couples, setCouples] = useState<OnsiteCouple[]>([]);
   /** 默契度排名：现场配对按默契度差异正序（未完成计算排最后） */
   const [cpRanks, setCpRanks] = useState<OnsitePairingAdminItem[]>([]);
+  /** 心动排名：互相心动配对池（互心次数倒序）与当前展示的配对 */
+  const [heartPool, setHeartPool] = useState<OnsiteCouple[]>([]);
+  const [heartCurrent, setHeartCurrent] = useState<OnsiteCouple | null>(null);
+  const heartPoolRef = useRef<OnsiteCouple[]>([]);
+  /** 已展示过的配对成员（跳过原则：任何一位已出现过即跳过该对） */
+  const shownHeartIdsRef = useRef<Set<string>>(new Set());
+  /** 展示历史（↑ 回看上一对） */
+  const heartHistoryRef = useRef<OnsiteCouple[]>([]);
+  const heartCursorRef = useRef(-1);
+  /** 数据源已耗尽提示（池中无可展示且重拉后仍无） */
+  const [heartNoMore, setHeartNoMore] = useState(false);
   const [focusIdx, setFocusIdx] = useState(0);
   /** 胶片模式：交叉渐变的当前层/下一层 */
   const [current, setCurrent] = useState<WallUser | null>(null);
@@ -277,9 +290,12 @@ const ActivityOnsite: React.FC = () => {
     return null;
   }, [id, upgradePhotos]);
 
-  /** 心动排名数据（有现场心动的配对，按现场心动次数倒序） */
-  const fetchCouples = useCallback(async () => {
-    if (!id) return;
+  /** 互相心动：双方均有现场心动 */
+  const isMutual = (c: OnsiteCouple) => (c.female_loves_count ?? 0) > 0 && (c.male_loves_count ?? 0) > 0;
+
+  /** 心动排名数据（有现场心动的配对，按现场心动次数倒序）；返回拉取到的列表（↓ 耗尽重拉用） */
+  const fetchCouples = useCallback(async (): Promise<OnsiteCouple[]> => {
+    if (!id) return [];
     try {
       const all: OnsiteCouple[] = [];
       let page = 1;
@@ -295,7 +311,9 @@ const ActivityOnsite: React.FC = () => {
       const ids = all.flatMap((c) => [c.female?.user?.user_id, c.male?.user?.user_id]).filter(Boolean) as string[];
       await upgradePhotos(ids);
       setCouples([...all]); // 照片就绪后重建渲染
+      return all;
     } catch { /* 查询失败静默 */ }
+    return [];
   }, [id, upgradePhotos]);
 
   /** 默契度排名数据：未完成答题的配对不显示；现场序号从报名记录反查 */
@@ -495,10 +513,73 @@ const ActivityOnsite: React.FC = () => {
   /** 切换界面并立即拉取对应最新数据（演示模式下保持演示数据不刷新） */
   const switchTab = useCallback((next: 'list' | 'feeling') => {
     setTab(next);
+    if (next === 'feeling') {
+      // 心动排名：重置展示状态（跳过原则与历史清零）
+      shownHeartIdsRef.current = new Set();
+      heartHistoryRef.current = [];
+      heartCursorRef.current = -1;
+      setHeartCurrent(null);
+      setHeartNoMore(false);
+    }
     if (demoRef.current) return;
     if (next === 'list') fetchWall();
     else fetchCouples();
   }, [fetchWall, fetchCouples]);
+
+  // 互相心动配对池：互心组按心动次数倒序（接口已排，兜底再排）
+  useEffect(() => {
+    if (tab !== 'feeling') return;
+    const pool = couples.filter(isMutual).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
+    setHeartPool(pool);
+    heartPoolRef.current = pool;
+  }, [couples, tab]);
+
+  /** 配对成员 id 列表（双方完整才算有效组合） */
+  const heartIdsOf = (c: OnsiteCouple): string[] =>
+    [c.male?.user?.user_id, c.female?.user?.user_id].filter((x): x is string => !!x);
+
+  /** ↓：展示下一对互相心动组合——双方任一已展示过则跳过；池耗尽再拉取一次，仍无则提示 */
+  const showNextHeart = useCallback(async () => {
+    if (tab !== 'feeling') return;
+    const tryFind = (pool: OnsiteCouple[]): number => {
+      for (let i = 0; i < pool.length; i++) {
+        const ids = heartIdsOf(pool[i]);
+        if (ids.length === 2 && !ids.some((uid) => shownHeartIdsRef.current.has(uid))) return i;
+      }
+      return -1;
+    };
+    let idx = tryFind(heartPoolRef.current);
+    if (idx === -1) {
+      if (demoRef.current) {
+        // 演示模式不重拉真实数据，直接提示耗尽
+        setHeartNoMore(true);
+        return;
+      }
+      // 池中无可展示：再拉取一次匹配接口，看是否有新的互相心动组合
+      const fresh = await fetchCouples();
+      const freshPool = fresh.filter(isMutual).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
+      heartPoolRef.current = freshPool;
+      setHeartPool(freshPool);
+      idx = tryFind(freshPool);
+      if (idx === -1) {
+        setHeartNoMore(true);
+        return;
+      }
+    }
+    setHeartNoMore(false);
+    const c = heartPoolRef.current[idx];
+    heartIdsOf(c).forEach((uid) => shownHeartIdsRef.current.add(uid));
+    heartHistoryRef.current.push(c);
+    heartCursorRef.current = heartHistoryRef.current.length - 1;
+    setHeartCurrent(c);
+  }, [tab, fetchCouples]);
+
+  /** ↑：展示上一对（回看历史，不越过最早一条） */
+  const showPrevHeart = useCallback(() => {
+    if (tab !== 'feeling' || heartCursorRef.current <= 0) return;
+    heartCursorRef.current -= 1;
+    setHeartCurrent(heartHistoryRef.current[heartCursorRef.current]);
+  }, [tab]);
 
   const clearDrawTimer = useCallback(() => {
     if (drawTimerRef.current) {
@@ -839,10 +920,12 @@ const ActivityOnsite: React.FC = () => {
       else if (e.key === '5') startCpRank();
       else if (e.key === 'o' || e.key === 'O') beginRoll();
       else if (e.key === 'p' || e.key === 'P') slowRoll();
+      else if (e.key === 'ArrowDown') showNextHeart();
+      else if (e.key === 'ArrowUp') showPrevHeart();
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, [toggleDemo, switchTab, startLucky, startCouple, startCpRank, beginRoll, slowRoll]);
+  }, [toggleDemo, switchTab, startLucky, startCouple, startCpRank, beginRoll, slowRoll, showNextHeart, showPrevHeart]);
 
   // 离开抽奖环节时清理滚动定时器
   useEffect(() => {
@@ -874,6 +957,29 @@ const ActivityOnsite: React.FC = () => {
       ? `现场嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`
       : `符合条件嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
   })();
+
+  /** 互相心动池中的男女嘉宾（按 userId 去重），组成左右两个心形 */
+  const heartUsersOf = (gender: 'male' | 'female'): WallUser[] => {
+    const seen = new Set<string>();
+    const list: WallUser[] = [];
+    heartPool.forEach((c) => {
+      const side = gender === 'male' ? c.male : c.female;
+      if (!side) return;
+      const uid = side.user?.user_id || '';
+      if (!uid || seen.has(uid)) return;
+      seen.add(uid);
+      list.push({
+        number: side.onsite_number ?? 0,
+        nick: side.profile?.nickname || '-',
+        gender,
+        userId: uid,
+        photo: photoOf(uid, side.profile?.avatar || ''),
+      });
+    });
+    return list;
+  };
+  const heartMaleItems = buildWallItems(heartUsersOf('male'), 10);
+  const heartFemaleItems = buildWallItems(heartUsersOf('female'), 10);
 
   const wallItems = buildWallItems(wall);
 
@@ -1158,53 +1264,63 @@ const ActivityOnsite: React.FC = () => {
               })
             )}
           </div>
-        ) : couples.length === 0 ? (
-          <div style={{ paddingTop: '30vh', textAlign: 'center', fontSize: '4vh', color: 'rgba(255,255,255,.5)' }}>暂无配对</div>
         ) : (
-          <div style={{ height: '100%', overflowY: 'auto', padding: '6vh 3vw 10vh' }}>
-            {couples.map((c) => {
-              const f = c.female;
-              const m = c.male;
-              const fPhoto = photoOf(f?.user?.user_id || '', f?.profile?.avatar || '');
-              const mPhoto = photoOf(m?.user?.user_id || '', m?.profile?.avatar || '');
-              const fLoves = Math.min(c.female_loves_count ?? 0, 3);
-              const mLoves = Math.min(c.male_loves_count ?? 0, 3);
-              return (
-                <div key={c.couple_id} style={{ height: '47.5vh', boxSizing: 'border-box', padding: '2vh 0', overflow: 'hidden', border: 'solid 1px #e04d2c', borderRadius: '1.3vh', background: 'rgba(224,77,44,.12)', marginBottom: '1.5vh', textAlign: 'center' }}>
-                  {/* 女方 */}
-                  <div style={{ display: 'inline-block', width: '28.55vw', overflow: 'hidden', verticalAlign: 'top' }}>
-                    <div style={{ height: '36vh', lineHeight: '36vh' }}>
-                      {fPhoto ? <img src={fPhoto} alt="" style={{ maxWidth: '100%', maxHeight: '100%', verticalAlign: 'middle', borderRadius: '1.3vh' }} /> : null}
-                    </div>
-                    <div style={{ marginTop: '1vh', textAlign: 'center' }}>
-                      <span style={{ display: 'inline-block', lineHeight: '4.5vh', fontSize: '3.2vh', color: '#fff', fontWeight: 'bold', background: 'rgba(0,0,0,.5)', borderRadius: '1vh', padding: '0 1.5vw' }}>
-                        {f?.onsite_number ?? '-'} - {f?.profile?.nickname || '-'}
-                      </span>
-                    </div>
-                  </div>
-                  {/* 心形计数 */}
-                  <div style={{ display: 'inline-block', width: '14.64vw', height: '100%', boxSizing: 'border-box', paddingTop: '15vh', overflow: 'hidden', fontSize: '5.5vh', verticalAlign: 'top' }}>
-                    <div style={{ marginBottom: '3.5vh', color: '#ff5b8f' }}>
-                      {Array.from({ length: fLoves }).map((_, i) => <HeartFilled key={`fl${i}`} style={{ width: '3.5vw', fontSize: '3.2vw' }} />)}
-                    </div>
-                    <div style={{ color: '#4da3ff' }}>
-                      {Array.from({ length: mLoves }).map((_, i) => <HeartFilled key={`ml${i}`} style={{ width: '3.5vw', fontSize: '3.2vw' }} />)}
-                    </div>
-                  </div>
-                  {/* 男方 */}
-                  <div style={{ display: 'inline-block', width: '28.55vw', overflow: 'hidden', verticalAlign: 'top' }}>
-                    <div style={{ height: '36vh', lineHeight: '36vh' }}>
-                      {mPhoto ? <img src={mPhoto} alt="" style={{ maxWidth: '100%', maxHeight: '100%', verticalAlign: 'middle', borderRadius: '1.3vh' }} /> : null}
-                    </div>
-                    <div style={{ marginTop: '1vh', textAlign: 'center' }}>
-                      <span style={{ display: 'inline-block', lineHeight: '4.5vh', fontSize: '3.2vh', color: '#fff', fontWeight: 'bold', background: 'rgba(0,0,0,.5)', borderRadius: '1vh', padding: '0 1.5vw' }}>
-                        {m?.onsite_number ?? '-'} - {m?.profile?.nickname || '-'}
-                      </span>
-                    </div>
+          /* ====== 心动排名（2）：左男右女双心形，中间互相心动次数；↓ 下一对 / ↑ 上一对 ====== */
+          <div style={{ height: '100%', display: 'flex' }}>
+            {/* 左：男生心形 */}
+            <div style={{ flex: 1, position: 'relative', height: '100%', overflow: 'hidden' }}>
+              {heartMaleItems.map((p) => (
+                <div
+                  key={p.userId}
+                  data-rot={p.rotate}
+                  className={`onsite-photo${heartCurrent && p.userId === heartCurrent.male?.user?.user_id ? ' heart-active' : ''}`}
+                  style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: heartCurrent && p.userId === heartCurrent.male?.user?.user_id ? 60 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
+                >
+                  <span className="onsite-number gender-male">{p.number || '-'}</span>
+                  <img src={p.photo} alt={p.nick} />
+                  <span className="onsite-nick">{p.nick}</span>
+                </div>
+              ))}
+              {heartMaleItems.length === 0 && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', fontSize: '3vh' }}>暂无男嘉宾</div>
+              )}
+            </div>
+
+            {/* 中：互相心动次数 */}
+            <div style={{ width: '16vw', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {heartCurrent ? (
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '7vh', color: '#ff5b8f', fontWeight: 'bold', lineHeight: 1.1 }}>{heartCurrent.onsite_loves_count ?? 0}</div>
+                  <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '2.6vh', marginTop: '1vh' }}>互相心动</div>
+                  <div style={{ color: 'rgba(255,255,255,.45)', fontSize: '2.2vh', marginTop: '3vh' }}>
+                    {heartNoMore ? '暂无更多互相心动的CP' : '↓ 下一对 · ↑ 上一对'}
                   </div>
                 </div>
-              );
-            })}
+              ) : (
+                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh', textAlign: 'center' }}>
+                  {heartNoMore ? '暂无更多互相心动的CP' : '按 ↓ 展示下一对心动组合'}
+                </div>
+              )}
+            </div>
+
+            {/* 右：女生心形 */}
+            <div style={{ flex: 1, position: 'relative', height: '100%', overflow: 'hidden' }}>
+              {heartFemaleItems.map((p) => (
+                <div
+                  key={p.userId}
+                  data-rot={p.rotate}
+                  className={`onsite-photo${heartCurrent && p.userId === heartCurrent.female?.user?.user_id ? ' heart-active' : ''}`}
+                  style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: heartCurrent && p.userId === heartCurrent.female?.user?.user_id ? 60 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
+                >
+                  <span className="onsite-number gender-female">{p.number || '-'}</span>
+                  <img src={p.photo} alt={p.nick} />
+                  <span className="onsite-nick">{p.nick}</span>
+                </div>
+              ))}
+              {heartFemaleItems.length === 0 && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.4)', fontSize: '3vh' }}>暂无女嘉宾</div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1217,6 +1333,10 @@ const ActivityOnsite: React.FC = () => {
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
         .onsite-photo.focus { transform: translate(calc(-50% + var(--fx,0px)), calc(-50% + var(--fy,0px))) scale(var(--fscale,2)) rotate(0deg) !important; opacity: 1; }
         .onsite-photo.focus img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+        /* 心动排名：当前配对的心形卡片放大高亮 */
+        .onsite-photo.heart-active { transform: translate(-50%,-50%) scale(1.4) rotate(0deg) !important; opacity: 1; }
+        .onsite-photo.heart-active img { border-color: #ffd700; box-shadow: 0 0 32px rgba(255,215,0,.85); }
+        .onsite-photo.heart-active .onsite-nick { background: rgba(255,215,0,.85); color: #3d2a00; }
         .onsite-number { position: absolute; left: 5%; top: 4%; min-width: 2.4vw; height: 2.4vw; padding: 0 .4vw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e04d2c; color: #fff; font-size: 1.2vw; font-weight: bold; line-height: 1; white-space: nowrap; z-index: 2; }
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
