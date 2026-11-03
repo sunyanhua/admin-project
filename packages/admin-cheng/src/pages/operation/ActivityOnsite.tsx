@@ -1292,7 +1292,7 @@ const ActivityOnsite: React.FC = () => {
                     style={{
                       left: isActive ? '50%' : `${p.left}%`,
                       top: isActive ? '50%' : `${p.top}%`,
-                      width: isActive ? '16vw' : `${p.size}vw`,
+                      width: isActive ? '32vw' : `${p.size}vw`,
                       zIndex: isActive ? 60 : p.z,
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
@@ -1339,7 +1339,7 @@ const ActivityOnsite: React.FC = () => {
                     style={{
                       left: isActive ? '50%' : `${p.left}%`,
                       top: isActive ? '50%' : `${p.top}%`,
-                      width: isActive ? '16vw' : `${p.size}vw`,
+                      width: isActive ? '32vw' : `${p.size}vw`,
                       zIndex: isActive ? 60 : p.z,
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
@@ -1367,9 +1367,12 @@ const ActivityOnsite: React.FC = () => {
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
         .onsite-photo.focus { transform: translate(calc(-50% + var(--fx,0px)), calc(-50% + var(--fy,0px))) scale(var(--fscale,2)) rotate(0deg) !important; opacity: 1; }
         .onsite-photo.focus img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-        /* 心动排名：当前配对的心形卡片（居中放大由行内样式控制），样式与嘉宾展示放大（focus）一致 */
+        /* 心动排名：当前配对的心形卡片（居中放大由行内样式控制）；文字行与徽章等比例放大 2 倍 */
         .onsite-photo.heart-active { opacity: 1; }
         .onsite-photo.heart-active img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+        .onsite-photo.heart-active .onsite-nick { font-size: 2.2vw; padding: 4px 8px; }
+        .onsite-photo.heart-active .onsite-number { min-width: 4.8vw; height: 4.8vw; font-size: 2.4vw; }
+        .onsite-photo.heart-active .onsite-group-corner { font-size: 2vw; line-height: 3.8vw; }
         .onsite-number { position: absolute; left: 5%; top: 4%; min-width: 2.4vw; height: 2.4vw; padding: 0 .4vw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e04d2c; color: #fff; font-size: 1.2vw; font-weight: bold; line-height: 1; white-space: nowrap; z-index: 2; }
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
