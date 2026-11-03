@@ -1151,7 +1151,6 @@ const ActivityOnsite: React.FC = () => {
                         ? <>恭喜 {drawWinners[0].number || ''} 号 {drawWinners[0].nick}</>
                         : <>恭喜 {drawWinners.length} 位幸运之星：{drawWinners.map((w) => `${w.number || ''}号 ${w.nick}`).join('、')}</>}
                     </div>
-                    <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 3 重新开始</div>
                   </>
                 )}
               </>
