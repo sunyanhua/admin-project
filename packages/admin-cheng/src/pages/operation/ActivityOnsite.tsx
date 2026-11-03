@@ -8,6 +8,7 @@ import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
 import { buildLuckyPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
+import { parseRoutine, RoutineStep, routineStepSummary } from '@/components/operation/onsiteRoutine.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
 const mulberry32 = (seed: number) => {
@@ -270,6 +271,19 @@ const ActivityOnsite: React.FC = () => {
   const [hasGroups, setHasGroups] = useState(false);
   /** 报名用户分组名映射（默契度排名从报名记录反查） */
   const groupMapRef = useRef<Map<string, string>>(new Map());
+  /** 流程编排（onsite_config.routine）：提前编排好的现场操作步骤（按 9 进入编排执行模式） */
+  const [routine, setRoutine] = useState<RoutineStep[]>([]);
+  const [routineMode, setRoutineMode] = useState(false);
+  const [routineIdx, setRoutineIdx] = useState(0);
+  /** 当前步骤是否已出结果（空格进入下一步）或已跳过 */
+  const [routineDone, setRoutineDone] = useState(false);
+  /** 编排执行提示（步骤跳过原因等，大屏顶部横幅） */
+  const [routineNotice, setRoutineNotice] = useState('');
+  const routineModeRef = useRef(false);
+  const routineIdxRef = useRef(0);
+  const routineDoneRef = useRef(false);
+  /** 编排执行时本步抽取数量（慢速定格数量来源；自由模式为 null 走右上角配置） */
+  const blockCountRef = useRef<number | null>(null);
 
   /**
    * 按图片实际比例钳制位置：整卡（含旋转）完整落在墙内；
@@ -449,6 +463,7 @@ const ActivityOnsite: React.FC = () => {
             groupsRef.current = obj.groups.split('|').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
           }
           setHasGroups(groupsRef.current.length > 0);
+          setRoutine(parseRoutine(res?.onsite_config));
         }
       } catch { /* 无配置保持默认渐变 */ }
     }).catch(() => {}).finally(() => {
@@ -780,11 +795,19 @@ const ActivityOnsite: React.FC = () => {
     setLuckyOffsets([...luckyOffsetsRef.current]);
   }, []);
 
-  /** 进入幸运之星（快捷键 3）：先查询最新签到数据作为转轮筛选来源，再显示栏目封面，按 O 开始滚动 */
-  const startLucky = useCallback(async () => {
+  /** 进入幸运之星（快捷键 3）：先查询最新签到数据作为转轮筛选来源，再显示栏目封面，按 O 开始滚动。编排模式传参覆盖右上角配置 */
+  const startLucky = useCallback(async (override?: { count?: number; gender?: LuckyGender }) => {
     clearDrawTimer();
     const source = demoRef.current ? wall : ((await fetchWall()) ?? wall);
-    const pools = buildLuckyPools(source, luckyCount, luckyGender);
+    const count = override?.count ?? luckyCount;
+    const gender = override?.gender ?? luckyGender;
+    const pools = buildLuckyPools(source, count, gender);
+    // 编排模式：无符合条件的嘉宾时标记已跳过（空格直接进入下一步，不卡住流程）
+    if (routineModeRef.current && pools.length === 0) {
+      routineDoneRef.current = true;
+      setRoutineDone(true);
+      setRoutineNotice('本步暂无符合条件的嘉宾，已跳过');
+    }
     // 每个转轮独立洗牌（各转轮人组合随机、互不相同），但都滚动全体嘉宾——性别要求不体现在候选滚动中，只控制最终落定的获奖者
     const strips = pools.map(() => buildStrip(source));
     luckyStripsRef.current = strips;
@@ -851,6 +874,12 @@ const ActivityOnsite: React.FC = () => {
     const pools = groupsRef.current
       .map((g) => wall.filter((u) => u.group === g))
       .filter((p) => p.length > 0);
+    // 编排模式：无已签到且已分组的成员时标记已跳过（空格直接进入下一步）
+    if (routineModeRef.current && pools.length === 0) {
+      routineDoneRef.current = true;
+      setRoutineDone(true);
+      setRoutineNotice('本步暂无已签到且已分组的成员，已跳过');
+    }
     const strips = pools.map((pool) => buildStrip(pool));
     luckyStripsRef.current = strips;
     luckyWinnerPoolsRef.current = pools;
@@ -865,18 +894,24 @@ const ActivityOnsite: React.FC = () => {
     setDrawWinners([]);
   }, [clearDrawTimer, wall, buildStrip]);
 
-  /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员） */
-  const startBlockDraw = useCallback((kind: 'group' | 'person') => {
+  /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员）。编排模式传参覆盖指定组 */
+  const startBlockDraw = useCallback((kind: 'group' | 'person', override?: { group?: string }) => {
     clearDrawTimer();
     if (kind === 'group') {
       const blocks: BlockItem[] = groupsRef.current.map((g) => ({ key: g, label: g }));
       setBlockAll(blocks);
       blockCandidatesRef.current = blocks.map((b) => b.key);
     } else {
-      const g = personGroup || groupsRef.current[0] || '';
+      const g = override?.group || personGroup || groupsRef.current[0] || '';
       const blocks: BlockItem[] = wall
         .filter((u) => u.group === g)
         .map((u) => ({ key: u.userId, label: u.nick, photo: u.photo, number: u.number, gender: u.gender, group: u.group }));
+      // 编排模式：指定组暂无已签到成员时标记已跳过（空格直接进入下一步）
+      if (routineModeRef.current && blocks.length === 0) {
+        routineDoneRef.current = true;
+        setRoutineDone(true);
+        setRoutineNotice(`分组「${g}」暂无已签到成员，本步已跳过`);
+      }
       setBlockAll(blocks);
       blockCandidatesRef.current = blocks.map((b) => b.key);
     }
@@ -894,6 +929,11 @@ const ActivityOnsite: React.FC = () => {
     if (blockPhaseRef.current === 'rolling' || blockPhaseRef.current === 'slowing') return;
     if (!blockCandidatesRef.current.length) return;
     clearDrawTimer();
+    // 编排执行模式：新一轮滚动开始即重置为未出结果（避免滚动中空格误跳下一步）
+    if (routineModeRef.current) {
+      routineDoneRef.current = false;
+      setRoutineDone(false);
+    }
     setBlockRoundWinners([]);
     setBlockPhase('rolling');
     blockPhaseRef.current = 'rolling';
@@ -915,7 +955,7 @@ const ActivityOnsite: React.FC = () => {
     setBlockPhase('slowing');
     blockPhaseRef.current = 'slowing';
     const candidates = blockCandidatesRef.current;
-    const count = tab === 'groupDraw' ? groupDrawCount : personDrawCount;
+    const count = blockCountRef.current ?? (tab === 'groupDraw' ? groupDrawCount : personDrawCount);
     const take = Math.min(Math.max(1, count), candidates.length);
     const shuffled = [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
     const durations = Array.from({ length: 8 }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
@@ -927,6 +967,11 @@ const ActivityOnsite: React.FC = () => {
         setBlockDrawnKeys((prev) => [...prev, ...winners]);
         setBlockPhase('done');
         blockPhaseRef.current = 'done';
+        // 编排执行模式：出结果后空格进入下一步
+        if (routineModeRef.current) {
+          routineDoneRef.current = true;
+          setRoutineDone(true);
+        }
         return;
       }
       const winner = shuffled[wi];
@@ -1147,6 +1192,11 @@ const ActivityOnsite: React.FC = () => {
                 setDrawPairWinner(pairWinners);
               }
               setDrawPhase('done');
+              // 编排执行模式：出结果后空格进入下一步
+              if (routineModeRef.current) {
+                routineDoneRef.current = true;
+                setRoutineDone(true);
+              }
             }, 560);
           }, 400);
         }, durations[MAX_SHOW - 1] + 60);
@@ -1161,14 +1211,93 @@ const ActivityOnsite: React.FC = () => {
     step(0);
   }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets, slowBlock]);
 
-  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 嘉宾展示 / 2 心动互选 / 3 我钟意你 / 4 幸运之星 / 5 默契度 / 6 各组代表 / 7 组中抽组 / 8 单组选人 / ↓↑ 切换配对 / o 开始滚动 / p 减速停下
+  /** 编排执行：进入第 idx 步——应用步骤参数并打开对应界面封面（未执行状态）；无效步骤标记跳过 */
+  const runRoutineStep = useCallback((idx: number) => {
+    const step = routine[idx];
+    if (!step) return;
+    routineIdxRef.current = idx;
+    setRoutineIdx(idx);
+    routineDoneRef.current = false;
+    setRoutineDone(false);
+    setRoutineNotice('');
+    blockCountRef.current = null;
+    // 分组相关步骤：分组未配置或引用的组已删改 → 标记跳过，空格直接进入下一步（不卡住流程）
+    if (step.type !== 'lucky' && groupsRef.current.length === 0) {
+      routineDoneRef.current = true;
+      setRoutineDone(true);
+      setRoutineNotice('活动未配置分组，本步已跳过');
+      return;
+    }
+    if (step.type === 'personDraw' && (!step.group || !groupsRef.current.includes(step.group))) {
+      routineDoneRef.current = true;
+      setRoutineDone(true);
+      setRoutineNotice(`步骤引用的分组「${step.group || ''}」不存在，已跳过`);
+      return;
+    }
+    if (step.type === 'lucky') {
+      startLucky({ count: step.count ?? 1, gender: step.gender ?? 'any' });
+    } else if (step.type === 'groupRep') {
+      startGroupRep();
+    } else if (step.type === 'groupDraw') {
+      blockCountRef.current = step.count ?? 1;
+      startBlockDraw('group');
+    } else {
+      blockCountRef.current = step.count ?? 1;
+      startBlockDraw('person', { group: step.group });
+    }
+  }, [routine, startLucky, startGroupRep, startBlockDraw]);
+
+  /** 按 9 进入编排执行模式：从第 1 步开始 */
+  const enterRoutine = useCallback(() => {
+    clearDrawTimer();
+    routineModeRef.current = true;
+    setRoutineMode(true);
+    runRoutineStep(0);
+  }, [clearDrawTimer, runRoutineStep]);
+
+  /** 退出编排执行模式（9/Esc）：回到嘉宾展示墙自由操作 */
+  const exitRoutine = useCallback(() => {
+    clearDrawTimer();
+    routineModeRef.current = false;
+    setRoutineMode(false);
+    setRoutineNotice('');
+    blockCountRef.current = null;
+    switchTab('list');
+  }, [clearDrawTimer, switchTab]);
+
+  /** 编排执行空格键：未出结果 → 开始滚动（同 O）；已出结果 → 进入下一步（最后一步回到嘉宾展示墙） */
+  const routineSpace = useCallback(() => {
+    const step = routine[routineIdxRef.current];
+    if (!step) return;
+    if (!routineDoneRef.current) {
+      beginRoll();
+      return;
+    }
+    if (routineIdxRef.current + 1 >= routine.length) exitRoutine();
+    else runRoutineStep(routineIdxRef.current + 1);
+  }, [routine, beginRoll, exitRoutine, runRoutineStep]);
+
+  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 嘉宾展示 / 2 心动互选 / 3 我钟意你 / 4 幸运之星 / 5 默契度 / 6 各组代表 / 7 组中抽组 / 8 单组选人 / ↓↑ 切换配对 / o 开始滚动 / p 减速停下 / 9 编排执行（空格 开始/下一步、R 重抽、←→ 切换、Esc 退出）
   // 能成时刻入口已隐藏（2026-11-03，功能保留）：恢复时把 4 改回 startCouple 并在工具区加回按钮
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
       // 配置下拉框打开/聚焦期间不响应快捷键，避免误触开始、停止或重建转轮
       if ((e.target as HTMLElement | null)?.closest('.ant-select, .ant-select-dropdown')) return;
-      if (e.key === '0') toggleDemo();
+      // 编排执行模式：模式键 0-8 失效，统一 空格 开始/下一步、O 开始、P 停止、R 重抽、←/→ 切换、9/Esc 退出
+      if (routineModeRef.current) {
+        if (e.key === '9' || e.key === 'Escape') exitRoutine();
+        else if (e.key === ' ') { e.preventDefault(); routineSpace(); }
+        else if (e.key === 'o' || e.key === 'O') beginRoll();
+        else if (e.key === 'p' || e.key === 'P') slowRoll();
+        else if (e.key === 'r' || e.key === 'R') runRoutineStep(routineIdxRef.current);
+        else if (e.key === 'ArrowLeft') runRoutineStep(Math.max(0, routineIdxRef.current - 1));
+        else if (e.key === 'ArrowRight') runRoutineStep(Math.min(routine.length - 1, routineIdxRef.current + 1));
+        return;
+      }
+      if (e.key === '9') {
+        if (routine.length > 0) enterRoutine();
+      } else if (e.key === '0') toggleDemo();
       else if (e.key === '1') switchTab('list');
       else if (e.key === '2') enterHeartTab('feeling');
       else if (e.key === '3') enterHeartTab('likeMe');
@@ -1184,7 +1313,7 @@ const ActivityOnsite: React.FC = () => {
     };
     window.addEventListener('keydown', onkey);
     return () => window.removeEventListener('keydown', onkey);
-  }, [toggleDemo, switchTab, enterHeartTab, startLucky, startCpRank, startGroupRep, startBlockDraw, beginRoll, slowRoll, showNextHeart, showPrevHeart]);
+  }, [routine, toggleDemo, switchTab, enterHeartTab, startLucky, startCpRank, startGroupRep, startBlockDraw, beginRoll, slowRoll, showNextHeart, showPrevHeart, enterRoutine, exitRoutine, routineSpace, runRoutineStep]);
 
   // 离开抽奖环节时清理滚动定时器
   useEffect(() => {
@@ -1207,16 +1336,23 @@ const ActivityOnsite: React.FC = () => {
   const luckyReelW = Math.min(18, (80 - (Math.min(luckyStrips.length, LUCKY_PER_ROW) - 1) * 1.5) / Math.min(luckyStrips.length, LUCKY_PER_ROW));
   const luckyReelH = (luckyReelW * 4) / 3;
 
+  /** 编排模式当前步骤参数（驱动封面人数/组名等展示；自由模式沿用右上角配置） */
+  const routineStepNow = routineMode && routine[routineIdx] ? routine[routineIdx] : null;
+  const effLuckyCount = routineStepNow?.type === 'lucky' ? (routineStepNow.count ?? 1) : luckyCount;
+  const effLuckyGender = routineStepNow?.type === 'lucky' ? (routineStepNow.gender ?? 'any') : luckyGender;
+  const effGroupDrawCount = routineStepNow?.type === 'groupDraw' ? (routineStepNow.count ?? 1) : groupDrawCount;
+  const effPersonDrawCount = routineStepNow?.type === 'personDraw' ? (routineStepNow.count ?? 1) : personDrawCount;
+
   /** 幸运之星封面：实际可建转轮数（与 buildLuckyPools 同一算法，避免两处规则漂移） */
-  const luckyReelCount = tab === 'lucky' ? buildLuckyPools(wall, luckyCount, luckyGender).length : 0;
+  const luckyReelCount = tab === 'lucky' ? buildLuckyPools(wall, effLuckyCount, effLuckyGender).length : 0;
   /**
    * 封面人数不足提示（性别筛选后符合条件人数 < 所选人数时自动缩减转轮数）。
    * 措辞不带性别——性别要求只控制落定结果，大屏展示不能让观众看出要求。
    */
   const luckyHint = (() => {
-    if (tab !== 'lucky' || luckyReelCount >= luckyCount) return '';
-    if (!luckyReelCount) return luckyGender === 'any' ? '暂无签到嘉宾' : '暂无符合条件的嘉宾，无法抽取';
-    return luckyGender === 'any'
+    if (tab !== 'lucky' || luckyReelCount >= effLuckyCount) return '';
+    if (!luckyReelCount) return effLuckyGender === 'any' ? '暂无签到嘉宾' : '暂无符合条件的嘉宾，无法抽取';
+    return effLuckyGender === 'any'
       ? `现场嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`
       : `符合条件嘉宾仅 ${luckyReelCount} 人，按 ${luckyReelCount} 人抽取`;
   })();
@@ -1230,8 +1366,8 @@ const ActivityOnsite: React.FC = () => {
   const heartMaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'male'), 9));
   const heartFemaleItems = compressHeart(buildWallItems(wall.filter((u) => u.gender === 'female'), 9));
 
-  /** 单组选人：指定组的已签到成员数（配置人数上限） */
-  const personGroupName = personGroup || groupsRef.current[0] || '';
+  /** 单组选人：指定组的已签到成员数（配置人数上限）；编排模式取步骤指定组 */
+  const personGroupName = (routineStepNow?.type === 'personDraw' && routineStepNow.group ? routineStepNow.group : personGroup) || groupsRef.current[0] || '';
   const personCountOptions = Array.from(
     { length: Math.min(26, Math.max(1, wall.filter((u) => u.group === personGroupName).length)) },
     (_, i) => i + 1,
@@ -1263,7 +1399,8 @@ const ActivityOnsite: React.FC = () => {
         </div>
       )}
 
-      {/* 右上角工作区：鼠标悬停显示，移走隐藏 */}
+      {/* 右上角工作区：鼠标悬停显示，移走隐藏（编排执行模式下隐藏，参数全部来自编排步骤） */}
+      {!routineMode && (
       <div className="onsite-tools">
         <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 10, whiteSpace: 'nowrap' }}>
           {/* 横向压缩 */}
@@ -1289,7 +1426,7 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={() => switchTab('list')} style={tab === 'list' ? toolBtnActive : toolBtn}>嘉宾展示(1)</button>
               <button onClick={() => enterHeartTab('feeling')} style={tab === 'feeling' ? toolBtnActive : toolBtn}>心动互选(2)</button>
               <button onClick={() => enterHeartTab('likeMe')} style={tab === 'likeMe' ? toolBtnActive : toolBtn}>我钟意你(3)</button>
-              <button onClick={startLucky} style={tab === 'lucky' ? toolBtnActive : toolBtn}>幸运之星(4)</button>
+              <button onClick={() => startLucky()} style={tab === 'lucky' ? toolBtnActive : toolBtn}>幸运之星(4)</button>
               <button onClick={startCpRank} style={tab === 'cpRank' ? toolBtnActive : toolBtn}>默契度排名(5)</button>
               <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
               {/* 分组抽取功能：仅活动已配置分组时显示 */}
@@ -1299,6 +1436,10 @@ const ActivityOnsite: React.FC = () => {
                   <button onClick={() => startBlockDraw('group')} style={tab === 'groupDraw' ? toolBtnActive : toolBtn}>组中抽组(7)</button>
                   <button onClick={() => startBlockDraw('person')} style={tab === 'personDraw' ? toolBtnActive : toolBtn}>单组选人(8)</button>
                 </>
+              )}
+              {/* 流程编排入口：仅活动已保存编排步骤时显示，按 9 进入编排执行模式 */}
+              {routine.length > 0 && (
+                <button onClick={enterRoutine} style={toolBtn}>流程编排(9)</button>
               )}
             </div>
           </div>
@@ -1376,6 +1517,28 @@ const ActivityOnsite: React.FC = () => {
           )}
         </div>
       </div>
+      )}
+
+      {/* 编排执行进度条（编排模式常显）：第 x/N 步 + 摘要 + 备注 + 操作提示 */}
+      {routineMode && routine[routineIdx] && (
+        <div style={{ position: 'absolute', top: 14, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 6, pointerEvents: 'none' }}>
+          <div style={{ background: 'rgba(0,0,0,.62)', borderRadius: 22, padding: '7px 20px', color: '#fff', fontSize: '2.4vh', display: 'flex', alignItems: 'center', gap: 16, whiteSpace: 'nowrap' }}>
+            <span style={{ color: '#ffd700', fontWeight: 'bold' }}>流程编排 {routineIdx + 1}/{routine.length}</span>
+            <span>{routineStepSummary(routine[routineIdx])}</span>
+            {routine[routineIdx].note && <span style={{ color: '#ffd700' }}>{routine[routineIdx].note}</span>}
+            <span style={{ color: 'rgba(255,255,255,.6)', fontSize: '2vh' }}>空格 {routineDone ? '下一步' : '开始'} · P 停止 · R 重抽 · ←/→ 切换 · 9 退出</span>
+          </div>
+        </div>
+      )}
+
+      {/* 编排跳过提示横幅 */}
+      {routineNotice && (
+        <div style={{ position: 'absolute', top: '11vh', left: 0, right: 0, textAlign: 'center', zIndex: 6, pointerEvents: 'none' }}>
+          <span style={{ display: 'inline-block', background: 'rgba(224,77,44,.9)', color: '#fff', padding: '8px 26px', borderRadius: 26, fontSize: '3vh', fontWeight: 600 }}>
+            {routineNotice}
+          </span>
+        </div>
+      )}
 
       {/* 内容区 */}
       <div style={{ height: '100vh', transform: `scaleX(${scale})`, transformOrigin: 'center top' }}>
@@ -1391,7 +1554,7 @@ const ActivityOnsite: React.FC = () => {
                   </div>
                 )}
                 {tab === 'lucky' && luckyHint && <div style={{ color: '#ffd700', fontSize: '2.8vh' }}>{luckyHint}</div>}
-                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 减速停止</div>
+                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>{routineMode ? '按空格开始 · 按 P 减速停止' : '按 O 开始 · 按 P 减速停止'}</div>
               </>
             ) : (
               <>
@@ -1433,11 +1596,11 @@ const ActivityOnsite: React.FC = () => {
                 <div className="draw-cover-title">{tab === 'groupDraw' ? '组中抽组' : '单组选人'}</div>
                 <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '2.8vh' }}>
                   {tab === 'groupDraw'
-                    ? `共 ${blockAll.length} 组 · 每轮抽取 ${groupDrawCount} 组`
-                    : `「${personGroupName}」组 · 每轮抽取 ${personDrawCount} 人`}
+                    ? `共 ${blockAll.length} 组 · 每轮抽取 ${effGroupDrawCount} 组`
+                    : `「${personGroupName}」组 · 每轮抽取 ${effPersonDrawCount} 人`}
                 </div>
                 <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>
-                  按 O 开始 · 按 P 减速停止{blockDrawnKeys.length > 0 ? ' · 按 O 继续下一轮' : ''}
+                  {routineMode ? '按空格开始 · 按 P 减速停止' : '按 O 开始 · 按 P 减速停止'}{blockDrawnKeys.length > 0 ? ' · 按 O 继续下一轮' : ''}
                 </div>
               </>
             ) : (
@@ -1461,9 +1624,13 @@ const ActivityOnsite: React.FC = () => {
                 </div>
                 {blockPhase === 'done' && (
                   <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.6vh' }}>
-                    {blockCandidatesRef.current.length
-                      ? '按 O 继续下一轮 · 按 7/8 重新开始'
-                      : '已全部抽出 · 按 7/8 重新开始'}
+                    {routineMode
+                      ? (blockCandidatesRef.current.length
+                        ? '按 O 继续下一轮 · 空格进入下一步'
+                        : '已全部抽出 · 空格进入下一步')
+                      : (blockCandidatesRef.current.length
+                        ? '按 O 继续下一轮 · 按 7/8 重新开始'
+                        : '已全部抽出 · 按 7/8 重新开始')}
                   </div>
                 )}
               </>

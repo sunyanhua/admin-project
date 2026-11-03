@@ -16,6 +16,7 @@ import ActivityCpTab from '@/components/operation/ActivityCpTab';
 import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAddModal';
 import OnsiteConfigTab from '@/components/operation/OnsiteConfigTab';
 import OnsiteGroupTab from '@/components/operation/OnsiteGroupTab';
+import OnsiteRoutineTab from '@/components/operation/OnsiteRoutineTab';
 import { formatDateTime, parseApiTime } from '@/utils/format';
 
 interface OnsiteManageModalProps {
@@ -373,6 +374,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
           { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={activity} /> },
+          { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={activity} /> : null },
         ]}
       />
     </ScrollableModal>
