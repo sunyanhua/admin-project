@@ -124,7 +124,7 @@ describe('OnsiteGroupTab', () => {
     });
   });
 
-  it('快速设置：字母 + 组数自动生成分组名称', async () => {
+  it('快速设置：默认汉字 + 组数自动生成分组名称', async () => {
     render(
       <App>
         <OnsiteGroupTab activityId="a1" activity={ACTIVITY as any} />
@@ -136,7 +136,24 @@ describe('OnsiteGroupTab', () => {
     await userEvent.type(countInput, '3');
     await userEvent.click(btnByText('应用'));
     await waitFor(() => {
-      expect(input.value).toBe('A|B|C');
+      expect(input.value).toBe('一|二|三');
+    });
+  });
+
+  it('快速设置：汉字 11 组生成 一|…|十一', async () => {
+    render(
+      <App>
+        <OnsiteGroupTab activityId="a1" activity={ACTIVITY as any} />
+      </App>,
+    );
+    const input = await screen.findByPlaceholderText('A|B|C|D|E|F|G') as HTMLInputElement;
+    const countInput = screen.getByPlaceholderText('组数') as HTMLInputElement;
+    await userEvent.clear(countInput);
+    await userEvent.type(countInput, '11');
+    await userEvent.click(btnByText('应用'));
+    await waitFor(() => {
+      expect(input.value).toContain('十一');
+      expect(input.value.startsWith('一|二|')).toBe(true);
     });
   });
 

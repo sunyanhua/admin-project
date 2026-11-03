@@ -87,23 +87,33 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
   /** 已保存的组CP配对（自动分组时男女须同组） */
   const [cpPairs, setCpPairs] = useState<{ maleId: string; femaleId: string }[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
-  /** 快速设置：组名类型（字母/数字）与组数 */
-  const [quickType, setQuickType] = useState<'letter' | 'number'>('letter');
+  /** 快速设置：组名类型（汉字/字母/数字）与组数 */
+  const [quickType, setQuickType] = useState<'cn' | 'letter' | 'number'>('cn');
   const [quickCount, setQuickCount] = useState<number | null>(null);
+
+  /** 中文数字（1~26）：一组、二组…十组、十一组…二十六组 */
+  const cnNum = (n: number): string => {
+    const CN = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    if (n <= 10) return n === 10 ? '十' : CN[n];
+    if (n < 20) return `十${n % 10 === 0 ? '' : CN[n % 10]}`;
+    const tens = Math.floor(n / 10);
+    const ones = n % 10;
+    return `${CN[tens]}十${ones ? CN[ones] : ''}`;
+  };
   /** 拖拽中：dragUid 为被拖动成员，dragOverIdx 为悬停目标组 */
   const [dragUid, setDragUid] = useState<string | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
   const resetDrag = () => { setDragUid(null); setDragOverIdx(null); };
 
-  /** 快速设置：按类型与组数自动生成分组名称（字母 A|B|C… 或数字 1|2|3…） */
+  /** 快速设置：按类型与组数自动生成分组名称（汉字 一|二|三… / 字母 A|B|C… / 数字 1|2|3…） */
   const applyQuickSet = () => {
     if (quickCount == null || quickCount < 1 || quickCount > 26) {
       showError('请输入 1~26 的组数');
       return;
     }
     const names = Array.from({ length: quickCount }, (_, i) =>
-      quickType === 'letter' ? String.fromCharCode(65 + i) : String(i + 1),
+      quickType === 'cn' ? cnNum(i + 1) : quickType === 'letter' ? String.fromCharCode(65 + i) : String(i + 1),
     );
     form.setFieldValue('groups', names.join('|'));
   };
@@ -376,6 +386,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
             onChange={(v) => setQuickType(v)}
             style={{ width: 84 }}
             options={[
+              { label: '汉字', value: 'cn' },
               { label: '字母', value: 'letter' },
               { label: '数字', value: 'number' },
             ]}
@@ -391,7 +402,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
             style={{ width: 84 }}
           />
           <Button size="small" onClick={applyQuickSet}>应用</Button>
-          <span style={{ color: '#999' }}>如字母 + 7 → A|B|C|D|E|F|G</span>
+          <span style={{ color: '#999' }}>如汉字 + 3 → 一|二|三</span>
         </div>
       </Form>
 
