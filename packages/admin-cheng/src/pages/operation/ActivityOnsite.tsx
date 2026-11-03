@@ -1054,28 +1054,6 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={() => setBgMode('contain')} style={bgMode === 'contain' ? toolBtnActive : toolBtn}>等比完整</button>
             </div>
           )}
-          {/* 幸运之星配置（仅幸运之星界面显示） */}
-          {tab === 'lucky' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ marginRight: 4 }}>幸运之星</span>
-              <span>人数</span>
-              <Select
-                size="small"
-                value={luckyCount}
-                onChange={(v: number) => setLuckyCount(v)}
-                style={{ width: 62 }}
-                options={[1, 2, 3, 4, 5].map((n) => ({ value: n, label: `${n} 人` }))}
-              />
-              <span>性别</span>
-              <Select
-                size="small"
-                value={luckyGender}
-                onChange={(v: LuckyGender) => setLuckyGender(v)}
-                style={{ width: 78 }}
-                options={LUCKY_GENDER_OPTIONS}
-              />
-            </div>
-          )}
           {/* 界面切换（按钮注明快捷键）；能成时刻入口已隐藏（2026-11-03），功能保留：恢复时加回「能成时刻(4)」按钮并把键盘 4 改回 startCouple */}
           <div style={{ display: 'flex', gap: 8 }}>
             <span style={{ alignSelf: 'flex-start', marginRight: 4, lineHeight: '26px' }}>界面切换</span>
@@ -1088,6 +1066,28 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={toggleDemo} style={demo ? toolBtnActive : toolBtn}>演示模式(0)</button>
             </div>
           </div>
+          {/* 幸运之星配置（仅幸运之星界面显示） */}
+          {tab === 'lucky' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>幸运之星</span>
+              <span>人数</span>
+              <Select
+                size="small"
+                value={luckyCount}
+                onChange={(v: number) => setLuckyCount(v)}
+                style={{ width: 62 }}
+                options={[1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }))}
+              />
+              <span>性别</span>
+              <Select
+                size="small"
+                value={luckyGender}
+                onChange={(v: LuckyGender) => setLuckyGender(v)}
+                style={{ width: 78 }}
+                options={LUCKY_GENDER_OPTIONS}
+              />
+            </div>
+          )}
           {/* 用户切换（心动互选/我钟意你界面显示） */}
           {(tab === 'feeling' || tab === 'likeMe') && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
