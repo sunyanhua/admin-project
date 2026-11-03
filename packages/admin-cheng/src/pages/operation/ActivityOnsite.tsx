@@ -867,10 +867,12 @@ const ActivityOnsite: React.FC = () => {
     setBlockPhase('rolling');
     blockPhaseRef.current = 'rolling';
     let idx = 0;
+    // 单组选人跳格稍慢（照片卡观感更清晰）
+    const interval = tab === 'personDraw' ? 130 : 90;
     const tick = () => {
       idx = (idx + 1) % blockCandidatesRef.current.length;
       setBlockHighlight(idx);
-      drawTimerRef.current = setTimeout(tick, 90);
+      drawTimerRef.current = setTimeout(tick, interval);
     };
     tick();
   }, [tab, clearDrawTimer]);
@@ -900,8 +902,9 @@ const ActivityOnsite: React.FC = () => {
       const winIdx = blockCandidatesRef.current.indexOf(winner);
       const step = (i: number) => {
         if (i >= 8) {
-          // 立即锁定：从候选中移除，后续跳动跳过该块
+          // 立即锁定：呈现选中高亮、从候选中移除，后续跳动跳过该块
           winners.push(winner);
+          setBlockRoundWinners([...winners]);
           blockCandidatesRef.current = blockCandidatesRef.current.filter((k) => k !== winner);
           drawTimerRef.current = setTimeout(() => landNext(wi + 1), 420);
           return;
@@ -1356,11 +1359,6 @@ const ActivityOnsite: React.FC = () => {
                     从现场嘉宾中随机抽取 {luckyReelCount} 位幸运之星
                   </div>
                 )}
-                {tab === 'groupRep' && (
-                  <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>
-                    每组转轮由其组员组成，定格即各组代表
-                  </div>
-                )}
                 {tab === 'lucky' && luckyHint && <div style={{ color: '#ffd700', fontSize: '2.8vh' }}>{luckyHint}</div>}
                 <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 减速停止</div>
               </>
@@ -1392,9 +1390,6 @@ const ActivityOnsite: React.FC = () => {
                       ? <>恭喜 {drawWinners[0].number || ''} 号 {drawWinners[0].nick}</>
                       : <>恭喜 {drawWinners.length} 位幸运之星：{drawWinners.map((w) => `${w.number || ''}号 ${w.nick}`).join('、')}</>}
                   </div>
-                )}
-                {drawPhase === 'done' && tab === 'groupRep' && (
-                  <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.6vh' }}>各组代表已定格 · 按 6 重新开始</div>
                 )}
               </>
             )}
