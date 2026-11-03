@@ -63,6 +63,7 @@ vi.mock('@/api/services/activity-v1', () => ({
     getDetail: vi.fn().mockResolvedValue(ACTIVITY),
     update: updateMock,
     getRegisters: vi.fn().mockResolvedValue(REGISTERS),
+    getOnsitePairings: vi.fn().mockResolvedValue([]),
     updateRegisterExtraData: updateExtraMock,
   },
 }));

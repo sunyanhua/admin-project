@@ -35,22 +35,46 @@ const byNumber = <T extends { userId: string; number?: number | null }>(a: T, b:
 
 /**
  * 自动分组：把所有用户分配到各组的序号（0 起）。
- * 男女分别按现场序号排序后轮询分配——各组人数平均、各组男女人数平均；
- * 女方从末组反向轮询，使两性余数落在不同组，总人数差异最小。
+ * - 已组CP的男女必须分到同一组（pairs 按顺序轮询分配，组CP男女同组）；
+ * - 未配对用户：男女分别按现场序号排序后轮询分配——各组人数平均、各组男女人数平均；
+ *   女方从末组反向轮询，使两性余数落在不同组，总人数差异最小。
  * 性别未设置的用户按顺序轮询分配。
  */
 export function autoAssignGroups<T extends { userId: string; gender: 'male' | 'female' | ''; number?: number | null }>(
   users: T[],
   groupCount: number,
+  pairs: { maleId: string; femaleId: string }[] = [],
 ): Map<string, number> {
   const result = new Map<string, number>();
   if (groupCount < 1) return result;
-  const males = users.filter((u) => u.gender === 'male').sort(byNumber);
-  const females = users.filter((u) => u.gender === 'female').sort(byNumber);
+  // 组CP男女同组：配对单元按顺序轮询分配
+  const malePairIdx = new Map(pairs.map((p, i) => [p.maleId, i]));
+  const femalePairIdx = new Map(pairs.map((p, i) => [p.femaleId, i]));
+  pairs.forEach((p, i) => {
+    const g = i % groupCount;
+    result.set(p.maleId, g);
+    result.set(p.femaleId, g);
+  });
+  // 未配对用户：男女分别轮询；起始组偏移配对数量，使余数不与配对余数聚在同组
+  const maleStart = pairs.length % groupCount;
+  const femaleStart = (groupCount - 1 - (pairs.length % groupCount) + groupCount) % groupCount;
+  const males = users.filter((u) => u.gender === 'male' && !malePairIdx.has(u.userId)).sort(byNumber);
+  const females = users.filter((u) => u.gender === 'female' && !femalePairIdx.has(u.userId)).sort(byNumber);
   const others = users.filter((u) => u.gender !== 'male' && u.gender !== 'female').sort(byNumber);
-  males.forEach((u, i) => result.set(u.userId, i % groupCount));
-  // 女方从末组开始反向轮询（余数分散到不同组）
-  females.forEach((u, i) => result.set(u.userId, (groupCount - 1 - (i % groupCount) + groupCount) % groupCount));
+  males.forEach((u, i) => result.set(u.userId, (maleStart + i) % groupCount));
+  females.forEach((u, i) => result.set(u.userId, (femaleStart + i) % groupCount));
   others.forEach((u, i) => result.set(u.userId, i % groupCount));
   return result;
+}
+
+/** 移除 extra_data 中的分组信息，返回新 JSON 字符串（保留其他键；无剩余键时返回空对象 JSON） */
+export function stripGroupInfo(extraData: string): string {
+  let obj: Record<string, any> = {};
+  try {
+    const parsed = JSON.parse(extraData || '{}');
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) obj = parsed;
+  } catch { /* 原值非法则从空对象开始 */ }
+  delete obj[GROUP_INDEX_KEY];
+  delete obj[GROUP_NAME_KEY];
+  return JSON.stringify(obj);
 }

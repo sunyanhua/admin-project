@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGroupNames, parseGroupIndex, autoAssignGroups, GROUP_INDEX_KEY, GROUP_NAME_KEY } from '@/components/operation/onsiteGrouping.utils';
+import { parseGroupNames, parseGroupIndex, autoAssignGroups, stripGroupInfo, GROUP_INDEX_KEY, GROUP_NAME_KEY } from '@/components/operation/onsiteGrouping.utils';
 
 const user = (userId: string, gender: 'male' | 'female' | '', number?: number) => ({ userId, gender, number });
 
@@ -56,5 +56,51 @@ describe('autoAssignGroups', () => {
 
   it('组数为 0 返回空分配', () => {
     expect(autoAssignGroups([user('m1', 'male', 1)], 0).size).toBe(0);
+  });
+
+  it('已组CP的男女分到同一组', () => {
+    const users = [
+      user('m1', 'male', 1),
+      user('f1', 'female', 1),
+      user('m2', 'male', 2),
+      user('f2', 'female', 2),
+      user('m3', 'male', 3),
+      user('f3', 'female', 3),
+    ];
+    const map = autoAssignGroups(users, 3, [
+      { maleId: 'm1', femaleId: 'f1' },
+      { maleId: 'm2', femaleId: 'f2' },
+    ]);
+    // 每对 CP 男女同组
+    expect(map.get('m1')).toBe(map.get('f1'));
+    expect(map.get('m2')).toBe(map.get('f2'));
+    // 所有用户都有分配
+    expect(map.size).toBe(6);
+  });
+
+  it('CP 同组时各组人数仍尽量平均', () => {
+    // 3 对 CP + 3 名单身（2 男 1 女）→ 3 组
+    const users = [
+      user('m1', 'male', 1), user('f1', 'female', 1),
+      user('m2', 'male', 2), user('f2', 'female', 2),
+      user('m3', 'male', 3), user('f3', 'female', 3),
+      user('m4', 'male', 4), user('m5', 'male', 5), user('f4', 'female', 4),
+    ];
+    const map = autoAssignGroups(users, 3, [
+      { maleId: 'm1', femaleId: 'f1' },
+      { maleId: 'm2', femaleId: 'f2' },
+      { maleId: 'm3', femaleId: 'f3' },
+    ]);
+    const totals = [0, 1, 2].map((g) => [...map.values()].filter((v) => v === g).length);
+    expect(Math.max(...totals) - Math.min(...totals)).toBeLessThanOrEqual(1);
+  });
+
+  it('stripGroupInfo 移除分组键并保留其他内容', () => {
+    const stripped = stripGroupInfo(JSON.stringify({ foo: 'bar', [GROUP_INDEX_KEY]: 1, [GROUP_NAME_KEY]: 'A' }));
+    expect(JSON.parse(stripped)).toEqual({ foo: 'bar' });
+    // 仅剩分组键时得到空对象
+    expect(JSON.parse(stripGroupInfo(JSON.stringify({ [GROUP_INDEX_KEY]: 2 })))).toEqual({});
+    // 非法 JSON 不抛错
+    expect(JSON.parse(stripGroupInfo('not-json{'))).toEqual({});
   });
 });

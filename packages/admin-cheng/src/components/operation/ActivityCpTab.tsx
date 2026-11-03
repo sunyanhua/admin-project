@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Button, Empty, Spin, Tag } from 'antd';
+import { Button, Empty, Spin, Tag, Modal } from 'antd';
 import { ReloadOutlined, HeartFilled, DeleteOutlined, CloudUploadOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, RegisterRecord, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
@@ -9,6 +9,7 @@ import UserAvatar from '@/components/user/UserAvatar';
 import { getMediumUrl } from '@/utils/imageUtils';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { matchCpPairs, CpCandidate } from './cpMatching.utils';
+import { parseGroupIndex, stripGroupInfo } from './onsiteGrouping.utils';
 
 interface ActivityCpTabProps {
   activityId: string;
@@ -160,13 +161,8 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
     load();
   }, [load]);
 
-  /**
-   * 清空全部报名记录的现场序号（提交组CP前置步骤）。
-   * 配对创建会按 seq 覆盖双方序号——先全部清空，保证未被配对的成员序号置空、配对成员由创建接口统一重排。
-   * 无批量清空接口：拉全部报名记录后对已有序号的记录逐条 DELETE（分块并发 8）。
-   * @returns 已清空条数与失败条数（失败不抛错，由调用方决定是否继续）
-   */
-  const clearAllOnsiteNumbers = useCallback(async (): Promise<{ cleared: number; failed: number }> => {
+  /** 拉取本活动全部报名记录（分页 size 100） */
+  const fetchAllRegisters = useCallback(async (): Promise<RegisterRecord[]> => {
     const regs: RegisterRecord[] = [];
     let page = 1;
     while (true) {
@@ -177,6 +173,30 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
       if (list.length < 100) break;
       page++;
     }
+    return regs;
+  }, [activityId]);
+
+  /**
+   * 抹除全部报名记录的分组信息（extra_data 剥离 group_index/group_name，其他键保留）。
+   * 逐条 PATCH；失败静默计数。
+   */
+  const clearAllGrouping = useCallback(async (regs: RegisterRecord[]): Promise<{ failed: number }> => {
+    const grouped = regs.filter((r) => parseGroupIndex(r.extra_data) != null);
+    let failed = 0;
+    for (const r of grouped) {
+      try {
+        await activityApi.updateRegisterExtraData(activityId, r.id, stripGroupInfo(r.extra_data));
+      } catch { failed++; }
+    }
+    return { failed };
+  }, [activityId]);
+
+  /**
+   * 清空全部报名记录的现场序号（提交组CP前置步骤）。
+   * 配对创建会按 seq 覆盖双方序号——先全部清空，保证未被配对的成员序号置空、配对成员由创建接口统一重排。
+   * 无批量清空接口：对已有序号的记录逐条 DELETE（分块并发 8）。
+   */
+  const clearAllOnsiteNumbers = useCallback(async (regs: RegisterRecord[]): Promise<{ cleared: number; failed: number }> => {
     const targets = regs.filter((r) => r.onsite_number != null);
     let failed = 0;
     const BATCH = 8;
@@ -188,27 +208,36 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
     return { cleared: targets.length - failed, failed };
   }, [activityId]);
 
-  /** 提交：先清空所有报名用户序号，再按组顺序从序号 1 起逐对提交；任一步失败即停 */
-  const handleSubmit = async () => {
-    if (!autoPairs.length) return;
+  /** 提交执行：①抹除分组信息 ②清空所有现场序号 ③按组顺序从序号 1 逐对提交；任一步失败即停 */
+  const runSubmit = async (regs: RegisterRecord[]) => {
     setSubmitting(true);
     setSubmitPhase('clear');
     setSubmitProgress(0);
 
-    // ① 清空所有报名用户序号（有失败即终止，不进入配对提交，避免编号混乱）
+    // ① 抹除所有用户的分组信息（已在确认弹窗中提示）
+    const { failed: groupFailed } = await clearAllGrouping(regs);
+    if (groupFailed > 0) {
+      showError(`分组信息抹除失败 ${groupFailed} 条，已终止提交`);
+      setSubmitting(false);
+      return;
+    }
+
+    // ② 清空所有报名用户序号（有失败即终止，不进入配对提交，避免编号混乱）
     try {
-      const { cleared, failed } = await clearAllOnsiteNumbers();
+      const { cleared, failed } = await clearAllOnsiteNumbers(regs);
       if (failed > 0) {
         showError(`序号清空失败 ${failed} 条，已终止提交`);
+        setSubmitting(false);
         return;
       }
       if (cleared > 0) success(`已清空 ${cleared} 个现场序号`);
     } catch (err: any) {
       showError(err?.response?.data?.message || '清空序号失败，已终止提交');
+      setSubmitting(false);
       return;
     }
 
-    // ② 逐对提交（seq 从 1 按组顺序）
+    // ③ 逐对提交（seq 从 1 按组顺序）
     setSubmitPhase('pair');
     let submitted = 0;
     try {
@@ -232,6 +261,32 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
       // 部分提交后活动可能已有保存数据，重新检测模式
       await load();
     }
+  };
+
+  /** 提交入口：检测是否已有用户完成分组——有则弹窗提示「组CP将抹除所有分组信息」，确认后执行 */
+  const handleSubmit = async () => {
+    if (!autoPairs.length) return;
+    let regs: RegisterRecord[] = [];
+    try {
+      regs = await fetchAllRegisters();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '提交前检查失败');
+      return;
+    }
+    const hasGrouping = regs.some((r) => parseGroupIndex(r.extra_data) != null);
+    if (!hasGrouping) {
+      await runSubmit(regs);
+      return;
+    }
+    Modal.confirm({
+      title: '确认提交组CP',
+      content: '当前已有用户完成分组，提交组CP将抹除所有用户的分组信息，需要重新再进行分组。是否继续？',
+      okText: '继续提交',
+      cancelText: '取消',
+      onOk: async () => {
+        await runSubmit(regs);
+      },
+    });
   };
 
   /** 删除单对（软删释放序号；全部删完后回到自动组合模式）；任一成员已签到则不可删除 */
@@ -333,7 +388,7 @@ const ActivityCpTab: React.FC<ActivityCpTabProps> = ({ activityId }) => {
               ? (submitPhase === 'clear' ? '清空序号中…' : `提交中 ${submitProgress}/${autoPairs.length}`)
               : `提交（${autoPairs.length} 组）`}
           </Button>
-          <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>提交前将先清空所有报名用户的现场序号</div>
+          <div style={{ fontSize: 12, color: '#999', marginTop: 6 }}>提交前将先清空所有报名用户的现场序号；已有分组时将抹除全部分组信息</div>
         </div>
       )}
     </div>

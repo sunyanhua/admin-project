@@ -83,6 +83,8 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
   const [groups, setGroups] = useState<string[]>([]);
   /** 已入选报名记录与当前分组序号 */
   const [members, setMembers] = useState<MemberRow[]>([]);
+  /** 已保存的组CP配对（自动分组时男女须同组） */
+  const [cpPairs, setCpPairs] = useState<{ maleId: string; femaleId: string }[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   /** 快速设置：组名类型（字母/数字）与组数 */
   const [quickType, setQuickType] = useState<'letter' | 'number'>('letter');
@@ -174,6 +176,23 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
           if (hit) all[i] = hit;
         }
       }
+      // 组CP配对（自动分组时男女须同组）
+      const pairList: { maleId: string; femaleId: string }[] = [];
+      let pp = 1;
+      while (true) {
+        const res: any = await activityApi.getOnsitePairings(activityId, { page: pp, size: 100, sort_by: 'seq' });
+        const list: any[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        list.forEach((c) => {
+          const mid = c.male?.user?.user_id;
+          const fid = c.female?.user?.user_id;
+          if (mid && fid) pairList.push({ maleId: mid, femaleId: fid });
+        });
+        if (list.length < 100) break;
+        pp++;
+      }
+      setCpPairs(pairList);
+
       // user_id 可为 null（免报名入选），空安全比较避免排序崩溃
       const byNumber = (a: RegisterRecord, b: RegisterRecord) =>
         (a.onsite_number ?? Number.MAX_SAFE_INTEGER) - (b.onsite_number ?? Number.MAX_SAFE_INTEGER)
@@ -250,6 +269,8 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
           number: m.onsite_number,
         })),
         groups.length,
+        // 已组CP的男女分到同一组
+        cpPairs,
       );
       return prev.map((m) => ({ ...m, groupIdx: map.get(uidOf(m)) ?? null }));
     });
