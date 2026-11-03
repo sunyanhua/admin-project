@@ -118,17 +118,18 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
   const scale = state === 'win' ? 'scale(1.08)' : 'scale(1)';
   const transition = 'transform .3s, box-shadow .3s, opacity .3s';
   if (item.photo) {
-    // 未选中：灰度 + 蒙版；已抽：更深灰度 + 蒙版 + 半透明；滚动高亮/选中：全彩无蒙版
-    const mask = state === 'drawn' ? 'rgba(0,0,0,.8)' : state === 'normal' ? 'rgba(0,0,0,.55)' : 'transparent';
+    // 未选中：灰度 + 蒙版 + 徽章/昵称同步降亮；已抽：更深；滚动高亮/选中：全彩醒目
+    const mask = state === 'drawn' ? 'rgba(0,0,0,.8)' : state === 'normal' ? 'rgba(0,0,0,.6)' : 'transparent';
     const filter = state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.6)' : 'none';
     const opacity = state === 'drawn' ? 0.55 : 1;
+    const badgeDim = state === 'drawn' ? 0.3 : state === 'normal' ? 0.5 : 1;
     return (
       <div style={{ position: 'relative', width: '10vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition, opacity }}>
         <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block', filter, transition: 'filter .3s' }} />
         {mask !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: mask }} />}
-        <span className={`onsite-number gender-${item.gender}`}>{item.number || '-'}</span>
-        {item.group && <span className="onsite-group onsite-group-corner">{item.group}组</span>}
-        <span className="onsite-nick">{item.label}</span>
+        <span className={`onsite-number gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>
+        {item.group && <span className="onsite-group onsite-group-corner" style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.group}组</span>}
+        <span className="onsite-nick" style={{ opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1, transition: 'opacity .3s' }}>{item.label}</span>
       </div>
     );
   }
@@ -138,8 +139,8 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
       fontSize: '4vw', fontWeight: 'bold', color: '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
       background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : 'rgba(255,255,255,.12)',
       transform: scale, transition,
-      opacity: state === 'drawn' ? 0.4 : 1,
-      filter: state === 'drawn' ? 'grayscale(.9)' : 'none',
+      opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
+      filter: state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.5)' : 'none',
     }}>
       {item.label}
     </div>
