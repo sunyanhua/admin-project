@@ -111,17 +111,20 @@ interface BlockItem {
   group?: string;
 }
 
-/** 组中抽组/单组选人展示块：组名方块或用户卡片（与全站卡片样式一致；照片卡未抽中带蒙版，参考电影播放效果） */
+/** 组中抽组/单组选人展示块：组名方块或用户卡片（选中金色放大、未选中灰度+蒙版，区分度明显） */
 const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' | 'drawn' }> = ({ item, state }) => {
-  const border = state === 'active' || state === 'win' ? '3px solid #ffd700' : '1px solid rgba(255,255,255,.4)';
-  const opacity = state === 'drawn' ? 0.35 : 1;
-  const shadow = state === 'win' ? '0 0 28px rgba(255,215,0,.8)' : state === 'active' ? '0 0 18px rgba(255,215,0,.7)' : 'none';
+  const border = state === 'active' || state === 'win' ? '3px solid #ffd700' : '1px solid rgba(255,255,255,.35)';
+  const shadow = state === 'win' ? '0 0 32px rgba(255,215,0,.9)' : state === 'active' ? '0 0 18px rgba(255,215,0,.7)' : 'none';
+  const scale = state === 'win' ? 'scale(1.08)' : 'scale(1)';
+  const transition = 'transform .3s, box-shadow .3s, opacity .3s';
   if (item.photo) {
-    // 未抽中的照片带蒙版：普通半透明、已抽更深
-    const mask = state === 'drawn' ? 'rgba(0,0,0,.75)' : state === 'normal' ? 'rgba(0,0,0,.5)' : 'transparent';
+    // 未选中：灰度 + 蒙版；已抽：更深灰度 + 蒙版 + 半透明；滚动高亮/选中：全彩无蒙版
+    const mask = state === 'drawn' ? 'rgba(0,0,0,.8)' : state === 'normal' ? 'rgba(0,0,0,.55)' : 'transparent';
+    const filter = state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.6)' : 'none';
+    const opacity = state === 'drawn' ? 0.55 : 1;
     return (
-      <div style={{ position: 'relative', width: '10vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, opacity, background: '#fff', boxSizing: 'border-box' }}>
-        <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block' }} />
+      <div style={{ position: 'relative', width: '10vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition, opacity }}>
+        <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block', filter, transition: 'filter .3s' }} />
         {mask !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: mask }} />}
         <span className={`onsite-number gender-${item.gender}`}>{item.number || '-'}</span>
         {item.group && <span className="onsite-group onsite-group-corner">{item.group}组</span>}
@@ -132,8 +135,11 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
   return (
     <div style={{
       width: '10vw', height: '10vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '4vw', fontWeight: 'bold', color: '#fff', borderRadius: '1vh', border, boxShadow: shadow, opacity, boxSizing: 'border-box',
+      fontSize: '4vw', fontWeight: 'bold', color: '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
       background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : 'rgba(255,255,255,.12)',
+      transform: scale, transition,
+      opacity: state === 'drawn' ? 0.4 : 1,
+      filter: state === 'drawn' ? 'grayscale(.9)' : 'none',
     }}>
       {item.label}
     </div>
@@ -595,21 +601,39 @@ const ActivityOnsite: React.FC = () => {
     if (!demoRef.current) fetchCouples();
   }, [fetchCouples]);
 
-  /** 心动配对筛选：feeling=互相心动（双方均有），likeMe=单方心动（仅一方有） */
-  const isHeartPair = (c: OnsiteCouple, mode: 'mutual' | 'single') => {
-    const f = c.female_loves_count ?? 0;
-    const m = c.male_loves_count ?? 0;
-    return mode === 'mutual' ? (f > 0 && m > 0) : ((f > 0) !== (m > 0));
-  };
+  /**
+   * 构建心动配对池：
+   * mutual=互相心动（双方均有）；single=单方心动（仅一方有）且双方均未出现在任一互心配对中。
+   */
+  const buildHeartPool = useCallback((list: OnsiteCouple[], mode: 'mutual' | 'single'): OnsiteCouple[] => {
+    const sortByLoves = (arr: OnsiteCouple[]) => arr.sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
+    if (mode === 'mutual') {
+      return sortByLoves(list.filter((c) => (c.female_loves_count ?? 0) > 0 && (c.male_loves_count ?? 0) > 0));
+    }
+    // 单方心动：排除所有已互相心动的人选
+    const mutualIds = new Set(
+      list
+        .filter((c) => (c.female_loves_count ?? 0) > 0 && (c.male_loves_count ?? 0) > 0)
+        .flatMap((c) => [c.male?.user?.user_id, c.female?.user?.user_id])
+        .filter((x): x is string => !!x),
+    );
+    return sortByLoves(list.filter((c) => {
+      const f = c.female_loves_count ?? 0;
+      const m = c.male_loves_count ?? 0;
+      if (!((f > 0) !== (m > 0))) return false;
+      const ids = [c.male?.user?.user_id, c.female?.user?.user_id];
+      return !ids.some((uid) => uid && mutualIds.has(uid));
+    }));
+  }, []);
 
-  // 心动配对池：按模式筛选后按心动次数倒序（接口已排，兜底再排）
+  // 心动配对池：按模式筛选后按心动次数倒序
   useEffect(() => {
     if (tab !== 'feeling' && tab !== 'likeMe') return;
     const mode: 'mutual' | 'single' = tab === 'likeMe' ? 'single' : 'mutual';
-    const pool = couples.filter((c) => isHeartPair(c, mode)).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
+    const pool = buildHeartPool(couples, mode);
     setHeartPool(pool);
     heartPoolRef.current = pool;
-  }, [couples, tab]);
+  }, [couples, tab, buildHeartPool]);
 
   /** 配对成员 id 列表（双方完整才算有效组合） */
   const heartIdsOf = (c: OnsiteCouple): string[] =>
@@ -650,7 +674,7 @@ const ActivityOnsite: React.FC = () => {
       }
       // 池中无可展示：再拉取一次匹配接口，看是否有新的心动组合
       const fresh = await fetchCouples();
-      const freshPool = fresh.filter((c) => isHeartPair(c, mode)).sort((a, b) => (b.onsite_loves_count ?? 0) - (a.onsite_loves_count ?? 0));
+      const freshPool = buildHeartPool(fresh, mode);
       heartPoolRef.current = freshPool;
       setHeartPool(freshPool);
       idx = tryFind(freshPool);
