@@ -8,7 +8,7 @@ import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
 import { buildLuckyPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
-import { parseRoutine, RoutineStep, routineStepSummary } from '@/components/operation/onsiteRoutine.utils';
+import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
 const mulberry32 = (seed: number) => {
@@ -1424,9 +1424,15 @@ const ActivityOnsite: React.FC = () => {
         </div>
       )}
 
-      {/* 右上角工作区：鼠标悬停显示，移走隐藏（编排执行模式下隐藏，参数全部来自编排步骤） */}
-      {!routineMode && (
+      {/* 右上角工作区：鼠标悬停显示，移走隐藏（编排执行模式下仅显示操作提示，参数全部来自编排步骤） */}
       <div className="onsite-tools">
+        {routineMode ? (
+          <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8, whiteSpace: 'nowrap' }}>
+            <div>空格 {routineDone ? '下一步' : '开始'} · P 停止 · R 重抽本步</div>
+            <div>←/→ 切换步骤 · 9 退出</div>
+            <button onClick={exitRoutine} style={toolBtn}>退出编排</button>
+          </div>
+        ) : (
         <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 10, whiteSpace: 'nowrap' }}>
           {/* 横向压缩 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1541,17 +1547,15 @@ const ActivityOnsite: React.FC = () => {
             </div>
           )}
         </div>
+        )}
       </div>
-      )}
 
-      {/* 编排执行进度条（编排模式常显）：第 x/N 步 + 摘要 + 备注 + 操作提示 */}
+      {/* 编排执行进度（编排模式常显）：仅步骤序号 + 流程简介（备注），操作提示在右上角隐藏区域 */}
       {routineMode && routine[routineIdx] && (
         <div style={{ position: 'absolute', top: 14, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 6, pointerEvents: 'none' }}>
-          <div style={{ background: 'rgba(0,0,0,.62)', borderRadius: 22, padding: '7px 20px', color: '#fff', fontSize: '2.4vh', display: 'flex', alignItems: 'center', gap: 16, whiteSpace: 'nowrap' }}>
-            <span style={{ color: '#ffd700', fontWeight: 'bold' }}>流程编排 {routineIdx + 1}/{routine.length}</span>
-            <span>{routineStepSummary(routine[routineIdx])}</span>
-            {routine[routineIdx].note && <span style={{ color: '#ffd700' }}>{routine[routineIdx].note}</span>}
-            <span style={{ color: 'rgba(255,255,255,.6)', fontSize: '2vh' }}>空格 {routineDone ? '下一步' : '开始'} · P 停止 · R 重抽 · ←/→ 切换 · 9 退出</span>
+          <div style={{ background: 'rgba(0,0,0,.62)', borderRadius: 22, padding: '7px 20px', color: '#fff', fontSize: '2.4vh', display: 'flex', alignItems: 'center', gap: 14, whiteSpace: 'nowrap' }}>
+            <span style={{ color: '#ffd700', fontWeight: 'bold' }}>第 {routineIdx + 1}/{routine.length} 步</span>
+            {routine[routineIdx].note && <span>{routine[routineIdx].note}</span>}
           </div>
         </div>
       )}
@@ -1579,7 +1583,7 @@ const ActivityOnsite: React.FC = () => {
                   </div>
                 )}
                 {tab === 'lucky' && luckyHint && <div style={{ color: '#ffd700', fontSize: '2.8vh' }}>{luckyHint}</div>}
-                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>{routineMode ? '按空格开始 · 按 P 减速停止' : '按 O 开始 · 按 P 减速停止'}</div>
+                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>{routineMode ? '按空格开始 · 按 P 停止' : '按 O 开始 · 按 P 停止'}</div>
               </>
             ) : (
               <>
@@ -1625,7 +1629,7 @@ const ActivityOnsite: React.FC = () => {
                     : `「${personGroupName}」组 · 每轮抽取 ${effPersonDrawCount} 人`}
                 </div>
                 <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>
-                  {routineMode ? '按空格开始 · 按 P 减速停止' : '按 O 开始 · 按 P 减速停止'}{blockDrawnKeys.length > 0 ? ' · 按 O 继续下一轮' : ''}
+                  {routineMode ? '按空格开始 · 按 P 停止' : '按 O 开始 · 按 P 停止'}{blockDrawnKeys.length > 0 ? ' · 按 O 继续下一轮' : ''}
                 </div>
               </>
             ) : (
@@ -1668,7 +1672,7 @@ const ActivityOnsite: React.FC = () => {
               <>
                 <div className="draw-cover-title">能成时刻</div>
                 <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>从现场嘉宾中随机抽取一对幸运组合</div>
-                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 减速停止</div>
+                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 停止</div>
               </>
             ) : (
               <>

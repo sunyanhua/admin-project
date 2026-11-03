@@ -1,4 +1,4 @@
-import { LUCKY_GENDER_OPTIONS, LuckyGender } from '@/pages/operation/luckyPools.utils';
+import { LuckyGender } from '@/pages/operation/luckyPools.utils';
 
 /** 编排步骤类型：与现场大屏四种抽取模式一一对应 */
 export type RoutineStepType = 'lucky' | 'groupRep' | 'groupDraw' | 'personDraw';
@@ -60,16 +60,3 @@ export const parseRoutine = (onsiteConfig?: string | null): RoutineStep[] => {
 /** 校验单组选人步骤引用的分组：返回第一个引用无效分组（缺失或不在分组名称中）的步骤下标，全部有效返回 -1 */
 export const findInvalidPersonGroup = (steps: RoutineStep[], groupNames: string[]): number =>
   steps.findIndex((s) => s.type === 'personDraw' && (!s.group || !groupNames.includes(s.group)));
-
-const genderLabelOf = (gender?: LuckyGender): string =>
-  LUCKY_GENDER_OPTIONS.find((o) => o.value === gender)?.label ?? '不限';
-
-/** 步骤摘要（编排列表与大屏进度条展示用） */
-export const routineStepSummary = (s: RoutineStep): string => {
-  const label = ROUTINE_STEP_TYPE_LABELS[s.type];
-  if (s.type === 'lucky') return `${label} · ${s.count ?? 1}人 · ${genderLabelOf(s.gender)}`;
-  // 指定结果时只显示数量不显示组名——大屏进度条面向观众，不能泄露指定结果
-  if (s.type === 'groupDraw') return `${label} · 抽${s.count ?? s.fixed?.length ?? 1}组`;
-  if (s.type === 'personDraw') return `${label} · ${s.group ? `${s.group}组` : '未选组'} · ${s.count ?? 1}人`;
-  return label;
-};

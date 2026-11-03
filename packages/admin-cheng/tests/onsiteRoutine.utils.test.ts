@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   parseRoutine,
   findInvalidPersonGroup,
-  routineStepSummary,
   ROUTINE_STEP_TYPE_LABELS,
 } from '@/components/operation/onsiteRoutine.utils';
 
@@ -85,17 +84,6 @@ describe('onsiteRoutine.utils', () => {
     expect(findInvalidPersonGroup([{ type: 'lucky' as const }], ['一'])).toBe(-1);
     expect(findInvalidPersonGroup([{ type: 'personDraw' as const, group: '一' }], ['一'])).toBe(-1);
     expect(findInvalidPersonGroup([], [])).toBe(-1);
-  });
-
-  it('routineStepSummary：步骤摘要（进度条展示用）', () => {
-    expect(routineStepSummary({ type: 'lucky', count: 3, gender: 'mix' })).toBe('幸运之星 · 3人 · 混搭');
-    expect(routineStepSummary({ type: 'lucky', count: 1 })).toBe('幸运之星 · 1人 · 不限');
-    expect(routineStepSummary({ type: 'groupRep' })).toBe('分组代表');
-    expect(routineStepSummary({ type: 'groupDraw', count: 2 })).toBe('组中选组 · 抽2组');
-    // 指定结果时摘要只显示数量不显示组名——进度条面向观众，不能泄露指定结果
-    expect(routineStepSummary({ type: 'groupDraw', fixed: ['一', '三'] })).toBe('组中选组 · 抽2组');
-    expect(routineStepSummary({ type: 'personDraw', group: '一', count: 2 })).toBe('单组选人 · 一组 · 2人');
-    expect(routineStepSummary({ type: 'personDraw', count: 1 })).toBe('单组选人 · 未选组 · 1人');
   });
 
   it('步骤类型标签齐全', () => {
