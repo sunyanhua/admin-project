@@ -128,6 +128,8 @@ const ActivityOnsite: React.FC = () => {
   /** 展示历史（↑ 回看上一对） */
   const heartHistoryRef = useRef<OnsiteCouple[]>([]);
   const heartCursorRef = useRef(-1);
+  /** 当前是否有展示中的配对（耗尽隐藏后 ↑ 可重新显示最后一条） */
+  const heartDisplayedRef = useRef(false);
   /** 数据源已耗尽提示（池中无可展示且重拉后仍无） */
   const [heartNoMore, setHeartNoMore] = useState(false);
   /** 配对切换过渡定时器（单一实例：新操作先取消旧的，避免快速连按时旧定时器覆盖新展示） */
@@ -520,6 +522,7 @@ const ActivityOnsite: React.FC = () => {
       shownHeartIdsRef.current = new Set();
       heartHistoryRef.current = [];
       heartCursorRef.current = -1;
+      heartDisplayedRef.current = false;
       setHeartCurrent(null);
       setHeartNoMore(false);
     }
@@ -567,6 +570,7 @@ const ActivityOnsite: React.FC = () => {
     if (idx === -1) {
       if (demoRef.current) {
         // 演示模式不重拉真实数据，直接提示耗尽（先恢复当前展示）
+        heartDisplayedRef.current = false;
         showHeartPair(null);
         setHeartNoMore(true);
         return;
@@ -578,6 +582,7 @@ const ActivityOnsite: React.FC = () => {
       setHeartPool(freshPool);
       idx = tryFind(freshPool);
       if (idx === -1) {
+        heartDisplayedRef.current = false;
         showHeartPair(null);
         setHeartNoMore(true);
         return;
@@ -588,12 +593,21 @@ const ActivityOnsite: React.FC = () => {
     heartIdsOf(c).forEach((uid) => shownHeartIdsRef.current.add(uid));
     heartHistoryRef.current.push(c);
     heartCursorRef.current = heartHistoryRef.current.length - 1;
+    heartDisplayedRef.current = true;
     showHeartPair(c);
   }, [tab, fetchCouples]);
 
-  /** ↑：展示上一对（回看历史，不越过最早一条；先恢复原状再展示） */
+  /** ↑：展示上一对（回看历史，不越过最早一条；耗尽隐藏后 ↑ 重新显示最后一条） */
   const showPrevHeart = useCallback(() => {
-    if (tab !== 'feeling' || heartCursorRef.current <= 0) return;
+    if (tab !== 'feeling' || heartHistoryRef.current.length === 0) return;
+    if (!heartDisplayedRef.current) {
+      // 当前无展示（如耗尽后被隐藏）：重新显示历史最后一条，游标不动
+      heartDisplayedRef.current = true;
+      setHeartNoMore(false);
+      showHeartPair(heartHistoryRef.current[heartCursorRef.current]);
+      return;
+    }
+    if (heartCursorRef.current <= 0) return;
     heartCursorRef.current -= 1;
     showHeartPair(heartHistoryRef.current[heartCursorRef.current]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
