@@ -5,6 +5,7 @@ import { HeartFilled } from '@ant-design/icons';
 import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
+import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
 import { buildLuckyPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -25,6 +26,8 @@ interface WallUser {
   gender: 'male' | 'female' | '';
   userId: string;
   photo: string;
+  /** 分组名（已分组时展示在卡片上） */
+  group?: string;
 }
 
 /** 心形布局位置（序号做种子，布局确定） */
@@ -75,8 +78,8 @@ const buildWallItems = (photos: WallUser[]): WallItem[] => {
   });
 };
 
-/** 默契度排名单人侧：现场序号 + 图片 + 昵称（right=女生侧，内容靠右对齐） */
-const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?: number; right?: boolean }> = ({ nick, photo, gender, number, right }) => (
+/** 默契度排名单人侧：现场序号 + 图片 + 昵称（right=女生侧，内容靠右对齐；已分组显示分组标签） */
+const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?: number; group?: string; right?: boolean }> = ({ nick, photo, gender, number, group, right }) => (
   <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1.2vw', flexDirection: right ? 'row-reverse' : 'row' }}>
     {photo ? (
       <img src={photo} alt={nick} style={{ width: '9vh', height: '9vh', borderRadius: '1vh', objectFit: 'cover', border: 'solid 2px rgba(255,255,255,.6)', flexShrink: 0 }} />
@@ -90,6 +93,7 @@ const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?
         {number ?? '-'}
       </span>
       <span style={{ color: '#fff', fontSize: '3vh', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
+        {group && <span className="onsite-group">{group}组</span>}
         {nick}
       </span>
     </div>
@@ -169,6 +173,10 @@ const ActivityOnsite: React.FC = () => {
   const photoMapRef = useRef<Map<string, string>>(new Map());
   /** 报名用户现场序号映射（配对条目不带序号，默契度排名从报名记录反查） */
   const onsiteNumMapRef = useRef<Map<string, number>>(new Map());
+  /** 分组名称（onsite_config.groups，照片墙与默契度排名展示用） */
+  const groupsRef = useRef<string[]>([]);
+  /** 报名用户分组名映射（默契度排名从报名记录反查） */
+  const groupMapRef = useRef<Map<string, string>>(new Map());
 
   /**
    * 按图片实际比例钳制位置：整卡（含旋转）完整落在墙内；
@@ -246,12 +254,16 @@ const ActivityOnsite: React.FC = () => {
       const checked = regs.filter((r) => !!r.checkin_at);
       const base: WallUser[] = checked.map((r) => {
         const g = r.user_profile?.gender ?? r.gender;
+        // 已分组的用户展示分组名（extra_data.group_index → onsite_config.groups）
+        const groupIdx = parseGroupIndex(r.extra_data);
+        const group = groupIdx != null ? (groupsRef.current[groupIdx - 1] || '') : '';
         return {
           number: r.onsite_number ?? 0,
           nick: r.user_profile?.nickname || r.nickname || r.user_id,
           gender: g === 1 ? 'male' : g === 2 ? 'female' : '',
           userId: r.user_id,
           photo: photoMapRef.current.get(r.user_id) || getFullWidthUrl(r.user_profile?.avatar || r.avatar || ''),
+          group,
         };
       });
       base.sort((a, b) => a.number - b.number);
@@ -299,6 +311,12 @@ const ActivityOnsite: React.FC = () => {
         if (!list.length) break;
         list.forEach((r) => {
           if (r.user_id && r.onsite_number != null) numMap.set(r.user_id, r.onsite_number);
+          // 分组名反查（排名卡片展示）
+          if (r.user_id) {
+            const gIdx = parseGroupIndex(r.extra_data);
+            const gName = gIdx != null ? (groupsRef.current[gIdx - 1] || '') : '';
+            if (gName) groupMapRef.current.set(r.user_id, gName);
+          }
         });
         if (list.length < 100) break;
         page++;
@@ -326,17 +344,23 @@ const ActivityOnsite: React.FC = () => {
 
   useEffect(() => {
     if (!id) return;
-    // 活动详情：取现场大屏背景图（onsite_config.bg_screen）
+    // 活动详情：取现场大屏背景图（bg_screen）与分组名称（groups）——照片墙卡片需要分组名，先取详情再拉数据
     activityApi.getDetail(id).then((res: any) => {
       try {
         const obj = JSON.parse(res?.onsite_config || '{}');
-        if (obj && typeof obj === 'object' && obj.bg_screen) setBgScreen(String(obj.bg_screen));
+        if (obj && typeof obj === 'object') {
+          if (obj.bg_screen) setBgScreen(String(obj.bg_screen));
+          if (typeof obj.groups === 'string') {
+            groupsRef.current = obj.groups.split('|').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+          }
+        }
       } catch { /* 无配置保持默认渐变 */ }
-    }).catch(() => {});
-    // 首次加载各数据源；之后不做轮询——每次按键先查询（1 签到 / 2 心动排名 / 3、4 先刷新签到 / 5 默契度）
-    fetchWall();
-    fetchCouples();
-    fetchCpRank();
+    }).catch(() => {}).finally(() => {
+      // 首次加载各数据源；之后不做轮询——每次按键先查询（1 签到 / 2 心动排名 / 3、4 先刷新签到 / 5 默契度）
+      fetchWall();
+      fetchCouples();
+      fetchCpRank();
+    });
   }, [id, fetchWall, fetchCouples, fetchCpRank]);
 
   /** 演示模式：按 0 键从系统随机抽 50 名左右男女用户模拟心形照片墙与配对 */
@@ -381,6 +405,8 @@ const ActivityOnsite: React.FC = () => {
           gender,
           userId: `demo-${gender}-${i}`,
           photo: u?.match_profile?.photos?.[0] || u?.profile?.avatar || demoAvatar(offset + i, gender),
+          // 演示数据带分组，展示分组徽章效果
+          group: ['A', 'B', 'C'][i % 3],
         }));
       const femaleWall = toWall(females, 0, 'female');
       const maleWall = toWall(males, females.length, 'male');
@@ -588,7 +614,7 @@ const ActivityOnsite: React.FC = () => {
     fetchCpRank();
   }, [clearDrawTimer, couples, fetchCpRank]);
 
-  /** 默契度排名单人侧展示资料（脱单照片优先，缺失回退头像；现场序号从报名记录反查） */
+  /** 默契度排名单人侧展示资料（脱单照片优先，缺失回退头像；现场序号与分组名从报名记录反查） */
   const rankUserOf = (u?: OnsitePairingUserAdmin) => {
     const userId = u?.user?.user_id || '';
     const avatar = u?.profile?.avatar || '';
@@ -598,6 +624,7 @@ const ActivityOnsite: React.FC = () => {
       photo: raw ? getMediumUrl(raw) : '',
       gender: u?.profile?.gender,
       number: userId ? onsiteNumMapRef.current.get(userId) : undefined,
+      group: userId ? groupMapRef.current.get(userId) : undefined,
     };
   };
 
@@ -966,7 +993,7 @@ const ActivityOnsite: React.FC = () => {
                               <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
                                 <img src={u.photo} alt={u.nick} />
                                 <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
-                                <span className="draw-nick">{u.nick}</span>
+                                <span className="draw-nick">{u.group ? <><span className="onsite-group">{u.group}组</span>{u.nick}</> : u.nick}</span>
                               </div>
                             ))}
                           </div>
@@ -1009,7 +1036,7 @@ const ActivityOnsite: React.FC = () => {
                             <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
                               <span className="onsite-number gender-female">{u.number || '-'}</span>
-                              <span className="draw-nick">{u.nick}</span>
+                              <span className="draw-nick">{u.group ? `${u.group}组 ${u.nick}` : u.nick}</span>
                             </div>
                           ))}
                         </div>
@@ -1025,7 +1052,7 @@ const ActivityOnsite: React.FC = () => {
                             <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
                               <span className="onsite-number gender-male">{u.number || '-'}</span>
-                              <span className="draw-nick">{u.nick}</span>
+                              <span className="draw-nick">{u.group ? `${u.group}组 ${u.nick}` : u.nick}</span>
                             </div>
                           ))}
                         </div>
@@ -1058,6 +1085,7 @@ const ActivityOnsite: React.FC = () => {
                     <div key={`cur-${current.userId}-${current.number}`} style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 0 : 1, transition: 'opacity .5s ease' }}>
                       <img src={current.photo} alt={current.nick} style={{ height: 'calc(100% - 4.5vh)', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
                       <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
+                        {current.group && <span className="onsite-group">{current.group}组</span>}
                         {current.number || '-'} - {current.nick}
                       </div>
                     </div>
@@ -1099,6 +1127,7 @@ const ActivityOnsite: React.FC = () => {
                   style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: i === focusIdx ? 50 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
                 >
                   <span className={`onsite-number gender-${p.gender}`}>{p.number || '-'}</span>
+                  {p.group && <span className="onsite-group onsite-group-corner">{p.group}组</span>}
                   <img src={p.photo} alt={p.nick} onLoad={clampWall} />
                   <span className="onsite-nick">{p.nick}</span>
                 </div>
@@ -1117,13 +1146,13 @@ const ActivityOnsite: React.FC = () => {
                 const female = rankUserOf(c.female);
                 return (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '2vw', background: 'rgba(0,0,0,.35)', borderRadius: '1.3vh', padding: '1.8vh 2.5vw', marginBottom: '1.5vh' }}>
-                    <RankSide nick={male.nick} photo={male.photo} gender={male.gender} number={male.number} />
+                    <RankSide nick={male.nick} photo={male.photo} gender={male.gender} number={male.number} group={male.group} />
                     <div style={{ textAlign: 'center', minWidth: '11vw', flexShrink: 0 }}>
                       <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.4vh' }}>第 {i + 1} 名</div>
                       <div style={{ fontSize: '5vh', color: '#ffd700', fontWeight: 'bold', lineHeight: 1.2 }}>{c.diff_total != null ? 100 - c.diff_total : '—'}</div>
                       <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.2vh' }}>默契度</div>
                     </div>
-                    <RankSide nick={female.nick} photo={female.photo} gender={female.gender} number={female.number} right />
+                    <RankSide nick={female.nick} photo={female.photo} gender={female.gender} number={female.number} group={female.group} right />
                   </div>
                 );
               })
@@ -1192,6 +1221,9 @@ const ActivityOnsite: React.FC = () => {
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* 分组徽章：金色胶囊，与序号徽章同款风格（相对字号随场景缩放） */
+        .onsite-group { display: inline-block; padding: 0 .5em; margin-right: .3em; border-radius: .5em; background: #ffd700; color: #3d2a00; font-weight: bold; font-size: .72em; line-height: 1.5; }
+        .onsite-group-corner { position: absolute; right: 5%; top: 4%; z-index: 2; font-size: 1vw; line-height: 1.9vw; }
         /* 抽奖环节（幸运之星/能成时刻）：转轮式滚动，照片首尾相连 */
         .draw-cover-title { font-size: 9vh; font-weight: 800; color: #ffd700; letter-spacing: 8px; text-shadow: 0 4px 24px rgba(0,0,0,.5); }
         /* 卡片比例 3:4（宽:高）；边框/光晕在外框，内窗口无边框且高度与卡片完全一致 */
