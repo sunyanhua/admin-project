@@ -8,6 +8,7 @@ import {
   parseGroupNames,
   parseGroupIndex,
   autoAssignGroups,
+  stripGroupInfo,
   GROUP_INDEX_KEY,
   GROUP_NAME_KEY,
 } from './onsiteGrouping.utils';
@@ -284,13 +285,14 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     resetDrag();
   };
 
-  /** 保存分组：逐条 PATCH extra_data（JSON 原对象透传 + group_index/group_name） */
+  /** 保存分组：逐条 PATCH extra_data（JSON 原对象透传 + group_index/group_name）；未分组的成员同步剥离旧分组键 */
   const handleSaveAssign = async () => {
     if (!groups.length) {
       showError('请先保存分组名称');
       return;
     }
-    const targets = members.filter((m) => m.groupIdx != null);
+    // 全量同步：有分组的写 group_index/group_name；之前有分组、现拖到未分组的剥离旧键
+    const targets = members.filter((m) => m.groupIdx != null || parseGroupIndex(m.extra_data) != null);
     if (!targets.length) {
       showError('暂无已分配分组的成员');
       return;
@@ -302,14 +304,19 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     for (let i = 0; i < targets.length; i++) {
       const m = targets[i];
       try {
-        let obj: Record<string, any> = {};
-        try {
-          const parsed = JSON.parse(m.extra_data || '{}');
-          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) obj = parsed;
-        } catch { /* 原值非法则从空对象开始 */ }
-        obj[GROUP_INDEX_KEY] = (m.groupIdx as number) + 1;
-        obj[GROUP_NAME_KEY] = groups[m.groupIdx as number];
-        await activityApi.updateRegisterExtraData(activityId, m.id, JSON.stringify(obj));
+        const extra = m.groupIdx != null
+          ? (() => {
+              let obj: Record<string, any> = {};
+              try {
+                const parsed = JSON.parse(m.extra_data || '{}');
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) obj = parsed;
+              } catch { /* 原值非法则从空对象开始 */ }
+              obj[GROUP_INDEX_KEY] = (m.groupIdx as number) + 1;
+              obj[GROUP_NAME_KEY] = groups[m.groupIdx as number];
+              return JSON.stringify(obj);
+            })()
+          : stripGroupInfo(m.extra_data);
+        await activityApi.updateRegisterExtraData(activityId, m.id, extra);
         ok++;
       } catch { fail++; } // 单条失败静默计数
       setSavingProgress(i + 1);
