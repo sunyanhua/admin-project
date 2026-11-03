@@ -130,6 +130,8 @@ const ActivityOnsite: React.FC = () => {
   const heartCursorRef = useRef(-1);
   /** 数据源已耗尽提示（池中无可展示且重拉后仍无） */
   const [heartNoMore, setHeartNoMore] = useState(false);
+  /** 配对切换过渡定时器（单一实例：新操作先取消旧的，避免快速连按时旧定时器覆盖新展示） */
+  const heartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [focusIdx, setFocusIdx] = useState(0);
   /** 胶片模式：交叉渐变的当前层/下一层 */
   const [current, setCurrent] = useState<WallUser | null>(null);
@@ -538,6 +540,19 @@ const ActivityOnsite: React.FC = () => {
   const heartIdsOf = (c: OnsiteCouple): string[] =>
     [c.male?.user?.user_id, c.female?.user?.user_id].filter((x): x is string => !!x);
 
+  /** 展示配对：先恢复原状（缩回卡片、消失次数）再切换，新操作取消旧定时器避免覆盖 */
+  const showHeartPair = (c: OnsiteCouple | null) => {
+    if (heartTimerRef.current) {
+      clearTimeout(heartTimerRef.current);
+      heartTimerRef.current = null;
+    }
+    setHeartCurrent(null);
+    heartTimerRef.current = setTimeout(() => {
+      setHeartCurrent(c);
+      heartTimerRef.current = null;
+    }, 520);
+  };
+
   /** ↓：展示下一对互相心动组合——双方任一已展示过则跳过；池耗尽再拉取一次，仍无则提示 */
   const showNextHeart = useCallback(async () => {
     if (tab !== 'feeling') return;
@@ -552,7 +567,7 @@ const ActivityOnsite: React.FC = () => {
     if (idx === -1) {
       if (demoRef.current) {
         // 演示模式不重拉真实数据，直接提示耗尽（先恢复当前展示）
-        setHeartCurrent(null);
+        showHeartPair(null);
         setHeartNoMore(true);
         return;
       }
@@ -563,7 +578,7 @@ const ActivityOnsite: React.FC = () => {
       setHeartPool(freshPool);
       idx = tryFind(freshPool);
       if (idx === -1) {
-        setHeartCurrent(null);
+        showHeartPair(null);
         setHeartNoMore(true);
         return;
       }
@@ -573,18 +588,15 @@ const ActivityOnsite: React.FC = () => {
     heartIdsOf(c).forEach((uid) => shownHeartIdsRef.current.add(uid));
     heartHistoryRef.current.push(c);
     heartCursorRef.current = heartHistoryRef.current.length - 1;
-    // 先把当前展示的一对恢复原状（卡片缩回、中间次数消失），再加载下一对
-    setHeartCurrent(null);
-    setTimeout(() => setHeartCurrent(c), 520);
+    showHeartPair(c);
   }, [tab, fetchCouples]);
 
   /** ↑：展示上一对（回看历史，不越过最早一条；先恢复原状再展示） */
   const showPrevHeart = useCallback(() => {
     if (tab !== 'feeling' || heartCursorRef.current <= 0) return;
     heartCursorRef.current -= 1;
-    const prev = heartHistoryRef.current[heartCursorRef.current];
-    setHeartCurrent(null);
-    setTimeout(() => setHeartCurrent(prev), 520);
+    showHeartPair(heartHistoryRef.current[heartCursorRef.current]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
   const clearDrawTimer = useCallback(() => {
@@ -1266,7 +1278,7 @@ const ActivityOnsite: React.FC = () => {
                     style={{
                       left: isActive ? '50%' : `${p.left}%`,
                       top: isActive ? '50%' : `${p.top}%`,
-                      width: isActive ? '19vw' : `${p.size}vw`,
+                      width: isActive ? '22vw' : `${p.size}vw`,
                       zIndex: isActive ? 60 : p.z,
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
@@ -1313,7 +1325,7 @@ const ActivityOnsite: React.FC = () => {
                     style={{
                       left: isActive ? '50%' : `${p.left}%`,
                       top: isActive ? '50%' : `${p.top}%`,
-                      width: isActive ? '19vw' : `${p.size}vw`,
+                      width: isActive ? '22vw' : `${p.size}vw`,
                       zIndex: isActive ? 60 : p.z,
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
