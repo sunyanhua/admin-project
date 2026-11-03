@@ -284,6 +284,8 @@ const ActivityOnsite: React.FC = () => {
   const routineDoneRef = useRef(false);
   /** 编排执行时本步抽取数量（慢速定格数量来源；自由模式为 null 走右上角配置） */
   const blockCountRef = useRef<number | null>(null);
+  /** 编排组中选组指定结果（按序落地；仅首轮生效，出结果后清空恢复随机） */
+  const blockFixedRef = useRef<string[] | null>(null);
 
   /**
    * 按图片实际比例钳制位置：整卡（含旋转）完整落在墙内；
@@ -955,9 +957,13 @@ const ActivityOnsite: React.FC = () => {
     setBlockPhase('slowing');
     blockPhaseRef.current = 'slowing';
     const candidates = blockCandidatesRef.current;
-    const count = blockCountRef.current ?? (tab === 'groupDraw' ? groupDrawCount : personDrawCount);
+    // 编排·组中选组指定结果：按指定分组顺序落地（仅首轮）；未指定恢复随机
+    const fixed = tab === 'groupDraw' && blockFixedRef.current?.length
+      ? blockFixedRef.current.filter((g) => candidates.includes(g))
+      : null;
+    const count = fixed ? fixed.length : (blockCountRef.current ?? (tab === 'groupDraw' ? groupDrawCount : personDrawCount));
     const take = Math.min(Math.max(1, count), candidates.length);
-    const shuffled = [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
+    const shuffled = fixed ? fixed.slice(0, take) : [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
     const durations = Array.from({ length: 8 }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
     const winners: string[] = [];
     const landNext = (wi: number) => {
@@ -967,6 +973,8 @@ const ActivityOnsite: React.FC = () => {
         setBlockDrawnKeys((prev) => [...prev, ...winners]);
         setBlockPhase('done');
         blockPhaseRef.current = 'done';
+        // 指定结果仅作用于本轮，后续轮次恢复随机
+        blockFixedRef.current = null;
         // 编排执行模式：出结果后空格进入下一步
         if (routineModeRef.current) {
           routineDoneRef.current = true;
@@ -1221,6 +1229,7 @@ const ActivityOnsite: React.FC = () => {
     setRoutineDone(false);
     setRoutineNotice('');
     blockCountRef.current = null;
+    blockFixedRef.current = null;
     // 分组相关步骤：分组未配置或引用的组已删改 → 标记跳过，空格直接进入下一步（不卡住流程）
     if (step.type !== 'lucky' && groupsRef.current.length === 0) {
       routineDoneRef.current = true;
@@ -1239,7 +1248,19 @@ const ActivityOnsite: React.FC = () => {
     } else if (step.type === 'groupRep') {
       startGroupRep();
     } else if (step.type === 'groupDraw') {
-      blockCountRef.current = step.count ?? 1;
+      if (step.fixed && step.fixed.length) {
+        // 指定结果：校验指定分组仍存在，无效则跳过本步
+        const missing = step.fixed.filter((g) => !groupsRef.current.includes(g));
+        if (missing.length) {
+          routineDoneRef.current = true;
+          setRoutineDone(true);
+          setRoutineNotice(`步骤指定的分组「${missing.join('、')}」不存在，已跳过`);
+          return;
+        }
+        blockFixedRef.current = [...step.fixed];
+      } else {
+        blockCountRef.current = step.count ?? 1;
+      }
       startBlockDraw('group');
     } else {
       blockCountRef.current = step.count ?? 1;
@@ -1262,6 +1283,7 @@ const ActivityOnsite: React.FC = () => {
     setRoutineMode(false);
     setRoutineNotice('');
     blockCountRef.current = null;
+    blockFixedRef.current = null;
     switchTab('list');
   }, [clearDrawTimer, switchTab]);
 
@@ -1340,7 +1362,10 @@ const ActivityOnsite: React.FC = () => {
   const routineStepNow = routineMode && routine[routineIdx] ? routine[routineIdx] : null;
   const effLuckyCount = routineStepNow?.type === 'lucky' ? (routineStepNow.count ?? 1) : luckyCount;
   const effLuckyGender = routineStepNow?.type === 'lucky' ? (routineStepNow.gender ?? 'any') : luckyGender;
-  const effGroupDrawCount = routineStepNow?.type === 'groupDraw' ? (routineStepNow.count ?? 1) : groupDrawCount;
+  // 组中选组指定结果时抽组数=所选中组数（进度条/封面不泄露具体组名）
+  const effGroupDrawCount = routineStepNow?.type === 'groupDraw'
+    ? (routineStepNow.fixed?.length ?? routineStepNow.count ?? 1)
+    : groupDrawCount;
   const effPersonDrawCount = routineStepNow?.type === 'personDraw' ? (routineStepNow.count ?? 1) : personDrawCount;
 
   /** 幸运之星封面：实际可建转轮数（与 buildLuckyPools 同一算法，避免两处规则漂移） */

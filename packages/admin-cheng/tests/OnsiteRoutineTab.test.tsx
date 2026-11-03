@@ -30,6 +30,29 @@ const ACTIVITY_BAD = vi.hoisted(() => ({
   }),
 }));
 
+/** 组中选组带指定结果（fixed）：抽中的组已指定 */
+const ACTIVITY_FIXED = vi.hoisted(() => ({
+  id: 'a1',
+  title: '测试活动',
+  activity_type: 0,
+  onsite_config: JSON.stringify({
+    bg_screen: 'https://cdn.example.com/bg.png',
+    groups: '一|二|三',
+    routine: [{ type: 'groupDraw', fixed: ['一', '三'] }],
+  }),
+}));
+
+/** 组中选组指定结果引用了不存在的分组（保存应被拦截） */
+const ACTIVITY_FIXED_BAD = vi.hoisted(() => ({
+  id: 'a1',
+  title: '测试活动',
+  activity_type: 0,
+  onsite_config: JSON.stringify({
+    groups: '一|二',
+    routine: [{ type: 'groupDraw', fixed: ['一', '三'] }],
+  }),
+}));
+
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 
 vi.mock('@/api/services/activity-v1', () => ({
@@ -121,6 +144,40 @@ describe('OnsiteRoutineTab', () => {
       </App>,
     );
     await waitFor(() => expect(screen.getAllByText('单组选人').length).toBeGreaterThan(0));
+    await userEvent.click(btnByText('保存'));
+    await waitFor(() => {
+      expect(updateMock).not.toHaveBeenCalled();
+    });
+  });
+
+  it('组中选组指定结果：回填选中分组，保存序列化 fixed（不存 count）', async () => {
+    render(
+      <App>
+        <OnsiteRoutineTab activityId="a1" activity={ACTIVITY_FIXED as any} />
+      </App>,
+    );
+    // 回填：多选框中显示已指定的分组
+    await waitFor(() => {
+      expect(screen.getByText('一组')).toBeTruthy();
+      expect(screen.getByText('三组')).toBeTruthy();
+    });
+    await userEvent.click(btnByText('保存'));
+    await waitFor(() => {
+      expect(updateMock).toHaveBeenCalled();
+      const obj = JSON.parse(updateMock.mock.calls[0][1].onsite_config);
+      expect(obj.bg_screen).toBe('https://cdn.example.com/bg.png');
+      expect(obj.groups).toBe('一|二|三');
+      expect(obj.routine).toEqual([{ type: 'groupDraw', fixed: ['一', '三'] }]);
+    });
+  });
+
+  it('组中选组指定结果引用不存在的分组时保存被拦截（不调接口）', async () => {
+    render(
+      <App>
+        <OnsiteRoutineTab activityId="a1" activity={ACTIVITY_FIXED_BAD as any} />
+      </App>,
+    );
+    await waitFor(() => expect(screen.getAllByText('组中选组').length).toBeGreaterThan(0));
     await userEvent.click(btnByText('保存'));
     await waitFor(() => {
       expect(updateMock).not.toHaveBeenCalled();

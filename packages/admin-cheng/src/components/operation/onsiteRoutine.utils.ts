@@ -12,6 +12,8 @@ export interface RoutineStep {
   gender?: LuckyGender;
   /** 单组选人：指定组名（对应 onsite_config.groups 中的一段） */
   group?: string;
+  /** 组中选组：指定抽中的组名（按序落地，数量即抽组数）；缺省则随机抽取 */
+  fixed?: string[];
   /** 现场备注（大屏进度条展示） */
   note?: string;
 }
@@ -31,6 +33,10 @@ const sanitizeStep = (raw: Record<string, unknown>): RoutineStep => {
   if (typeof raw.count === 'number' && raw.count >= 1) step.count = Math.floor(raw.count);
   if (step.type === 'lucky' && LUCKY_GENDERS.includes(raw.gender as LuckyGender)) step.gender = raw.gender as LuckyGender;
   if (step.type === 'personDraw' && typeof raw.group === 'string' && raw.group.trim()) step.group = raw.group.trim();
+  if (step.type === 'groupDraw' && Array.isArray(raw.fixed)) {
+    const fixed = [...new Set(raw.fixed.filter((g): g is string => typeof g === 'string').map((g) => g.trim()).filter((g) => g))];
+    if (fixed.length) step.fixed = fixed;
+  }
   if (typeof raw.note === 'string' && raw.note.trim()) step.note = raw.note.trim();
   return step;
 };
@@ -62,7 +68,8 @@ const genderLabelOf = (gender?: LuckyGender): string =>
 export const routineStepSummary = (s: RoutineStep): string => {
   const label = ROUTINE_STEP_TYPE_LABELS[s.type];
   if (s.type === 'lucky') return `${label} · ${s.count ?? 1}人 · ${genderLabelOf(s.gender)}`;
-  if (s.type === 'groupDraw') return `${label} · 抽${s.count ?? 1}组`;
+  // 指定结果时只显示数量不显示组名——大屏进度条面向观众，不能泄露指定结果
+  if (s.type === 'groupDraw') return `${label} · 抽${s.count ?? s.fixed?.length ?? 1}组`;
   if (s.type === 'personDraw') return `${label} · ${s.group ? `${s.group}组` : '未选组'} · ${s.count ?? 1}人`;
   return label;
 };

@@ -106,6 +106,12 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
       showError('编排包含分组相关步骤，请先在「分组管理」中配置分组名称');
       return;
     }
+    // 组中选组指定结果：指定的分组必须在当前分组名称中
+    const fixedGroups = steps.flatMap((s) => (s.type === 'groupDraw' && s.fixed ? s.fixed : []));
+    if (fixedGroups.length && fixedGroups.some((g) => !groups.includes(g))) {
+      showError('组中选组步骤指定的分组已不存在，请重新选择');
+      return;
+    }
     if (findInvalidPersonGroup(steps, groups) !== -1) {
       showError('单组选人步骤未选择有效分组，请为每一步选择分组');
       return;
@@ -121,8 +127,11 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
         obj.routine = steps.map((s) => {
           const clean: RoutineStep = { type: s.type, note: (s.note || '').trim() };
           if (s.type === 'lucky') { clean.count = s.count ?? 1; clean.gender = s.gender ?? 'any'; }
-          else if (s.type === 'groupDraw') clean.count = s.count ?? 1;
-          else if (s.type === 'personDraw') { clean.count = s.count ?? 1; clean.group = (s.group || '').trim(); }
+          else if (s.type === 'groupDraw') {
+            // 指定结果时抽组数=所选中组数（不存 count）；未指定则随机抽取
+            if (s.fixed && s.fixed.length) clean.fixed = [...s.fixed];
+            else clean.count = s.count ?? 1;
+          } else if (s.type === 'personDraw') { clean.count = s.count ?? 1; clean.group = (s.group || '').trim(); }
           if (!clean.note) delete clean.note;
           return clean;
         });
@@ -151,7 +160,7 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
     setDragIdx(idx);
   };
 
-  const personGroupOptions = groups.map((g) => ({ value: g, label: `${g}组` }));
+  const groupOptions = groups.map((g) => ({ value: g, label: `${g}组` }));
   const groupDrawMax = Math.max(1, groups.length);
 
   return (
@@ -210,13 +219,24 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
                 {s.type === 'groupDraw' && (
                   <Space size={6}>
                     <span style={{ color: '#666' }}>抽组数</span>
-                    <InputNumber size="small" min={1} max={groupDrawMax} precision={0} value={s.count ?? 1} onChange={(v) => updateStep(idx, { count: v ?? 1 })} style={{ width: 64 }} />
+                    <InputNumber size="small" min={1} max={groupDrawMax} precision={0} disabled={!!(s.fixed && s.fixed.length)} value={s.fixed && s.fixed.length ? s.fixed.length : (s.count ?? 1)} onChange={(v) => updateStep(idx, { count: v ?? 1 })} style={{ width: 64 }} />
+                    <span style={{ color: '#666' }}>指定结果</span>
+                    <Select
+                      mode="multiple"
+                      size="small"
+                      placeholder="不指定则随机"
+                      value={s.fixed || []}
+                      onChange={(v: string[]) => updateStep(idx, { fixed: v.length ? v : undefined })}
+                      style={{ minWidth: 190 }}
+                      options={groupOptions}
+                    />
+                    <span style={{ color: '#999', fontSize: 12 }}>指定后抽组数=所选中组数</span>
                   </Space>
                 )}
                 {s.type === 'personDraw' && (
                   <Space size={6}>
                     <span style={{ color: '#666' }}>指定组</span>
-                    <Select size="small" placeholder="选择分组" value={s.group || undefined} onChange={(v: string) => updateStep(idx, { group: v })} style={{ width: 96 }} options={personGroupOptions} />
+                    <Select size="small" placeholder="选择分组" value={s.group || undefined} onChange={(v: string) => updateStep(idx, { group: v })} style={{ width: 96 }} options={groupOptions} />
                     <span style={{ color: '#666' }}>人数</span>
                     <InputNumber size="small" min={1} max={26} precision={0} value={s.count ?? 1} onChange={(v) => updateStep(idx, { count: v ?? 1 })} style={{ width: 64 }} />
                   </Space>

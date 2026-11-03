@@ -55,6 +55,25 @@ describe('onsiteRoutine.utils', () => {
     ]);
   });
 
+  it('组中选组指定结果（fixed）：去重去空串，空数组被丢弃，其他类型不保留 fixed', () => {
+    const cfg = JSON.stringify({
+      routine: [
+        { type: 'groupDraw', fixed: ['一', '一', ' 二 ', '', 42, null], count: 5 },
+        { type: 'groupDraw', fixed: [], count: 2 },
+        { type: 'groupDraw', fixed: '一' },
+        { type: 'lucky', fixed: ['一'] },
+        { type: 'groupDraw', count: 2, fixed: ['一', '三'] },
+      ],
+    });
+    expect(parseRoutine(cfg)).toEqual([
+      { type: 'groupDraw', fixed: ['一', '二'], count: 5 },
+      { type: 'groupDraw', count: 2 },
+      { type: 'groupDraw' },
+      { type: 'lucky' },
+      { type: 'groupDraw', count: 2, fixed: ['一', '三'] },
+    ]);
+  });
+
   it('findInvalidPersonGroup：返回第一个引用无效分组的步骤下标，全部有效返回 -1', () => {
     const steps = [
       { type: 'lucky' as const, count: 1 },
@@ -73,6 +92,8 @@ describe('onsiteRoutine.utils', () => {
     expect(routineStepSummary({ type: 'lucky', count: 1 })).toBe('幸运之星 · 1人 · 不限');
     expect(routineStepSummary({ type: 'groupRep' })).toBe('分组代表');
     expect(routineStepSummary({ type: 'groupDraw', count: 2 })).toBe('组中选组 · 抽2组');
+    // 指定结果时摘要只显示数量不显示组名——进度条面向观众，不能泄露指定结果
+    expect(routineStepSummary({ type: 'groupDraw', fixed: ['一', '三'] })).toBe('组中选组 · 抽2组');
     expect(routineStepSummary({ type: 'personDraw', group: '一', count: 2 })).toBe('单组选人 · 一组 · 2人');
     expect(routineStepSummary({ type: 'personDraw', count: 1 })).toBe('单组选人 · 未选组 · 1人');
   });
