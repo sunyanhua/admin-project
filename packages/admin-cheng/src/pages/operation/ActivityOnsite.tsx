@@ -114,8 +114,8 @@ interface BlockItem {
 /** 组中抽组/单组选人展示块：组名方块或用户卡片（选中金色放大、未选中灰度+蒙版，区分度明显） */
 const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' | 'drawn' }> = ({ item, state }) => {
   const border = state === 'active' || state === 'win' ? '3px solid #ffd700' : '1px solid rgba(255,255,255,.35)';
-  const shadow = state === 'win' ? '0 0 32px rgba(255,215,0,.9)' : state === 'active' ? '0 0 18px rgba(255,215,0,.7)' : 'none';
-  const scale = state === 'win' ? 'scale(1.08)' : 'scale(1)';
+  const shadow = state === 'win' ? '0 0 40px rgba(255,215,0,.95)' : state === 'active' ? '0 0 18px rgba(255,215,0,.7)' : 'none';
+  const scale = state === 'win' ? 'scale(1.15)' : 'scale(1)';
   const transition = 'transform .3s, box-shadow .3s, opacity .3s';
   if (item.photo) {
     // 未选中：灰度 + 蒙版 + 徽章/昵称同步降亮；已抽：更深；滚动高亮/选中：全彩醒目
@@ -129,18 +129,24 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
         {mask !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: mask }} />}
         <span className={`onsite-number gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>
         {item.group && <span className="onsite-group onsite-group-corner" style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.group}组</span>}
-        <span className="onsite-nick" style={{ opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1, transition: 'opacity .3s' }}>{item.label}</span>
+        <span className="onsite-nick" style={{
+          opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
+          transition: 'opacity .3s, background .3s, color .3s',
+          // 选中：昵称金色底 + 深色加粗大字，视觉突出
+          ...(state === 'win' ? { background: '#ffd700', color: '#3d2a00', fontWeight: 800, fontSize: '1.35vw' } : {}),
+        }}>{item.label}</span>
       </div>
     );
   }
   return (
     <div style={{
       width: '10vw', height: '10vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '4vw', fontWeight: 'bold', color: '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
+      fontSize: '4vw', fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
       background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : 'rgba(255,255,255,.12)',
       transform: scale, transition,
       opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
       filter: state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.5)' : 'none',
+      textShadow: state === 'win' ? '0 2px 8px rgba(255,255,255,.6)' : 'none',
     }}>
       {item.label}
     </div>
