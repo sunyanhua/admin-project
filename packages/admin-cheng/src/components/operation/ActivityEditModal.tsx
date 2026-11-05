@@ -669,8 +669,7 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
                   <span>现场签到</span>
                   {mode === 'edit' && activity && checkinEnabled && (
                     <SourceQrcodeModal
-                      basePage={`pages/activity-onsite/index?id=${activity.id}`}
-                      h5Page={`https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id=${activity.id}`}
+                      basePage={`pages/h5/index?url=${encodeURIComponent(`https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id=${activity.id}`)}`}
                       showSource={false}
                       showShortlink={false}
                     />
