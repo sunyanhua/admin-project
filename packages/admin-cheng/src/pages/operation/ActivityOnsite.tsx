@@ -122,7 +122,7 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
     const opacity = state === 'drawn' ? 0.55 : 1;
     const badgeDim = state === 'drawn' ? 0.3 : state === 'normal' ? 0.5 : 1;
     return (
-      <div style={{ position: 'relative', width: '10vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition, opacity }}>
+      <div style={{ position: 'relative', width: '12vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition, opacity }}>
         <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block', filter, transition: 'filter .3s' }} />
         {mask !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: mask }} />}
         <span className="onsite-nick" style={{
