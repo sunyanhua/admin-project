@@ -288,6 +288,8 @@ const ActivityOnsite: React.FC = () => {
   const blockGenderRef = useRef<LuckyGender | null>(null);
   /** 编排组中选组指定结果（按序落地；仅首轮生效，出结果后清空恢复随机） */
   const blockFixedRef = useRef<string[] | null>(null);
+  /** 编排·组中选组指定结果已揭晓——该步骤仅执行一轮，揭晓后 O 不再进入下一轮 */
+  const blockFixedDoneRef = useRef(false);
 
   /**
    * 按图片实际比例钳制位置：整卡（含旋转）完整落在墙内；
@@ -926,6 +928,8 @@ const ActivityOnsite: React.FC = () => {
     if (tab !== 'groupDraw' && tab !== 'personDraw') return;
     if (blockPhaseRef.current === 'rolling' || blockPhaseRef.current === 'slowing') return;
     if (!blockCandidatesRef.current.length) return;
+    // 编排·组中选组指定结果：仅执行一轮，揭晓后 O 不再进入下一轮（随机步骤保持可连续多轮）
+    if (routineModeRef.current && blockFixedDoneRef.current) return;
     clearDrawTimer();
     setBlockRoundWinners([]);
     setBlockPhase('rolling');
@@ -980,7 +984,8 @@ const ActivityOnsite: React.FC = () => {
         setBlockBright(new Set(locked));
         setBlockPhase('done');
         blockPhaseRef.current = 'done';
-        // 指定结果仅作用于本轮，后续轮次恢复随机
+        // 指定结果仅作用于本轮，后续轮次恢复随机；编排模式下指定结果步骤仅执行一轮
+        if (fixed) blockFixedDoneRef.current = true;
         blockFixedRef.current = null;
         return;
       }
@@ -1233,6 +1238,7 @@ const ActivityOnsite: React.FC = () => {
     blockCountRef.current = null;
     blockGenderRef.current = null;
     blockFixedRef.current = null;
+    blockFixedDoneRef.current = false;
     // 分组相关步骤：分组未配置或引用的组已删改 → 提示跳过，不卡住流程
     if (step.type !== 'lucky' && groupsRef.current.length === 0) {
       setRoutineNotice('活动未配置分组，本步已跳过');
@@ -1283,6 +1289,7 @@ const ActivityOnsite: React.FC = () => {
     blockCountRef.current = null;
     blockGenderRef.current = null;
     blockFixedRef.current = null;
+    blockFixedDoneRef.current = false;
     switchTab('list');
   }, [clearDrawTimer, switchTab]);
 
@@ -1435,7 +1442,12 @@ const ActivityOnsite: React.FC = () => {
         {routineMode ? (
           <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8, whiteSpace: 'nowrap' }}>
             <button onClick={exitRoutine} style={toolBtn}>退出编排</button>
-            <div style={{ color: '#ffd700' }}>操作提示：O 开始 · P 停止 · R 重抽本步 · ←/→ 切换步骤 · 9 退出</div>
+            <div style={{ color: '#ffd700' }}>
+              操作提示：
+              {routineStepNow?.type === 'groupDraw' && routineStepNow.fixed?.length && blockPhase === 'done'
+                ? '指定结果已揭晓 · 按 → 进入下一步'
+                : 'O 开始 · P 停止 · R 重抽本步 · ←/→ 切换步骤 · 9 退出'}
+            </div>
           </div>
         ) : (
         <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 10, whiteSpace: 'nowrap' }}>
