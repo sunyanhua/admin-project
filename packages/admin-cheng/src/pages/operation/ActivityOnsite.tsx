@@ -1692,7 +1692,7 @@ const ActivityOnsite: React.FC = () => {
             ) : (
               <>
                 <div className="draw-cover-title" style={{ fontSize: '4.5vh' }}>{tab === 'groupDraw' ? '组中抽组' : '单组选人'}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.2vw', maxWidth: '84vw', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2vw 2.6vw', maxWidth: '84vw', justifyContent: 'center' }}>
                   {/* 原始顺序展示：本轮定格金色、更早已抽带蒙版、滚动高亮去蒙版 */}
                   {blockAll.map((b) => {
                     const isWin = blockRoundWinners.includes(b.key);
