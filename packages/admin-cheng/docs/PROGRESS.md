@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-10-20**
+**2026-11-05**
 
 ---
 
@@ -95,6 +95,8 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-11-05 | 现场签到小程序码 scene.url 改为 H5 中转页——`/pages/h5/index?url=encodeURIComponent(https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id={id})`（替换原 `/pages/activity-onsite/index?id={id}`，扫码后由小程序 H5 中转页打开该地址）；**正式版+测试版构建发布**（build:prod / build:test，产物待上传） | ActivityEditModal | f8fbec7、28c35c4、5397367（构建产物未提交） |
+| 2026-11-03 | 现场大屏流程编排——现场管理弹窗新增「流程编排」TAB（步骤类型+参数+备注，添加/删除/拖拽排序，存 onsite_config.routine 原对象透传）；大屏按 9 进入编排执行（顶部「第 x/N 步」+流程简介，操作提示在右上角隐藏悬停区）；组中选组支持指定结果（fixed 多选：指定后抽组数=所选中组数，P 定格按指定顺序落地仅首轮生效、不泄露结果，后续轮次恢复随机）；按键与普通操作一致（O 开始/P 停止/R 重抽/←→ 切换/9 退出）；组名已删改/无候选时提示跳过不卡流程；全站「减速停止」文案统一「停止」 | ActivityOnsite + OnsiteRoutineTab + onsiteRoutine.utils + OnsiteManageModal + tests | 9dafaf0、344bd10、06daf51、fec1905（构建产物未提交） |
 | 2026-11-03 | 单组选人选中用户视觉再突出（昵称金色底深色加粗、放大 1.15、光晕加强）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityOnsite | 62d75ba（构建产物未提交） |
 | 2026-11-03 | 现场大屏系列——心动排名改版（左男右女双心形 + ↓/↑ 配对切换 + 桃心次数 + 跳过原则 + 耗尽重拉 + 分组徽章）；模式调整（心动互选/我钟意你/幸运之星 4/能成时刻隐藏）；三个分组抽取模式（各组代表 6/组中抽组 7/单组选人 8：转轮多行排版、逐格锁定、照片蒙版、仅已签到候选）；组CP 与分组联动（CP 同组分配、保存前抹除确认）；分组管理快速设置汉字选项；分组保存全量同步；我钟意你排除互心人选；单组选人区分度加强（徽章/昵称同步降亮）；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | ActivityOnsite + OnsiteGroupTab + onsiteGrouping.utils + ActivityCpTab + tests | a242ad5、e35304c、9049ccb、bdaf607、6b7dab6、bfd303b、113a9c9、c2d960e、0ff1e85、ecc4430、497ca74、6fe6b77、df7b8bf、796189c（构建产物未提交） |
 | 2026-10-30 | 分组管理完整实现（现场弹窗 TAB：分组名称配置/竖向分组列表/拖拽移动/自动分组男女均衡/保存分组写 extra_data）；报喜管理调整（男女昵称头像可点资料卡片、重新审核提醒、撤销）；基础资料管理新增全量导出（并发分页+失败重试）；现场弹窗默认 TAB 随签到时间切换；现场配置图片回填修复；**正式版构建发布**（build:zone-prod 合并产物：主后台 + 专区管理后台） | OnsiteGroupTab + onsiteGrouping.utils + CongratulationManagement/DetailModal + UserList + OnsiteManageModal + activity-v1 | 9a640a1、dc94e3b、6572662、685c18a、884498a、4995d7c、afff494、fa02c16、779904b、ec59286、b3d08e4（构建产物未提交） |
