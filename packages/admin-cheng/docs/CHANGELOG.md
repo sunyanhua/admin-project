@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-11-05 10:45 | 28c35c4 | fix: 现场签到小程序码 scene.url 改为 H5 中转页——`/pages/h5/index?url=encodeURIComponent(https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id={id})`（替换原 `/pages/activity-onsite/index?id={id}`）；撤销上一版弹窗单独展示 H5 链接的做法 |
 | 2026-11-05 10:30 | f8fbec7 | feat: 现场签到二维码弹窗增加 H5 地址展示（可一键复制）——`https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id={id}`，与预热活动（活动详情）二维码 basePage+h5Page 生成方式一致；小程序码生成保持不变 |
 | 2026-11-03 21:24 | fec1905 | refactor: 编排执行移除空格键——步骤开始统一用 O 键（与各步骤普通操作完全一致），P 停止、R 重抽、←/→ 切换步骤、9/Esc 退出；移除出结果状态机（空格推进的唯一消费方）；提示文案同步（右上角提示/各封面/完成提示/编排 TAB 说明） |
 | 2026-11-03 21:16 | 06daf51 | style: 编排执行顶部精简——去掉「流程编排」标题与步骤类别/配置摘要，只显示「第 x/N 步」+流程简介（备注）；操作提示移入右上角隐藏悬停区（含退出编排按钮）；全站封面「按 P 减速停止」统一改为「按 P 停止」；移除不再使用的步骤摘要工具函数 |
