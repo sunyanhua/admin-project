@@ -109,14 +109,14 @@ interface BlockItem {
   group?: string;
 }
 
-/** 组中抽组/单组选人展示块：组名方块或用户卡片（选中金色放大、未选中灰度+蒙版，区分度明显） */
-const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' | 'drawn' }> = ({ item, state }) => {
-  const border = state === 'active' || state === 'win' ? '3px solid #ffd700' : '1px solid rgba(255,255,255,.35)';
-  const shadow = state === 'win' ? '0 0 40px rgba(255,215,0,.95)' : state === 'active' ? '0 0 18px rgba(255,215,0,.7)' : 'none';
+/** 组中抽组/单组选人展示块：组名方块或用户卡片（bright=明暗跳动中亮起、win=中奖金色放大、normal/drawn=灰度+蒙版降亮） */
+const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' | 'drawn' }> = ({ item, state }) => {
+  const border = state === 'win' ? '3px solid #ffd700' : state === 'bright' ? '2px solid rgba(255,255,255,.8)' : '1px solid rgba(255,255,255,.35)';
+  const shadow = state === 'win' ? '0 0 40px rgba(255,215,0,.95)' : 'none';
   const scale = state === 'win' ? 'scale(1.15)' : 'scale(1)';
   const transition = 'transform .3s, box-shadow .3s, opacity .3s';
   if (item.photo) {
-    // 未选中：灰度 + 蒙版 + 徽章/昵称同步降亮；已抽：更深；滚动高亮/选中：全彩醒目
+    // 未选中：灰度 + 蒙版 + 徽章/昵称同步降亮；已抽：更深；明暗跳动亮起/中奖：全彩醒目
     const mask = state === 'drawn' ? 'rgba(0,0,0,.8)' : state === 'normal' ? 'rgba(0,0,0,.6)' : 'transparent';
     const filter = state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.6)' : 'none';
     const opacity = state === 'drawn' ? 0.55 : 1;
@@ -128,7 +128,7 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
         <span className="onsite-nick" style={{
           opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
           transition: 'opacity .3s, background .3s, color .3s',
-          // 选中：昵称金色底 + 深色加粗大字，视觉突出
+          // 中奖：昵称金色底 + 深色加粗大字，视觉突出
           ...(state === 'win' ? { background: '#ffd700', color: '#3d2a00', fontWeight: 800, fontSize: '1.35vw' } : {}),
         }}>
           <span className={`onsite-number-inline gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>
@@ -141,7 +141,7 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
     <div style={{
       width: '10vw', height: '10vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: '4vw', fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
-      background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : 'rgba(255,255,255,.12)',
+      background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : state === 'bright' ? 'rgba(255,255,255,.32)' : 'rgba(255,255,255,.12)',
       transform: scale, transition,
       opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
       filter: state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.5)' : 'none',
@@ -202,7 +202,8 @@ const ActivityOnsite: React.FC = () => {
   /** 本轮定格 key 列表 */
   const [blockRoundWinners, setBlockRoundWinners] = useState<string[]>([]);
   /** 滚动高亮索引（相对当前候选数组） */
-  const [blockHighlight, setBlockHighlight] = useState(-1);
+  /** 明暗跳动：当前亮起的候选集合（全部候选错落不规律地忽明忽暗，P 减速后逐一定格中奖者） */
+  const [blockBright, setBlockBright] = useState<Set<string>>(new Set());
   const [blockPhase, setBlockPhase] = useState<'cover' | 'rolling' | 'slowing' | 'done'>('cover');
   /** 当前候选 key（保持原始顺序；逐格锁定后从候选中移除，后续跳动跳过） */
   const blockCandidatesRef = useRef<string[]>([]);
@@ -910,13 +911,13 @@ const ActivityOnsite: React.FC = () => {
     }
     setBlockDrawnKeys([]);
     setBlockRoundWinners([]);
-    setBlockHighlight(-1);
+    setBlockBright(new Set());
     setBlockPhase('cover');
     blockPhaseRef.current = 'cover';
     setTab(kind === 'group' ? 'groupDraw' : 'personDraw');
   }, [clearDrawTimer, wall, personGroup]);
 
-  /** O：方块高亮轮扫开始（组中抽组/单组选人；done 后按 O 继续下一轮） */
+  /** O：明暗跳动开始（组中抽组/单组选人）——全部候选错落不规律地随机忽明忽暗；done 后按 O 继续下一轮 */
   const beginBlock = useCallback(() => {
     if (tab !== 'groupDraw' && tab !== 'personDraw') return;
     if (blockPhaseRef.current === 'rolling' || blockPhaseRef.current === 'slowing') return;
@@ -925,18 +926,22 @@ const ActivityOnsite: React.FC = () => {
     setBlockRoundWinners([]);
     setBlockPhase('rolling');
     blockPhaseRef.current = 'rolling';
-    let idx = 0;
-    // 单组选人跳格稍慢（照片卡观感更清晰）
+    // 单组选人跳动稍慢（照片卡观感更清晰）
     const interval = tab === 'personDraw' ? 130 : 90;
     const tick = () => {
-      idx = (idx + 1) % blockCandidatesRef.current.length;
-      setBlockHighlight(idx);
+      // 每帧随机一部分候选亮起，其余变暗——错落不规律
+      const cands = blockCandidatesRef.current;
+      const next = new Set<string>();
+      for (const k of cands) {
+        if (Math.random() < 0.35) next.add(k);
+      }
+      setBlockBright(next);
       drawTimerRef.current = setTimeout(tick, interval);
     };
     tick();
   }, [tab, clearDrawTimer]);
 
-  /** P：减速定格（组中抽组/单组选人）——逐格锁定，已锁定的不再参与后续跳动 */
+  /** P：明暗切换减速变慢，随后逐一定格中奖者（变亮放大；选中之间间距尽量短） */
   const slowBlock = useCallback(() => {
     if ((tab !== 'groupDraw' && tab !== 'personDraw') || blockPhaseRef.current !== 'rolling') return;
     clearDrawTimer();
@@ -949,39 +954,52 @@ const ActivityOnsite: React.FC = () => {
       : null;
     const count = fixed ? fixed.length : (blockCountRef.current ?? (tab === 'groupDraw' ? groupDrawCount : personDrawCount));
     const take = Math.min(Math.max(1, count), candidates.length);
-    const shuffled = fixed ? fixed.slice(0, take) : [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
-    const durations = Array.from({ length: 8 }, (_, i) => Math.min(1500, Math.round(180 * Math.pow(1.2, i))));
-    const winners: string[] = [];
-    const landNext = (wi: number) => {
-      if (wi >= shuffled.length) {
+    const winners = fixed ? fixed.slice(0, take) : [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
+    const locked: string[] = [];
+    // 随机明暗一帧（已定格的中奖者保持亮起）
+    const flicker = () => {
+      const next = new Set<string>(locked);
+      for (const k of blockCandidatesRef.current) {
+        if (Math.random() < 0.35) next.add(k);
+      }
+      setBlockBright(next);
+    };
+    // ① 减速：明暗切换间隔逐档增大（约 220ms → 1.3s），4 档后开始定格
+    const slow = (i: number) => {
+      if (i >= 4) { lock(0); return; }
+      flicker();
+      drawTimerRef.current = setTimeout(() => slow(i + 1), 220 + i * 360);
+    };
+    // ② 逐一定格：中奖者 2 档快速明暗后变亮放大锁定；选中之间间距尽量短（约 220ms）
+    const lock = (wi: number) => {
+      if (wi >= winners.length) {
         // 本轮完成：定格块移入已抽，候选保持原始顺序
-        setBlockRoundWinners(winners);
-        setBlockDrawnKeys((prev) => [...prev, ...winners]);
+        setBlockRoundWinners(locked);
+        setBlockDrawnKeys((prev) => [...prev, ...locked]);
+        setBlockBright(new Set(locked));
         setBlockPhase('done');
         blockPhaseRef.current = 'done';
         // 指定结果仅作用于本轮，后续轮次恢复随机
         blockFixedRef.current = null;
         return;
       }
-      const winner = shuffled[wi];
-      const winIdx = blockCandidatesRef.current.indexOf(winner);
-      const step = (i: number) => {
-        if (i >= 8) {
-          // 立即锁定：呈现选中高亮、从候选中移除，后续跳动跳过该块
-          winners.push(winner);
-          setBlockRoundWinners([...winners]);
+      const winner = winners[wi];
+      const land = (i: number) => {
+        if (i >= 2) {
+          // 锁定：变亮放大定格、从候选中移除（后续跳动跳过该块）
+          locked.push(winner);
+          setBlockRoundWinners([...locked]);
+          setBlockBright(new Set(locked));
           blockCandidatesRef.current = blockCandidatesRef.current.filter((k) => k !== winner);
-          drawTimerRef.current = setTimeout(() => landNext(wi + 1), 420);
+          drawTimerRef.current = setTimeout(() => lock(wi + 1), 220);
           return;
         }
-        const len = blockCandidatesRef.current.length;
-        const hl = (((winIdx - (7 - i)) % len) + len) % len;
-        setBlockHighlight(hl);
-        drawTimerRef.current = setTimeout(() => step(i + 1), durations[i]);
+        flicker();
+        drawTimerRef.current = setTimeout(() => land(i + 1), 160);
       };
-      step(0);
+      land(0);
     };
-    landNext(0);
+    slow(0);
   }, [tab, clearDrawTimer, groupDrawCount, personDrawCount]);
 
   // 单组选人：切换指定组时重置抽取
@@ -1618,13 +1636,12 @@ const ActivityOnsite: React.FC = () => {
                   {blockAll.map((b) => {
                     const isWin = blockRoundWinners.includes(b.key);
                     const isDrawn = !isWin && blockDrawnKeys.includes(b.key);
-                    const candIdx = blockCandidatesRef.current.indexOf(b.key);
-                    const isActive = blockPhase !== 'done' && blockHighlight === candIdx && candIdx !== -1;
+                    const isBright = blockPhase !== 'done' && blockBright.has(b.key);
                     return (
                       <BlockCard
                         key={b.key}
                         item={b}
-                        state={isWin ? 'win' : isDrawn ? 'drawn' : isActive ? 'active' : 'normal'}
+                        state={isWin ? 'win' : isDrawn ? 'drawn' : isBright ? 'bright' : 'normal'}
                       />
                     );
                   })}
