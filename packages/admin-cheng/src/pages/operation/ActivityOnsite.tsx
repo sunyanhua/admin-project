@@ -1097,23 +1097,43 @@ const ActivityOnsite: React.FC = () => {
     if (isLucky) {
       const picked = new Set<string>();
       luckyWinners = [];
-      // 各组代表固定混搭：组间男女尽量均衡——优先当前少数性别，组内无该性别回退另一性别（仍从本组组员中抽取）
-      let repM = 0;
-      let repF = 0;
+      // 各组代表固定混搭：组间男女尽量均衡——目标性别名额（男多/女多随机）随机分配到各组
+      // （仅含单一性别的组强制该性别），组内再从目标性别随机抽取（无则回退另一性别/任意组员）
+      let groupAssignment: ('male' | 'female' | 'any')[] = [];
+      if (tab === 'groupRep') {
+        const groupPools = luckyStripsRef.current.map((_, i) =>
+          luckyWinnerPoolsRef.current[i].filter((u) => !picked.has(u.userId)),
+        );
+        const n = groupPools.length;
+        const wantM = Math.random() < 0.5 ? Math.ceil(n / 2) : Math.floor(n / 2);
+        let mLeft = wantM;
+        let fLeft = n - wantM;
+        groupAssignment = groupPools.map((pool) => {
+          const hasM = pool.some((u) => u.gender === 'male');
+          const hasF = pool.some((u) => u.gender === 'female');
+          if (hasM && !hasF) { mLeft--; return 'male'; }
+          if (hasF && !hasM) { fLeft--; return 'female'; }
+          return 'any';
+        });
+        // 弹性组（男女皆有）随机打乱后依次分配剩余名额
+        const flexible = groupAssignment.map((a, i) => (a === 'any' ? i : -1)).filter((i) => i >= 0);
+        for (const gi of [...flexible].sort(() => Math.random() - 0.5)) {
+          if (mLeft > 0) { groupAssignment[gi] = 'male'; mLeft--; }
+          else if (fLeft > 0) { groupAssignment[gi] = 'female'; fLeft--; }
+          else groupAssignment[gi] = Math.random() < 0.5 ? 'male' : 'female';
+        }
+      }
       luckySteps = luckyStripsRef.current.map((strip, i) => {
         const len = luckyReelLensRef.current[i];
         const pool = luckyWinnerPoolsRef.current[i].filter((u) => !picked.has(u.userId));
         let cands: WallUser[];
-        if (tab === 'groupRep' && pool.length > 1) {
+        if (tab === 'groupRep') {
           const males = pool.filter((u) => u.gender === 'male');
           const females = pool.filter((u) => u.gender === 'female');
-          if (repM <= repF) {
-            cands = males.length ? males : (females.length ? females : pool);
-            if (males.length) repM++; else repF++;
-          } else {
-            cands = females.length ? females : (males.length ? males : pool);
-            if (females.length) repF++; else repM++;
-          }
+          const target = groupAssignment[i];
+          cands = target === 'male' ? (males.length ? males : (females.length ? females : pool))
+            : target === 'female' ? (females.length ? females : (males.length ? males : pool))
+            : pool;
         } else {
           cands = pool;
         }
