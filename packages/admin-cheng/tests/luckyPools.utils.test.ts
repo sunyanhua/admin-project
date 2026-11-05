@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLuckyPools, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
 import type { LuckyGuest } from '@/pages/operation/luckyPools.utils';
 
 const male = (i: number): LuckyGuest => ({ userId: `m${i}`, gender: 'male' });
@@ -81,5 +81,46 @@ describe('buildLuckyPools', () => {
 
   it('性别选项为 男/女/不限/混搭', () => {
     expect(LUCKY_GENDER_OPTIONS.map((o) => o.label)).toEqual(['男', '女', '不限', '混搭']);
+  });
+
+  it('pickGenderedWinners any：随机抽取 count 人且不重复', () => {
+    const w = pickGenderedWinners([male(1), male(2), male(3), female(1), female(2)], 3, 'any', () => 0.5);
+    expect(w).toHaveLength(3);
+    expect(new Set(w.map((u) => u.userId)).size).toBe(3);
+  });
+
+  it('pickGenderedWinners male/female：只从对应性别中抽取', () => {
+    const guests = [male(1), male(2), female(1), female(2)];
+    const ms = pickGenderedWinners(guests, 2, 'male', () => 0.5);
+    expect(ms).toHaveLength(2);
+    expect(ms.every((u) => u.gender === 'male')).toBe(true);
+    const fs = pickGenderedWinners(guests, 2, 'female', () => 0.5);
+    expect(fs.every((u) => u.gender === 'female')).toBe(true);
+  });
+
+  it('pickGenderedWinners mix：男女名额尽量均分，奇数随机哪边多 1', () => {
+    const guests = [male(1), male(2), male(3), female(1), female(2)];
+    // rng 0.1 < 0.5：奇数时男多 1（3 人 → 男2女1）
+    const w = pickGenderedWinners(guests, 3, 'mix', () => 0.1);
+    expect(w.filter((u) => u.gender === 'male').length).toBe(2);
+    expect(w.filter((u) => u.gender === 'female').length).toBe(1);
+    // 偶数：男女各半
+    const w2 = pickGenderedWinners(guests, 4, 'mix', () => 0.9);
+    expect(w2.filter((u) => u.gender === 'male').length).toBe(2);
+    expect(w2.filter((u) => u.gender === 'female').length).toBe(2);
+  });
+
+  it('pickGenderedWinners mix：一侧性别不足时名额让给另一侧', () => {
+    const guests = [male(1), female(1), female(2)];
+    // 想男2女1 但男仅 1 人 → 男1女2
+    const w = pickGenderedWinners(guests, 3, 'mix', () => 0.1);
+    expect(w.filter((u) => u.gender === 'male').length).toBe(1);
+    expect(w.filter((u) => u.gender === 'female').length).toBe(2);
+  });
+
+  it('pickGenderedWinners：性别筛选后人数不足按实际返回；count 非法返回空', () => {
+    expect(pickGenderedWinners([male(1)], 3, 'female', () => 0.5)).toEqual([]);
+    expect(pickGenderedWinners([male(1), female(1)], 0, 'any', () => 0.5)).toEqual([]);
+    expect(pickGenderedWinners([], 2, 'mix', () => 0.5)).toEqual([]);
   });
 });

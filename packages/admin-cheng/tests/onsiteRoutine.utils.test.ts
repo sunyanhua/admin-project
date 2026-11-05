@@ -54,6 +54,19 @@ describe('onsiteRoutine.utils', () => {
     ]);
   });
 
+  it('单组选人性别（gender）：合法值保留，非法值丢弃', () => {
+    const cfg = JSON.stringify({
+      routine: [
+        { type: 'personDraw', group: '一', count: 2, gender: 'mix' },
+        { type: 'personDraw', group: '一', count: 2, gender: 'xx' },
+      ],
+    });
+    expect(parseRoutine(cfg)).toEqual([
+      { type: 'personDraw', group: '一', count: 2, gender: 'mix' },
+      { type: 'personDraw', group: '一', count: 2 },
+    ]);
+  });
+
   it('组中选组指定结果（fixed）：去重去空串，空数组被丢弃，其他类型不保留 fixed', () => {
     const cfg = JSON.stringify({
       routine: [

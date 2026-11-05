@@ -8,7 +8,7 @@ export interface RoutineStep {
   type: RoutineStepType;
   /** 幸运之星/组中选组/单组选人：抽取人数（组数），≥1 */
   count?: number;
-  /** 幸运之星：性别要求（仅控制结果） */
+  /** 幸运之星/单组选人：性别要求（仅控制结果；各组代表固定混搭） */
   gender?: LuckyGender;
   /** 单组选人：指定组名（对应 onsite_config.groups 中的一段） */
   group?: string;
@@ -31,7 +31,7 @@ const LUCKY_GENDERS: LuckyGender[] = ['male', 'female', 'any', 'mix'];
 const sanitizeStep = (raw: Record<string, unknown>): RoutineStep => {
   const step: RoutineStep = { type: raw.type as RoutineStepType };
   if (typeof raw.count === 'number' && raw.count >= 1) step.count = Math.floor(raw.count);
-  if (step.type === 'lucky' && LUCKY_GENDERS.includes(raw.gender as LuckyGender)) step.gender = raw.gender as LuckyGender;
+  if ((step.type === 'lucky' || step.type === 'personDraw') && LUCKY_GENDERS.includes(raw.gender as LuckyGender)) step.gender = raw.gender as LuckyGender;
   if (step.type === 'personDraw' && typeof raw.group === 'string' && raw.group.trim()) step.group = raw.group.trim();
   if (step.type === 'groupDraw' && Array.isArray(raw.fixed)) {
     const fixed = [...new Set(raw.fixed.filter((g): g is string => typeof g === 'string').map((g) => g.trim()).filter((g) => g))];

@@ -132,7 +132,7 @@ describe('OnsiteRoutineTab', () => {
       expect(obj.groups).toBe('一|二');
       expect(obj.routine).toEqual([
         { type: 'lucky', count: 2, gender: 'mix', note: '开场抽奖' },
-        { type: 'personDraw', group: '一', count: 2 },
+        { type: 'personDraw', group: '一', count: 2, gender: 'mix' },
       ]);
     });
   });

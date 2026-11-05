@@ -26,9 +26,9 @@ const STEP_TYPE_OPTIONS = (Object.keys(ROUTINE_STEP_TYPE_LABELS) as RoutineStepT
 
 /** 各类型默认参数（切换类型时重置，备注保留） */
 const defaultStepOf = (type: RoutineStepType, note = ''): RoutineStep =>
-  type === 'lucky' ? { type, count: 1, gender: 'any' as LuckyGender, note }
+  type === 'lucky' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
   : type === 'groupDraw' ? { type, count: 1, note }
-  : type === 'personDraw' ? { type, count: 1, note }
+  : type === 'personDraw' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
   : { type, note };
 
 /**
@@ -126,12 +126,12 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
       if (steps.length) {
         obj.routine = steps.map((s) => {
           const clean: RoutineStep = { type: s.type, note: (s.note || '').trim() };
-          if (s.type === 'lucky') { clean.count = s.count ?? 1; clean.gender = s.gender ?? 'any'; }
+          if (s.type === 'lucky') { clean.count = s.count ?? 1; clean.gender = s.gender ?? 'mix'; }
           else if (s.type === 'groupDraw') {
             // 指定结果时抽组数=所选中组数（不存 count）；未指定则随机抽取
             if (s.fixed && s.fixed.length) clean.fixed = [...s.fixed];
             else clean.count = s.count ?? 1;
-          } else if (s.type === 'personDraw') { clean.count = s.count ?? 1; clean.group = (s.group || '').trim(); }
+          } else if (s.type === 'personDraw') { clean.count = s.count ?? 1; clean.group = (s.group || '').trim(); clean.gender = s.gender ?? 'mix'; }
           if (!clean.note) delete clean.note;
           return clean;
         });
@@ -212,7 +212,7 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
                     <span style={{ color: '#666' }}>人数</span>
                     <InputNumber size="small" min={1} max={5} precision={0} value={s.count ?? 1} onChange={(v) => updateStep(idx, { count: v ?? 1 })} style={{ width: 64 }} />
                     <span style={{ color: '#666' }}>性别</span>
-                    <Select size="small" value={s.gender ?? 'any'} onChange={(v: LuckyGender) => updateStep(idx, { gender: v })} style={{ width: 78 }} options={LUCKY_GENDER_OPTIONS} />
+                    <Select size="small" value={s.gender ?? 'mix'} onChange={(v: LuckyGender) => updateStep(idx, { gender: v })} style={{ width: 78 }} options={LUCKY_GENDER_OPTIONS} />
                   </Space>
                 )}
                 {s.type === 'groupRep' && <span style={{ color: '#999', fontSize: 12 }}>每组从已签到成员中抽取一名代表</span>}
@@ -239,6 +239,8 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
                     <Select size="small" placeholder="选择分组" value={s.group || undefined} onChange={(v: string) => updateStep(idx, { group: v })} style={{ width: 96 }} options={groupOptions} />
                     <span style={{ color: '#666' }}>人数</span>
                     <InputNumber size="small" min={1} max={26} precision={0} value={s.count ?? 1} onChange={(v) => updateStep(idx, { count: v ?? 1 })} style={{ width: 64 }} />
+                    <span style={{ color: '#666' }}>性别</span>
+                    <Select size="small" value={s.gender ?? 'mix'} onChange={(v: LuckyGender) => updateStep(idx, { gender: v })} style={{ width: 78 }} options={LUCKY_GENDER_OPTIONS} />
                   </Space>
                 )}
                 <Input

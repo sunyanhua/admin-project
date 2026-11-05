@@ -7,7 +7,7 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
-import { buildLuckyPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -195,6 +195,8 @@ const ActivityOnsite: React.FC = () => {
   /** 单组选人：指定组与每轮抽取人数（右上角配置） */
   const [personGroup, setPersonGroup] = useState('');
   const [personDrawCount, setPersonDrawCount] = useState(1);
+  /** 单组选人性别要求（默认混搭，仅控制落定结果——候选展示全体组员） */
+  const [personGender, setPersonGender] = useState<LuckyGender>('mix');
   /** 组中抽组/单组选人：原始顺序全部块（展示排序保持不变） */
   const [blockAll, setBlockAll] = useState<BlockItem[]>([]);
   /** 累计已抽 key（按抽中顺序） */
@@ -231,9 +233,9 @@ const ActivityOnsite: React.FC = () => {
   /** 各转轮回卷当帧的过渡禁用标记（仅回卷的转轮置位） */
   const [luckySnaps, setLuckySnaps] = useState<boolean[]>([]);
   const [drawWinners, setDrawWinners] = useState<WallUser[]>([]);
-  /** 幸运之星配置：人数=转轮数（1~5，默认 1）、性别要求（默认不限） */
+  /** 幸运之星配置：人数=转轮数（1~5，默认 1）、性别要求（默认混搭） */
   const [luckyCount, setLuckyCount] = useState(1);
-  const [luckyGender, setLuckyGender] = useState<LuckyGender>('any');
+  const [luckyGender, setLuckyGender] = useState<LuckyGender>('mix');
   /** 能成时刻：男女条带与最终配对 */
   const [femaleStrip, setFemaleStrip] = useState<WallUser[]>([]);
   const [maleStrip, setMaleStrip] = useState<WallUser[]>([]);
@@ -282,6 +284,8 @@ const ActivityOnsite: React.FC = () => {
   const routineIdxRef = useRef(0);
   /** 编排执行时本步抽取数量（慢速定格数量来源；自由模式为 null 走右上角配置） */
   const blockCountRef = useRef<number | null>(null);
+  /** 编排执行时单组选人本步性别要求（自由模式为 null 走右上角配置） */
+  const blockGenderRef = useRef<LuckyGender | null>(null);
   /** 编排组中选组指定结果（按序落地；仅首轮生效，出结果后清空恢复随机） */
   const blockFixedRef = useRef<string[] | null>(null);
 
@@ -954,7 +958,16 @@ const ActivityOnsite: React.FC = () => {
       : null;
     const count = fixed ? fixed.length : (blockCountRef.current ?? (tab === 'groupDraw' ? groupDrawCount : personDrawCount));
     const take = Math.min(Math.max(1, count), candidates.length);
-    const winners = fixed ? fixed.slice(0, take) : [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
+    const winners = (() => {
+      if (fixed) return fixed.slice(0, take);
+      if (tab === 'personDraw') {
+        // 单组选人：性别要求只控制落定结果（候选展示全体组员）——混搭男女尽量均分
+        const genderMap = new Map(blockAll.map((b) => [b.key, b.gender || '']));
+        const guests = candidates.map((k) => ({ userId: k, gender: (genderMap.get(k) || '') as 'male' | 'female' | '' }));
+        return pickGenderedWinners(guests, count, blockGenderRef.current ?? personGender).map((w) => w.userId);
+      }
+      return [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
+    })();
     // 停止闪烁：全部候选即刻变暗
     setBlockBright(new Set());
     const locked: string[] = [];
@@ -980,7 +993,7 @@ const ActivityOnsite: React.FC = () => {
     };
     // 短暂停顿后开始定格（P 按下与首个中奖之间留一点悬念）
     drawTimerRef.current = setTimeout(() => lock(0), 320);
-  }, [tab, clearDrawTimer, groupDrawCount, personDrawCount]);
+  }, [tab, clearDrawTimer, groupDrawCount, personDrawCount, personGender, blockAll]);
 
   // 单组选人：切换指定组时重置抽取
   useEffect(() => {
@@ -1079,9 +1092,26 @@ const ActivityOnsite: React.FC = () => {
     if (isLucky) {
       const picked = new Set<string>();
       luckyWinners = [];
+      // 各组代表固定混搭：组间男女尽量均衡——优先当前少数性别，组内无该性别回退另一性别（仍从本组组员中抽取）
+      let repM = 0;
+      let repF = 0;
       luckySteps = luckyStripsRef.current.map((strip, i) => {
         const len = luckyReelLensRef.current[i];
-        const cands = luckyWinnerPoolsRef.current[i].filter((u) => !picked.has(u.userId));
+        const pool = luckyWinnerPoolsRef.current[i].filter((u) => !picked.has(u.userId));
+        let cands: WallUser[];
+        if (tab === 'groupRep' && pool.length > 1) {
+          const males = pool.filter((u) => u.gender === 'male');
+          const females = pool.filter((u) => u.gender === 'female');
+          if (repM <= repF) {
+            cands = males.length ? males : (females.length ? females : pool);
+            if (males.length) repM++; else repF++;
+          } else {
+            cands = females.length ? females : (males.length ? males : pool);
+            if (females.length) repF++; else repM++;
+          }
+        } else {
+          cands = pool;
+        }
         const w = randOf(cands) as WallUser;
         picked.add(w.userId);
         luckyWinners.push(w);
@@ -1201,6 +1231,7 @@ const ActivityOnsite: React.FC = () => {
     setRoutineIdx(idx);
     setRoutineNotice('');
     blockCountRef.current = null;
+    blockGenderRef.current = null;
     blockFixedRef.current = null;
     // 分组相关步骤：分组未配置或引用的组已删改 → 提示跳过，不卡住流程
     if (step.type !== 'lucky' && groupsRef.current.length === 0) {
@@ -1212,7 +1243,7 @@ const ActivityOnsite: React.FC = () => {
       return;
     }
     if (step.type === 'lucky') {
-      startLucky({ count: step.count ?? 1, gender: step.gender ?? 'any' });
+      startLucky({ count: step.count ?? 1, gender: step.gender ?? 'mix' });
     } else if (step.type === 'groupRep') {
       startGroupRep();
     } else if (step.type === 'groupDraw') {
@@ -1230,6 +1261,7 @@ const ActivityOnsite: React.FC = () => {
       startBlockDraw('group');
     } else {
       blockCountRef.current = step.count ?? 1;
+      blockGenderRef.current = step.gender ?? 'mix';
       startBlockDraw('person', { group: step.group });
     }
   }, [routine, startLucky, startGroupRep, startBlockDraw]);
@@ -1249,6 +1281,7 @@ const ActivityOnsite: React.FC = () => {
     setRoutineMode(false);
     setRoutineNotice('');
     blockCountRef.current = null;
+    blockGenderRef.current = null;
     blockFixedRef.current = null;
     switchTab('list');
   }, [clearDrawTimer, switchTab]);
@@ -1314,7 +1347,7 @@ const ActivityOnsite: React.FC = () => {
   /** 编排模式当前步骤参数（驱动封面人数/组名等展示；自由模式沿用右上角配置） */
   const routineStepNow = routineMode && routine[routineIdx] ? routine[routineIdx] : null;
   const effLuckyCount = routineStepNow?.type === 'lucky' ? (routineStepNow.count ?? 1) : luckyCount;
-  const effLuckyGender = routineStepNow?.type === 'lucky' ? (routineStepNow.gender ?? 'any') : luckyGender;
+  const effLuckyGender = routineStepNow?.type === 'lucky' ? (routineStepNow.gender ?? 'mix') : luckyGender;
   // 组中选组指定结果时抽组数=所选中组数（进度条/封面不泄露具体组名）
   const effGroupDrawCount = routineStepNow?.type === 'groupDraw'
     ? (routineStepNow.fixed?.length ?? routineStepNow.count ?? 1)
@@ -1504,6 +1537,15 @@ const ActivityOnsite: React.FC = () => {
                 onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 62 }}
                 options={personCountOptions.map((n) => ({ value: n, label: String(n) }))}
+              />
+              <span>性别</span>
+              <Select
+                size="small"
+                value={personGender}
+                onChange={blurAfter((v: LuckyGender) => setPersonGender(v))}
+                onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
+                style={{ width: 78 }}
+                options={LUCKY_GENDER_OPTIONS}
               />
             </div>
           )}
