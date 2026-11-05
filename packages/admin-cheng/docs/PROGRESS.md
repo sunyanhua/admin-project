@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-11-06 | 单组选人/组中选组卡片区域间距扩大（gap 1.2vw → 列 2vw/行 2.6vw，避免选中放大 1.15 后相邻行覆盖）；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite | 3846863（构建产物未提交） |
 | 2026-11-05 | 下拉选中后按键误开下拉框修复（blurAfter 延迟失焦 + 按键守卫兜底）；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite | 9463dc5（构建产物未提交） |
 | 2026-11-05 | 现场大屏操作体验系列——①面板下拉框展开时面板保持显示、按键提示统一收拢右上角「操作提示：」；②全站用户卡片统一样式（照片+底部昵称条、序号贴在前、去角落徽章，em 比例统一），单组选人卡片加宽 12vw；③组中选组/单组选人跳动改为全体候选错落忽明忽暗，P 停止闪烁直接定格（选中间距约 220ms）；④性别控制：幸运之星默认混搭、单组选人新增性别下拉（默认混搭）、各组代表固定混搭（名额随机分配到组、组内随机抽）；⑤编排·组中选组指定结果仅执行一轮（揭晓后 O 不再续抽）；⑥各组代表随机性修复（消除每次结果相同）；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite + OnsiteRoutineTab + onsiteRoutine.utils + luckyPools.utils + tests | 8fcf713、302fa1e、e58aa7b、a9ddba6、92e6bbb、bb2ef5b、9904c90、dbc27d0（构建产物未提交） |
 | 2026-11-05 | 现场签到小程序码 scene.url 改为 H5 中转页——`/pages/h5/index?url=encodeURIComponent(https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id={id})`（替换原 `/pages/activity-onsite/index?id={id}`，扫码后由小程序 H5 中转页打开该地址）；**正式版+测试版构建发布**（build:prod / build:test，产物待上传） | ActivityEditModal | f8fbec7、28c35c4、5397367（构建产物未提交） |
