@@ -277,6 +277,8 @@ const ActivityOnsite: React.FC = () => {
   const [routineIdx, setRoutineIdx] = useState(0);
   /** 编排执行提示（步骤跳过原因等，大屏顶部横幅） */
   const [routineNotice, setRoutineNotice] = useState('');
+  /** 右上角面板内下拉框展开中——展开时面板保持显示（下拉是面板的一部分，操作时不隐藏） */
+  const [toolSelectOpen, setToolSelectOpen] = useState(false);
   const routineModeRef = useRef(false);
   const routineIdxRef = useRef(0);
   /** 编排执行时本步抽取数量（慢速定格数量来源；自由模式为 null 走右上角配置） */
@@ -1348,6 +1350,26 @@ const ActivityOnsite: React.FC = () => {
 
   /** 单组选人：指定组的已签到成员数（配置人数上限）；编排模式取步骤指定组 */
   const personGroupName = (routineStepNow?.type === 'personDraw' && routineStepNow.group ? routineStepNow.group : personGroup) || groupsRef.current[0] || '';
+
+  /** 操作提示（右上角面板底部）：原界面上的按键提示统一收拢于此，随界面状态变化 */
+  const freeHint = (() => {
+    if (tab === 'lucky' || tab === 'groupRep' || tab === 'couple') {
+      if (drawPhase === 'cover') return '按 O 开始 · 按 P 停止';
+      if (tab === 'couple' && drawPhase === 'done') return '按 4 重新开始';
+      return '';
+    }
+    if (tab === 'groupDraw' || tab === 'personDraw') {
+      if (blockPhase === 'cover') {
+        return blockDrawnKeys.length > 0 ? '按 O 开始 · 按 P 停止 · 按 O 继续下一轮' : '按 O 开始 · 按 P 停止';
+      }
+      if (blockPhase === 'done') {
+        return blockCandidatesRef.current.length ? '按 O 继续下一轮 · 按 7/8 重新开始' : '已全部抽出 · 按 7/8 重新开始';
+      }
+      return '';
+    }
+    if (tab === 'feeling' || tab === 'likeMe') return '↓ 下一对 · ↑ 上一对';
+    return '';
+  })();
   const personCountOptions = Array.from(
     { length: Math.min(26, Math.max(1, wall.filter((u) => u.group === personGroupName).length)) },
     (_, i) => i + 1,
@@ -1379,13 +1401,12 @@ const ActivityOnsite: React.FC = () => {
         </div>
       )}
 
-      {/* 右上角工作区：鼠标悬停显示，移走隐藏（编排执行模式下仅显示操作提示，参数全部来自编排步骤） */}
-      <div className="onsite-tools">
+      {/* 右上角工作区：鼠标悬停显示，移走隐藏；面板内下拉框展开时保持显示（下拉属于面板的一部分） */}
+      <div className={`onsite-tools${toolSelectOpen ? ' tools-open' : ''}`}>
         {routineMode ? (
           <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 8, whiteSpace: 'nowrap' }}>
-            <div>O 开始 · P 停止 · R 重抽本步</div>
-            <div>←/→ 切换步骤 · 9 退出</div>
             <button onClick={exitRoutine} style={toolBtn}>退出编排</button>
+            <div style={{ color: '#ffd700' }}>操作提示：O 开始 · P 停止 · R 重抽本步 · ←/→ 切换步骤 · 9 退出</div>
           </div>
         ) : (
         <div style={{ background: 'rgba(0,0,0,.55)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 10, whiteSpace: 'nowrap' }}>
@@ -1438,6 +1459,7 @@ const ActivityOnsite: React.FC = () => {
                 size="small"
                 value={luckyCount}
                 onChange={blurAfter((v: number) => setLuckyCount(v))}
+                onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 62 }}
                 options={[1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }))}
               />
@@ -1446,6 +1468,7 @@ const ActivityOnsite: React.FC = () => {
                 size="small"
                 value={luckyGender}
                 onChange={blurAfter((v: LuckyGender) => setLuckyGender(v))}
+                onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 78 }}
                 options={LUCKY_GENDER_OPTIONS}
               />
@@ -1459,6 +1482,7 @@ const ActivityOnsite: React.FC = () => {
                 size="small"
                 value={groupDrawCount}
                 onChange={blurAfter((v: number) => setGroupDrawCount(v))}
+                onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 62 }}
                 options={groupsRef.current.map((_, i) => ({ value: i + 1, label: String(i + 1) }))}
               />
@@ -1472,6 +1496,7 @@ const ActivityOnsite: React.FC = () => {
                 size="small"
                 value={personGroup || groupsRef.current[0]}
                 onChange={blurAfter((v: string) => setPersonGroup(v))}
+                onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 88 }}
                 options={groupsRef.current.map((g) => ({ value: g, label: `${g}组` }))}
               />
@@ -1480,6 +1505,7 @@ const ActivityOnsite: React.FC = () => {
                 size="small"
                 value={personDrawCount}
                 onChange={blurAfter((v: number) => setPersonDrawCount(v))}
+                onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 62 }}
                 options={personCountOptions.map((n) => ({ value: n, label: String(n) }))}
               />
@@ -1501,6 +1527,8 @@ const ActivityOnsite: React.FC = () => {
               <button onClick={() => setWallMode('spotlight')} style={wallMode === 'spotlight' ? toolBtnActive : toolBtn}>电影播放</button>
             </div>
           )}
+          {/* 操作提示：原界面上的按键提示统一收拢于此（随界面状态变化） */}
+          {freeHint && <div style={{ color: '#ffd700' }}>操作提示：{freeHint}</div>}
         </div>
         )}
       </div>
@@ -1538,7 +1566,6 @@ const ActivityOnsite: React.FC = () => {
                   </div>
                 )}
                 {tab === 'lucky' && luckyHint && <div style={{ color: '#ffd700', fontSize: '2.8vh' }}>{luckyHint}</div>}
-                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 停止</div>
               </>
             ) : (
               <>
@@ -1583,9 +1610,6 @@ const ActivityOnsite: React.FC = () => {
                     ? `共 ${blockAll.length} 组 · 每轮抽取 ${effGroupDrawCount} 组`
                     : `「${personGroupName}」组 · 每轮抽取 ${effPersonDrawCount} 人`}
                 </div>
-                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>
-                  按 O 开始 · 按 P 停止{blockDrawnKeys.length > 0 ? ' · 按 O 继续下一轮' : ''}
-                </div>
               </>
             ) : (
               <>
@@ -1606,17 +1630,6 @@ const ActivityOnsite: React.FC = () => {
                     );
                   })}
                 </div>
-                {blockPhase === 'done' && (
-                  <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.6vh' }}>
-                    {routineMode
-                      ? (blockCandidatesRef.current.length
-                        ? '按 O 继续下一轮 · 按 → 下一步'
-                        : '已全部抽出 · 按 → 下一步')
-                      : (blockCandidatesRef.current.length
-                        ? '按 O 继续下一轮 · 按 7/8 重新开始'
-                        : '已全部抽出 · 按 7/8 重新开始')}
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -1627,7 +1640,6 @@ const ActivityOnsite: React.FC = () => {
               <>
                 <div className="draw-cover-title">能成时刻</div>
                 <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>从现场嘉宾中随机抽取一对幸运组合</div>
-                <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 O 开始 · 按 P 停止</div>
               </>
             ) : (
               <>
@@ -1668,12 +1680,9 @@ const ActivityOnsite: React.FC = () => {
                   )}
                 </div>
                 {drawPhase === 'done' && drawPairWinner && (
-                  <>
-                    <div style={{ color: '#ffd700', fontSize: '4.5vh', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>
-                      恭喜 {drawPairWinner.female?.nick} × {drawPairWinner.male?.nick}
-                    </div>
-                    <div style={{ color: 'rgba(255,255,255,.5)', fontSize: '2.6vh' }}>按 4 重新开始</div>
-                  </>
+                  <div style={{ color: '#ffd700', fontSize: '4.5vh', fontWeight: 'bold', textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>
+                    恭喜 {drawPairWinner.female?.nick} × {drawPairWinner.male?.nick}
+                  </div>
                 )}
               </>
             )}
@@ -1850,7 +1859,7 @@ const ActivityOnsite: React.FC = () => {
       {/* 照片墙样式（移植自旧系统 activscreen） */}
       <style>{`
         .onsite-tools { position: fixed; top: 0; right: 0; width: 430px; z-index: 100; opacity: 0; transition: opacity .3s; display: flex; align-items: flex-start; justify-content: flex-end; padding: 10px 14px; }
-        .onsite-tools:hover { opacity: 1; }
+        .onsite-tools:hover, .onsite-tools.tools-open { opacity: 1; }
         .onsite-photo { position: absolute; transition: transform .5s, opacity .5s, left .5s ease, top .5s ease, width .5s ease; opacity: .85; }
         .onsite-photo img { width: 100%; height: auto; display: block; border-radius: 1.3vh; border: solid 2px rgba(255,255,255,.6); box-shadow: 0 3px 8px rgba(0,0,0,.35); }
         .onsite-photo.focus { transform: translate(calc(-50% + var(--fx,0px)), calc(-50% + var(--fy,0px))) scale(var(--fscale,2)) rotate(0deg) !important; opacity: 1; }
