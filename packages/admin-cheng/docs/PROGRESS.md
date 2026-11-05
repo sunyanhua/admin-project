@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-11-05 | 下拉选中后按键误开下拉框修复（blurAfter 延迟失焦 + 按键守卫兜底）；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite | 9463dc5（构建产物未提交） |
 | 2026-11-05 | 现场大屏操作体验系列——①面板下拉框展开时面板保持显示、按键提示统一收拢右上角「操作提示：」；②全站用户卡片统一样式（照片+底部昵称条、序号贴在前、去角落徽章，em 比例统一），单组选人卡片加宽 12vw；③组中选组/单组选人跳动改为全体候选错落忽明忽暗，P 停止闪烁直接定格（选中间距约 220ms）；④性别控制：幸运之星默认混搭、单组选人新增性别下拉（默认混搭）、各组代表固定混搭（名额随机分配到组、组内随机抽）；⑤编排·组中选组指定结果仅执行一轮（揭晓后 O 不再续抽）；⑥各组代表随机性修复（消除每次结果相同）；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite + OnsiteRoutineTab + onsiteRoutine.utils + luckyPools.utils + tests | 8fcf713、302fa1e、e58aa7b、a9ddba6、92e6bbb、bb2ef5b、9904c90、dbc27d0（构建产物未提交） |
 | 2026-11-05 | 现场签到小程序码 scene.url 改为 H5 中转页——`/pages/h5/index?url=encodeURIComponent(https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id={id})`（替换原 `/pages/activity-onsite/index?id={id}`，扫码后由小程序 H5 中转页打开该地址）；**正式版+测试版构建发布**（build:prod / build:test，产物待上传） | ActivityEditModal | f8fbec7、28c35c4、5397367（构建产物未提交） |
 | 2026-11-03 | 现场大屏流程编排——现场管理弹窗新增「流程编排」TAB（步骤类型+参数+备注，添加/删除/拖拽排序，存 onsite_config.routine 原对象透传）；大屏按 9 进入编排执行（顶部「第 x/N 步」+流程简介，操作提示在右上角隐藏悬停区）；组中选组支持指定结果（fixed 多选：指定后抽组数=所选中组数，P 定格按指定顺序落地仅首轮生效、不泄露结果，后续轮次恢复随机）；按键与普通操作一致（O 开始/P 停止/R 重抽/←→ 切换/9 退出）；组名已删改/无候选时提示跳过不卡流程；全站「减速停止」文案统一「停止」 | ActivityOnsite + OnsiteRoutineTab + onsiteRoutine.utils + OnsiteManageModal + tests | 9dafaf0、344bd10、06daf51、fec1905（构建产物未提交） |
