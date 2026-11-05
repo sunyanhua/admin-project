@@ -81,21 +81,18 @@ const buildWallItems = (photos: WallUser[], sizeOverride?: number): WallItem[] =
 };
 
 /** 默契度排名单人侧：现场序号 + 图片 + 昵称（right=女生侧，内容靠右对齐；已分组显示分组标签） */
-const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?: number; group?: string; right?: boolean }> = ({ nick, photo, gender, number, group, right }) => (
-  <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: '1.2vw', flexDirection: right ? 'row-reverse' : 'row' }}>
-    {photo ? (
-      <img src={photo} alt={nick} style={{ width: '9vh', height: '9vh', borderRadius: '1vh', objectFit: 'cover', border: 'solid 2px rgba(255,255,255,.6)', flexShrink: 0 }} />
-    ) : (
-      <div style={{ width: '9vh', height: '9vh', borderRadius: '1vh', background: 'rgba(255,255,255,.15)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.5)', fontSize: '3vh' }}>
-        {gender === 1 ? '男' : gender === 2 ? '女' : '?'}
-      </div>
-    )}
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6vw', minWidth: 0, flexDirection: right ? 'row-reverse' : 'row' }}>
-      <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '4.5vh', height: '4.5vh', borderRadius: '50%', background: gender === 1 ? '#0088cc' : '#eb5482', color: '#fff', fontSize: '2.4vh', fontWeight: 'bold', padding: '0 0.8vh', boxSizing: 'border-box', flexShrink: 0 }}>
-        {number ?? '-'}
-      </span>
-      <span style={{ color: '#fff', fontSize: '3vh', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
-        {group && <span className="onsite-group">{group}组</span>}
+const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?: number; right?: boolean }> = ({ nick, photo, gender, number, right }) => (
+  <div style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: right ? 'flex-end' : 'flex-start' }}>
+    <div style={{ position: 'relative', width: '11vw' }}>
+      {photo ? (
+        <img src={photo} alt={nick} style={{ width: '100%', aspectRatio: '3 / 4', objectFit: 'cover', borderRadius: '1vh', border: 'solid 2px rgba(255,255,255,.6)', display: 'block' }} />
+      ) : (
+        <div style={{ width: '100%', aspectRatio: '3 / 4', borderRadius: '1vh', background: 'rgba(255,255,255,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,.5)', fontSize: '4vh' }}>
+          {gender === 1 ? '男' : gender === 2 ? '女' : '?'}
+        </div>
+      )}
+      <span className="onsite-nick" style={{ fontSize: '2.6vh' }}>
+        <span className={`onsite-number-inline${gender === 1 ? ' gender-male' : gender === 2 ? ' gender-female' : ''}`}>{number ?? '-'}</span>
         {nick}
       </span>
     </div>
@@ -128,14 +125,15 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'active' | 'win' 
       <div style={{ position: 'relative', width: '10vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition, opacity }}>
         <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block', filter, transition: 'filter .3s' }} />
         {mask !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: mask }} />}
-        <span className={`onsite-number gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>
-        {item.group && <span className="onsite-group onsite-group-corner" style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.group}组</span>}
         <span className="onsite-nick" style={{
           opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
           transition: 'opacity .3s, background .3s, color .3s',
           // 选中：昵称金色底 + 深色加粗大字，视觉突出
           ...(state === 'win' ? { background: '#ffd700', color: '#3d2a00', fontWeight: 800, fontSize: '1.35vw' } : {}),
-        }}>{item.label}</span>
+        }}>
+          <span className={`onsite-number-inline gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>
+          {item.label}
+        </span>
       </div>
     );
   }
@@ -1578,9 +1576,10 @@ const ActivityOnsite: React.FC = () => {
                             {strip.map((u, j) => (
                               <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
                                 <img src={u.photo} alt={u.nick} />
-                                <span className={`onsite-number gender-${u.gender}`}>{u.number || '-'}</span>
-                                {u.group && <span className="onsite-group onsite-group-corner">{u.group}组</span>}
-                                <span className="draw-nick">{u.nick}</span>
+                                <span className="draw-nick">
+                                  <span className={`onsite-number-inline gender-${u.gender}`}>{u.number || '-'}</span>
+                                  {u.nick}
+                                </span>
                               </div>
                             ))}
                           </div>
@@ -1652,9 +1651,10 @@ const ActivityOnsite: React.FC = () => {
                           {femaleStrip.map((u, i) => (
                             <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
-                              <span className="onsite-number gender-female">{u.number || '-'}</span>
-                              {u.group && <span className="onsite-group onsite-group-corner">{u.group}组</span>}
-                              <span className="draw-nick">{u.nick}</span>
+                              <span className="draw-nick">
+                                <span className="onsite-number-inline gender-female">{u.number || '-'}</span>
+                                {u.nick}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -1669,9 +1669,10 @@ const ActivityOnsite: React.FC = () => {
                           {maleStrip.map((u, i) => (
                             <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
                               <img src={u.photo} alt={u.nick} />
-                              <span className="onsite-number gender-male">{u.number || '-'}</span>
-                              {u.group && <span className="onsite-group onsite-group-corner">{u.group}组</span>}
-                              <span className="draw-nick">{u.nick}</span>
+                              <span className="draw-nick">
+                                <span className="onsite-number-inline gender-male">{u.number || '-'}</span>
+                                {u.nick}
+                              </span>
                             </div>
                           ))}
                         </div>
@@ -1699,18 +1700,23 @@ const ActivityOnsite: React.FC = () => {
                   {/* key 按嘉宾身份：晋升时当前层重建挂载、无过渡直接显示，避免从 0 重淡入造成闪白 */}
                   {current && (
                     <div key={`cur-${current.userId}-${current.number}`} style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 0 : 1, transition: 'opacity .5s ease' }}>
-                      <img src={current.photo} alt={current.nick} style={{ height: 'calc(100% - 4.5vh)', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
-                      <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
-                        {current.group && <span className="onsite-group">{current.group}组</span>}
-                        {current.number || '-'} - {current.nick}
+                      <div style={{ position: 'relative', display: 'inline-block', height: '100%' }}>
+                        <img src={current.photo} alt={current.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)', display: 'block' }} />
+                        <span className="onsite-nick" style={{ fontSize: '3vh', fontWeight: 'bold', padding: '.3em .6em', borderRadius: '0 0 1.3vh 1.3vh' }}>
+                          <span className={`onsite-number-inline gender-${current.gender}`}>{current.number || '-'}</span>
+                          {current.nick}
+                        </span>
                       </div>
                     </div>
                   )}
                   {next && (
                     <div key={`next-${next.userId}-${next.number}`} style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 1 : 0, transition: 'opacity .5s ease' }}>
-                      <img src={next.photo} alt={next.nick} style={{ height: 'calc(100% - 4.5vh)', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)' }} />
-                      <div style={{ marginTop: '1.5vh', color: '#fff', fontSize: '3vh', fontWeight: 'bold' }}>
-                        {next.number || '-'} - {next.nick}
+                      <div style={{ position: 'relative', display: 'inline-block', height: '100%' }}>
+                        <img src={next.photo} alt={next.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)', display: 'block' }} />
+                        <span className="onsite-nick" style={{ fontSize: '3vh', fontWeight: 'bold', padding: '.3em .6em', borderRadius: '0 0 1.3vh 1.3vh' }}>
+                          <span className={`onsite-number-inline gender-${next.gender}`}>{next.number || '-'}</span>
+                          {next.nick}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -1763,13 +1769,13 @@ const ActivityOnsite: React.FC = () => {
                 const female = rankUserOf(c.female);
                 return (
                   <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '2vw', background: 'rgba(0,0,0,.35)', borderRadius: '1.3vh', padding: '1.8vh 2.5vw', marginBottom: '1.5vh' }}>
-                    <RankSide nick={male.nick} photo={male.photo} gender={male.gender} number={male.number} group={male.group} />
+                    <RankSide nick={male.nick} photo={male.photo} gender={male.gender} number={male.number} />
                     <div style={{ textAlign: 'center', minWidth: '11vw', flexShrink: 0 }}>
                       <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.4vh' }}>第 {i + 1} 名</div>
                       <div style={{ fontSize: '5vh', color: '#ffd700', fontWeight: 'bold', lineHeight: 1.2 }}>{c.diff_total != null ? 100 - c.diff_total : '—'}</div>
                       <div style={{ color: 'rgba(255,255,255,.6)', fontSize: '2.2vh' }}>默契度</div>
                     </div>
-                    <RankSide nick={female.nick} photo={female.photo} gender={female.gender} number={female.number} group={female.group} right />
+                    <RankSide nick={female.nick} photo={female.photo} gender={female.gender} number={female.number} right />
                   </div>
                 );
               })
@@ -1795,10 +1801,11 @@ const ActivityOnsite: React.FC = () => {
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
                   >
-                    <span className="onsite-number gender-male">{p.number || '-'}</span>
-                    {p.group && <span className="onsite-group onsite-group-corner">{p.group}组</span>}
                     <img src={p.photo} alt={p.nick} />
-                    <span className="onsite-nick">{p.nick}</span>
+                    <span className="onsite-nick">
+                      <span className="onsite-number-inline gender-male">{p.number || '-'}</span>
+                      {p.nick}
+                    </span>
                   </div>
                 );
               })}
@@ -1842,10 +1849,11 @@ const ActivityOnsite: React.FC = () => {
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
                   >
-                    <span className="onsite-number gender-female">{p.number || '-'}</span>
-                    {p.group && <span className="onsite-group onsite-group-corner">{p.group}组</span>}
                     <img src={p.photo} alt={p.nick} />
-                    <span className="onsite-nick">{p.nick}</span>
+                    <span className="onsite-nick">
+                      <span className="onsite-number-inline gender-female">{p.number || '-'}</span>
+                      {p.nick}
+                    </span>
                   </div>
                 );
               })}
@@ -1868,20 +1876,15 @@ const ActivityOnsite: React.FC = () => {
         /* 心动排名：当前配对的心形卡片（居中放大由行内样式控制）；文字行与徽章等比例放大 2 倍 */
         .onsite-photo.heart-active { opacity: 1; }
         .onsite-photo.heart-active img { border-color: #e04d2c; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
-        .onsite-photo.heart-active .onsite-nick { font-size: 2.2vw; padding: 4px 8px; }
-        .onsite-photo.heart-active .onsite-number { min-width: 4.8vw; height: 4.8vw; font-size: 2.4vw; }
-        .onsite-photo.heart-active .onsite-group-corner { font-size: 2vw; line-height: 3.8vw; }
+        .onsite-photo.heart-active .onsite-nick { font-size: 2.2vw; padding: .3em .6em; }
         .onsite-number { position: absolute; left: 5%; top: 4%; min-width: 2.4vw; height: 2.4vw; padding: 0 .4vw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e04d2c; color: #fff; font-size: 1.2vw; font-weight: bold; line-height: 1; white-space: nowrap; z-index: 2; }
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
-        /* 嘉宾展示卡片：序号贴内联在昵称行前（较文字略大，向上微调与文字视觉对齐） */
+        /* 全站用户卡片统一：序号贴内联在昵称行前（em 比例随卡片整体大小等比缩放） */
         .onsite-number-inline { display: inline-flex; align-items: center; justify-content: center; min-width: 1.35em; height: 1.35em; padding: 0 .3em; box-sizing: border-box; border-radius: 50%; background: #e04d2c; color: #fff; font-size: 1em; font-weight: bold; line-height: 1; vertical-align: middle; position: relative; top: -0.12em; margin-right: .45em; white-space: nowrap; }
         .onsite-number-inline.gender-male { background: #0088cc; }
         .onsite-number-inline.gender-female { background: #eb5482; }
-        .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        /* 分组徽章：金色胶囊，与序号徽章同款风格（相对字号随场景缩放） */
-        .onsite-group { display: inline-block; padding: 0 .5em; margin-right: .3em; border-radius: .5em; background: #ffd700; color: #3d2a00; font-weight: bold; font-size: .72em; line-height: 1.5; }
-        .onsite-group-corner { position: absolute; right: 5%; top: 4%; z-index: 2; font-size: 1vw; line-height: 1.9vw; }
+        .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: .3em .5em; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         /* 抽奖环节（幸运之星/能成时刻）：转轮式滚动，照片首尾相连 */
         .draw-cover-title { font-size: 9vh; font-weight: 800; color: #ffd700; letter-spacing: 8px; text-shadow: 0 4px 24px rgba(0,0,0,.5); }
         /* 卡片比例 3:4（宽:高）；边框/光晕在外框，内窗口无边框且高度与卡片完全一致 */
@@ -1893,8 +1896,7 @@ const ActivityOnsite: React.FC = () => {
         .draw-reel-item { position: relative; width: 100%; height: 24vw; flex-shrink: 0; }
         .draw-reel-frame.couple .draw-reel-item { height: 20vw; }
         .draw-reel-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .draw-reel-item .onsite-number { left: 2%; top: 2%; }
-        .draw-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 6px; text-align: center; background: rgba(0,0,0,.5); color: #fff; font-size: 1.6vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .draw-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: .3em .5em; text-align: center; background: rgba(0,0,0,.5); color: #fff; font-size: 1.6vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .draw-reel-frame.win { border-color: #ffd700; box-shadow: 0 0 50px rgba(255,215,0,.8); }
       `}</style>
     </div>
