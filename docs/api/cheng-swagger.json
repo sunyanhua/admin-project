@@ -4644,6 +4644,18 @@
                         "in": "query"
                     },
                     {
+                        "type": "integer",
+                        "description": "结婚证筛选：0=无 1=有",
+                        "name": "has_marriage_certificate",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "排序：default=提交倒序（默认）；cert_supplemented_desc=最后补充倒序",
+                        "name": "sort",
+                        "in": "query"
+                    },
+                    {
                         "type": "string",
                         "description": "关键字（双方昵称模糊匹配）",
                         "name": "keyword",
@@ -17470,7 +17482,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.RegisterUserItem"
                                             }
                                         }
                                     }
@@ -17669,6 +17681,162 @@
                         "description": "未认证",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/invite-candidates": {
+            "get": {
+                "description": "返回当前牵线用户亲友团成员或神助攻过的、已达 1314 且无进行中/已通过报喜的配对；排除已邀请。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-邀请"
+                ],
+                "summary": "可邀请报喜的配对",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.InviteCandidateItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/invites": {
+            "post": {
+                "description": "邀请亲友团/神助攻过的配对报喜（站内消息通知男女双方）；同一配对仅一次，每日最多 5 对。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-邀请"
+                ],
+                "summary": "邀请报喜",
+                "parameters": [
+                    {
+                        "description": "邀请参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateInviteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "邀请成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateInviteResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/invites/mine": {
+            "get": {
+                "description": "分页查询当前牵线用户发出的邀请（按邀请时间倒序）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-邀请"
+                ],
+                "summary": "我发出的报喜邀请",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.MyInviteItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -17925,6 +18093,65 @@
                     },
                     "401": {
                         "description": "未登录",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/{id}/marriage-certificate": {
+            "put": {
+                "description": "仅报喜发起人、审核通过且此前未填写结婚证时允许补充；补充不影响审核状态，仅后台可见。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜模块"
+                ],
+                "summary": "补充结婚证",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "结婚证附件",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SupplementMarriageCertificateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "补充成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SupplementMarriageCertificateResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -24430,6 +24657,26 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.RegisterUserItem": {
+            "type": "object",
+            "properties": {
+                "extra_data": {
+                    "type": "object"
+                },
+                "match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfileInfo"
+                },
+                "match_stats": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.MatchStatsInfo"
+                },
+                "profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_activity_model.RegistrationResponse": {
             "type": "object",
             "properties": {
@@ -26593,6 +26840,10 @@
                 "gift_set_at": {
                     "type": "string"
                 },
+                "has_marriage_certificate": {
+                    "description": "HasMarriageCertificate 是否已有结婚证（列表筛选/展示；详情返回附件 URL）。",
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -26620,6 +26871,10 @@
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
+                "marriage_certificate_supplemented_at": {
+                    "description": "MarriageCertificateSupplementedAt 结婚证最后补充时间（NULL=未补充）。",
+                    "type": "string"
+                },
                 "matching": {
                     "type": "integer"
                 },
@@ -26634,6 +26889,10 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus"
+                },
+                "submitted_at": {
+                    "description": "SubmittedAt 提交时间（首次提交/重提刷新；默认排序键）。",
+                    "type": "string"
                 },
                 "submitter": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationUserData"
@@ -26735,6 +26994,10 @@
                 "gift_set_at": {
                     "type": "string"
                 },
+                "has_marriage_certificate": {
+                    "description": "HasMarriageCertificate 是否已有结婚证（列表筛选/展示；详情返回附件 URL）。",
+                    "type": "boolean"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -26753,11 +27016,19 @@
                 "male_nickname": {
                     "type": "string"
                 },
+                "marriage_certificate_supplemented_at": {
+                    "description": "MarriageCertificateSupplementedAt 结婚证最后补充时间（NULL=未补充）。",
+                    "type": "string"
+                },
                 "matching": {
                     "type": "integer"
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus"
+                },
+                "submitted_at": {
+                    "description": "SubmittedAt 提交时间（首次提交/重提刷新；默认排序键）。",
+                    "type": "string"
                 },
                 "submitter_id": {
                     "type": "string"
@@ -27324,6 +27595,54 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateInviteRequest": {
+            "type": "object",
+            "required": [
+                "couple_id"
+            ],
+            "properties": {
+                "couple_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateInviteResponse": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "type": "string"
+                },
+                "invite_id": {
+                    "type": "string"
+                },
+                "invited_at": {
+                    "type": "string"
+                },
+                "remaining_today": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.InviteCandidateItem": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "type": "string"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "matching": {
+                    "type": "integer"
+                },
+                "source": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationInviteSource"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.MyCongratulationResponse": {
             "type": "object",
             "properties": {
@@ -27380,6 +27699,29 @@
                 },
                 "updated_at": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.MyInviteItem": {
+            "type": "object",
+            "properties": {
+                "couple_id": {
+                    "type": "string"
+                },
+                "female": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "invite_id": {
+                    "type": "string"
+                },
+                "invited_at": {
+                    "type": "string"
+                },
+                "male": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
+                },
+                "source": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationInviteSource"
                 }
             }
         },
@@ -27615,6 +27957,37 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
                     }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SupplementMarriageCertificateRequest": {
+            "type": "object",
+            "required": [
+                "marriage_certificate"
+            ],
+            "properties": {
+                "marriage_certificate": {
+                    "description": "MarriageCertificate 结婚证（1 张；仅审核通过且此前未填写时允许补充）。",
+                    "type": "array",
+                    "maxItems": 1,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
+                    }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SupplementMarriageCertificateResponse": {
+            "type": "object",
+            "properties": {
+                "has_marriage_certificate": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "marriage_certificate_supplemented_at": {
+                    "type": "string"
                 }
             }
         },
@@ -35503,6 +35876,30 @@
                 "CommonStatusDisabled"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationInviteSource": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "CongratulationInviteSourceBoth": "两者",
+                "CongratulationInviteSourceDivine": "神助攻",
+                "CongratulationInviteSourceRelatives": "亲友团"
+            },
+            "x-enum-descriptions": [
+                "亲友团",
+                "神助攻",
+                "两者"
+            ],
+            "x-enum-varnames": [
+                "CongratulationInviteSourceRelatives",
+                "CongratulationInviteSourceDivine",
+                "CongratulationInviteSourceBoth"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationStatus": {
             "type": "integer",
             "format": "int32",
@@ -35978,6 +36375,7 @@
                 103,
                 104,
                 105,
+                106,
                 200,
                 201,
                 202,
@@ -35990,6 +36388,7 @@
             "x-enum-comments": {
                 "NotificationSceneActivityAudit": "活动报名审核",
                 "NotificationSceneActivityStartReminder": "活动开始提醒（调度器触发）",
+                "NotificationSceneCongratulationInvite": "收到报喜邀请",
                 "NotificationSceneCongratulationTribute": "收到报喜站内礼物",
                 "NotificationSceneCouple1314": "达成 1314",
                 "NotificationSceneFollow": "关注",
@@ -36010,6 +36409,7 @@
                 "活动报名审核",
                 "活动开始提醒（调度器触发）",
                 "收到报喜站内礼物",
+                "收到报喜邀请",
                 "心动",
                 "关注",
                 "私信",
@@ -36027,6 +36427,7 @@
                 "NotificationSceneActivityAudit",
                 "NotificationSceneActivityStartReminder",
                 "NotificationSceneCongratulationTribute",
+                "NotificationSceneCongratulationInvite",
                 "NotificationSceneHeartbeat",
                 "NotificationSceneFollow",
                 "NotificationSceneMessage",
