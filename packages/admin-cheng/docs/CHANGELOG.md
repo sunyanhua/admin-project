@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-11-05 21:05 | a9f22ea | style: 嘉宾展示卡片调整——去掉右上角分组名徽章；序号贴从左上角移到昵称行内前面（inline-flex 圆形徽章，高度与文字行一致，男女蓝红配色） |
 | 2026-11-05 20:47 | 8fcf713 | style: 大屏操作面板两处调整——①右上角面板内下拉框展开时面板保持显示（下拉属于面板一部分，操作时不隐藏）；②界面上按键提示（按 O 开始/按 P 停止/继续下一轮/重新开始/下一对等）全部移除，统一收拢到右上角面板底部「操作提示：」行（随界面状态变化，编排模式含 O/P/R/←→/9 提示） |
 | 2026-11-05 10:45 | 28c35c4 | fix: 现场签到小程序码 scene.url 改为 H5 中转页——`/pages/h5/index?url=encodeURIComponent(https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id={id})`（替换原 `/pages/activity-onsite/index?id={id}`）；撤销上一版弹窗单独展示 H5 链接的做法 |
 | 2026-11-05 10:30 | f8fbec7 | feat: 现场签到二维码弹窗增加 H5 地址展示（可一键复制）——`https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id={id}`，与预热活动（活动详情）二维码 basePage+h5Page 生成方式一致；小程序码生成保持不变 |
