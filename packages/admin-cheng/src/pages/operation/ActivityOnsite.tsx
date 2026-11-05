@@ -941,7 +941,7 @@ const ActivityOnsite: React.FC = () => {
     tick();
   }, [tab, clearDrawTimer]);
 
-  /** P：明暗切换减速变慢，随后逐一定格中奖者（变亮放大；选中之间间距尽量短） */
+  /** P：停止闪烁后逐一定格中奖者（变亮放大；选中之间间距尽量短） */
   const slowBlock = useCallback(() => {
     if ((tab !== 'groupDraw' && tab !== 'personDraw') || blockPhaseRef.current !== 'rolling') return;
     clearDrawTimer();
@@ -955,22 +955,10 @@ const ActivityOnsite: React.FC = () => {
     const count = fixed ? fixed.length : (blockCountRef.current ?? (tab === 'groupDraw' ? groupDrawCount : personDrawCount));
     const take = Math.min(Math.max(1, count), candidates.length);
     const winners = fixed ? fixed.slice(0, take) : [...candidates].sort(() => Math.random() - 0.5).slice(0, take);
+    // 停止闪烁：全部候选即刻变暗
+    setBlockBright(new Set());
     const locked: string[] = [];
-    // 随机明暗一帧（已定格的中奖者保持亮起）
-    const flicker = () => {
-      const next = new Set<string>(locked);
-      for (const k of blockCandidatesRef.current) {
-        if (Math.random() < 0.35) next.add(k);
-      }
-      setBlockBright(next);
-    };
-    // ① 减速：明暗切换间隔逐档增大（约 220ms → 1.3s），4 档后开始定格
-    const slow = (i: number) => {
-      if (i >= 4) { lock(0); return; }
-      flicker();
-      drawTimerRef.current = setTimeout(() => slow(i + 1), 220 + i * 360);
-    };
-    // ② 逐一定格：中奖者 2 档快速明暗后变亮放大锁定；选中之间间距尽量短（约 220ms）
+    // 逐一定格：中奖者变亮放大锁定、从候选中移除；选中之间间距尽量短（约 220ms）
     const lock = (wi: number) => {
       if (wi >= winners.length) {
         // 本轮完成：定格块移入已抽，候选保持原始顺序
@@ -984,22 +972,14 @@ const ActivityOnsite: React.FC = () => {
         return;
       }
       const winner = winners[wi];
-      const land = (i: number) => {
-        if (i >= 2) {
-          // 锁定：变亮放大定格、从候选中移除（后续跳动跳过该块）
-          locked.push(winner);
-          setBlockRoundWinners([...locked]);
-          setBlockBright(new Set(locked));
-          blockCandidatesRef.current = blockCandidatesRef.current.filter((k) => k !== winner);
-          drawTimerRef.current = setTimeout(() => lock(wi + 1), 220);
-          return;
-        }
-        flicker();
-        drawTimerRef.current = setTimeout(() => land(i + 1), 160);
-      };
-      land(0);
+      locked.push(winner);
+      setBlockRoundWinners([...locked]);
+      setBlockBright(new Set(locked));
+      blockCandidatesRef.current = blockCandidatesRef.current.filter((k) => k !== winner);
+      drawTimerRef.current = setTimeout(() => lock(wi + 1), 220);
     };
-    slow(0);
+    // 短暂停顿后开始定格（P 按下与首个中奖之间留一点悬念）
+    drawTimerRef.current = setTimeout(() => lock(0), 320);
   }, [tab, clearDrawTimer, groupDrawCount, personDrawCount]);
 
   // 单组选人：切换指定组时重置抽取
