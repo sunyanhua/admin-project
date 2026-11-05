@@ -164,10 +164,13 @@ const demoAvatar = (i: number, gender: 'male' | 'female') => {
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { error: showError } = useAppNotification();
-  /** 下拉选中后自动失焦，避免后续数字快捷键被下拉框拦截 */
+  /** 下拉选中后自动失焦，避免后续快捷键被下拉框拦截（延迟执行，防止被 antd 关闭下拉时的回焦覆盖） */
   const blurAfter = <T,>(fn: (v: T) => void) => (v: T) => {
     fn(v);
-    (document.activeElement as HTMLElement | null)?.blur?.();
+    setTimeout(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (el?.closest('.ant-select')) el.blur();
+    }, 150);
   };
   const [tab, setTab] = useState<'list' | 'feeling' | 'likeMe' | 'lucky' | 'couple' | 'cpRank' | 'groupRep' | 'groupDraw' | 'personDraw'>('list');
   const [scale, setScale] = useState(1);
@@ -1318,8 +1321,12 @@ const ActivityOnsite: React.FC = () => {
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
       if (e.repeat) return;
-      // 配置下拉框打开/聚焦期间不响应快捷键，避免误触开始、停止或重建转轮
-      if ((e.target as HTMLElement | null)?.closest('.ant-select, .ant-select-dropdown')) return;
+      // 配置下拉框打开/聚焦期间不响应快捷键；若焦点残留在面板下拉框上（选中后未失焦），先失焦再忽略本次按键
+      if ((e.target as HTMLElement | null)?.closest('.ant-select, .ant-select-dropdown')) {
+        const el = document.activeElement as HTMLElement | null;
+        if (el?.closest('.ant-select')) el.blur();
+        return;
+      }
       // 编排执行模式：模式键 0-8 失效，O 开始、P 停止、R 重抽、←/→ 切换步骤、9/Esc 退出（与自由模式按键一致）
       if (routineModeRef.current) {
         if (e.key === '9' || e.key === 'Escape') exitRoutine();
