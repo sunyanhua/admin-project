@@ -1742,10 +1742,11 @@ const ActivityOnsite: React.FC = () => {
                   className={`onsite-photo${i === focusIdx ? ' focus' : ''}`}
                   style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: i === focusIdx ? 50 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
                 >
-                  <span className={`onsite-number gender-${p.gender}`}>{p.number || '-'}</span>
-                  {p.group && <span className="onsite-group onsite-group-corner">{p.group}组</span>}
                   <img src={p.photo} alt={p.nick} onLoad={clampWall} />
-                  <span className="onsite-nick">{p.nick}</span>
+                  <span className="onsite-nick">
+                    <span className={`onsite-number-inline gender-${p.gender}`}>{p.number || '-'}</span>
+                    {p.nick}
+                  </span>
                 </div>
               ))}
             </div>
@@ -1873,6 +1874,10 @@ const ActivityOnsite: React.FC = () => {
         .onsite-number { position: absolute; left: 5%; top: 4%; min-width: 2.4vw; height: 2.4vw; padding: 0 .4vw; box-sizing: border-box; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #e04d2c; color: #fff; font-size: 1.2vw; font-weight: bold; line-height: 1; white-space: nowrap; z-index: 2; }
         .onsite-number.gender-male { background: #0088cc; }
         .onsite-number.gender-female { background: #eb5482; }
+        /* 嘉宾展示卡片：序号贴内联在昵称行前，高度与文字行一致 */
+        .onsite-number-inline { display: inline-flex; align-items: center; justify-content: center; min-width: 1.15em; height: 1.15em; padding: 0 .25em; box-sizing: border-box; border-radius: 50%; background: #e04d2c; color: #fff; font-size: .85em; font-weight: bold; line-height: 1; vertical-align: middle; margin-right: .45em; white-space: nowrap; }
+        .onsite-number-inline.gender-male { background: #0088cc; }
+        .onsite-number-inline.gender-female { background: #eb5482; }
         .onsite-nick { position: absolute; left: 0; right: 0; bottom: 0; padding: 2px 4px; text-align: center; background: rgba(0,0,0,.45); color: #fff; font-size: 1.1vw; border-radius: 0 0 1.3vh 1.3vh; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         /* 分组徽章：金色胶囊，与序号徽章同款风格（相对字号随场景缩放） */
         .onsite-group { display: inline-block; padding: 0 .5em; margin-right: .3em; border-radius: .5em; background: #ffd700; color: #3d2a00; font-weight: bold; font-size: .72em; line-height: 1.5; }
