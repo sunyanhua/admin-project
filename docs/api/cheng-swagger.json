@@ -5996,6 +5996,311 @@
                 }
             }
         },
+        "/admin/v1/bizops/idverify/price-rules": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询价格规则，按生效开始时间倒序。价格单位为金币，price_coins=0 表示免费。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证管理"
+                ],
+                "summary": "实人认证价格规则列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "启用状态：0=启用 1=停用（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字（名称/备注模糊匹配）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.PriceRuleItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "新增价格规则。启用状态的规则时间区间不可与其它启用规则重叠（42226）；同一时刻仅一条启用规则生效。\nprice_coins=0 表示免费；original_price_coins=0 表示无原价。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证管理"
+                ],
+                "summary": "新增实人认证价格规则",
+                "parameters": [
+                    {
+                        "description": "价格规则参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.CreatePriceRuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.PriceRuleItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/idverify/price-rules/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "PATCH 语义：仅传需修改字段，未传字段保持原值。启用状态的规则时间区间不可与其它启用规则重叠（42226）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证管理"
+                ],
+                "summary": "更新实人认证价格规则",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "价格规则 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "价格规则修改参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.UpdatePriceRuleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.PriceRuleItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "价格规则不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/idverify/records": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询认证记录，按创建时间倒序。响应不含真实姓名/身份证号/CertifyUrl。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证管理"
+                ],
+                "summary": "实人认证记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "记录状态：0=待支付 1=待认证 2=已通过 3=重试耗尽 4=已关闭 5=已退款（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户 ID（不传=全部）",
+                        "name": "user_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RecordItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/lottery/deployment/active": {
             "get": {
                 "description": "查询当前全部活跃投放记录（只读视图——未被抽走的 deployment 记录，最多 1000 条）。",
@@ -11826,6 +12131,762 @@
                     },
                     "403": {
                         "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/pay/coin-products": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询代币充值档位，按 sort_order 升序。价格单位：分。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "代币充值档位列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "启用状态：0=启用 1=停用（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字（名称/微信商品 ID 模糊匹配）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinProductItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "新增档位。mp_product_id 为微信 MP 后台商品 ID，全局唯一。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "新增代币充值档位",
+                "parameters": [
+                    {
+                        "description": "档位参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CreateCoinProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinProductItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/pay/coin-products/{id}": {
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "PATCH 语义：仅传需修改字段，未传字段保持原值。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "更新代币充值档位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "档位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "档位修改参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.UpdateCoinProductRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinProductItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "档位不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/pay/coin-recharges": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询代币充值记录，按创建时间倒序。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "代币充值记录列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "充值状态：0=处理中 1=成功 2=失败（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户 ID（不传=全部）",
+                        "name": "user_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminCoinRechargeItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/pay/orders": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询支付订单，按创建时间倒序。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "支付订单列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "业务类型：2=报喜现金红包 3=代币充值 4=实人认证（不传=全部）",
+                        "name": "biz_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "订单状态：0=待支付 1=已支付 2=已退款 3=已关闭（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "用户 ID（不传=全部）",
+                        "name": "user_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminOrderItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/pay/refunds": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询退款流水，按创建时间倒序。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "退款流水列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "支付订单 ID（不传=全部）",
+                        "name": "order_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "退款状态：0=处理中 1=退款成功 2=退款失败（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminRefundItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/pay/virtual-configs": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "分页查询虚拟支付配置，按更新时间倒序。响应不含任何密钥，仅以 has_* 布尔值标识是否已配置。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "虚拟支付配置列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "启用状态：0=启用 1=停用（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "关键字（offer_id/app_id/备注模糊匹配）",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.VirtualPayConfigListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "新增配置。同一 app_id + env 唯一；启用（status=0）时自动停用同 app_id 的其他启用配置。\n敏感凭据字段按要求通过请求体提交并由服务端 AES-256-GCM 加密存储，本接口在 Swagger 中不展开任何凭据字段。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "新增虚拟支付配置",
+                "parameters": [
+                    {
+                        "description": "配置参数（凭据字段不在文档中展开）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.VirtualPayConfigDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或配置已存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/pay/virtual-configs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "按 ID 查询配置。响应不含任何密钥，仅以 has_* 布尔值标识是否已配置。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "虚拟支付配置详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "配置 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.VirtualPayConfigDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "配置不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "PATCH 语义：仅传需修改字段。凭据字段不传=保持不变，显式传入=轮换。\n启用（status=0）时自动停用同 app_id 的其他启用配置；敏感凭据字段不在 Swagger 中展开。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "更新虚拟支付配置",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "配置 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "配置修改参数（凭据字段不在文档中展开）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.VirtualPayConfigDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或配置已存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "配置不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -18479,6 +19540,374 @@
                 }
             }
         },
+        "/api/v1/wxa/idverify/quote": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "返回当前生效价格规则（无生效规则时 rule=null）、用户是否已实名，以及进行中的认证记录摘要。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证"
+                ],
+                "summary": "实人认证报价与状态",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.QuoteResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/idverify/records": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "免费规则直接创建记录并签发 CertifyUrl；付费规则先扣金币（currency_pay）再签发。\n已有进行中记录时按恢复路径返回，不重复扣费。档案不存在 42004、档案实名不一致 42005、已完成实名 42006。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证"
+                ],
+                "summary": "创建/恢复实人认证",
+                "parameters": [
+                    {
+                        "description": "认证参数（姓名/身份证号/阿里云 MetaInfo）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.CreateRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.CreateRecordResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/idverify/records/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "查询认证记录并同步推进阿里云 DescribeFaceVerify 结果（幂等）；通过时回写脱单档案实名并锁定。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证"
+                ],
+                "summary": "查询实人认证结果",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "认证记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RecordResultResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "认证记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/idverify/records/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "免费/未支付订单：关闭记录与订单（status=4），不退款。付费已支付订单：原路退款（cancel_currency_pay），记录 status=5。\n已通过认证不可取消；已关闭/已退款幂等返回终态。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证"
+                ],
+                "summary": "取消未完成认证",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "认证记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取消成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.CancelResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "当前状态不可取消",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "认证记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/idverify/records/{id}/certify-url": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "为待认证/可重试记录重新签发 CertifyUrl，不额外扣费；仅记录归属用户可调用。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证"
+                ],
+                "summary": "重新签发认证 URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "认证记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "认证参数（姓名/身份证号/阿里云 MetaInfo）",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.CreateRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "签发成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.CertifyURLResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "认证记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/idverify/records/{id}/refund": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "对未成功认证的已支付订单发起原路退款（cancel_currency_pay）。已通过认证不可退款。\n免费/0 元订单无款可退，请使用取消接口；已退款幂等返回终态。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证"
+                ],
+                "summary": "未成功认证订单退款",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "认证记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "退款成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RefundResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "当前状态不可退款",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "认证记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/im/block/{user_id}": {
             "post": {
                 "security": [
@@ -21084,6 +22513,216 @@
                     },
                     "401": {
                         "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pay/coin-balance": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "调用微信虚拟支付 query_user_balance，返回当前登录用户在本小程序内的代币余额与赠送余额。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付"
+                ],
+                "summary": "查询微信代币余额",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinBalanceResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pay/coin-products": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "返回启用状态的代币充值档位，按 sort_order 升序。价格单位：分。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付"
+                ],
+                "summary": "可充值代币档位",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinProductResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pay/coin-recharges": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "按档位创建支付订单与充值记录，返回 wx.requestVirtualPayment 所需参数（sign_data/pay_sig/signature/mode）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付"
+                ],
+                "summary": "创建代币充值订单",
+                "parameters": [
+                    {
+                        "description": "充值档位",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CreateCoinRechargeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinRechargeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或档位不可用",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/pay/coin-recharges/{id}/confirm": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "支付成功后调用微信 query_order 确认并发放代币；已成功时幂等返回当前状态。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付"
+                ],
+                "summary": "确认代币充值",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "充值记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "确认成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.ConfirmCoinRechargeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "充值记录不存在",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -28636,6 +30275,362 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.ActiveRecordSummary": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "failed_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "passed": {
+                    "type": "boolean"
+                },
+                "remaining_attempts": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                },
+                "sub_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.CancelResponse": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string"
+                },
+                "record_id": {
+                    "type": "string"
+                },
+                "refund_no": {
+                    "type": "string"
+                },
+                "refunded_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.CertifyURLResponse": {
+            "type": "object",
+            "properties": {
+                "certify_url": {
+                    "type": "string"
+                },
+                "record_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.CreatePriceRuleRequest": {
+            "type": "object",
+            "required": [
+                "end_at",
+                "name",
+                "price_coins",
+                "start_at"
+            ],
+            "properties": {
+                "end_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "original_price_coins": {
+                    "description": "0=无原价",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "price_coins": {
+                    "description": "0=免费",
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "0=启用 1=停用",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.CreateRecordRequest": {
+            "type": "object",
+            "required": [
+                "cert_name",
+                "cert_no",
+                "meta_info"
+            ],
+            "properties": {
+                "cert_name": {
+                    "description": "CertName 真实姓名（明文入参；服务端 AES-256-GCM 加密留存用于回写兜底，不写日志）。",
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "cert_no": {
+                    "description": "CertNo 身份证号（明文入参；服务端 AES-256-GCM 加密留存用于回写兜底，不写日志）。",
+                    "type": "string",
+                    "maxLength": 32
+                },
+                "meta_info": {
+                    "description": "MetaInfo 阿里云 H5 SDK getMetaInfo() 原始 JSON 字符串。",
+                    "type": "string",
+                    "maxLength": 4096
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.CreateRecordResponse": {
+            "type": "object",
+            "properties": {
+                "certify_url": {
+                    "type": "string"
+                },
+                "failed_count": {
+                    "type": "integer"
+                },
+                "is_free": {
+                    "type": "boolean"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "original_price_coins": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "record_id": {
+                    "type": "string"
+                },
+                "remaining_attempts": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.PriceRuleItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "original_price_coins": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.PriceRuleQuote": {
+            "type": "object",
+            "properties": {
+                "end_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_free": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "original_price_coins": {
+                    "type": "integer"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "start_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.QuoteResponse": {
+            "type": "object",
+            "properties": {
+                "active_record": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.ActiveRecordSummary"
+                },
+                "is_real_verified": {
+                    "type": "boolean"
+                },
+                "rule": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.PriceRuleQuote"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.RecordItem": {
+            "type": "object",
+            "properties": {
+                "attempt_count": {
+                    "type": "integer"
+                },
+                "certify_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "failed_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "original_price_coins": {
+                    "type": "integer"
+                },
+                "passed": {
+                    "type": "boolean"
+                },
+                "price_coins": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                },
+                "sub_code": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "verified_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.RecordResultResponse": {
+            "type": "object",
+            "properties": {
+                "failed_count": {
+                    "type": "integer"
+                },
+                "passed": {
+                    "type": "boolean"
+                },
+                "real_verified": {
+                    "type": "boolean"
+                },
+                "record_id": {
+                    "type": "string"
+                },
+                "remaining_attempts": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                },
+                "sub_code": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.RefundResponse": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string"
+                },
+                "record_id": {
+                    "type": "string"
+                },
+                "refund_no": {
+                    "type": "string"
+                },
+                "refunded_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.UpdatePriceRuleRequest": {
+            "type": "object",
+            "properties": {
+                "end_at": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "original_price_coins": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "price_coins": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "start_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_im_model.BlockRelationRequest": {
             "type": "object",
             "required": [
@@ -30767,6 +32762,394 @@
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicMatchProfile"
                         }
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminCoinRechargeItem": {
+            "type": "object",
+            "properties": {
+                "coin_amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "type": "integer"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CoinRechargeStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminOrderItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "biz_id": {
+                    "type": "string"
+                },
+                "biz_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PayBizType"
+                },
+                "closed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_no": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "refunded_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OrderStatus"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "wx_order_id": {
+                    "type": "string"
+                },
+                "wx_transaction_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminRefundItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "refund_no": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.RefundStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "wx_refund_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "integer"
+                },
+                "present_balance": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinProductItem": {
+            "type": "object",
+            "properties": {
+                "coin_amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "mp_product_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinProductResponse": {
+            "type": "object",
+            "properties": {
+                "coin_amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.CoinRechargeResponse": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "order_no": {
+                    "type": "string"
+                },
+                "pay_sig": {
+                    "type": "string"
+                },
+                "recharge_id": {
+                    "type": "string"
+                },
+                "sign_data": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.ConfirmCoinRechargeResponse": {
+            "type": "object",
+            "properties": {
+                "order_id": {
+                    "type": "string"
+                },
+                "recharge_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.CreateCoinProductRequest": {
+            "type": "object",
+            "required": [
+                "coin_amount",
+                "mp_product_id",
+                "name",
+                "price_cents"
+            ],
+            "properties": {
+                "coin_amount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "mp_product_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "description": "分；iOS 最低 100",
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.CreateCoinRechargeRequest": {
+            "type": "object",
+            "required": [
+                "product_id"
+            ],
+            "properties": {
+                "product_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.UpdateCoinProductRequest": {
+            "type": "object",
+            "properties": {
+                "coin_amount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "mp_product_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.VirtualPayConfigDetailResponse": {
+            "type": "object",
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "callback_url": {
+                    "description": "CallbackURL 微信 MP 后台「消息推送 URL」——按 server.domain 自动生成，\n供运营复制到 MP 后台；server.domain 为空时为空串。",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "env": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.VirtualPayEnv"
+                },
+                "has_app_key": {
+                    "type": "boolean"
+                },
+                "has_app_secret": {
+                    "type": "boolean"
+                },
+                "has_callback_token": {
+                    "type": "boolean"
+                },
+                "has_encoding_aes_key": {
+                    "type": "boolean"
+                },
+                "has_push_token": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "offer_id": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.VirtualPayConfigListItem": {
+            "type": "object",
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "callback_url": {
+                    "description": "CallbackURL 微信 MP 后台「消息推送 URL」——按 server.domain 自动生成，\n供运营复制到 MP 后台；server.domain 为空时为空串。",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "env": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.VirtualPayEnv"
+                },
+                "has_app_key": {
+                    "type": "boolean"
+                },
+                "has_app_secret": {
+                    "type": "boolean"
+                },
+                "has_callback_token": {
+                    "type": "boolean"
+                },
+                "has_encoding_aes_key": {
+                    "type": "boolean"
+                },
+                "has_push_token": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "offer_id": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
                 }
             }
         },
@@ -35856,6 +38239,30 @@
                 "BloodTypeO"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.CoinRechargeStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "CoinRechargeStatusFailed": "失败",
+                "CoinRechargeStatusProcessing": "处理中",
+                "CoinRechargeStatusSuccess": "成功"
+            },
+            "x-enum-descriptions": [
+                "处理中",
+                "成功",
+                "失败"
+            ],
+            "x-enum-varnames": [
+                "CoinRechargeStatusProcessing",
+                "CoinRechargeStatusSuccess",
+                "CoinRechargeStatusFailed"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus": {
             "type": "integer",
             "format": "int32",
@@ -36126,6 +38533,42 @@
             "x-enum-varnames": [
                 "GiftTypeNormal",
                 "GiftTypeSpecial"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5
+            ],
+            "x-enum-comments": {
+                "IDVerifyRecordStatusClosed": "已关闭/过期",
+                "IDVerifyRecordStatusExhausted": "重试次数耗尽",
+                "IDVerifyRecordStatusPassed": "已通过（订单权益失效）",
+                "IDVerifyRecordStatusPendingPayment": "待支付",
+                "IDVerifyRecordStatusPendingVerify": "待认证/可重试",
+                "IDVerifyRecordStatusRefunded": "已退款"
+            },
+            "x-enum-descriptions": [
+                "待支付",
+                "待认证/可重试",
+                "已通过（订单权益失效）",
+                "重试次数耗尽",
+                "已关闭/过期",
+                "已退款"
+            ],
+            "x-enum-varnames": [
+                "IDVerifyRecordStatusPendingPayment",
+                "IDVerifyRecordStatusPendingVerify",
+                "IDVerifyRecordStatusPassed",
+                "IDVerifyRecordStatusExhausted",
+                "IDVerifyRecordStatusClosed",
+                "IDVerifyRecordStatusRefunded"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.IMRelationAction": {
@@ -36478,6 +38921,58 @@
                 "OpinionTypeSplit"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.OrderStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "OrderStatusClosed": "已关闭",
+                "OrderStatusPaid": "已支付",
+                "OrderStatusPending": "待支付",
+                "OrderStatusRefunded": "已退款"
+            },
+            "x-enum-descriptions": [
+                "待支付",
+                "已支付",
+                "已退款",
+                "已关闭"
+            ],
+            "x-enum-varnames": [
+                "OrderStatusPending",
+                "OrderStatusPaid",
+                "OrderStatusRefunded",
+                "OrderStatusClosed"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.PayBizType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                2,
+                3,
+                4
+            ],
+            "x-enum-comments": {
+                "PayBizTypeCoinRecharge": "虚拟支付代币充值",
+                "PayBizTypeCongratulationCash": "报喜现金红包（虚拟支付代币）",
+                "PayBizTypeIDVerify": "实人认证（2026-11-03）"
+            },
+            "x-enum-descriptions": [
+                "报喜现金红包（虚拟支付代币）",
+                "虚拟支付代币充值",
+                "实人认证（2026-11-03）"
+            ],
+            "x-enum-varnames": [
+                "PayBizTypeCongratulationCash",
+                "PayBizTypeCoinRecharge",
+                "PayBizTypeIDVerify"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.PresignStatus": {
             "type": "integer",
             "format": "int32",
@@ -36524,6 +39019,30 @@
                 "ProfileAuditPending",
                 "ProfileAuditApproved",
                 "ProfileAuditRejected"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.RefundStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "RefundStatusFailed": "退款失败",
+                "RefundStatusProcessing": "处理中",
+                "RefundStatusSuccess": "退款成功"
+            },
+            "x-enum-descriptions": [
+                "处理中",
+                "退款成功",
+                "退款失败"
+            ],
+            "x-enum-varnames": [
+                "RefundStatusProcessing",
+                "RefundStatusSuccess",
+                "RefundStatusFailed"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.RegisterAuditStatus": {
@@ -36864,6 +39383,26 @@
                 "UserVisibilityFull",
                 "UserVisibilityZone",
                 "UserVisibilityHide"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.VirtualPayEnv": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1
+            ],
+            "x-enum-comments": {
+                "VirtualPayEnvProduction": "正式环境",
+                "VirtualPayEnvSandbox": "沙箱环境"
+            },
+            "x-enum-descriptions": [
+                "正式环境",
+                "沙箱环境"
+            ],
+            "x-enum-varnames": [
+                "VirtualPayEnvProduction",
+                "VirtualPayEnvSandbox"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.ZoneApplicationStatus": {
