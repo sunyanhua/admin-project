@@ -28,12 +28,16 @@ interface OnsiteManageModalProps {
   onClose: () => void;
 }
 
-/** 签到筛选哨兵值（映射 checked_in=true） */
+/** 签到筛选哨兵值（映射 checked_in=true / false） */
 const CHECKED = 'checked';
+const UNCHECKED = 'unchecked';
 
 const LIST_FILTERS: FilterConfig[] = [
   { name: 'check_status', placeholder: '全部状态', type: 'select',
-    options: [{ label: '已签到', value: CHECKED }],
+    options: [
+      { label: '已签到', value: CHECKED },
+      { label: '未签到', value: UNCHECKED },
+    ],
   },
   { name: 'gender', placeholder: '全部性别', type: 'select',
     options: [
@@ -76,7 +80,7 @@ const ApprovedListTab: React.FC<{ activityId: string }> = ({ activityId }) => {
     const res: any = await activityApi.getRegisters(activityId, {
       page: params.page, size: params.page_size,
       audit_status: RegisterAuditStatus.APPROVED,
-      checked_in: params.check_status === CHECKED ? true : undefined,
+      checked_in: params.check_status === CHECKED ? true : params.check_status === UNCHECKED ? false : undefined,
       gender: params.gender,
       keyword: params.keyword || undefined,
     });
