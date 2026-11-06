@@ -216,7 +216,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     filters.push({ name: 'audit_status', placeholder: '全部状态', type: 'select',
       options: [
         { label: '待审核', value: RegisterAuditStatus.PENDING },
-        { label: '已筛选', value: RegisterAuditStatus.APPROVED },
+        { label: '已入选', value: RegisterAuditStatus.APPROVED },
         { label: '已退回', value: RegisterAuditStatus.REJECTED },
         { label: '已签到', value: CHECKED_FILTER },
       ],
