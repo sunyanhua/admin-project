@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-11-06 | 实名认证配置页面（价格规则管理 + 认证记录列表，idverify 接口组）；并入「用户资料·用户认证」菜单（默认认证记录 TAB，价格单位元）；**测试版构建发布**（build:test，产物待上传） | idverify 服务 + UserVerify + IdVerifyPriceRuleModal + router/menu + tests | 765f053、7e70d61（构建产物未提交） |
 | 2026-11-06 | 现场管理入选名单新增「未签到」筛选（签到状态下拉：已签到/未签到，映射 checked_in true/false，不选不筛；新增 OnsiteManageModal 单测 4 项 + setupTests 修复 Node 25 localStorage 遮蔽）；报名名单审核状态下拉「已筛选」改为「已入选」；同步后端接口文档（新增「实人认证管理」接口组：价格规则 CRUD + 认证记录列表）；**正式版构建发布**（build:prod，产物待上传） | OnsiteManageModal + ActivityRegisterModal + tests + setupTests | 36144f8、5913b9a、9c5d47c（构建产物未提交） |
 | 2026-11-06 | 单组选人/组中选组卡片区域间距扩大（gap 1.2vw → 列 2vw/行 2.6vw，避免选中放大 1.15 后相邻行覆盖）；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite | 3846863（构建产物未提交） |
 | 2026-11-05 | 下拉选中后按键误开下拉框修复（blurAfter 延迟失焦 + 按键守卫兜底）；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite | 9463dc5（构建产物未提交） |
