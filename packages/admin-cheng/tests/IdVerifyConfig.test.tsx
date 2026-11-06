@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from 'antd';
-import IdVerifyConfig from '@/pages/system/IdVerifyConfig';
+import UserVerify from '@/pages/community/UserVerify';
 
 const PRICE_RULES = vi.hoisted(() => [
   {
@@ -70,7 +70,7 @@ beforeEach(() => {
 const renderPage = () =>
   render(
     <App>
-      <IdVerifyConfig />
+      <UserVerify />
     </App>,
   );
 
@@ -92,20 +92,39 @@ const pickDate = async (input: Element, day: number) => {
   fireEvent.click(okBtn!);
 };
 
-describe('IdVerifyConfig 实名认证配置', () => {
+/** 切到「价格规则」TAB 并等待规则列表加载 */
+const openRulesTab = async () => {
+  await userEvent.click(screen.getByRole('tab', { name: /价格规则/ }));
+  await waitFor(() => expect(screen.getByText('标准认证')).toBeInTheDocument());
+};
+
+describe('UserVerify 用户认证（实名认证配置）', () => {
+  it('默认显示认证记录 TAB：挂载即拉取记录并渲染状态标签', async () => {
+    renderPage();
+    // 默认 TAB 即认证记录，无需点击
+    await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());
+    expect(screen.getByText('u1')).toBeInTheDocument();
+    expect(screen.getByText('u2')).toBeInTheDocument();
+    // 状态标签：待认证 / 已通过
+    expect(screen.getByTitle('待认证')).toBeInTheDocument();
+    expect(screen.getByTitle('已通过')).toBeInTheDocument();
+    // 价格规则 TAB 未激活不拉取
+    expect(getPriceRulesMock).not.toHaveBeenCalled();
+  });
+
   it('价格规则列表渲染：名称/免费标签/状态开关', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText('标准认证')).toBeInTheDocument());
+    await openRulesTab();
     expect(screen.getByText('优惠认证')).toBeInTheDocument();
-    // 价格 0 → 「免费」标签（记录 TAB 未激活，仅价格规则一条）
-    expect(screen.getByTitle('免费')).toBeInTheDocument();
+    // 价格 0 → 「免费」标签（规则与记录 TAB 各有一条 0 元记录，至少出现一个）
+    expect(screen.getAllByTitle('免费').length).toBeGreaterThan(0);
     // 两行各一个状态开关
     expect(screen.getAllByRole('switch').length).toBe(2);
   });
 
   it('新增规则：表单提交调用创建接口（状态默认启用 0）', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText('标准认证')).toBeInTheDocument());
+    await openRulesTab();
 
     await userEvent.click(screen.getByRole('button', { name: /新增规则/ }));
     await screen.findByText('新增价格规则');
@@ -155,7 +174,7 @@ describe('IdVerifyConfig 实名认证配置', () => {
 
   it('状态开关切换：调用更新接口传反向状态', async () => {
     renderPage();
-    await waitFor(() => expect(screen.getByText('标准认证')).toBeInTheDocument());
+    await openRulesTab();
 
     // 第一行（标准认证，当前启用）的开关 → 点击后应停用
     fireEvent.click(screen.getAllByRole('switch')[0]);
@@ -163,21 +182,5 @@ describe('IdVerifyConfig 实名认证配置', () => {
     await waitFor(() => {
       expect(updateMock).toHaveBeenCalledWith('p1', { status: 1 });
     });
-  });
-
-  it('认证记录 TAB：按需加载并渲染记录与状态标签', async () => {
-    renderPage();
-    await waitFor(() => expect(screen.getByText('标准认证')).toBeInTheDocument());
-    // 未激活前不拉记录
-    expect(getRecordsMock).not.toHaveBeenCalled();
-
-    await userEvent.click(screen.getByRole('tab', { name: /认证记录/ }));
-
-    await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());
-    expect(screen.getByText('u1')).toBeInTheDocument();
-    expect(screen.getByText('u2')).toBeInTheDocument();
-    // 状态标签：待认证 / 已通过
-    expect(screen.getByTitle('待认证')).toBeInTheDocument();
-    expect(screen.getByTitle('已通过')).toBeInTheDocument();
   });
 });

@@ -119,7 +119,7 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          label="价格（金币，0 表示免费）"
+          label="价格（元，0 表示免费）"
           name="price_coins"
           rules={[{ required: true, message: '请输入价格' }]}
         >
@@ -127,7 +127,7 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          label="原价（金币，0 表示无原价）"
+          label="原价（元，0 表示无原价）"
           name="original_price_coins"
         >
           <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="0 表示无原价" />

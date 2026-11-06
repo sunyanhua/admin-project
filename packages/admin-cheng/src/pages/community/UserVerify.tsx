@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Button, Space, Tag, Tabs } from 'antd';
+import { Button, Tag, Tabs } from 'antd';
 import { PlusOutlined, SafetyCertificateOutlined, OrderedListOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -43,123 +43,7 @@ const formatResponse = (res: any) => {
   return { list, count: total };
 };
 
-/** 价格规则 TAB：列表/新增/编辑/状态切换（后端无删除接口；启用规则时间区间不可重叠） */
-const PriceRulesTab: React.FC = () => {
-  const { success, error: showError } = useAppNotification();
-  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
-  const [modalVisible, setModalVisible] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [editingRule, setEditingRule] = useState<PriceRule | null>(null);
-
-  const fetchRules = useCallback(async (params: any) => {
-    return idverifyApi.getPriceRules({
-      page: params.page,
-      size: params.page_size,
-      status: params.status,
-      keyword: params.keyword || undefined,
-    });
-  }, []);
-
-  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<PriceRule>({
-    fetchFn: fetchRules,
-    formatResponse,
-  });
-
-  const handleSearchChange = (name: string, value: any) => setSearchValues((p) => ({ ...p, [name]: value }));
-  const handleSearch = (vals: Record<string, any>) => search(vals);
-  const handleReset = () => { setSearchValues({}); search({}); };
-
-  const handleStatusToggle = async (record: PriceRule, checked: boolean) => {
-    try {
-      await idverifyApi.updatePriceRule(record.id, { status: checked ? PriceRuleStatus.ENABLED : PriceRuleStatus.DISABLED });
-      success('状态更新成功');
-      refresh();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '状态更新失败');
-    }
-  };
-
-  const handleAdd = () => { setModalMode('create'); setEditingRule(null); setModalVisible(true); };
-  const handleEdit = (record: PriceRule) => { setModalMode('edit'); setEditingRule(record); setModalVisible(true); };
-
-  const filters: FilterConfig[] = [
-    { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
-    { name: 'keyword', placeholder: '搜索规则名称/备注', type: 'input' },
-  ];
-
-  const columns: ColumnsType<PriceRule> = [
-    {
-      title: '规则名称',
-      dataIndex: 'name',
-      key: 'name',
-      render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
-    },
-    {
-      title: '价格（金币）',
-      dataIndex: 'price_coins',
-      key: 'price_coins',
-      width: 100,
-      render: (v: number) => (v === 0 ? <Tag color="green" title="免费">免费</Tag> : v),
-    },
-    {
-      title: '原价（金币）',
-      dataIndex: 'original_price_coins',
-      key: 'original_price_coins',
-      width: 100,
-      render: (v: number) => (v > 0 ? v : '-'),
-    },
-    {
-      title: '生效开始',
-      dataIndex: 'start_at',
-      key: 'start_at',
-      width: 120,
-      render: (v: string) => {
-        const t = formatDateTime(v);
-        return <div style={{ fontSize: 12, lineHeight: 1.6 }}><div>{t.slice(0, 10)}</div><div>{t.slice(11)}</div></div>;
-      },
-    },
-    {
-      title: '生效结束',
-      dataIndex: 'end_at',
-      key: 'end_at',
-      width: 120,
-      render: (v: string) => {
-        const t = formatDateTime(v);
-        return <div style={{ fontSize: 12, lineHeight: 1.6 }}><div>{t.slice(0, 10)}</div><div>{t.slice(11)}</div></div>;
-      },
-    },
-    {
-      title: '备注',
-      dataIndex: 'remark',
-      key: 'remark',
-      width: 160,
-      ellipsis: true,
-      render: (v: string) => <span title={v || ''}>{v || '-'}</span>,
-    },
-    statusSwitchColumn<PriceRule>('status', PriceRuleStatus.ENABLED, PriceRuleStatus.DISABLED, handleStatusToggle, '启用', '停用', 100),
-    ActionColumn({ onEdit: handleEdit, showDelete: false, width: 100 }),
-  ];
-
-  return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
-        <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增规则</Button>
-      </div>
-      <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
-
-      <IdVerifyPriceRuleModal
-        visible={modalVisible}
-        mode={modalMode}
-        rule={editingRule}
-        onClose={() => { setModalVisible(false); setEditingRule(null); }}
-        onSuccess={refresh}
-      />
-    </div>
-  );
-};
-
-/** 认证记录 TAB：只读列表（按创建时间倒序；不含真实姓名/身份证号） */
+/** 认证记录 TAB（默认）：只读列表（按创建时间倒序；不含真实姓名/身份证号） */
 const RecordsTab: React.FC = () => {
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
 
@@ -206,14 +90,14 @@ const RecordsTab: React.FC = () => {
       },
     },
     {
-      title: '价格（金币）',
+      title: '价格（元）',
       dataIndex: 'price_coins',
       key: 'price_coins',
       width: 100,
       render: (v: number) => (v === 0 ? <Tag color="green" title="免费">免费</Tag> : v),
     },
     {
-      title: '原价（金币）',
+      title: '原价（元）',
       dataIndex: 'original_price_coins',
       key: 'original_price_coins',
       width: 100,
@@ -277,20 +161,136 @@ const RecordsTab: React.FC = () => {
   );
 };
 
-const IdVerifyConfig = () => {
-  const [tabKey, setTabKey] = useState('rules');
+/** 价格规则 TAB：列表/新增/编辑/状态切换（后端无删除接口；启用规则时间区间不可重叠） */
+const PriceRulesTab: React.FC = () => {
+  const { success, error: showError } = useAppNotification();
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [editingRule, setEditingRule] = useState<PriceRule | null>(null);
+
+  const fetchRules = useCallback(async (params: any) => {
+    return idverifyApi.getPriceRules({
+      page: params.page,
+      size: params.page_size,
+      status: params.status,
+      keyword: params.keyword || undefined,
+    });
+  }, []);
+
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<PriceRule>({
+    fetchFn: fetchRules,
+    formatResponse,
+  });
+
+  const handleSearchChange = (name: string, value: any) => setSearchValues((p) => ({ ...p, [name]: value }));
+  const handleSearch = (vals: Record<string, any>) => search(vals);
+  const handleReset = () => { setSearchValues({}); search({}); };
+
+  const handleStatusToggle = async (record: PriceRule, checked: boolean) => {
+    try {
+      await idverifyApi.updatePriceRule(record.id, { status: checked ? PriceRuleStatus.ENABLED : PriceRuleStatus.DISABLED });
+      success('状态更新成功');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '状态更新失败');
+    }
+  };
+
+  const handleAdd = () => { setModalMode('create'); setEditingRule(null); setModalVisible(true); };
+  const handleEdit = (record: PriceRule) => { setModalMode('edit'); setEditingRule(record); setModalVisible(true); };
+
+  const filters: FilterConfig[] = [
+    { name: 'status', placeholder: '全部状态', type: 'select', options: STATUS_OPTIONS },
+    { name: 'keyword', placeholder: '搜索规则名称/备注', type: 'input' },
+  ];
+
+  const columns: ColumnsType<PriceRule> = [
+    {
+      title: '规则名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
+    },
+    {
+      title: '价格（元）',
+      dataIndex: 'price_coins',
+      key: 'price_coins',
+      width: 100,
+      render: (v: number) => (v === 0 ? <Tag color="green" title="免费">免费</Tag> : v),
+    },
+    {
+      title: '原价（元）',
+      dataIndex: 'original_price_coins',
+      key: 'original_price_coins',
+      width: 100,
+      render: (v: number) => (v > 0 ? v : '-'),
+    },
+    {
+      title: '生效开始',
+      dataIndex: 'start_at',
+      key: 'start_at',
+      width: 120,
+      render: (v: string) => {
+        const t = formatDateTime(v);
+        return <div style={{ fontSize: 12, lineHeight: 1.6 }}><div>{t.slice(0, 10)}</div><div>{t.slice(11)}</div></div>;
+      },
+    },
+    {
+      title: '生效结束',
+      dataIndex: 'end_at',
+      key: 'end_at',
+      width: 120,
+      render: (v: string) => {
+        const t = formatDateTime(v);
+        return <div style={{ fontSize: 12, lineHeight: 1.6 }}><div>{t.slice(0, 10)}</div><div>{t.slice(11)}</div></div>;
+      },
+    },
+    {
+      title: '备注',
+      dataIndex: 'remark',
+      key: 'remark',
+      width: 160,
+      ellipsis: true,
+      render: (v: string) => <span title={v || ''}>{v || '-'}</span>,
+    },
+    statusSwitchColumn<PriceRule>('status', PriceRuleStatus.ENABLED, PriceRuleStatus.DISABLED, handleStatusToggle, '启用', '停用', 100),
+    ActionColumn({ onEdit: handleEdit, showDelete: false, width: 100 }),
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+        <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新增规则</Button>
+      </div>
+      <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+
+      <IdVerifyPriceRuleModal
+        visible={modalVisible}
+        mode={modalMode}
+        rule={editingRule}
+        onClose={() => { setModalVisible(false); setEditingRule(null); }}
+        onSuccess={refresh}
+      />
+    </div>
+  );
+};
+
+const UserVerify = () => {
+  const [tabKey, setTabKey] = useState('records');
 
   return (
     <StandardPage
-      title="实名认证配置"
-      description="配置实名认证的价格规则，查看用户实名认证的办理情况。"
+      title="用户认证"
+      description="查看用户实名认证的办理情况，配置实名认证的价格规则。"
       table={
         <Tabs
           activeKey={tabKey}
           onChange={setTabKey}
           items={[
-            { key: 'rules', label: '价格规则', icon: <SafetyCertificateOutlined />, children: <PriceRulesTab /> },
-            { key: 'records', label: '认证记录', icon: <OrderedListOutlined />, children: tabKey === 'records' ? <RecordsTab /> : null },
+            { key: 'records', label: '认证记录', icon: <OrderedListOutlined />, children: <RecordsTab /> },
+            { key: 'rules', label: '价格规则', icon: <SafetyCertificateOutlined />, children: tabKey === 'rules' ? <PriceRulesTab /> : null },
           ]}
         />
       }
@@ -298,4 +298,4 @@ const IdVerifyConfig = () => {
   );
 };
 
-export default IdVerifyConfig;
+export default UserVerify;

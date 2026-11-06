@@ -17,7 +17,7 @@ import VisitUserStats from '@/pages/system/VisitUserStats';
 import WxaAppManagement from '@/pages/system/WxaAppManagement';
 import BannerManagement from '@/pages/system/BannerManagement';
 import FaqManagement from '@/pages/system/FaqManagement';
-import IdVerifyConfig from '@/pages/system/IdVerifyConfig';
+import UserVerify from '@/pages/community/UserVerify';
 
 // 运营管理页面
 import PageConfigManagement from '@/pages/operation/PageConfigManagement';
@@ -106,7 +106,6 @@ const router = createHashRouter([
           { path: 'popups', element: <HomePopupManagement /> },
           { path: 'agreements', element: <AgreementManagement /> },
           { path: 'faq', element: <FaqManagement /> },
-          { path: 'idverify', element: <IdVerifyConfig /> },
           { path: 'points', element: <PlaceholderPage title="积分配置" /> },
         ],
       },
@@ -118,7 +117,7 @@ const router = createHashRouter([
           // 用户资料（原社区管理）
           { path: 'users', element: <UserList /> },
           { path: 'match-profiles', element: <MatchProfileManagement /> },
-          { path: 'user-verify', element: <PlaceholderPage title="用户认证" /> },
+          { path: 'user-verify', element: <UserVerify /> },
           // 互动管理（原社区管理）
           { path: 'gifts', element: <GiftManagement /> },
           { path: 'lottery', element: <LotteryManagement /> },
