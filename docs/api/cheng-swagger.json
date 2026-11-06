@@ -7327,6 +7327,191 @@
                 }
             }
         },
+        "/admin/v1/bizops/report": {
+            "get": {
+                "description": "管理后台分页查询举报列表，支持状态、被举报能成号、提交时间区间筛选。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "举报管理"
+                ],
+                "summary": "举报列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "处理状态：0=待处理 1=已处理 2=已驳回",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "被举报能成号",
+                        "name": "target_match_code",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "提交时间起（RFC3339）",
+                        "name": "start_time",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "提交时间止（RFC3339）",
+                        "name": "end_time",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportListItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/report/{id}": {
+            "get": {
+                "description": "查询举报完整信息，含附件与举报人/被举报人资料卡。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "举报管理"
+                ],
+                "summary": "举报详情",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "举报 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportDetailResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "举报不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/report/{id}/handle": {
+            "patch": {
+                "description": "将待处理举报标记为已处理/已驳回，处理备注必填；已处理记录不可重复处理。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "举报管理"
+                ],
+                "summary": "处理举报",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "举报 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "处理参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.AdminHandleReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "处理成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或状态不允许",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/settings": {
             "get": {
                 "security": [
@@ -9347,6 +9532,71 @@
                 }
             }
         },
+        "/admin/v1/bizops/user/{id}/education-verify": {
+            "patch": {
+                "description": "管理后台人工核验学历后设置认证状态。true=认证通过（首次通过 +10 靠谱值），false=撤销认证（不自动扣分，如需扣分走靠谱值调整接口）。档案不存在返回 404。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "管理后台-用户模块"
+                ],
+                "summary": "设置学历认证",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "学历认证请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.AdminSetEducationVerifyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "设置成功",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "脱单档案不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/user/{id}/match-profile": {
             "put": {
                 "description": "管理后台编辑 C 端用户脱单档案的非系统字段，变更原因必填。仅更新用户自主填写的字段，不含系统管理的 AuditStatus/Timestamps/MatchCode 等。",
@@ -9636,6 +9886,133 @@
                     },
                     "500": {
                         "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/{id}/reliability-logs": {
+            "get": {
+                "description": "分页查询用户靠谱值变化账本（created_at 倒序）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "靠谱值管理"
+                ],
+                "summary": "靠谱值流水",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_reliability_model.AdminReliabilityLogItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/user/{id}/reliability-score": {
+            "patch": {
+                "description": "管理后台调整用户系统记录级靠谱值（正=加分、负=扣分），必须填写原因；展示值不立即变化，下一次周算统一生效。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "靠谱值管理"
+                ],
+                "summary": "调整系统记录级靠谱值",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "用户 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "调整参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_reliability_model.AdminAdjustReliabilityRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "调整成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_reliability_model.AdminAdjustReliabilityResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或调整后小于 0",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -23005,6 +23382,64 @@
                 }
             }
         },
+        "/api/v1/wxa/report": {
+            "post": {
+                "description": "仅脱单用户可提交（档案存在 + is_active=true + 账户正常）；被举报人按 8 位能成号核验；不能举报自己；附件 0-9 张仅图片；协议必须勾选；每个举报人每天仅一次。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "举报"
+                ],
+                "summary": "提交举报",
+                "parameters": [
+                    {
+                        "description": "举报请求",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.SubmitReportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "提交成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.SubmitReportResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或业务校验失败",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/session-storage": {
             "get": {
                 "description": "返回当前用户全部存储记录（updated_at DESC，条数不限）",
@@ -33153,6 +33588,245 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_reliability_model.AdminAdjustReliabilityRequest": {
+            "type": "object",
+            "required": [
+                "delta",
+                "reason"
+            ],
+            "properties": {
+                "delta": {
+                    "type": "integer",
+                    "maximum": 10000,
+                    "minimum": -10000
+                },
+                "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_reliability_model.AdminAdjustReliabilityResponse": {
+            "type": "object",
+            "properties": {
+                "reliability_display_score": {
+                    "type": "integer"
+                },
+                "reliability_score": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_reliability_model.AdminReliabilityLogItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "delta": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "operator_id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "related_id": {
+                    "type": "string"
+                },
+                "score_after": {
+                    "type": "integer"
+                },
+                "source_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ReliabilitySource"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_report_model.AdminHandleReportRequest": {
+            "type": "object",
+            "required": [
+                "remark",
+                "status"
+            ],
+            "properties": {
+                "remark": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "status": {
+                    "description": "Status 目标状态：1=已处理 2=已驳回（0 不允许，required 安全）。",
+                    "type": "integer",
+                    "enum": [
+                        1,
+                        2
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportDetailResponse": {
+            "type": "object",
+            "properties": {
+                "agreed_at": {
+                    "type": "string"
+                },
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
+                    }
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "handle_remark": {
+                    "type": "string"
+                },
+                "handled_at": {
+                    "type": "string"
+                },
+                "handled_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "reporter": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportUserCard"
+                },
+                "reporter_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ReportStatus"
+                },
+                "target": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportUserCard"
+                },
+                "target_match_code": {
+                    "type": "string"
+                },
+                "target_user_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportListItem": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "handle_remark": {
+                    "type": "string"
+                },
+                "handled_at": {
+                    "type": "string"
+                },
+                "handled_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "reporter": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportUserCard"
+                },
+                "reporter_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ReportStatus"
+                },
+                "target": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportUserCard"
+                },
+                "target_match_code": {
+                    "type": "string"
+                },
+                "target_user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_report_model.AdminReportUserCard": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "match_code": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_report_model.SubmitReportRequest": {
+            "type": "object",
+            "required": [
+                "agreed",
+                "content",
+                "target_match_code"
+            ],
+            "properties": {
+                "agreed": {
+                    "description": "Agreed 协议勾选：必须为 true。使用 *bool 指针——required 只检查 non-nil，\n允许显式 false 通过 binding 后由 Service 返回业务错误；语义：true=已勾选同意。",
+                    "type": "boolean"
+                },
+                "attachments": {
+                    "description": "Attachments 相关附件：0–9 张，仅图片，可不传。",
+                    "type": "array",
+                    "maxItems": 9,
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.Attachment"
+                    }
+                },
+                "content": {
+                    "description": "Content 举报内容：去除首尾空白后 1–1000 字符。",
+                    "type": "string",
+                    "maxLength": 1000,
+                    "minLength": 1
+                },
+                "target_match_code": {
+                    "description": "TargetMatchCode 对方能成号：8 位数字脱单号。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_report_model.SubmitReportResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.ReportStatus"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_session_storage_model.SessionStorageItemResponse": {
             "type": "object",
             "properties": {
@@ -34774,6 +35448,9 @@
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
+                "education_verified_at": {
+                    "type": "string"
+                },
                 "ethnicity": {
                     "type": "string"
                 },
@@ -34802,6 +35479,9 @@
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IncomeRange"
                 },
                 "is_active": {
+                    "type": "boolean"
+                },
+                "is_education_verified": {
                     "type": "boolean"
                 },
                 "is_org_certified": {
@@ -34837,6 +35517,12 @@
                 "recommend_expire_at": {
                     "description": "RecommendExpireAt 运营推荐有效截止时间（null=未设置推荐）。\n该时间之前，本档案在 C 端随机接口优先展示；已过期的时间值会保留展示，\n是否仍在推荐期由调用方与当前时间比较判断。",
                     "type": "string"
+                },
+                "reliability_display_score": {
+                    "type": "integer"
+                },
+                "reliability_score": {
+                    "type": "integer"
                 },
                 "self_intro": {
                     "type": "string"
@@ -34897,6 +35583,23 @@
                 },
                 "zodiac": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.AdminSetEducationVerifyRequest": {
+            "type": "object",
+            "required": [
+                "reason",
+                "verified"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "verified": {
+                    "description": "Verified true=认证通过（首次通过 +10 靠谱值），false=撤销认证（不自动扣分）。\n使用 *bool 指针：required 只检查 non-nil，允许 JSON 显式传入 false。",
+                    "type": "boolean"
                 }
             }
         },
@@ -35338,6 +36041,9 @@
                 "education": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.Education"
                 },
+                "education_verified_at": {
+                    "type": "string"
+                },
                 "ethnicity": {
                     "type": "string"
                 },
@@ -35388,6 +36094,9 @@
                     "type": "boolean"
                 },
                 "is_active": {
+                    "type": "boolean"
+                },
+                "is_education_verified": {
                     "type": "boolean"
                 },
                 "is_migrated": {
@@ -35481,6 +36190,12 @@
                     "type": "string"
                 },
                 "relatives_count": {
+                    "type": "integer"
+                },
+                "reliability_display_score": {
+                    "type": "integer"
+                },
+                "reliability_score": {
                     "type": "integer"
                 },
                 "self_intro": {
@@ -35945,6 +36660,9 @@
                     "description": "IsCongratulated 是否已报喜（NULL 等效 false，2026-10-23）。",
                     "type": "boolean"
                 },
+                "is_education_verified": {
+                    "type": "boolean"
+                },
                 "is_org_certified": {
                     "type": "boolean"
                 },
@@ -35974,6 +36692,12 @@
                 },
                 "real_name": {
                     "type": "string"
+                },
+                "reliability_display_score": {
+                    "type": "integer"
+                },
+                "reliability_score": {
+                    "type": "integer"
                 },
                 "self_intro": {
                     "type": "string"
@@ -36069,6 +36793,10 @@
                     "description": "IsCongratulated 是否已报喜（NULL 等效 false，2026-10-23 报喜功能）。",
                     "type": "boolean"
                 },
+                "is_education_verified": {
+                    "description": "IsEducationVerified 是否已通过学历认证（2026-11-06，仅自己/后台可见）。",
+                    "type": "boolean"
+                },
                 "is_org_certified": {
                     "type": "boolean"
                 },
@@ -36095,6 +36823,14 @@
                 },
                 "profession": {
                     "type": "string"
+                },
+                "reliability_display_score": {
+                    "description": "ReliabilityDisplayScore 公开展示靠谱值（每周边界重算）。",
+                    "type": "integer"
+                },
+                "reliability_score": {
+                    "description": "ReliabilityScore 系统记录级靠谱值（仅自己/后台可见）。",
+                    "type": "integer"
                 },
                 "self_intro": {
                     "type": "string"
@@ -37896,6 +38632,10 @@
                 "profession": {
                     "type": "string"
                 },
+                "reliability_display_score": {
+                    "description": "ReliabilityDisplayScore 公开展示靠谱值（每周边界按最近登录时长扣减后重算）。\n公开面只输出展示值，不输出系统记录级原始值（2026-11-06）。",
+                    "type": "integer"
+                },
                 "self_intro": {
                     "type": "string"
                 },
@@ -39091,6 +39831,74 @@
                 "RegisterPayPending",
                 "RegisterPayPaid",
                 "RegisterPayRefunded"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.ReliabilitySource": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+            ],
+            "x-enum-comments": {
+                "ReliabilitySourceActivityCheckin": "现场签到",
+                "ReliabilitySourceActivityRegister": "活动报名（仅 C 端普通报名/预报名）",
+                "ReliabilitySourceAdminAdjust": "管理后台调整",
+                "ReliabilitySourceBackfill": "历史数据回填",
+                "ReliabilitySourceEducationVerify": "学历认证",
+                "ReliabilitySourceOrgVerify": "单位认证（专区认证通过）",
+                "ReliabilitySourceRealVerify": "实名认证",
+                "ReliabilitySourceRegisterMatchProfile": "注册脱单"
+            },
+            "x-enum-descriptions": [
+                "历史数据回填",
+                "注册脱单",
+                "实名认证",
+                "学历认证",
+                "单位认证（专区认证通过）",
+                "现场签到",
+                "活动报名（仅 C 端普通报名/预报名）",
+                "管理后台调整"
+            ],
+            "x-enum-varnames": [
+                "ReliabilitySourceBackfill",
+                "ReliabilitySourceRegisterMatchProfile",
+                "ReliabilitySourceRealVerify",
+                "ReliabilitySourceEducationVerify",
+                "ReliabilitySourceOrgVerify",
+                "ReliabilitySourceActivityCheckin",
+                "ReliabilitySourceActivityRegister",
+                "ReliabilitySourceAdminAdjust"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.ReportStatus": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                0,
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "ReportStatusHandled": "已处理",
+                "ReportStatusPending": "待处理",
+                "ReportStatusRejected": "已驳回"
+            },
+            "x-enum-descriptions": [
+                "待处理",
+                "已处理",
+                "已驳回"
+            ],
+            "x-enum-varnames": [
+                "ReportStatusPending",
+                "ReportStatusHandled",
+                "ReportStatusRejected"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.SettingValueType": {
