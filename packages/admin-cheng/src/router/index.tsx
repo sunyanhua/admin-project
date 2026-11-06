@@ -17,6 +17,7 @@ import VisitUserStats from '@/pages/system/VisitUserStats';
 import WxaAppManagement from '@/pages/system/WxaAppManagement';
 import BannerManagement from '@/pages/system/BannerManagement';
 import FaqManagement from '@/pages/system/FaqManagement';
+import IdVerifyConfig from '@/pages/system/IdVerifyConfig';
 
 // 运营管理页面
 import PageConfigManagement from '@/pages/operation/PageConfigManagement';
@@ -105,6 +106,7 @@ const router = createHashRouter([
           { path: 'popups', element: <HomePopupManagement /> },
           { path: 'agreements', element: <AgreementManagement /> },
           { path: 'faq', element: <FaqManagement /> },
+          { path: 'idverify', element: <IdVerifyConfig /> },
           { path: 'points', element: <PlaceholderPage title="积分配置" /> },
         ],
       },
