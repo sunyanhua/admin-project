@@ -1,10 +1,15 @@
 import { useState } from 'react';
+import dayjs from 'dayjs';
 import { Button, Form, InputNumber, Alert } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { activityApi, RegisterRecord } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
 import { RegisterAuditStatus } from '@shared/constants';
+import { dayjsToApi } from '@/utils/format';
+
+/** 扣分完成标记键（写入 onsite_config，服务端透明存储——与 groups/routine 同模式） */
+export const DEDUCT_DONE_KEY = 'deduct_done_at';
 
 export interface OnsiteDeductScoreModalProps {
   open: boolean;
@@ -46,6 +51,20 @@ const OnsiteDeductScoreModal: React.FC<OnsiteDeductScoreModalProps> = ({ open, a
     return all;
   };
 
+  /** 标记活动已完成扣分：重新拉取详情后原对象透传写入 onsite_config.deduct_done_at（避免覆盖并行修改） */
+  const markDeductDone = async () => {
+    try {
+      const res: any = await activityApi.getDetail(activityId);
+      let obj: Record<string, any> = {};
+      try {
+        const parsed = JSON.parse(res?.onsite_config || '{}');
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) obj = parsed;
+      } catch { /* 原值非法则从空对象开始 */ }
+      obj[DEDUCT_DONE_KEY] = dayjsToApi(dayjs());
+      await activityApi.update(activityId, { onsite_config: JSON.stringify(obj) });
+    } catch { /* 标记失败静默——不阻断扣分结果反馈 */ }
+  };
+
   const handleSubmit = async (values: { score: number }) => {
     const score = values.score ?? DEFAULT_DEDUCT;
     if (!(score >= 1)) {
@@ -75,6 +94,8 @@ const OnsiteDeductScoreModal: React.FC<OnsiteDeductScoreModalProps> = ({ open, a
         }
       }
       setProgress('');
+      // 扣分执行完成后将活动标记为「已完成扣分」（防止重复扣分）
+      await markDeductDone();
       success(`扣分完成：成功 ${ok} 人，失败 ${fail} 人（展示值下次周算后生效）`);
       onClose();
     } catch (err: any) {

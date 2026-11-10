@@ -37,6 +37,7 @@ const REGISTERS = vi.hoisted(() => [
 
 const getRegistersMock = vi.hoisted(() => vi.fn().mockResolvedValue(REGISTERS));
 const adjustReliabilityMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 
 // 阻断真实 API 模块链（src/api/index.ts 顶层依赖 localStorage，jsdom 下不可用）
 vi.mock('@/api/services/user', () => ({
@@ -54,7 +55,7 @@ vi.mock('@/api/services/activity-v1', () => ({
     getRegisters: getRegistersMock,
     getPresigns: vi.fn().mockResolvedValue([]),
     getDetail: vi.fn().mockResolvedValue(ACTIVITY),
-    update: vi.fn().mockResolvedValue({}),
+    update: updateMock,
     getRegisterUser: vi.fn(),
     getRegisterUserPrivacy: vi.fn(),
     checkinRegister: vi.fn(),
@@ -80,6 +81,7 @@ beforeAll(() => {
 beforeEach(() => {
   getRegistersMock.mockClear();
   adjustReliabilityMock.mockClear();
+  updateMock.mockClear();
 });
 
 /** 打开签到状态下拉并选择指定选项（rc-select 选项带 title 属性，避开状态列同名 Tag 文本） */
@@ -92,14 +94,14 @@ const selectCheckStatus = async (label: string) => {
 };
 
 describe('OnsiteManageModal 入选名单签到筛选', () => {
-  const renderModal = () =>
+  const renderModal = (activity?: any) =>
     render(
       <App>
         <OnsiteManageModal
           visible
           activityId="a1"
           activityTitle="测试活动"
-          activity={ACTIVITY as any}
+          activity={(activity ?? ACTIVITY) as any}
           onClose={vi.fn()}
         />
       </App>,
@@ -187,5 +189,22 @@ describe('OnsiteManageModal 入选名单签到筛选', () => {
     });
     expect(adjustReliabilityMock).toHaveBeenCalledWith('u1', -10, expect.stringContaining('测试活动'));
     expect(adjustReliabilityMock).toHaveBeenCalledWith('u2', -10, expect.stringContaining('测试活动'));
+    // 扣分完成后将活动标记为已完成扣分（写入 onsite_config.deduct_done_at）
+    await waitFor(() => {
+      const markCall = updateMock.mock.calls.find((c: any[]) =>
+        typeof c?.[1]?.onsite_config === 'string' && c[1].onsite_config.includes('deduct_done_at'));
+      expect(markCall).toBeTruthy();
+    });
+  }, 30000);
+
+  it('已完成扣分的活动：未签到筛选下显示标记且不再提供扣分按钮', async () => {
+    renderModal({ ...ACTIVITY, onsite_config: JSON.stringify({ deduct_done_at: '2026-11-10T10:00:00+08:00' }) });
+    await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+    await selectCheckStatus('未签到');
+
+    await waitFor(() => {
+      expect(screen.getByText('已完成扣分')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: /扣分/ })).toBeNull();
   }, 30000);
 });

@@ -50,7 +50,7 @@ const LIST_FILTERS: FilterConfig[] = [
 ];
 
 /** 入选名单 TAB：已入选用户管理（添加/排序/签到/序号），未注册用户展示与报名名单一致 */
-const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string }> = ({ activityId, activityTitle }) => {
+const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string; activity?: Activity | null; onDeducted?: () => void }> = ({ activityId, activityTitle, activity, onDeducted }) => {
   const { success, error: showError } = useAppNotification();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [userDetailVisible, setUserDetailVisible] = useState(false);
@@ -60,6 +60,14 @@ const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string }> =
   const [assigning, setAssigning] = useState(false);
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
   const [deductVisible, setDeductVisible] = useState(false);
+
+  /** 已完成扣分标记（onsite_config.deduct_done_at） */
+  const deductDoneAt = (() => {
+    try {
+      const obj = JSON.parse(activity?.onsite_config || '{}');
+      return obj && typeof obj === 'object' ? (obj.deduct_done_at || '') : '';
+    } catch { return ''; }
+  })();
 
   /** 免报名入选记录（user_id 为空）反查预报名信息，补齐姓名/性别/手机号（与报名名单一致） */
   const enrichAdminRecords = useCallback(async (list: RegisterRecord[]) => {
@@ -313,9 +321,13 @@ const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string }> =
         <Space style={{ marginLeft: 12, flexShrink: 0 }}>
           <Button icon={<PlusOutlined />} onClick={() => setAddVisible(true)}>添加</Button>
           <Button icon={<OrderedListOutlined />} loading={assigning} onClick={handleAssignNumbers}>排序</Button>
-          {/* 未签到筛选下：批量扣除未签到用户靠谱值（2026-11-10 用户定） */}
+          {/* 未签到筛选下：批量扣除未签到用户靠谱值（2026-11-10 用户定）；已完成扣分后显示标记防重复 */}
           {searchValues.check_status === UNCHECKED && (
-            <Button danger icon={<MinusCircleOutlined />} onClick={() => setDeductVisible(true)}>扣分</Button>
+            deductDoneAt ? (
+              <Tag color="green" title={formatDateTime(deductDoneAt)} style={{ marginRight: 0 }}>已完成扣分</Tag>
+            ) : (
+              <Button danger icon={<MinusCircleOutlined />} onClick={() => setDeductVisible(true)}>扣分</Button>
+            )
           )}
           <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
         </Space>
@@ -341,7 +353,10 @@ const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string }> =
         open={deductVisible}
         activityId={activityId}
         activityTitle={activityTitle}
-        onClose={() => setDeductVisible(false)}
+        onClose={() => {
+          setDeductVisible(false);
+          onDeducted?.(); // 刷新弹窗内活动数据，展示「已完成扣分」标记
+        }}
       />
     </div>
   );
@@ -402,7 +417,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
         }}
         items={[
           { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} activity={liveActivity} /> },
-          { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} activityTitle={activityTitle} /> },
+          { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} activityTitle={activityTitle} activity={liveActivity} onDeducted={refreshLiveActivity} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
           { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={liveActivity} onSaved={refreshLiveActivity} /> },
           { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={liveActivity} /> : null },
