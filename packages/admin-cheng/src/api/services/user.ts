@@ -121,4 +121,12 @@ export const userApi = {
   getReliabilityLogs: (userId: string, params?: { page?: number; size?: number }) => {
     return request.get(`/admin/v1/bizops/user/${userId}/reliability-logs`, { params });
   },
+
+  /**
+   * 调整用户系统记录级靠谱值 — PATCH /admin/v1/bizops/user/{id}/reliability-score
+   * delta 正=加分、负=扣分（±10000）；reason 必填 ≤500 字；展示值下一次周算统一生效。
+   */
+  adjustReliabilityScore: (userId: string, delta: number, reason: string) => {
+    return request.patch(`/admin/v1/bizops/user/${userId}/reliability-score`, { delta, reason });
+  },
 };

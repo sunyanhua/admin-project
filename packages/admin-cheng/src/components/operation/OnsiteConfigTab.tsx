@@ -4,6 +4,7 @@ import { SaveOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity } from '@/api/services/activity-v1';
 import ImageUpload from '@/components/common/ImageUpload';
+import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { parseApiTime, dayjsToApi } from '@/utils/format';
 
 interface OnsiteConfigTabProps {
@@ -142,7 +143,18 @@ const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId, activity:
     <div style={{ maxWidth: 560 }}>
       <Form form={form} layout="vertical">
         <Form.Item
-          label="现场签到"
+          label={
+            <Space size={4}>
+              <span>现场签到</span>
+              {activity && checkinEnabled && (
+                <SourceQrcodeModal
+                  basePage={`pages/h5/index?url=${encodeURIComponent(`https://ttfm-h5.liteweb.cn/v5/2025/cheng/h5/index.html#/pages/activity-onsite/index?id=${activityId}`)}`}
+                  showSource={false}
+                  showShortlink={false}
+                />
+              )}
+            </Space>
+          }
           name="checkin_enabled"
           valuePropName="checked"
           extra="开启后用户可在活动现场签到"

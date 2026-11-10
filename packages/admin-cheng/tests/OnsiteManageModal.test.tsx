@@ -36,6 +36,7 @@ const REGISTERS = vi.hoisted(() => [
 ]);
 
 const getRegistersMock = vi.hoisted(() => vi.fn().mockResolvedValue(REGISTERS));
+const adjustReliabilityMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 
 // 阻断真实 API 模块链（src/api/index.ts 顶层依赖 localStorage，jsdom 下不可用）
 vi.mock('@/api/services/user', () => ({
@@ -44,6 +45,7 @@ vi.mock('@/api/services/user', () => ({
     getCommunityUserPrivacy: vi.fn(),
     auditMatchProfile: vi.fn(),
     getMatchProfile: vi.fn(),
+    adjustReliabilityScore: adjustReliabilityMock,
   },
 }));
 
@@ -77,6 +79,7 @@ beforeAll(() => {
 
 beforeEach(() => {
   getRegistersMock.mockClear();
+  adjustReliabilityMock.mockClear();
 });
 
 /** 打开签到状态下拉并选择指定选项（rc-select 选项带 title 属性，避开状态列同名 Tag 文本） */
@@ -148,4 +151,41 @@ describe('OnsiteManageModal 入选名单签到筛选', () => {
       expect(getRegistersMock).toHaveBeenCalledWith('a1', expect.objectContaining({ checked_in: true }));
     });
   });
+
+  it('扣分按钮仅在「未签到」筛选下显示', async () => {
+    renderModal();
+    await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+    // 未选中未签到时不显示
+    expect(screen.queryByRole('button', { name: /扣分/ })).toBeNull();
+
+    await selectCheckStatus('未签到');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /扣分/ })).toBeInTheDocument();
+    });
+  }, 30000);
+
+  it('扣分弹窗默认 10 分：确认后按 -10 逐条扣除未签到用户靠谱值', async () => {
+    renderModal();
+    await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+    await selectCheckStatus('未签到');
+
+    fireEvent.click(screen.getByRole('button', { name: /扣分/ }));
+    await screen.findByText('扣除未签到用户靠谱值');
+    // 默认扣除值 10：扣分弹窗是嵌套弹窗（DOM 中最后一个 .ant-modal），外层弹窗序号列也有数字输入框
+    await waitFor(() => {
+      const modals = document.querySelectorAll('.ant-modal');
+      const deductModal = modals[modals.length - 1] as HTMLElement | undefined;
+      const scoreInput = deductModal?.querySelector('.ant-input-number input') as HTMLInputElement | null;
+      expect(scoreInput?.value).toBe('10');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /确认扣分/ }));
+
+    await waitFor(() => {
+      expect(adjustReliabilityMock).toHaveBeenCalledTimes(2);
+    });
+    expect(adjustReliabilityMock).toHaveBeenCalledWith('u1', -10, expect.stringContaining('测试活动'));
+    expect(adjustReliabilityMock).toHaveBeenCalledWith('u2', -10, expect.stringContaining('测试活动'));
+  }, 30000);
 });
