@@ -120,3 +120,12 @@ export const formatDate = (dateStr: string): string => {
     return dateStr;
   }
 };
+
+/**
+ * 金额展示：分 → 元（保留两位小数）；空值返回 '-'。
+ * 支付/退款/提现等金额接口统一以「分」存储（price_cents/amount_cents）。
+ */
+export const formatCents = (cents?: number | null): string => {
+  if (cents == null) return '-';
+  return (cents / 100).toFixed(2);
+};

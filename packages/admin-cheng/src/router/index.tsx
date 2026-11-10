@@ -18,6 +18,10 @@ import WxaAppManagement from '@/pages/system/WxaAppManagement';
 import BannerManagement from '@/pages/system/BannerManagement';
 import FaqManagement from '@/pages/system/FaqManagement';
 import UserVerify from '@/pages/community/UserVerify';
+import OrderManagement from '@/pages/finance/OrderManagement';
+import RefundManagement from '@/pages/finance/RefundManagement';
+import IosRefundManagement from '@/pages/finance/IosRefundManagement';
+import WithdrawManagement from '@/pages/finance/WithdrawManagement';
 
 // 运营管理页面
 import PageConfigManagement from '@/pages/operation/PageConfigManagement';
@@ -135,7 +139,10 @@ const router = createHashRouter([
           // 合作管理
           { path: 'cooperation', element: <ZoneManagement /> },
           // 财务管理
-          { path: 'orders', element: <PlaceholderPage title="订单管理" /> },
+          { path: 'orders', element: <OrderManagement /> },
+          { path: 'refunds', element: <RefundManagement /> },
+          { path: 'ios-refunds', element: <IosRefundManagement /> },
+          { path: 'withdraws', element: <WithdrawManagement /> },
           { path: 'finance-stats', element: <PlaceholderPage title="财务统计" /> },
         ],
       },

@@ -4,6 +4,29 @@ import request from '..';
 // 报喜（congratulation）— 管理后台
 // ========================
 
+/** 提现状态 */
+export enum WithdrawStatus {
+  PROCESSING = 0, // 处理中
+  SUCCESS = 1, // 提现成功
+  FAILED = 2, // 提现失败
+  PENDING_REVIEW = 3, // 待审核（2026-11-09：申请后须后台审核）
+}
+
+/** 提现记录条目 */
+export interface WithdrawItem {
+  id: string;
+  withdraw_no: string;
+  wx_transfer_no: string;
+  /** 提现金额（分） */
+  amount_cents: number;
+  status: number;
+  /** 需用户确认收款时返回（前端 wx.requestMerchantTransfer 拉起） */
+  package_info: string;
+  fail_reason: string;
+  created_at: string;
+  completed_at: string;
+}
+
 /** 附件信息（照片/结婚证通用） */
 export interface CongratulationAttachment {
   url?: string;
@@ -131,5 +154,23 @@ export const congratulationApi = {
   /** 启用/停用报喜礼物配置 */
   toggleGiftStatus: (id: string, status: number) => {
     return request.patch(`/admin/v1/bizops/congratulation/gifts/${id}/status`, { status });
+  },
+
+  /** 提现记录查询（POST 承载以产生审计留痕） */
+  getWithdraws: (params: {
+    page?: number; size?: number; status?: number; user_id?: string; keyword?: string;
+    start_date?: string; end_date?: string;
+  }) => {
+    return request.post('/admin/v1/bizops/congratulation/withdraws', params);
+  },
+
+  /** 提现审核通过（待审核 → 处理中，随后发起商家转账） */
+  approveWithdraw: (id: string) => {
+    return request.post(`/admin/v1/bizops/congratulation/withdraws/${id}/approve`);
+  },
+
+  /** 提现审核拒绝（待审核 → 失败并冲正来源子账） */
+  rejectWithdraw: (id: string, reason: string) => {
+    return request.post(`/admin/v1/bizops/congratulation/withdraws/${id}/reject`, { reason });
   },
 };

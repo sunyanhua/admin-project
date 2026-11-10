@@ -20,6 +20,9 @@ import {
   ShoppingCartOutlined,
   SmileOutlined,
   DollarOutlined,
+  RollbackOutlined,
+  AppleOutlined,
+  WalletOutlined,
   SoundOutlined,
   SendOutlined,
   ApartmentOutlined,
@@ -159,6 +162,9 @@ export const sidebarMenuConfig: Record<string, any[]> = {
       label: '财务管理',
       children: [
         { key: '/operation/orders', icon: <ShoppingCartOutlined />, label: '订单管理' },
+        { key: '/operation/refunds', icon: <RollbackOutlined />, label: '退款管理' },
+        { key: '/operation/ios-refunds', icon: <AppleOutlined />, label: 'iOS退款处理' },
+        { key: '/operation/withdraws', icon: <WalletOutlined />, label: '提现申请' },
       ],
     },
 
