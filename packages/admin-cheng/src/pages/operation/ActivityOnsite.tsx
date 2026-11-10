@@ -241,8 +241,8 @@ const ActivityOnsite: React.FC = () => {
   const [luckyGender, setLuckyGender] = useState<LuckyGender>('mix');
   /** 各组代表性别要求（默认混搭=组间男女尽量均衡；2026-11-10 用户定：与其它抽取模式一致可选） */
   const [groupRepGender, setGroupRepGender] = useState<LuckyGender>('mix');
-  /** 各组代表本次抽取使用的性别要求（编排步骤参数优先，进入时落定） */
-  const groupRepGenderRef = useRef<LuckyGender>('mix');
+  /** 各组代表性别要求编排覆盖（仅编排步骤传参时落定；null=手动模式，按 P 时读实时配置 groupRepGender） */
+  const groupRepGenderRef = useRef<LuckyGender | null>(null);
   /** 能成时刻：男女条带与最终配对 */
   const [femaleStrip, setFemaleStrip] = useState<WallUser[]>([]);
   const [maleStrip, setMaleStrip] = useState<WallUser[]>([]);
@@ -906,7 +906,8 @@ const ActivityOnsite: React.FC = () => {
   /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（仅已签到成员，滚动形式与幸运之星完全一致）。编排模式传参覆盖右上角配置 */
   const startGroupRep = useCallback((override?: { gender?: LuckyGender }) => {
     clearDrawTimer();
-    groupRepGenderRef.current = override?.gender ?? groupRepGender;
+    // 仅编排传参时落定覆盖值；手动进入保持 null——按 P 时读取实时配置（与单组选人一致）
+    groupRepGenderRef.current = override?.gender ?? null;
     const pools = groupsRef.current
       .map((g) => wall.filter((u) => u.group === g))
       .filter((p) => p.length > 0);
@@ -926,7 +927,7 @@ const ActivityOnsite: React.FC = () => {
     setTab('groupRep');
     setDrawPhase('cover');
     setDrawWinners([]);
-  }, [clearDrawTimer, wall, buildStrip, groupRepGender]);
+  }, [clearDrawTimer, wall, buildStrip]);
 
   /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员）。编排模式传参覆盖指定组 */
   const startBlockDraw = useCallback((kind: 'group' | 'person', override?: { group?: string }) => {
@@ -1142,7 +1143,8 @@ const ActivityOnsite: React.FC = () => {
             male: pool.filter((u) => u.gender === 'male').length,
             female: pool.filter((u) => u.gender === 'female').length,
           })),
-          groupRepGenderRef.current,
+          // 手动模式按 P 时读实时配置；编排步骤参数优先（进入时已落定 ref）
+          groupRepGenderRef.current ?? groupRepGender,
         );
       }
       luckySteps = luckyStripsRef.current.map((strip, i) => {
@@ -1268,7 +1270,7 @@ const ActivityOnsite: React.FC = () => {
       }, durations[i]);
     };
     step(0);
-  }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets, slowBlock]);
+  }, [tab, drawPhase, clearDrawTimer, malesOf, femalesOf, wrapOffset, advanceLuckyOffsets, slowBlock, groupRepGender]);
 
   /** 编排执行：进入第 idx 步——应用步骤参数并打开对应界面封面（未执行状态）；无效步骤提示跳过（按 → 切换） */
   const runRoutineStep = useCallback((idx: number) => {
@@ -1281,6 +1283,7 @@ const ActivityOnsite: React.FC = () => {
     blockGenderRef.current = null;
     blockFixedRef.current = null;
     blockFixedDoneRef.current = false;
+    groupRepGenderRef.current = null;
     // 分组相关步骤：分组未配置或引用的组已删改 → 提示跳过，不卡住流程
     if (step.type !== 'lucky' && groupsRef.current.length === 0) {
       setRoutineNotice('活动未配置分组，本步已跳过');
@@ -1332,6 +1335,7 @@ const ActivityOnsite: React.FC = () => {
     blockGenderRef.current = null;
     blockFixedRef.current = null;
     blockFixedDoneRef.current = false;
+    groupRepGenderRef.current = null;
     switchTab('list');
   }, [clearDrawTimer, switchTab]);
 
