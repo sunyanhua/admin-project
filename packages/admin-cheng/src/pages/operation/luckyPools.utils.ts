@@ -4,7 +4,7 @@ export interface LuckyGuest {
   gender: 'male' | 'female' | '';
 }
 
-/** 幸运之星性别要求：male=男 female=女 any=不限 mix=混搭 */
+/** 抽取模式性别要求（幸运之星/各组代表/单组选人共用）：male=男 female=女 any=不限 mix=混搭 */
 export type LuckyGender = 'male' | 'female' | 'any' | 'mix';
 
 export const LUCKY_GENDER_OPTIONS: { value: LuckyGender; label: string }[] = [
@@ -97,4 +97,38 @@ export function buildLuckyPools<T extends LuckyGuest>(
   for (let i = minN; i < maleSlots; i++) pools.push(males);
   for (let i = minN; i < femaleSlots; i++) pools.push(females);
   return pools;
+}
+
+/**
+ * 各组代表性别名额分配（数组长度 = 组数，返回每组的目标性别）：
+ * - male / female → 每组目标该性别（组内抽取时无该性别则回退另一性别/任意组员，
+ *   回退由调用方 slowRoll 处理，此处只定目标）；
+ * - any → 每组任意组员；
+ * - mix → 组间男女尽量均衡：目标男女名额（男多/女多随机）随机分配到各组，
+ *   单一性别组强制该性别。
+ * @param rng 随机源（测试可注入，默认 Math.random）
+ */
+export function assignGroupRepTargets(
+  pools: { male: number; female: number }[],
+  gender: LuckyGender,
+  rng: () => number = Math.random,
+): ('male' | 'female' | 'any')[] {
+  const n = pools.length;
+  if (gender !== 'mix') return pools.map(() => (gender === 'any' ? 'any' : gender));
+  const wantM = rng() < 0.5 ? Math.ceil(n / 2) : Math.floor(n / 2);
+  let mLeft = wantM;
+  let fLeft = n - wantM;
+  const assignment: ('male' | 'female' | 'any')[] = pools.map((p) => {
+    if (p.male > 0 && p.female === 0) { mLeft--; return 'male'; }
+    if (p.female > 0 && p.male === 0) { fLeft--; return 'female'; }
+    return 'any';
+  });
+  // 弹性组（男女皆有）随机打乱后依次分配剩余名额
+  const flexible = assignment.map((a, i) => (a === 'any' ? i : -1)).filter((i) => i >= 0);
+  for (const gi of [...flexible].sort(() => rng() - 0.5)) {
+    if (mLeft > 0) { assignment[gi] = 'male'; mLeft--; }
+    else if (fLeft > 0) { assignment[gi] = 'female'; fLeft--; }
+    else assignment[gi] = rng() < 0.5 ? 'male' : 'female';
+  }
+  return assignment;
 }

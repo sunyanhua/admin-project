@@ -349,10 +349,24 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
   })();
   const [tabKey, setTabKey] = useState(defaultTabKey);
 
-  // 每次打开弹窗按当前时间重新决定默认 TAB（签到时间到了自动落在入选名单）
+  /** 弹窗内实时活动数据：任一分组/配置 TAB 保存后重新拉取，同步给所有 TAB（2026-11-10 用户定：保存分组后编排等 TAB 免刷新页面） */
+  const [liveActivity, setLiveActivity] = useState<Activity | null | undefined>(activity);
+
+  // 每次打开弹窗按当前时间重新决定默认 TAB（签到时间到了自动落在入选名单），并重置弹窗内活动数据
   useEffect(() => {
-    if (visible) setTabKey(defaultTabKey);
-  }, [visible, defaultTabKey]);
+    if (visible) {
+      setTabKey(defaultTabKey);
+      setLiveActivity(activity);
+    }
+  }, [visible, defaultTabKey, activity]);
+
+  /** 分组配置保存后：重拉活动详情并同步给其余 TAB */
+  const refreshLiveActivity = useCallback(async () => {
+    try {
+      const res: any = await activityApi.getDetail(activityId);
+      if (res) setLiveActivity(res);
+    } catch { /* 刷新失败静默——各 TAB 保留旧数据 */ }
+  }, [activityId]);
 
   const openBigScreen = () => {
     const base = window.location.href.split('#')[0];
@@ -374,11 +388,11 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           right: <Button type="primary" icon={<DesktopOutlined />} onClick={openBigScreen}>大屏</Button>,
         }}
         items={[
-          { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} activity={activity} /> },
+          { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} activity={liveActivity} /> },
           { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
-          { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={activity} /> },
-          { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={activity} /> : null },
+          { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={liveActivity} onSaved={refreshLiveActivity} /> },
+          { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={liveActivity} /> : null },
         ]}
       />
     </ScrollableModal>

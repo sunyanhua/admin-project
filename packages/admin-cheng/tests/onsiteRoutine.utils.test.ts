@@ -67,6 +67,21 @@ describe('onsiteRoutine.utils', () => {
     ]);
   });
 
+  it('分组代表性别（gender，2026-11-10 用户定可选）：合法值保留，非法值丢弃', () => {
+    const cfg = JSON.stringify({
+      routine: [
+        { type: 'groupRep', gender: 'male' },
+        { type: 'groupRep', gender: 'mix' },
+        { type: 'groupRep', gender: 'xx' },
+      ],
+    });
+    expect(parseRoutine(cfg)).toEqual([
+      { type: 'groupRep', gender: 'male' },
+      { type: 'groupRep', gender: 'mix' },
+      { type: 'groupRep' },
+    ]);
+  });
+
   it('组中选组指定结果（fixed）：去重去空串，空数组被丢弃，其他类型不保留 fixed', () => {
     const cfg = JSON.stringify({
       routine: [

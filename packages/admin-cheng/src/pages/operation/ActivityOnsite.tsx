@@ -7,7 +7,7 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
-import { buildLuckyPools, pickGenderedWinners, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -239,6 +239,10 @@ const ActivityOnsite: React.FC = () => {
   /** 幸运之星配置：人数=转轮数（1~5，默认 1）、性别要求（默认混搭） */
   const [luckyCount, setLuckyCount] = useState(1);
   const [luckyGender, setLuckyGender] = useState<LuckyGender>('mix');
+  /** 各组代表性别要求（默认混搭=组间男女尽量均衡；2026-11-10 用户定：与其它抽取模式一致可选） */
+  const [groupRepGender, setGroupRepGender] = useState<LuckyGender>('mix');
+  /** 各组代表本次抽取使用的性别要求（编排步骤参数优先，进入时落定） */
+  const groupRepGenderRef = useRef<LuckyGender>('mix');
   /** 能成时刻：男女条带与最终配对 */
   const [femaleStrip, setFemaleStrip] = useState<WallUser[]>([]);
   const [maleStrip, setMaleStrip] = useState<WallUser[]>([]);
@@ -271,6 +275,8 @@ const ActivityOnsite: React.FC = () => {
   const onsiteNumMapRef = useRef<Map<string, number>>(new Map());
   /** 分组名称（onsite_config.groups，照片墙与默契度排名展示用） */
   const groupsRef = useRef<string[]>([]);
+  /** 最近一次同步的编排原始 JSON（轮询去重——内容未变不触发重渲染） */
+  const routineRawRef = useRef<string>('');
   /** 活动是否已配置分组（驱动各组代表/组中抽组/单组选人入口显隐） */
   const [hasGroups, setHasGroups] = useState(false);
   /** 报名用户分组名映射（默契度排名从报名记录反查） */
@@ -460,28 +466,50 @@ const ActivityOnsite: React.FC = () => {
     } catch { /* 查询失败静默 */ }
   }, [id, upgradePhotos]);
 
+  /** 拉取活动配置（bg_screen / 分组 / 编排）：分组变化时重拉照片墙与配对（组名渲染与组筛选同源）；
+   *  编排步骤仅在未执行时同步（播放中不被后台配置变更打断） */
+  const refreshConfig = useCallback(async () => {
+    if (!id) return;
+    try {
+      const res: any = await activityApi.getDetail(id);
+      const obj = JSON.parse(res?.onsite_config || '{}');
+      if (!obj || typeof obj !== 'object') return;
+      if (obj.bg_screen) setBgScreen((prev) => (prev === String(obj.bg_screen) ? prev : String(obj.bg_screen)));
+      if (typeof obj.groups === 'string') {
+        const groups: string[] = obj.groups.split('|').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+        const changed = groups.length !== groupsRef.current.length || groups.some((g, i) => g !== groupsRef.current[i]);
+        if (changed) {
+          groupsRef.current = groups;
+          setHasGroups(groups.length > 0);
+          // 组名变化 → 照片墙/配对卡片的组名与组筛选立即重建（2026-11-10 用户定：后台保存分组后大屏免整页刷新）
+          fetchWall();
+          fetchCouples();
+        }
+      }
+      const routineRaw = JSON.stringify((obj && typeof obj === 'object' ? obj.routine : undefined) ?? null);
+      if (routineRawRef.current !== routineRaw && !routineModeRef.current) {
+        routineRawRef.current = routineRaw;
+        setRoutine(parseRoutine(res?.onsite_config));
+      }
+    } catch { /* 配置拉取失败静默——保留现有配置 */ }
+  }, [id, fetchWall, fetchCouples]);
+
   useEffect(() => {
     if (!id) return;
-    // 活动详情：取现场大屏背景图（bg_screen）与分组名称（groups）——照片墙卡片需要分组名，先取详情再拉数据
-    activityApi.getDetail(id).then((res: any) => {
-      try {
-        const obj = JSON.parse(res?.onsite_config || '{}');
-        if (obj && typeof obj === 'object') {
-          if (obj.bg_screen) setBgScreen(String(obj.bg_screen));
-          if (typeof obj.groups === 'string') {
-            groupsRef.current = obj.groups.split('|').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
-          }
-          setHasGroups(groupsRef.current.length > 0);
-          setRoutine(parseRoutine(res?.onsite_config));
-        }
-      } catch { /* 无配置保持默认渐变 */ }
-    }).catch(() => {}).finally(() => {
+    refreshConfig().finally(() => {
       // 首次加载各数据源；之后不做轮询——每次按键先查询（1 签到 / 2 心动排名 / 3、4 先刷新签到 / 5 默契度）
       fetchWall();
       fetchCouples();
       fetchCpRank();
     });
-  }, [id, fetchWall, fetchCouples, fetchCpRank]);
+  }, [id, fetchWall, fetchCouples, fetchCpRank, refreshConfig]);
+
+  // 分组/背景/编排配置轮询（2026-11-10 用户定）：后台保存分组配置后大屏自动同步，无需刷新页面
+  useEffect(() => {
+    if (!id) return;
+    const timer = setInterval(() => { refreshConfig(); }, 10000);
+    return () => clearInterval(timer);
+  }, [id, refreshConfig]);
 
   /** 演示模式：按 0 键从系统随机抽 50 名左右男女用户模拟心形照片墙与配对 */
   const toggleDemo = useCallback(async () => {
@@ -875,9 +903,10 @@ const ActivityOnsite: React.FC = () => {
     };
   };
 
-  /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（仅已签到成员，滚动形式与幸运之星完全一致） */
-  const startGroupRep = useCallback(() => {
+  /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（仅已签到成员，滚动形式与幸运之星完全一致）。编排模式传参覆盖右上角配置 */
+  const startGroupRep = useCallback((override?: { gender?: LuckyGender }) => {
     clearDrawTimer();
+    groupRepGenderRef.current = override?.gender ?? groupRepGender;
     const pools = groupsRef.current
       .map((g) => wall.filter((u) => u.group === g))
       .filter((p) => p.length > 0);
@@ -897,7 +926,7 @@ const ActivityOnsite: React.FC = () => {
     setTab('groupRep');
     setDrawPhase('cover');
     setDrawWinners([]);
-  }, [clearDrawTimer, wall, buildStrip]);
+  }, [clearDrawTimer, wall, buildStrip, groupRepGender]);
 
   /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员）。编排模式传参覆盖指定组 */
   const startBlockDraw = useCallback((kind: 'group' | 'person', override?: { group?: string }) => {
@@ -1100,31 +1129,21 @@ const ActivityOnsite: React.FC = () => {
     if (isLucky) {
       const picked = new Set<string>();
       luckyWinners = [];
-      // 各组代表固定混搭：组间男女尽量均衡——目标性别名额（男多/女多随机）随机分配到各组
-      // （仅含单一性别的组强制该性别），组内再从目标性别随机抽取（无则回退另一性别/任意组员）
+      // 各组代表性别名额分配（2026-11-10 用户定：与其它抽取模式一致可选男/女/不限/混搭——
+      // 混搭=组间男女尽量均衡：目标性别名额随机分配到各组，单一性别组强制该性别）；
+      // 组内再从目标性别随机抽取（无则回退另一性别/任意组员）
       let groupAssignment: ('male' | 'female' | 'any')[] = [];
       if (tab === 'groupRep') {
         const groupPools = luckyStripsRef.current.map((_, i) =>
           luckyWinnerPoolsRef.current[i].filter((u) => !picked.has(u.userId)),
         );
-        const n = groupPools.length;
-        const wantM = Math.random() < 0.5 ? Math.ceil(n / 2) : Math.floor(n / 2);
-        let mLeft = wantM;
-        let fLeft = n - wantM;
-        groupAssignment = groupPools.map((pool) => {
-          const hasM = pool.some((u) => u.gender === 'male');
-          const hasF = pool.some((u) => u.gender === 'female');
-          if (hasM && !hasF) { mLeft--; return 'male'; }
-          if (hasF && !hasM) { fLeft--; return 'female'; }
-          return 'any';
-        });
-        // 弹性组（男女皆有）随机打乱后依次分配剩余名额
-        const flexible = groupAssignment.map((a, i) => (a === 'any' ? i : -1)).filter((i) => i >= 0);
-        for (const gi of [...flexible].sort(() => Math.random() - 0.5)) {
-          if (mLeft > 0) { groupAssignment[gi] = 'male'; mLeft--; }
-          else if (fLeft > 0) { groupAssignment[gi] = 'female'; fLeft--; }
-          else groupAssignment[gi] = Math.random() < 0.5 ? 'male' : 'female';
-        }
+        groupAssignment = assignGroupRepTargets(
+          groupPools.map((pool) => ({
+            male: pool.filter((u) => u.gender === 'male').length,
+            female: pool.filter((u) => u.gender === 'female').length,
+          })),
+          groupRepGenderRef.current,
+        );
       }
       luckySteps = luckyStripsRef.current.map((strip, i) => {
         const len = luckyReelLensRef.current[i];
@@ -1274,7 +1293,7 @@ const ActivityOnsite: React.FC = () => {
     if (step.type === 'lucky') {
       startLucky({ count: step.count ?? 1, gender: step.gender ?? 'mix' });
     } else if (step.type === 'groupRep') {
-      startGroupRep();
+      startGroupRep({ gender: step.gender ?? 'mix' });
     } else if (step.type === 'groupDraw') {
       if (step.fixed && step.fixed.length) {
         // 指定结果：校验指定分组仍存在，无效则跳过本步
@@ -1507,7 +1526,7 @@ const ActivityOnsite: React.FC = () => {
               {/* 分组抽取功能：仅活动已配置分组时显示 */}
               {hasGroups && (
                 <>
-                  <button onClick={startGroupRep} style={tab === 'groupRep' ? toolBtnActive : toolBtn}>各组代表(6)</button>
+                  <button onClick={() => startGroupRep()} style={tab === 'groupRep' ? toolBtnActive : toolBtn}>各组代表(6)</button>
                   <button onClick={() => startBlockDraw('group')} style={tab === 'groupDraw' ? toolBtnActive : toolBtn}>组中抽组(7)</button>
                   <button onClick={() => startBlockDraw('person')} style={tab === 'personDraw' ? toolBtnActive : toolBtn}>单组选人(8)</button>
                 </>
@@ -1536,6 +1555,20 @@ const ActivityOnsite: React.FC = () => {
                 size="small"
                 value={luckyGender}
                 onChange={blurAfter((v: LuckyGender) => setLuckyGender(v))}
+                onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
+                style={{ width: 78 }}
+                options={LUCKY_GENDER_OPTIONS}
+              />
+            </div>
+          )}
+          {/* 各组代表配置（仅该界面显示）：性别要求（默认混搭） */}
+          {tab === 'groupRep' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ marginRight: 4 }}>性别</span>
+              <Select
+                size="small"
+                value={groupRepGender}
+                onChange={blurAfter((v: LuckyGender) => setGroupRepGender(v))}
                 onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 78 }}
                 options={LUCKY_GENDER_OPTIONS}

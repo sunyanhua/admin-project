@@ -200,4 +200,22 @@ describe('OnsiteGroupTab', () => {
     expect(['A', 'B', 'C']).toContain(obj.group_name);
     expect(obj.foo).toBe('bar'); // 原有 extra_data 内容保留
   });
+
+  it('保存分组名称后触发 onSaved 回调（弹窗层据此同步刷新其它 TAB）', async () => {
+    const onSaved = vi.fn();
+    render(
+      <App>
+        <OnsiteGroupTab activityId="a1" activity={ACTIVITY as any} onSaved={onSaved} />
+      </App>,
+    );
+    const input = await screen.findByPlaceholderText('A|B|C|D|E|F|G') as HTMLInputElement;
+    await waitFor(() => expect(input.value).toBe('A|B|C'));
+    fireEvent.change(input, { target: { value: 'A|B|C|D' } });
+    await userEvent.click(btnByText('保存'));
+
+    await waitFor(() => {
+      expect(updateMock).toHaveBeenCalled();
+      expect(onSaved).toHaveBeenCalledTimes(1);
+    });
+  });
 });

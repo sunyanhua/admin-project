@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLuckyPools, pickGenderedWinners, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
 import type { LuckyGuest } from '@/pages/operation/luckyPools.utils';
 
 const male = (i: number): LuckyGuest => ({ userId: `m${i}`, gender: 'male' });
@@ -122,5 +122,50 @@ describe('buildLuckyPools', () => {
     expect(pickGenderedWinners([male(1)], 3, 'female', () => 0.5)).toEqual([]);
     expect(pickGenderedWinners([male(1), female(1)], 0, 'any', () => 0.5)).toEqual([]);
     expect(pickGenderedWinners([], 2, 'mix', () => 0.5)).toEqual([]);
+  });
+});
+
+describe('assignGroupRepTargets（各组代表性别名额分配）', () => {
+  const pools = [
+    { male: 2, female: 1 },
+    { male: 1, female: 2 },
+    { male: 3, female: 0 },
+    { male: 0, female: 2 },
+  ];
+
+  it('性别=男/女：每组目标该性别（不依赖随机源）', () => {
+    expect(assignGroupRepTargets(pools, 'male', () => 0.5)).toEqual(['male', 'male', 'male', 'male']);
+    expect(assignGroupRepTargets(pools, 'female', () => 0.5)).toEqual(['female', 'female', 'female', 'female']);
+  });
+
+  it('性别=不限：每组任意组员', () => {
+    expect(assignGroupRepTargets(pools, 'any', () => 0.5)).toEqual(['any', 'any', 'any', 'any']);
+  });
+
+  it('性别=混搭：单一性别组强制该性别，弹性组分配剩余男女名额', () => {
+    // rng 0.1：目标男多（4 组 → 男2女2）；纯男组强制 male（mLeft 1），纯女组强制 female（fLeft 1），
+    // 剩余男/女名额各 1 落到两个弹性组（随机打乱顺序，不锁定具体组）
+    const a = assignGroupRepTargets(pools, 'mix', () => 0.1);
+    expect(a).toHaveLength(4);
+    expect(a[2]).toBe('male');   // 纯男组强制
+    expect(a[3]).toBe('female'); // 纯女组强制
+    expect(a.filter((g) => g === 'male').length).toBe(2);
+    expect(a.filter((g) => g === 'female').length).toBe(2);
+    // 弹性组各分到一男一女
+    expect([a[0], a[1]].filter((g) => g === 'male').length).toBe(1);
+    expect([a[0], a[1]].filter((g) => g === 'female').length).toBe(1);
+  });
+
+  it('性别=混搭：纯男组超过目标男名额时弹性组不再分到男', () => {
+    const manyM = [
+      { male: 1, female: 0 },
+      { male: 1, female: 0 },
+      { male: 1, female: 0 },
+      { male: 1, female: 1 },
+    ];
+    // rng 0.9：目标男少（4 组 → 男1女3）；纯男组 3 个都强制 male（mLeft -2），弹性组只能分 female
+    const a = assignGroupRepTargets(manyM, 'mix', () => 0.9);
+    expect(a.filter((g) => g === 'male').length).toBe(3);
+    expect(a[3]).toBe('female');
   });
 });

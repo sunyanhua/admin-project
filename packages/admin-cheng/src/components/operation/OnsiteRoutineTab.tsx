@@ -27,6 +27,7 @@ const STEP_TYPE_OPTIONS = (Object.keys(ROUTINE_STEP_TYPE_LABELS) as RoutineStepT
 /** 各类型默认参数（切换类型时重置，备注保留） */
 const defaultStepOf = (type: RoutineStepType, note = ''): RoutineStep =>
   type === 'lucky' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
+  : type === 'groupRep' ? { type, gender: 'mix' as LuckyGender, note }
   : type === 'groupDraw' ? { type, count: 1, note }
   : type === 'personDraw' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
   : { type, note };
@@ -127,6 +128,7 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
         obj.routine = steps.map((s) => {
           const clean: RoutineStep = { type: s.type, note: (s.note || '').trim() };
           if (s.type === 'lucky') { clean.count = s.count ?? 1; clean.gender = s.gender ?? 'mix'; }
+          else if (s.type === 'groupRep') { clean.gender = s.gender ?? 'mix'; }
           else if (s.type === 'groupDraw') {
             // 指定结果时抽组数=所选中组数（不存 count）；未指定则随机抽取
             if (s.fixed && s.fixed.length) clean.fixed = [...s.fixed];
@@ -215,7 +217,13 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
                     <Select size="small" value={s.gender ?? 'mix'} onChange={(v: LuckyGender) => updateStep(idx, { gender: v })} style={{ width: 78 }} options={LUCKY_GENDER_OPTIONS} />
                   </Space>
                 )}
-                {s.type === 'groupRep' && <span style={{ color: '#999', fontSize: 12 }}>每组从已签到成员中抽取一名代表</span>}
+                {s.type === 'groupRep' && (
+                  <Space size={6}>
+                    <span style={{ color: '#666' }}>性别</span>
+                    <Select size="small" value={s.gender ?? 'mix'} onChange={(v: LuckyGender) => updateStep(idx, { gender: v })} style={{ width: 78 }} options={LUCKY_GENDER_OPTIONS} />
+                    <span style={{ color: '#999', fontSize: 12 }}>每组从已签到成员中抽取一名代表</span>
+                  </Space>
+                )}
                 {s.type === 'groupDraw' && (
                   <Space size={6}>
                     <span style={{ color: '#666' }}>抽组数</span>

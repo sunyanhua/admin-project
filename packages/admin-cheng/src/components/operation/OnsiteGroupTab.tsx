@@ -17,6 +17,8 @@ interface OnsiteGroupTabProps {
   activityId: string;
   /** 列表行数据（与现场配置 TAB 同源）；缺省时用详情接口兜底 */
   activity?: Activity | null;
+  /** 分组配置保存成功回调（弹窗层用于同步刷新其它 TAB 的分组数据） */
+  onSaved?: () => void;
 }
 
 /** 分组成员展示行 */
@@ -71,7 +73,7 @@ const MemberCard: React.FC<{
  * - 「自动分组」：全部已入选用户按人数平均 + 男女人数平均自动分配
  * - 「保存分组」：逐条 PATCH 报名 extra_data（JSON 原对象透传 + group_index/group_name）
  */
-const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: activityProp }) => {
+const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: activityProp, onSaved }) => {
   const { success, error: showError } = useAppNotification();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -251,6 +253,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
       await activityApi.update(activityId, { onsite_config: JSON.stringify(obj) });
       success('分组配置已保存');
       await fetchConfig();
+      onSaved?.();
     } catch (err: any) {
       if (err?.errorFields) return;
       showError(err?.response?.data?.message || '保存失败');
@@ -335,6 +338,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     setSavingProgress(0);
     success(`分组保存完成：成功 ${ok} 条，失败 ${fail} 条`);
     fetchMembers();
+    onSaved?.();
   };
 
   /** 组内男女人数统计 */
