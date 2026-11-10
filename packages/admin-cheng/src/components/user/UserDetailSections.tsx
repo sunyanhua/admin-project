@@ -1,9 +1,9 @@
 import { Avatar, Tag, Image, Switch, Checkbox, Space, Button, Typography } from 'antd';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import {
   UserOutlined, IdcardOutlined, WalletOutlined,
   SafetyCertificateOutlined, AccountBookOutlined, LockOutlined,
-  CopyOutlined, EditOutlined, AuditOutlined,
+  CopyOutlined, EditOutlined, AuditOutlined, TrophyOutlined,
 } from '@ant-design/icons';
 import { formatDateTime, formatDate, parseAsLocal } from '@/utils/format';
 import { getAvatarUrl, getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
@@ -22,6 +22,7 @@ import RealNameWithTag from '@/components/user/RealNameWithTag';
 import IdCardViewButton from '@/components/user/IdCardViewButton';
 import MatchRecommendButton from '@/components/user/MatchRecommendButton';
 import DivineChanceAdjustButton from '@/components/user/DivineChanceAdjustButton';
+import ReliabilityLogModal from '@/components/user/ReliabilityLogModal';
 
 const { Text } = Typography;
 
@@ -115,6 +116,25 @@ function MatchCodeTitle({ code }: { code: string }) {
         }}
       />
     </Space>
+  );
+}
+
+/** 靠谱值展示：{展示值}（原值{系统值}），点击弹出该用户靠谱值流水 */
+function ReliabilityValue({ userId, display, raw }: { userId: string; display?: number | null; raw?: number | null }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button
+        type="link"
+        size="small"
+        icon={<TrophyOutlined />}
+        style={{ padding: 0, height: 'auto', fontSize: 13 }}
+        onClick={() => setOpen(true)}
+      >
+        {display ?? '-'}（原值{raw ?? '-'}）
+      </Button>
+      {open && <ReliabilityLogModal open={open} userId={userId} onClose={() => setOpen(false)} />}
+    </>
   );
 }
 
@@ -241,8 +261,18 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
         { label: '自我介绍', value: matchProfile.self_intro || '-', span: 2 },
         { label: '择偶要求', value: matchProfile.partner_demand || '-', span: 2 },
         { label: '人气', value: matchProfile.popularity ?? '-', span: 1 },
+        {
+          label: '靠谱值',
+          value: (
+            <ReliabilityValue
+              userId={user.user_id}
+              display={matchProfile.reliability_display_score}
+              raw={matchProfile.reliability_score}
+            />
+          ),
+          span: 1,
+        },
         { label: '可见范围', value: matchProfile.audit_status === MatchProfileAuditStatus.REVOKED ? '-' : getVisibilityTag(matchProfile), span: 1 },
-        { label: '最后更新', value: matchProfile.updated_at ? formatDateTime(matchProfile.updated_at) : '-', span: 1 },
         {
           label: '审核状态',
           value: (() => {
@@ -260,6 +290,7 @@ export function buildUserDetailSections(props: CommunityUserDetailProps) {
           })(),
           span: 1,
         },
+        { label: '最后更新', value: matchProfile.updated_at ? formatDateTime(matchProfile.updated_at) : '-', span: 2 },
       ],
     });
   }

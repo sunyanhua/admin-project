@@ -77,6 +77,10 @@ export interface CommunityMatchProfileSummary {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  /** 公开展示靠谱值（每周边界重算） */
+  reliability_display_score?: number | null;
+  /** 系统记录级靠谱值（仅自己/后台可见） */
+  reliability_score?: number | null;
 }
 
 /** 钱包摘要 */

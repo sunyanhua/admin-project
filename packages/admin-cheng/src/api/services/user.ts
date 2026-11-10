@@ -116,4 +116,9 @@ export const userApi = {
   updateTopicDataStatus: (userId: string, topicKey: string, status: number) => {
     return request.patch(`/admin/v1/bizops/user/${userId}/topic-data/${topicKey}`, { status });
   },
+
+  /** 用户靠谱值流水 — GET /admin/v1/bizops/user/{id}/reliability-logs（created_at 倒序） */
+  getReliabilityLogs: (userId: string, params?: { page?: number; size?: number }) => {
+    return request.get(`/admin/v1/bizops/user/${userId}/reliability-logs`, { params });
+  },
 };
