@@ -7,7 +7,7 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
-import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -908,9 +908,14 @@ const ActivityOnsite: React.FC = () => {
     clearDrawTimer();
     // 仅编排传参时落定覆盖值；手动进入保持 null——按 P 时读取实时配置（与单组选人一致）
     groupRepGenderRef.current = override?.gender ?? null;
-    const pools = groupsRef.current
-      .map((g) => wall.filter((u) => u.group === g))
-      .filter((p) => p.length > 0);
+    const gender = override?.gender ?? groupRepGender;
+    // 指定性别严格过滤：组内无该性别则整组不出转轮（与幸运之星缩减转轮同口径）
+    const pools = filterGroupRepPools(
+      groupsRef.current
+        .map((g) => wall.filter((u) => u.group === g))
+        .filter((p) => p.length > 0),
+      gender,
+    );
     // 编排模式：无已签到且已分组的成员时提示跳过（按 → 切换步骤）
     if (routineModeRef.current && pools.length === 0) {
       setRoutineNotice('本步暂无已签到且已分组的成员，已跳过');
@@ -927,7 +932,7 @@ const ActivityOnsite: React.FC = () => {
     setTab('groupRep');
     setDrawPhase('cover');
     setDrawWinners([]);
-  }, [clearDrawTimer, wall, buildStrip]);
+  }, [clearDrawTimer, wall, buildStrip, groupRepGender]);
 
   /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员）。编排模式传参覆盖指定组 */
   const startBlockDraw = useCallback((kind: 'group' | 'person', override?: { group?: string }) => {
@@ -1046,6 +1051,12 @@ const ActivityOnsite: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [luckyCount, luckyGender]);
 
+  // 各组代表性别变更：封面状态立即按新性别重建转轮（无符合条件的组不展示；与幸运之星一致）
+  useEffect(() => {
+    if (tab === 'groupRep' && drawPhase === 'cover') startGroupRep();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupRepGender]);
+
   /** 进入能成时刻（快捷键 4）：先查询最新签到数据作为转轮筛选来源 */
   const startCouple = useCallback(async () => {
     clearDrawTimer();
@@ -1155,8 +1166,10 @@ const ActivityOnsite: React.FC = () => {
           const males = pool.filter((u) => u.gender === 'male');
           const females = pool.filter((u) => u.gender === 'female');
           const target = groupAssignment[i];
-          cands = target === 'male' ? (males.length ? males : (females.length ? females : pool))
-            : target === 'female' ? (females.length ? females : (males.length ? males : pool))
+          // 严格按目标性别抽取（2026-11-10 用户定：无符合条件的组已在进入时过滤，不做跨性别回退）；
+          // 空池兜底 pool 仅防滚动中改性别导致 randOf 空数组
+          cands = target === 'male' ? (males.length ? males : pool)
+            : target === 'female' ? (females.length ? females : pool)
             : pool;
         } else {
           cands = pool;

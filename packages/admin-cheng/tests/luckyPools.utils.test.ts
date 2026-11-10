@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
 import type { LuckyGuest } from '@/pages/operation/luckyPools.utils';
 
 const male = (i: number): LuckyGuest => ({ userId: `m${i}`, gender: 'male' });
@@ -167,5 +167,31 @@ describe('assignGroupRepTargets（各组代表性别名额分配）', () => {
     const a = assignGroupRepTargets(manyM, 'mix', () => 0.9);
     expect(a.filter((g) => g === 'male').length).toBe(3);
     expect(a[3]).toBe('female');
+  });
+});
+
+describe('filterGroupRepPools（各组代表候选组过滤）', () => {
+  const groups = [
+    [male(1), female(1)],          // 男女混合
+    [male(2), male(3)],            // 纯男
+    [female(2), female(3)],        // 纯女
+    [unknown(1)],                  // 性别未知
+  ];
+
+  it('性别=男：仅保留含男生的组（纯男/混合）', () => {
+    expect(filterGroupRepPools(groups, 'male')).toEqual([groups[0], groups[1]]);
+  });
+
+  it('性别=女：仅保留含女生的组（纯女/混合）', () => {
+    expect(filterGroupRepPools(groups, 'female')).toEqual([groups[0], groups[2]]);
+  });
+
+  it('性别=不限/混搭：保留全部组（含性别未知）', () => {
+    expect(filterGroupRepPools(groups, 'any')).toEqual(groups);
+    expect(filterGroupRepPools(groups, 'mix')).toEqual(groups);
+  });
+
+  it('无符合性别的组：返回空数组（不出转轮）', () => {
+    expect(filterGroupRepPools([[male(1)], [male(2)]], 'female')).toEqual([]);
   });
 });

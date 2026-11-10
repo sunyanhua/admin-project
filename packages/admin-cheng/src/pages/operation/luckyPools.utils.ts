@@ -100,9 +100,19 @@ export function buildLuckyPools<T extends LuckyGuest>(
 }
 
 /**
+ * 各组代表候选组过滤：male / female 仅保留组内含该性别的组（无符合条件的组不出转轮，
+ * 与幸运之星缩减转轮同口径）；any / mix 保留全部非空组。
+ */
+export function filterGroupRepPools<T extends LuckyGuest>(pools: T[][], gender: LuckyGender): T[][] {
+  if (gender === 'male') return pools.filter((p) => p.some((u) => u.gender === 'male'));
+  if (gender === 'female') return pools.filter((p) => p.some((u) => u.gender === 'female'));
+  return pools;
+}
+
+/**
  * 各组代表性别名额分配（数组长度 = 组数，返回每组的目标性别）：
- * - male / female → 每组目标该性别（组内抽取时无该性别则回退另一性别/任意组员，
- *   回退由调用方 slowRoll 处理，此处只定目标）；
+ * - male / female → 每组目标该性别（组内抽取严格按该性别，无则整组不出转轮——
+ *   由 filterGroupRepPools 在进入时过滤）；
  * - any → 每组任意组员；
  * - mix → 组间男女尽量均衡：目标男女名额（男多/女多随机）随机分配到各组，
  *   单一性别组强制该性别。
