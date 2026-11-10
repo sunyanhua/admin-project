@@ -120,6 +120,7 @@ const ActivityManagement = () => {
   const handleCloseModal = () => {
     setModalVisible(false);
     setEditingActivity(null);
+    refresh(); // 编辑弹窗可能改了活动数据（含现场配置），关闭即刷新列表行，避免其它入口读到过期数据
   };
 
   const handleOpenWarmUp = (record: Activity) => {
@@ -335,7 +336,7 @@ const ActivityManagement = () => {
         activityTitle={registerActivityTitle}
         activityType={registerActivityType}
         formConfig={registerFormConfig}
-        onClose={() => setRegisterModalVisible(false)}
+        onClose={() => { setRegisterModalVisible(false); refresh(); }}
       />
 
       <WarmUpManageModal
@@ -360,7 +361,7 @@ const ActivityManagement = () => {
         activityId={onsiteActivity?.id || ''}
         activityTitle={onsiteActivity?.title || ''}
         activity={onsiteActivity}
-        onClose={() => { setOnsiteModalVisible(false); setOnsiteActivity(null); }}
+        onClose={() => { setOnsiteModalVisible(false); setOnsiteActivity(null); refresh(); }}
       />
     </>
   );

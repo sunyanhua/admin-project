@@ -83,7 +83,7 @@ const pickOnsiteFields = (activity: Activity) => {
   };
 };
 
-const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity, onClose, onSuccess, onOpenPromiseModal, lockedZone }) => {
+const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, activity: activityProp, onClose, onSuccess, onOpenPromiseModal, lockedZone }) => {
   const { success, error: showError } = useAppNotification();
   const { user } = useAuth();
   /** 预热配置仅超级管理员（isRoot）可见可编辑，其他管理员提交时不更新该字段 */
@@ -96,6 +96,22 @@ const ActivityEditModal: React.FC<ActivityEditModalProps> = ({ visible, mode, ac
   const [zoneOptions, setZoneOptions] = useState<{ label: string; value: string }[]>([]);
   const [promiseTemplates, setPromiseTemplates] = useState<PromiseTemplate[]>([]);
   const [form] = Form.useForm();
+  /**
+   * 编辑模式打开时拉取最新活动详情：列表行数据可能过期（现场管理/其它入口已更新
+   * onsite_config/extra_params——直接按行数据回填并保存会覆盖新配置）。
+   * 组件内 activity 统一指向「最新详情优先、行数据兜底」。
+   */
+  const [freshActivity, setFreshActivity] = useState<Activity | null>(null);
+  useEffect(() => {
+    if (!visible) { setFreshActivity(null); return; }
+    if (mode !== 'edit' || !activityProp?.id) return;
+    let alive = true;
+    activityApi.getDetail(activityProp.id)
+      .then((res: any) => { if (alive && res) setFreshActivity(res); })
+      .catch(() => { /* 拉取失败保留行数据 */ });
+    return () => { alive = false; };
+  }, [visible, mode, activityProp]);
+  const activity = freshActivity ?? activityProp;
   /** 当前选择的所属专区（用于控制"仅本专区用户可报名"开关可用性） */
   const zoneId = Form.useWatch('zone_id', form);
   /** 现场签到开关（驱动签到开始时间显隐） */

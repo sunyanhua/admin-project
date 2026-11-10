@@ -38,6 +38,7 @@ const REGISTERS = vi.hoisted(() => [
 const getRegistersMock = vi.hoisted(() => vi.fn().mockResolvedValue(REGISTERS));
 const adjustReliabilityMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const getDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue(ACTIVITY));
 
 // 阻断真实 API 模块链（src/api/index.ts 顶层依赖 localStorage，jsdom 下不可用）
 vi.mock('@/api/services/user', () => ({
@@ -54,7 +55,7 @@ vi.mock('@/api/services/activity-v1', () => ({
   activityApi: {
     getRegisters: getRegistersMock,
     getPresigns: vi.fn().mockResolvedValue([]),
-    getDetail: vi.fn().mockResolvedValue(ACTIVITY),
+    getDetail: getDetailMock,
     update: updateMock,
     getRegisterUser: vi.fn(),
     getRegisterUserPrivacy: vi.fn(),
@@ -82,6 +83,8 @@ beforeEach(() => {
   getRegistersMock.mockClear();
   adjustReliabilityMock.mockClear();
   updateMock.mockClear();
+  getDetailMock.mockClear();
+  getDetailMock.mockImplementation(() => Promise.resolve(ACTIVITY));
 });
 
 /** 打开签到状态下拉并选择指定选项（rc-select 选项带 title 属性，避开状态列同名 Tag 文本） */
@@ -198,7 +201,10 @@ describe('OnsiteManageModal 入选名单签到筛选', () => {
   }, 30000);
 
   it('已完成扣分的活动：未签到筛选下显示标记且不再提供扣分按钮', async () => {
-    renderModal({ ...ACTIVITY, onsite_config: JSON.stringify({ deduct_done_at: '2026-11-10T10:00:00+08:00' }) });
+    const marked = { ...ACTIVITY, onsite_config: JSON.stringify({ deduct_done_at: '2026-11-10T10:00:00+08:00' }) };
+    // 弹窗打开即重拉详情——mock 返回带标记的最新数据
+    getDetailMock.mockImplementation(() => Promise.resolve(marked));
+    renderModal(marked);
     await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
     await selectCheckStatus('未签到');
 

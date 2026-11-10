@@ -380,21 +380,23 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
   /** 弹窗内实时活动数据：任一分组/配置 TAB 保存后重新拉取，同步给所有 TAB（2026-11-10 用户定：保存分组后编排等 TAB 免刷新页面） */
   const [liveActivity, setLiveActivity] = useState<Activity | null | undefined>(activity);
 
-  // 每次打开弹窗按当前时间重新决定默认 TAB（签到时间到了自动落在入选名单），并重置弹窗内活动数据
-  useEffect(() => {
-    if (visible) {
-      setTabKey(defaultTabKey);
-      setLiveActivity(activity);
-    }
-  }, [visible, defaultTabKey, activity]);
-
-  /** 分组配置保存后：重拉活动详情并同步给其余 TAB */
+  /** 重拉活动详情并同步给弹窗内所有 TAB（分组配置保存后 / 每次打开弹窗时调用） */
   const refreshLiveActivity = useCallback(async () => {
     try {
       const res: any = await activityApi.getDetail(activityId);
       if (res) setLiveActivity(res);
     } catch { /* 刷新失败静默——各 TAB 保留旧数据 */ }
   }, [activityId]);
+
+  // 每次打开弹窗按当前时间重新决定默认 TAB（签到时间到了自动落在入选名单），并重置弹窗内活动数据；
+  // 打开即重拉详情——列表行数据可能过期（分组/编排/扣分标记等配置已由其它入口更新），各 TAB 必须拿到最新值
+  useEffect(() => {
+    if (visible) {
+      setTabKey(defaultTabKey);
+      setLiveActivity(activity);
+      refreshLiveActivity();
+    }
+  }, [visible, defaultTabKey, activity, refreshLiveActivity]);
 
   const openBigScreen = () => {
     const base = window.location.href.split('#')[0];
