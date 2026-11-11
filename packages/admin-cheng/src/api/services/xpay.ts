@@ -48,6 +48,57 @@ export enum IOSProvideStatus {
   DELIVERING = 2, // 发货中
 }
 
+/** 投诉处理状态（列表筛选含 1=处理中） */
+export enum PayComplaintStatus {
+  PENDING = 0, // 待处理
+  PROCESSING = 1, // 处理中（仅列表筛选值）
+  REPLIED = 2, // 已回复
+  COMPLETED = 3, // 已结案
+  CLOSED = 4, // 已关闭
+}
+
+/** 投诉消息方向 */
+export enum PayComplaintDirection {
+  USER = 1, // 用户
+  MERCHANT = 2, // 商家
+}
+
+/** 投诉消息条目（详情内 messages） */
+export interface AdminComplaintMessageItem {
+  id: string;
+  content: string;
+  direction: number;
+  media_ids: string;
+  operator_id: string;
+  created_at: string;
+}
+
+/** 投诉列表项 */
+export interface AdminComplaintItem {
+  id: string;
+  complaint_id: string;
+  status: number;
+  complaint_detail: string;
+  complaint_time: string;
+  mch_order_id: string;
+  wx_order_id: string;
+  transaction_id: string;
+  open_id: string;
+  last_reply_at: string;
+  completed_at: string;
+  handler_admin_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 投诉详情（列表项 + 消息留痕 + 原始推送报文） */
+export interface AdminComplaintDetail extends AdminComplaintItem {
+  deadline_at: string;
+  request_id: string;
+  raw_payload: string;
+  messages: AdminComplaintMessageItem[];
+}
+
 /** 支付订单列表项 */
 export interface XpayOrder {
   id: string;
@@ -126,5 +177,30 @@ export const xpayApi = {
   /** iOS 退款问询详情（决策、证据快照与原始报文） */
   getIosRefundInquiry: (id: string) => {
     return request.get(`/admin/v1/xpay/ios-refund-inquiries/${id}`);
+  },
+
+  /** 投诉列表（created_at 倒序） */
+  getComplaints: (params?: { page?: number; size?: number; status?: number; keyword?: string }) => {
+    return request.get('/admin/v1/xpay/complaints', { params });
+  },
+
+  /** 投诉详情（本地投诉记录、商家回复留痕与原始推送报文） */
+  getComplaint: (id: string) => {
+    return request.get(`/admin/v1/xpay/complaints/${id}`);
+  },
+
+  /** 回复投诉用户（先调微信 response_complaint，成功后本地留痕并推进状态；已结案/已关闭不可回复） */
+  replyComplaint: (id: string, data: { content: string; image_file_ids?: string[] }) => {
+    return request.post(`/admin/v1/xpay/complaints/${id}/reply`, data);
+  },
+
+  /** 完成投诉处理（先调微信 complete_complaint，成功后本地置已结案；已结案/已关闭不可重复结案） */
+  completeComplaint: (id: string) => {
+    return request.post(`/admin/v1/xpay/complaints/${id}/complete`);
+  },
+
+  /** 投诉协商历史（实时调用微信 get_negotiation_history，分页转 offset/limit） */
+  getComplaintNegotiationHistory: (id: string, params?: { page?: number; size?: number }) => {
+    return request.get(`/admin/v1/xpay/complaints/${id}/negotiation-history`, { params });
   },
 };
