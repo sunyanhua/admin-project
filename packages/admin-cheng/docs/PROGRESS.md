@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-11-10**
+**2026-11-11**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-11-11 | 互动管理新增「投诉管理」（列表/详情/回复/结案，xpay 投诉接口）；**测试版构建发布**（build:test，产物待上传） | xpay + ComplaintManagement + router/menu + tests | 6399b29（构建产物未提交） |
 | 2026-11-10 | 现场管理完善——①分组配置保存后全链路同步（弹窗内重拉详情同步各 TAB + 现场大屏每 10s 轮询配置，分组变化重建照片墙/配对）；②各组代表性别可选（男/女/不限/混搭，编排步骤支持性别参数）；修复两组问题：性别选择不生效（ref 固化改为按 P 读实时配置）、指定性别仍抽异性（去跨性别回退，无符合组不出转轮）；**测试版+正式版构建发布**（build:test / build:prod，产物待上传） | ActivityOnsite + luckyPools.utils + OnsiteManageModal/GroupTab/RoutineTab + tests | 3e6766b、8f10e8a、409d52a（构建产物未提交） |
 | 2026-11-06 | 实名认证配置页面（价格规则管理 + 认证记录列表，idverify 接口组）；并入「用户资料·用户认证」菜单（默认认证记录 TAB，价格单位元）；**测试版构建发布**（build:test，产物待上传） | idverify 服务 + UserVerify + IdVerifyPriceRuleModal + router/menu + tests | 765f053、7e70d61（构建产物未提交） |
 | 2026-11-06 | 现场管理入选名单新增「未签到」筛选（签到状态下拉：已签到/未签到，映射 checked_in true/false，不选不筛；新增 OnsiteManageModal 单测 4 项 + setupTests 修复 Node 25 localStorage 遮蔽）；报名名单审核状态下拉「已筛选」改为「已入选」；同步后端接口文档（新增「实人认证管理」接口组：价格规则 CRUD + 认证记录列表）；**正式版构建发布**（build:prod，产物待上传） | OnsiteManageModal + ActivityRegisterModal + tests + setupTests | 36144f8、5913b9a、9c5d47c（构建产物未提交） |
