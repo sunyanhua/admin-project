@@ -12,6 +12,15 @@ const ORDERS = vi.hoisted(() => [
     description: '报喜红包-张三', user_id: 'u1', created_at: '2026-11-10T10:00:00+08:00',
     paid_at: '2026-11-10T10:01:00+08:00', wx_order_id: '', wx_transaction_id: '',
     biz_id: '', refunded_at: null, closed_at: null,
+    user_data: { phone: '13800000000' },
+    user_profile: { nickname: '张三', avatar: '', gender: 1, age: 28 },
+  },
+  {
+    id: 'o2', order_no: 'ON202611100002', biz_type: 3, status: 0, amount_cents: 1000,
+    description: '代币充值', user_id: 'u2', created_at: '2026-11-09T10:00:00+08:00',
+    paid_at: null, wx_order_id: '', wx_transaction_id: '',
+    biz_id: '', refunded_at: null, closed_at: null,
+    user_data: null, user_profile: null,
   },
 ]);
 
@@ -44,7 +53,21 @@ const WITHDRAWS = vi.hoisted(() => [
   },
 ]);
 
-const getOrdersMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: ORDERS, total: 1 }));
+const getOrdersMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: ORDERS, total: 2 }));
+
+const USER_DETAIL = vi.hoisted(() => ({
+  user: {
+    user_id: 'u1', phone: '13800000000', is_migrated: false, is_activated: false,
+    last_active_at: '', wallet_balance: null, credits: 0, credits_weekly: 0,
+  },
+  profile: {
+    nickname: '张三', avatar: '', gender: 1, age: 28,
+    birth_date: '', zodiac: '', created_at: '', audit_status: 0,
+  },
+  match_profile: null,
+  wallet: null,
+}));
+const getUserDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue(USER_DETAIL));
 const getRefundsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: REFUNDS, total: 1 }));
 const getInquiriesMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: INQUIRIES, total: 1 }));
 const getInquiryMock = vi.hoisted(() => vi.fn().mockResolvedValue(INQUIRIES[0]));
@@ -64,6 +87,18 @@ vi.mock('@/api/services/xpay', () => ({
     getRefunds: getRefundsMock,
     getIosRefundInquiries: getInquiriesMock,
     getIosRefundInquiry: getInquiryMock,
+  },
+}));
+
+vi.mock('@/api/services/user', () => ({
+  userApi: {
+    getUserDetail: getUserDetailMock,
+    getUserPrivacy: vi.fn(),
+    setMatchProfileRecommend: vi.fn(),
+    updateBasicProfile: vi.fn(),
+    getReliabilityLogs: vi.fn(),
+    auditMatchProfile: vi.fn(),
+    adjustDivineChance: vi.fn(),
   },
 }));
 
@@ -90,6 +125,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  getUserDetailMock.mockClear();
   getOrdersMock.mockClear();
   getRefundsMock.mockClear();
   getInquiriesMock.mockClear();
@@ -109,6 +145,20 @@ describe('财务管理页面', () => {
     expect(screen.getByText('已支付')).toBeInTheDocument();
     expect(screen.getByText('9.90')).toBeInTheDocument();
   });
+
+  it('订单管理：用户列展示头像昵称，点击打开用户资料卡片', async () => {
+    renderPage(<OrderManagement />);
+    await waitFor(() => expect(screen.getByText('ON202611100001')).toBeInTheDocument());
+    // 用户列展示昵称（无头像时兜底显示首字）
+    expect(screen.getByText('张三')).toBeInTheDocument();
+    // user_profile 缺失时回退显示用户 ID
+    expect(screen.getByText('u2')).toBeInTheDocument();
+    // 点击用户 → 打开标准用户资料卡片（按 userId 重新拉取最新数据）
+    fireEvent.click(screen.getByRole('button', { name: /张三/ }));
+    await waitFor(() => expect(getUserDetailMock).toHaveBeenCalledWith('u1'));
+    await screen.findByText('用户详情');
+    expect(screen.getAllByText('张三').length).toBeGreaterThanOrEqual(2);
+  }, 20000);
 
   it('退款管理：渲染退款单号/微信退款单号/状态/金额', async () => {
     renderPage(<RefundManagement />);

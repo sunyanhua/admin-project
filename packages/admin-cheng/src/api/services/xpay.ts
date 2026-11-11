@@ -112,6 +112,19 @@ export interface XpayOrder {
   description: string;
   biz_id: string;
   user_id: string;
+  /** 下单用户数据（后端挂载，可能为 null） */
+  user_data?: {
+    phone?: string;
+    credits?: number;
+    is_activated?: boolean;
+  } | null;
+  /** 下单用户资料（昵称/头像，可能为 null） */
+  user_profile?: {
+    nickname?: string;
+    avatar?: string;
+    gender?: number;
+    age?: number;
+  } | null;
   created_at: string;
   paid_at: string;
   refunded_at: string;
