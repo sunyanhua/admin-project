@@ -5265,7 +5265,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.WithdrawItem"
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminWithdrawItem"
                                             }
                                         }
                                     }
@@ -6424,7 +6424,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "分页查询认证记录，按创建时间倒序。响应不含真实姓名/身份证号/CertifyUrl。",
+                "description": "分页查询认证记录，按创建时间倒序。条目挂载申请用户的档案数据（user_data/user_profile/user_match_profile）。认证记录本身不返回认证时填写的姓名/身份证号/CertifyUrl。",
                 "produces": [
                     "application/json"
                 ],
@@ -16209,6 +16209,75 @@
                 }
             }
         },
+        "/admin/v1/xpay/bill-tasks/resync": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "对区间内每个自然日 × 账单类型（日账单/订单明细）创建或重置任务并立即执行一轮处理；已入账任务也会重置后重拉（明细 upsert 幂等、对账可重跑）。微信账单 T+3 生成，end_date 最晚为今天 −3 天；单次跨度 ≤31 天。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "账单区间补拉",
+                "parameters": [
+                    {
+                        "description": "补拉区间",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminResyncBillTasksRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "补拉完成（订单明细可能仍为生成中）",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminResyncBillTasksResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "日期格式/区间非法（40001 或 40735）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/xpay/bill-tasks/{id}/retry": {
             "post": {
                 "security": [
@@ -17037,6 +17106,147 @@
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/xpay/fund/daily": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "按北京时间自然日输出支付/入账/退费/提现的笔数与金额；缺失日补 0。日期窗口缺省近 30 天，显式窗口 ≤366 天。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "资金日统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（默认 30 天前）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundDailyItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "日期格式错误或窗口超限（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/xpay/fund/summary": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "支付（paid_at，含后来退款）/入账（bill_date 账单明细）/退费（成功流水）/提现（成功流水）四项汇总；日期窗口为北京时间自然日，缺省近 30 天，显式窗口 ≤366 天。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "资金汇总统计",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始日期 YYYYMMDD（默认 30 天前）",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束日期 YYYYMMDD（默认今天）",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundSummaryResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "日期格式错误或窗口超限（code=40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     },
                     "401": {
@@ -18665,6 +18875,75 @@
                     },
                     "400": {
                         "description": "参数错误或配置已存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/xpay/virtual-configs/switch-env": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "按 app_id + 目标 env 启用对应配置并停用同 app_id 的其他启用配置。\n安全约束：当前存在启用中的正式配置（env=0）时，禁止直接切换到沙箱（env=1），须先停用现网配置；沙箱 → 正式允许。\n目标环境已启用时幂等返回（switched=false）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "沙箱/正式一键切换",
+                "parameters": [
+                    {
+                        "description": "app_id + 目标 env",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.SwitchVirtualEnvRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "切换结果",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.SwitchVirtualEnvResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）、禁止正式→沙箱（40737）或目标配置不存在（40738）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -32459,6 +32738,38 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminWithdrawItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "fail_reason": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.WithdrawStatus"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
+                },
+                "withdraw_no": {
+                    "type": "string"
+                },
+                "wx_transfer_no": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationCoupleData": {
             "type": "object",
             "properties": {
@@ -34105,8 +34416,22 @@
                 "sub_code": {
                     "type": "string"
                 },
+                "user_data": {
+                    "description": "关联用户数据（批量查询填充；允许 null——用户可能已注销或数据缺失）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserDataForAdmin"
+                        }
+                    ]
+                },
                 "user_id": {
                     "type": "string"
+                },
+                "user_match_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserMatchProfileDataForAdmin"
+                },
+                "user_profile": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserProfileDataForAdmin"
                 },
                 "verified_at": {
                     "type": "string"
@@ -34200,6 +34525,9 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRefundApplyStatus"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
                 },
                 "user_id": {
                     "type": "string"
@@ -36467,6 +36795,9 @@
                 "reconciled_at": {
                     "type": "string"
                 },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
+                },
                 "wx_order_id": {
                     "type": "string"
                 }
@@ -36557,6 +36888,9 @@
                 "updated_at": {
                     "type": "string"
                 },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
+                },
                 "user_id": {
                     "type": "string"
                 }
@@ -36619,6 +36953,9 @@
                 "updated_at": {
                     "type": "string"
                 },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
+                },
                 "wx_order_id": {
                     "type": "string"
                 }
@@ -36665,6 +37002,9 @@
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
                 },
                 "wx_order_id": {
                     "type": "string"
@@ -36753,6 +37093,178 @@
                 "transfer_scene_id": {
                     "type": "string",
                     "maxLength": 32
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundDailyItem": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "description": "YYYYMMDD（北京时间自然日）",
+                    "type": "string"
+                },
+                "pay_cents": {
+                    "description": "支付成功金额（分）",
+                    "type": "integer"
+                },
+                "pay_count": {
+                    "description": "支付成功笔数（含后来退款）",
+                    "type": "integer"
+                },
+                "refund_cents": {
+                    "description": "退款成功金额（分）",
+                    "type": "integer"
+                },
+                "refund_count": {
+                    "description": "退款成功笔数",
+                    "type": "integer"
+                },
+                "settle_count": {
+                    "description": "账单明细笔数",
+                    "type": "integer"
+                },
+                "settle_fee_cents": {
+                    "description": "手续费（分）",
+                    "type": "integer"
+                },
+                "settle_gross_cents": {
+                    "description": "交易额（分）",
+                    "type": "integer"
+                },
+                "settle_net_cents": {
+                    "description": "结算净额（分）",
+                    "type": "integer"
+                },
+                "withdraw_cents": {
+                    "description": "提现成功金额（分）",
+                    "type": "integer"
+                },
+                "withdraw_count": {
+                    "description": "提现成功笔数",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPayBizTypeItem": {
+            "type": "object",
+            "properties": {
+                "biz_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PayBizType"
+                },
+                "cents": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "refunded_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPaySummary": {
+            "type": "object",
+            "properties": {
+                "by_biz_type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPayBizTypeItem"
+                    }
+                },
+                "cents": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "refunded_count": {
+                    "description": "其中当前状态=已退款",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRefundSummary": {
+            "type": "object",
+            "properties": {
+                "failed_count": {
+                    "type": "integer"
+                },
+                "processing_count": {
+                    "type": "integer"
+                },
+                "success_cents": {
+                    "type": "integer"
+                },
+                "success_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundSettleSummary": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "diff_count": {
+                    "type": "integer"
+                },
+                "fee_cents": {
+                    "type": "integer"
+                },
+                "gross_cents": {
+                    "type": "integer"
+                },
+                "matched_count": {
+                    "type": "integer"
+                },
+                "net_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundSummaryResponse": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "description": "YYYYMMDD（北京时间自然日，含）",
+                    "type": "string"
+                },
+                "pay": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPaySummary"
+                },
+                "refund": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRefundSummary"
+                },
+                "settle": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundSettleSummary"
+                },
+                "start_date": {
+                    "description": "YYYYMMDD（北京时间自然日，含）",
+                    "type": "string"
+                },
+                "withdraw": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundWithdrawSummary"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundWithdrawSummary": {
+            "type": "object",
+            "properties": {
+                "failed_count": {
+                    "type": "integer"
+                },
+                "pending_review_count": {
+                    "type": "integer"
+                },
+                "processing_count": {
+                    "type": "integer"
+                },
+                "success_cents": {
+                    "type": "integer"
+                },
+                "success_count": {
+                    "type": "integer"
                 }
             }
         },
@@ -36845,6 +37357,9 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OrderStatus"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
                 },
                 "user_id": {
                     "type": "string"
@@ -36986,6 +37501,9 @@
                 "updated_at": {
                     "type": "string"
                 },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
+                },
                 "wx_refund_id": {
                     "type": "string"
                 }
@@ -37009,6 +37527,86 @@
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminResyncBillTaskItem": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "created=新建 / reset=重置二次同步",
+                    "type": "string"
+                },
+                "bill_date": {
+                    "type": "string"
+                },
+                "bill_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PayBillType"
+                },
+                "error_msg": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "本次同步执行一轮后的最终状态",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PayBillTaskStatus"
+                        }
+                    ]
+                },
+                "task_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminResyncBillTasksRequest": {
+            "type": "object",
+            "required": [
+                "end_date",
+                "start_date"
+            ],
+            "properties": {
+                "end_date": {
+                    "description": "EndDate 账期日止 YYYYMMDD（北京时间自然日，含）；按 T+3 生成规则最晚为今天 −3 天。",
+                    "type": "string"
+                },
+                "start_date": {
+                    "description": "StartDate 账期日起 YYYYMMDD（北京时间自然日，含）。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminResyncBillTasksResponse": {
+            "type": "object",
+            "properties": {
+                "created_count": {
+                    "description": "其中新建任务数",
+                    "type": "integer"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "failed_count": {
+                    "description": "本轮执行后仍失败的任务数",
+                    "type": "integer"
+                },
+                "items": {
+                    "description": "Items 按日期升序、同日按账单类型升序（1=日账单 2=订单明细）。",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminResyncBillTaskItem"
+                    }
+                },
+                "reset_count": {
+                    "description": "其中重置后二次同步数",
+                    "type": "integer"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "total_count": {
+                    "description": "本次处理的任务总数（日账单 + 订单明细）",
+                    "type": "integer"
                 }
             }
         },
@@ -37573,6 +38171,9 @@
                 },
                 "updated_at": {
                     "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
                 }
             }
         },
@@ -37635,6 +38236,9 @@
                 },
                 "rule_name": {
                     "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
                 }
             }
         },
@@ -37865,6 +38469,59 @@
                     "type": "boolean"
                 },
                 "transport_verified": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.SwitchVirtualEnvRequest": {
+            "type": "object",
+            "required": [
+                "app_id",
+                "env"
+            ],
+            "properties": {
+                "app_id": {
+                    "description": "AppID 小程序 app_id（同一 app_id 同时只允许一条启用配置）。",
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "env": {
+                    "description": "Env 目标环境：0=正式 1=沙箱。使用 *int 指针：binding:\"required\" 对数值零值 0\n判为\"未提供\"，指针允许显式传入 0。",
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.SwitchVirtualEnvResponse": {
+            "type": "object",
+            "properties": {
+                "app_id": {
+                    "type": "string"
+                },
+                "config_id": {
+                    "type": "string"
+                },
+                "env": {
+                    "description": "Env 目标环境（切换后启用）。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.VirtualPayEnv"
+                        }
+                    ]
+                },
+                "previous_env": {
+                    "description": "PreviousEnv 切换前启用的环境；切换前无启用配置时为 null。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.VirtualPayEnv"
+                        }
+                    ]
+                },
+                "switched": {
+                    "description": "Switched false=目标环境本就启用（幂等返回，未做任何变更）。",
                     "type": "boolean"
                 }
             }
@@ -43198,6 +43855,20 @@
         "github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo": {
             "type": "object",
             "properties": {
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                },
                 "user_id": {
                     "type": "string"
                 }
