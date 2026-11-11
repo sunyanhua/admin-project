@@ -33,6 +33,75 @@ export interface WithdrawItem {
   completed_at: string;
 }
 
+/** 随份子类型 */
+export enum CongratulationTributeKind {
+  GIFT = 1, // 站内礼物
+  CASH = 2, // 现金红包
+}
+
+/** 随份子状态 */
+export enum CongratulationTributeStatus {
+  PENDING = 0, // 待支付
+  COMPLETED = 1, // 已完成
+  REFUNDED = 2, // 已退款
+  CLOSED = 3, // 已关闭
+}
+
+/** 报喜赠送账单汇总请求（全部可选） */
+export interface AdminTributeSummaryRequest {
+  /** 报喜 ID */
+  congratulation_id?: string;
+  /** 礼物配置 ID */
+  gift_id?: string;
+  /** 赠送人昵称模糊匹配 */
+  keyword?: string;
+  /** 随份子类型：1=站内礼物 2=现金红包 */
+  kind?: CongratulationTributeKind;
+  /** 随份子状态：0=待支付 1=已完成 2=已退款 3=已关闭 */
+  status?: CongratulationTributeStatus;
+  /** 创建时间下界（RFC3339，含） */
+  start_at?: string;
+  /** 创建时间上界（RFC3339，含） */
+  end_at?: string;
+  /** 赠送人 ID */
+  user_id?: string;
+}
+
+/** 赠送账单·类型+礼物分组 */
+export interface AdminTributeGroup {
+  kind: number;
+  gift_id: string;
+  gift_name: string;
+  gift_image: string;
+  count: number;
+  coins: number;
+  cents: number;
+}
+
+/** 赠送账单·状态分布 */
+export interface AdminTributeStatusCount {
+  status: number;
+  count: number;
+}
+
+/** 报喜赠送账单汇总响应（金额仅统计已完成记录） */
+export interface AdminTributeSummaryResponse {
+  /** 符合筛选条件的记录总数（含各状态） */
+  total_count: number;
+  /** 其中已完成记录数 */
+  completed_count: number;
+  /** 已完成记录的赠送人去重人数 */
+  total_users: number;
+  /** 已完成站内礼物的金币合计 */
+  total_coins: number;
+  /** 已完成现金红包的金额合计（分） */
+  total_cents: number;
+  /** 状态分布（按状态升序） */
+  status_counts: AdminTributeStatusCount[];
+  /** 按类型 + 礼物快照分组（记录数降序） */
+  groups: AdminTributeGroup[];
+}
+
 /** 附件信息（照片/结婚证通用） */
 export interface CongratulationAttachment {
   url?: string;
@@ -110,6 +179,11 @@ export const congratulationApi = {
   /** 报喜列表 */
   getList: (params?: { page?: number; size?: number; status?: number; hidden?: number; keyword?: string }) => {
     return request.get('/admin/v1/bizops/congratulation', { params });
+  },
+
+  /** 报喜赠送账单汇总（按筛选条件统计；金额仅统计已完成记录） */
+  getTributeSummary: (data: AdminTributeSummaryRequest) => {
+    return request.post('/admin/v1/bizops/congratulation/finance/summary', data);
   },
 
   /** 报喜详情 */

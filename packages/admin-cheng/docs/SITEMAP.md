@@ -88,7 +88,7 @@
     │   └── 优惠券管理 #/finance/coupons
     │
     └── 📈 财务统计
-        └── 财务统计管理 #/finance/stats (待开发)
+        └── 财务统计管理 #/operation/finance-stats（资金汇总/对账汇总/赠送账单）
 ```
 
 ---
@@ -140,7 +140,7 @@
 | 退款管理 | `#/finance/refunds` | 退款记录查询（v1） |
 | 发票管理 | `#/finance/invoices` | 发票记录查询（v1，新增） |
 | 优惠券管理 | `#/finance/coupons` | 优惠券 CRUD + 兑换规则 + 发放（v1） |
-| 财务统计 | `#/finance/stats` | 待开发（需后端接口） |
+| 财务统计 | `#/operation/finance-stats` | 资金汇总（支付/入账/退费/提现）、对账汇总（账期日×渠道）、报喜赠送账单汇总（v1 实现） |
 
 ---
 

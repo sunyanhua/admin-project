@@ -61,6 +61,8 @@ import ProgramManagement from '@/pages/operation/ProgramManagement';
 import PlatformStats from '@/pages/operation/PlatformStats';
 // 趋势统计
 import TrendStats from '@/pages/operation/TrendStats';
+// 财务统计
+import FinanceStats from '@/pages/operation/FinanceStats';
 
 // 占位页面（功能待开发）
 import PlaceholderPage from '@/pages/PlaceholderPage';
@@ -145,7 +147,7 @@ const router = createHashRouter([
           { path: 'refunds', element: <RefundManagement /> },
           { path: 'ios-refunds', element: <IosRefundManagement /> },
           { path: 'withdraws', element: <WithdrawManagement /> },
-          { path: 'finance-stats', element: <PlaceholderPage title="财务统计" /> },
+          { path: 'finance-stats', element: <FinanceStats /> },
         ],
       },
 

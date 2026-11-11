@@ -48,6 +48,12 @@ export enum IOSProvideStatus {
   DELIVERING = 2, // 发货中
 }
 
+/** 账单渠道 */
+export enum PayBillChannel {
+  WECHAT = 1, // 微信普通虚拟支付
+  APPLE = 2, // Apple IAP
+}
+
 /** 投诉处理状态（列表筛选含 1=处理中） */
 export enum PayComplaintStatus {
   PENDING = 0, // 待处理
@@ -166,10 +172,102 @@ export interface IosRefundInquiry {
   last_inquired_at: string;
 }
 
+/** 支付汇总·业务类型拆分 */
+export interface AdminFundPayBizTypeItem {
+  biz_type: number;
+  /** 金额（分） */
+  cents: number;
+  count: number;
+  /** 其中当前状态=已退款 */
+  refunded_count: number;
+}
+
+/** 支付汇总（paid_at 成功订单，含后来退款） */
+export interface AdminFundPaySummary {
+  /** 金额（分） */
+  cents: number;
+  count: number;
+  refunded_count: number;
+  by_biz_type: AdminFundPayBizTypeItem[];
+}
+
+/** 退费汇总（成功退款流水） */
+export interface AdminFundRefundSummary {
+  /** 成功退款金额（分） */
+  success_cents: number;
+  success_count: number;
+  failed_count: number;
+  processing_count: number;
+}
+
+/** 入账汇总（bill_date 账单明细） */
+export interface AdminFundSettleSummary {
+  count: number;
+  /** 毛收入（分） */
+  gross_cents: number;
+  /** 手续费（分） */
+  fee_cents: number;
+  /** 净收入（分） */
+  net_cents: number;
+  /** 对账一致数 */
+  matched_count: number;
+  /** 对账差异数 */
+  diff_count: number;
+}
+
+/** 提现汇总（成功提现流水） */
+export interface AdminFundWithdrawSummary {
+  /** 成功提现金额（分） */
+  success_cents: number;
+  success_count: number;
+  failed_count: number;
+  pending_review_count: number;
+  processing_count: number;
+}
+
+/** 资金汇总统计响应 */
+export interface AdminFundSummaryResponse {
+  /** YYYYMMDD（北京时间自然日，含） */
+  start_date: string;
+  end_date: string;
+  pay: AdminFundPaySummary;
+  refund: AdminFundRefundSummary;
+  settle: AdminFundSettleSummary;
+  withdraw: AdminFundWithdrawSummary;
+}
+
+/** 对账汇总条目（按账期日 + 渠道） */
+export interface AdminReconcileSummaryItem {
+  /** 账期日 YYYYMMDD */
+  bill_date: string;
+  channel: number;
+  trade_count: number;
+  /** 交易额（分） */
+  gross_amount_cents: number;
+  /** 手续费（分） */
+  fee_cents: number;
+  /** 净额（分） */
+  net_amount_cents: number;
+  /** 一致笔数 */
+  matched_count: number;
+  /** 差异笔数 */
+  diff_count: number;
+}
+
 export const xpayApi = {
   /** 支付订单列表（按创建时间倒序） */
   getOrders: (params?: { page?: number; size?: number; biz_type?: number; status?: number; user_id?: string }) => {
     return request.get('/admin/v1/xpay/orders', { params });
+  },
+
+  /** 资金汇总统计（北京时间自然日，缺省近 30 天，显式窗口 ≤366 天，超限后端返回 400） */
+  getFundSummary: (params?: { from_date?: string; to_date?: string }) => {
+    return request.get('/admin/v1/xpay/fund/summary', { params });
+  },
+
+  /** 对账汇总（按账期日 + 渠道；start/end 必填，channel 缺省=全部渠道） */
+  getReconcileSummary: (params: { start_date: string; end_date: string; channel?: number }) => {
+    return request.get('/admin/v1/xpay/reconcile-summary', { params });
   },
 
   /** 退款流水列表（按创建时间倒序；无操作接口，退款由系统/微信驱动） */
