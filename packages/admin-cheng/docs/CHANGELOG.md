@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-11-11 16:51 | dbccdef | feat: 订单/退款/提现用户列对齐后端 user 简报字段——后端三接口已挂载 user（user_id/nickname/avatar，swagger 已同步）：订单页用户列改读 user 字段（修正此前 user_profile 猜测），退款管理、提现申请新增用户列（头像+昵称，点击打开 UserDetailCardModal 标准资料卡片，缺失回退/空 user_id 禁用点击）；XpayOrder/XpayRefund/WithdrawItem 类型补 user 简报；测试补三页用户列与资料卡片用例 |
 | 2026-11-11 16:02 | ff39a25 | feat: 用户认证记录用户列展示头像昵称——用户ID列替换为头像+昵称（user_profile 挂载，缺失回退用户ID，user_id 为空禁用点击），点击打开 UserDetailCardModal 标准用户资料卡片；IdVerifyRecord 类型补充 user_data/user_profile/user_match_profile（swagger 已同步挂载）；测试补用户列与资料卡片用例 |
 | 2026-11-11 16:02 | 82839d4 | feat: 订单管理用户列展示头像昵称——用户ID列替换为头像+昵称（user_profile 挂载，缺失回退用户ID，user_id 为空禁用点击），点击打开 UserDetailCardModal 标准用户资料卡片；XpayOrder 类型补充 user_data/user_profile；测试补用户列/回退/资料卡片用例 |
 | 2026-11-11 09:10 | 6399b29 | feat: 互动管理最下方新增「投诉管理」——投诉列表（5 状态/关键词筛选）+ 详情弹窗（消息留痕用户/商家方向、原始报文可复制）+ 回复用户（≤2000 字，先调微信再留痕）+ 完成处理（确认后结案）；已结案/已关闭不提供操作；xpay 投诉 5 接口 + 枚举；新增 5 项单测 |
