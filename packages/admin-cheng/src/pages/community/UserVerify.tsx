@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Button, Tag, Tabs } from 'antd';
+import { Button, Tag, Tabs, Space } from 'antd';
 import { PlusOutlined, SafetyCertificateOutlined, OrderedListOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -10,6 +10,8 @@ import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import IdVerifyPriceRuleModal from '@/components/system/IdVerifyPriceRuleModal';
+import UserAvatar from '@/components/user/UserAvatar';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import { idverifyApi, PriceRule, PriceRuleStatus, IdVerifyRecord, IdVerifyRecordStatus } from '@/api/services/idverify';
 import { formatDateTime } from '@/utils/format';
 
@@ -46,6 +48,8 @@ const formatResponse = (res: any) => {
 /** 认证记录 TAB（默认）：只读列表（按创建时间倒序；不含真实姓名/身份证号） */
 const RecordsTab: React.FC = () => {
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState('');
 
   const fetchRecords = useCallback(async (params: any) => {
     return idverifyApi.getRecords({
@@ -72,12 +76,23 @@ const RecordsTab: React.FC = () => {
 
   const columns: ColumnsType<IdVerifyRecord> = [
     {
-      title: '用户ID',
-      dataIndex: 'user_id',
-      key: 'user_id',
-      width: 180,
-      ellipsis: true,
-      render: (v: string) => <span title={v}>{v || '-'}</span>,
+      title: '用户',
+      key: 'user',
+      width: 150,
+      render: (_: any, r: IdVerifyRecord) => {
+        const nickname = r.user_profile?.nickname || r.user_id || '-';
+        const avatar = r.user_profile?.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            disabled={!r.user_id}
+            onClick={() => { if (!r.user_id) return; setUserDetailUserId(r.user_id); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <UserAvatar src={avatar} nick={nickname} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
     },
     {
       title: '状态',
@@ -157,6 +172,11 @@ const RecordsTab: React.FC = () => {
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
       </div>
       <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+      />
     </div>
   );
 };
@@ -283,7 +303,7 @@ const UserVerify = () => {
   return (
     <StandardPage
       title="用户认证"
-      description="查看用户实名认证的办理情况，配置实名认证的价格规则。"
+      description="查看用户实名认证的办理情况并配置价格规则，点击用户头像或昵称可查看该用户的完整资料。"
       table={
         <Tabs
           activeKey={tabKey}

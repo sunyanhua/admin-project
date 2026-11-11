@@ -23,18 +23,48 @@ const RECORDS = vi.hoisted(() => [
     id: 'r1', user_id: 'u1', status: 1, price_coins: 0, original_price_coins: 0,
     attempt_count: 0, failed_count: 0,
     created_at: '2026-11-06T09:00:00+08:00', expires_at: '2026-11-06T10:00:00+08:00', verified_at: null,
+    user_data: { phone: '13800000000' },
+    user_profile: { nickname: '张三', avatar: '', gender: 1, age: 28 },
+    user_match_profile: null,
   },
   {
     id: 'r2', user_id: 'u2', status: 2, price_coins: 100, original_price_coins: 200,
     attempt_count: 1, failed_count: 0,
     created_at: '2026-11-06T08:00:00+08:00', expires_at: null, verified_at: '2026-11-06T09:30:00+08:00',
+    user_data: null, user_profile: null, user_match_profile: null,
   },
 ]);
+
+const USER_DETAIL = vi.hoisted(() => ({
+  user: {
+    user_id: 'u1', phone: '13800000000', is_migrated: false, is_activated: false,
+    last_active_at: '', wallet_balance: null, credits: 0, credits_weekly: 0,
+  },
+  profile: {
+    nickname: '张三', avatar: '', gender: 1, age: 28,
+    birth_date: '', zodiac: '', created_at: '', audit_status: 0,
+  },
+  match_profile: null,
+  wallet: null,
+}));
+const getUserDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue(USER_DETAIL));
 
 const getPriceRulesMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: PRICE_RULES, total: 2 }));
 const getRecordsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: RECORDS, total: 2 }));
 const createMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+
+vi.mock('@/api/services/user', () => ({
+  userApi: {
+    getUserDetail: getUserDetailMock,
+    getUserPrivacy: vi.fn(),
+    setMatchProfileRecommend: vi.fn(),
+    updateBasicProfile: vi.fn(),
+    getReliabilityLogs: vi.fn(),
+    auditMatchProfile: vi.fn(),
+    adjustDivineChance: vi.fn(),
+  },
+}));
 
 vi.mock('@/api/services/idverify', () => ({
   PriceRuleStatus: { ENABLED: 0, DISABLED: 1 },
@@ -61,6 +91,7 @@ beforeAll(() => {
 });
 
 beforeEach(() => {
+  getUserDetailMock.mockClear();
   getPriceRulesMock.mockClear();
   getRecordsMock.mockClear();
   createMock.mockClear();
@@ -103,7 +134,8 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     renderPage();
     // 默认 TAB 即认证记录，无需点击
     await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());
-    expect(screen.getByText('u1')).toBeInTheDocument();
+    // 用户列：有 user_profile 显示昵称，缺失时回退显示用户 ID
+    expect(screen.getByText('张三')).toBeInTheDocument();
     expect(screen.getByText('u2')).toBeInTheDocument();
     // 状态标签：待认证 / 已通过
     expect(screen.getByTitle('待认证')).toBeInTheDocument();
@@ -111,6 +143,15 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     // 价格规则 TAB 未激活不拉取
     expect(getPriceRulesMock).not.toHaveBeenCalled();
   });
+
+  it('认证记录：点击用户头像昵称打开用户资料卡片', async () => {
+    renderPage();
+    await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: /张三/ }));
+    await waitFor(() => expect(getUserDetailMock).toHaveBeenCalledWith('u1'));
+    await screen.findByText('用户详情');
+    expect(screen.getAllByText('张三').length).toBeGreaterThanOrEqual(2);
+  }, 20000);
 
   it('价格规则列表渲染：名称/免费标签/状态开关', async () => {
     renderPage();
