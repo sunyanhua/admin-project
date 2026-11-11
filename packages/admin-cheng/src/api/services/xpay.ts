@@ -99,6 +99,13 @@ export interface AdminComplaintDetail extends AdminComplaintItem {
   messages: AdminComplaintMessageItem[];
 }
 
+/** 订单/退款挂载的用户简报（UserBriefForAdmin） */
+export interface XpayUserBrief {
+  user_id?: string;
+  nickname?: string;
+  avatar?: string;
+}
+
 /** 支付订单列表项 */
 export interface XpayOrder {
   id: string;
@@ -112,19 +119,8 @@ export interface XpayOrder {
   description: string;
   biz_id: string;
   user_id: string;
-  /** 下单用户数据（后端挂载，可能为 null） */
-  user_data?: {
-    phone?: string;
-    credits?: number;
-    is_activated?: boolean;
-  } | null;
-  /** 下单用户资料（昵称/头像，可能为 null） */
-  user_profile?: {
-    nickname?: string;
-    avatar?: string;
-    gender?: number;
-    age?: number;
-  } | null;
+  /** 下单用户简报（后端挂载，可能为 null） */
+  user?: XpayUserBrief | null;
   created_at: string;
   paid_at: string;
   refunded_at: string;
@@ -141,6 +137,8 @@ export interface XpayRefund {
   amount_cents: number;
   reason: string;
   status: number;
+  /** 退款用户简报（后端挂载，可能为 null） */
+  user?: XpayUserBrief | null;
   created_at: string;
   updated_at: string;
 }

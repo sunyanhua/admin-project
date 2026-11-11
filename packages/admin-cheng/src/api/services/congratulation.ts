@@ -23,6 +23,12 @@ export interface WithdrawItem {
   /** 需用户确认收款时返回（前端 wx.requestMerchantTransfer 拉起） */
   package_info: string;
   fail_reason: string;
+  /** 申请用户简报（后端挂载，可能为 null） */
+  user?: {
+    user_id?: string;
+    nickname?: string;
+    avatar?: string;
+  } | null;
   created_at: string;
   completed_at: string;
 }

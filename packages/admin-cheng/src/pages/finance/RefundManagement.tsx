@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
-import { Tag } from 'antd';
+import { Tag, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
+import UserAvatar from '@/components/user/UserAvatar';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import { xpayApi, XpayRefund, RefundStatus } from '@/api/services/xpay';
 import { formatDateTime, formatCents } from '@/utils/format';
 
@@ -42,6 +44,8 @@ const dateTimeCol = (title: string, dataIndex: string, key: string) => ({
 
 const RefundManagement = () => {
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState('');
 
   const fetchRefunds = useCallback(async (params: any) => {
     return xpayApi.getRefunds({
@@ -92,6 +96,26 @@ const RefundManagement = () => {
       render: (v: string) => <span title={v}>{v || '-'}</span>,
     },
     {
+      title: '用户',
+      key: 'user',
+      width: 150,
+      render: (_: any, r: XpayRefund) => {
+        const userId = r.user?.user_id || '';
+        const nickname = r.user?.nickname || userId || '-';
+        const avatar = r.user?.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            disabled={!userId}
+            onClick={() => { if (!userId) return; setUserDetailUserId(userId); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <UserAvatar src={avatar} nick={nickname} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
+    },
+    {
       title: '金额（元）',
       dataIndex: 'amount_cents',
       key: 'amount_cents',
@@ -121,13 +145,18 @@ const RefundManagement = () => {
   return (
     <StandardPage
       title="退款管理"
-      description="查看支付订单的退款流水与退款进度。"
+      description="查看支付订单的退款流水与退款进度，点击用户头像或昵称可查看该用户的完整资料。"
       table={
         <div>
           <div style={{ marginBottom: 12 }}>
             <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
           </div>
           <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+          <UserDetailCardModal
+            visible={userDetailVisible}
+            userId={userDetailUserId}
+            onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
+          />
         </div>
       }
     />

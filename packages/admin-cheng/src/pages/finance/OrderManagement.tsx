@@ -133,8 +133,8 @@ const OrderManagement = () => {
       key: 'user',
       width: 150,
       render: (_: any, r: XpayOrder) => {
-        const nickname = r.user_profile?.nickname || r.user_id || '-';
-        const avatar = r.user_profile?.avatar || '';
+        const nickname = r.user?.nickname || r.user_id || '-';
+        const avatar = r.user?.avatar || '';
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }}
             disabled={!r.user_id}

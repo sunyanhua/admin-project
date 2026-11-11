@@ -8,6 +8,8 @@ import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import ScrollableModal from '@/components/templates/ScrollableModal';
+import UserAvatar from '@/components/user/UserAvatar';
+import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import { congratulationApi, WithdrawItem, WithdrawStatus } from '@/api/services/congratulation';
 import { formatDateTime, formatCents } from '@/utils/format';
 
@@ -91,6 +93,8 @@ const WithdrawManagement = () => {
   const [rejectVisible, setRejectVisible] = useState(false);
   const [rejectRecord, setRejectRecord] = useState<WithdrawItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [userDetailVisible, setUserDetailVisible] = useState(false);
+  const [userDetailUserId, setUserDetailUserId] = useState('');
 
   const fetchWithdraws = useCallback(async (params: any) => {
     return congratulationApi.getWithdraws({
@@ -178,6 +182,26 @@ const WithdrawManagement = () => {
       render: (v: number) => formatCents(v),
     },
     {
+      title: '用户',
+      key: 'user',
+      width: 150,
+      render: (_: any, r: WithdrawItem) => {
+        const userId = r.user?.user_id || '';
+        const nickname = r.user?.nickname || userId || '-';
+        const avatar = r.user?.avatar || '';
+        return (
+          <Button type="link" style={{ padding: 0, height: 'auto' }}
+            disabled={!userId}
+            onClick={() => { if (!userId) return; setUserDetailUserId(userId); setUserDetailVisible(true); }}>
+            <Space size={4}>
+              <UserAvatar src={avatar} nick={nickname} />
+              <span style={{ fontSize: 14 }}>{nickname}</span>
+            </Space>
+          </Button>
+        );
+      },
+    },
+    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
@@ -218,7 +242,7 @@ const WithdrawManagement = () => {
     <>
       <StandardPage
         title="提现申请"
-        description="审核用户的报喜提现申请，通过后自动发起转账，拒绝则原路退回。"
+        description="审核用户的报喜提现申请，通过后自动发起转账，拒绝则原路退回；点击用户头像或昵称可查看该用户的完整资料。"
         table={
           <div>
             <div style={{ marginBottom: 12 }}>
@@ -234,6 +258,11 @@ const WithdrawManagement = () => {
         submitting={submitting}
         onSubmit={handleRejectSubmit}
         onClose={() => { setRejectVisible(false); setRejectRecord(null); }}
+      />
+      <UserDetailCardModal
+        visible={userDetailVisible}
+        userId={userDetailUserId}
+        onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
       />
     </>
   );
