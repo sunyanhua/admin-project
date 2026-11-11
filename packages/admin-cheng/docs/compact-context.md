@@ -1,47 +1,58 @@
-# 项目上下文存档（compact-context）
+# 上下文压缩速记（compact-context）
 
-> 生成时间：2026-11-03（用户说「压缩」时写入；「继续」时读取此文件恢复上下文）
+> 本文件由「压缩」指令生成，不提交 git。用户说「继续」时先读本文件了解项目情况，再等待用户指令。
 
-## 1. 当前任务与进度
+## 一、当前进度（2026-11-06 ~ 11-11 已完成并提交）
 
-**无进行中的任务**——上一批需求（现场大屏系列 + 分组管理 + 报喜管理等）已全部完成、提交并推送。
+### 现场管理（活动）
+1. **未签到筛选**：入选名单签到状态下拉新增「未签到」（checked_in=false），OnsiteManageModal + 单测（36144f8）
+2. **分组配置保存后全链路同步**（3e6766b）：OnsiteGroupTab 新增 onSaved → 弹窗 refreshLiveActivity 重拉详情传给各 TAB；大屏 10s 轮询配置（refreshConfig + routineRawRef 去重 + routineModeRef 播放中不覆盖）
+3. **各组代表性别可选**（3e6766b/8f10e8a/409d52a）：右上角性别下拉（男/女/不限/混搭）；groupRepGenderRef 仅承载编排传参（null=手动），按 P 读实时配置；filterGroupRepPools 严格过滤（无符合性别的组不出转轮）、assignGroupRepTargets 纯函数（luckyPools.utils）
+4. **现场签到二维码**（94a7fcb）：现场配置 TAB「现场签到」标签旁 SourceQrcodeModal（与编辑弹窗一致，H5 中转页）
+5. **未签到批量扣分 + 已完成标记**（94a7fcb/d3070e9）：未签到筛选下「扣分」按钮 → OnsiteDeductScoreModal（默认 10 分）逐条 adjustReliabilityScore(-score)；完成后写入 onsite_config.deduct_done_at（DEDUCT_DONE_KEY），按钮区显示绿色「已完成扣分」标签防重复
+6. **配置过期全链路修复**（899952f）：OnsiteManageModal 打开即 refreshLiveActivity；ActivityEditModal 打开拉最新详情（prop 改名 activityProp + freshActivity 优先，保存合并防覆盖）；ActivityManagement 编辑/报名/现场弹窗关闭后 refresh 列表
 
-## 2. 最近完成的工作（本轮会话全部已提交并推送）
+### 靠谱值（用户）
+- 文档确认新字段 reliability_display_score/reliability_score + 流水/调整接口 + 8 种来源枚举
+- 用户资料卡片：人气+靠谱值同行、可见范围+审核状态同行、最后更新单独一行；`{展示值}（原值{系统值}）` 可点击 → ReliabilityLogModal（**不含操作人列**，用户要求去掉）
+- userApi.getReliabilityLogs / adjustReliabilityScore；types/user.ts 补字段（835f7e3）
 
-- **现场大屏（ActivityOnsite.tsx）**：
-  - 心动排名改版：左男右女双心形（全员签到、纵向压缩）、↓/↑ 配对切换（先复原再切换、单一过渡定时器防竞态）、双行桃心次数、跳过原则（双方任一展示过则跳过）、耗尽重拉一次、↑ 耗尽后可回看最后一对
-  - 模式调整：心动互选(2) / 我钟意你(3) / 幸运之星(4) / 默契度排名(5) / 演示(0)；**能成时刻入口已隐藏**（功能代码保留，恢复方式已注释：键盘 4 改回 startCouple + 工具区加回按钮）
-  - 我钟意你：单方心动，且**排除所有已互相心动的人选**
-  - 三个分组抽取模式（仅活动配置分组时显示入口）：各组代表(6)——每组一转轮（仅已签到成员）、多行排版（每行最多 5 个）；组中抽组(7)——方块高亮轮扫、P 逐格锁定（立即金色定格、跳过已锁定、排序保持）、连续抽、按 7 重抽；单组选人(8)——用户卡片同款、蒙版+灰度+徽章降亮区分、选中金色底加粗昵称+放大 1.15+光晕、跳格 130ms、按 8 重抽
-  - 分组徽章：照片墙右上角、转轮/排名昵称旁（金色胶囊）
-- **分组管理（OnsiteGroupTab + onsiteGrouping.utils）**：分组名称配置（onsite_config.groups，原对象透传）、快速设置（汉字默认/字母/数字）、竖向分组列表 + 拖拽移动、自动分组（CP 同组 + 贪心人数/男女均衡）、保存分组全量同步（未分组剥离旧键）、分组保存前抹除确认（组CP 提交）
-- **组CP（ActivityCpTab）**：提交前检测分组→确认抹除→清序号→逐对提交；已签到不可删；CP 同组自动分组
-- **现场管理弹窗（OnsiteManageModal）**：现场配置/入选名单/组CP/分组管理 TAB、大屏按钮（tabBarExtraContent）、默认 TAB 随签到时间切换
-- **其他**：报喜管理（资料卡片/重新审核/撤销）、基础资料导出（并发分页）、脱单资料重新审核提醒、卡片审核入口、报名名单添加/签到/导出等
+### 财务管理（3b2ba24）
+- 订单管理（占位落实）/ 退款管理 / iOS退款处理（问询列表+详情）/ 提现申请（通过/拒绝）四个页面 + xpay.ts 服务 + formatCents（分→元）
 
-## 3. 待办/待确认事项
+### 投诉管理（6399b29）
+- 互动管理最下方新增：列表（5 状态/关键词）+ 详情（消息留痕用户/商家方向、原始报文复制）+ 回复（≤2000 字）+ 完成结案；已结案/已关闭不可操作；xpay 投诉 5 接口
 
-- **无未完成的功能任务**。
-- 可选优化（用户未要求，勿主动做）：现场大屏多转轮 DOM 性能；心动互选/能成时刻 N 轮机制统一重构。
-- 登录态掉线问题：根因已定位（refresh 需未过期 Token + 休眠跨过有效期），**治本需后端加宽限窗口**（过期后 N 天可刷），前端已具备自动续期链路。用户未给后续指令。
-- 报喜删除等 C端项目消息曾发错会话——遇到非管理后台的需求先确认是否发错。
+### 其它
+- 实人认证配置页已并入「用户资料·用户认证」（默认认证记录 TAB、价格单位「元」）
+- 报名名单下拉「已筛选」→「已入选」
+- 接口文档已同步：虚拟支付 xpay 模块重构（59 增/15 删）+ 靠谱值 + 实人认证退款 + 报喜提现
+- 测试版构建完成（dist-test/，产物待上传，0d0010d）
 
-## 4. 关键实现细节（易踩坑）
+## 二、未完成 / 待办
 
-- **接口约定**：改接口前先 `pm2 reload api-sync` 同步 cheng-swagger.json；改完提交 `chore: 同步后端接口文档`。
-- **分页**：size 最大 100；列表接口响应 `Array.isArray(res) ? res : res?.list`。
-- **免报名入选**：`user_id` 可能为 **null**（不是空串），比较/排序必须空安全（`String(a.user_id || '')`）；展示用「未注册」+预报名反查姓名/性别/手机号。
-- **UI 消息**：禁止 antd message，用 useAppNotification；禁止 `catch (error: any)` 遮蔽（用 err）。
-- **弹窗**：ScrollableModal（内置 maskClosable=false）；直接 Modal.confirm 仅用于确认弹窗。
-- **日期**：统一 `YYYY/MM/DD HH:mm:ss` + formatDateTime；禁止 toISOString、裸 dayjs 解析。
-- **枚举**：禁止硬编码状态值，用 @shared/constants；status 标准 ENABLED=0/DISABLED=1。
-- **antd 测试坑**：两字中文按钮可访问名会插空格（「应 用」）；vi.mock 工厂引用顶层变量要用 vi.hoisted；matchMedia 需 polyfill；useAppNotification 需 App 包裹。
-- **提交习惯**：每项实质改动立即 commit（conventional commits）+ 同步 docs/CHANGELOG.md 一行（时间/短哈希/内容）；构建后更新 docs/PROGRESS.md；构建产物不提交。
-- **git push**：代理(7897)与直连交替可用，一条失败换另一条；最近直连恢复可用。
+1. **推送**：master 领先 origin 约 12 个提交（上次推送 eaffbe7，11-10 双版本构建时）——待用户要求推送（记忆：代理失败换直连）
+2. **正式版构建**：11-10 双版本之后的新功能（靠谱值卡片/扣分标记/配置过期修复/投诉管理等）尚未进正式版
+3. 测试版产物待上传服务器 /cheng 目录
+4. 大屏分组轮询间隔当前 10s（如需更快可调 refreshConfig interval）
 
-## 5. 构建/推送状态
+## 三、关键实现细节（易忘点）
 
-- ✅ 代码已全部提交并推送（最新：`8013aea` docs: CLAUDE.md 压缩协作规则）
-- ✅ 正式版已构建发布（dist/ 含现场大屏全部最新改动；最近一次构建含「选中突出加强」）
-- ⏳ 构建产物 `dist/` 需用户手动上传正式服务器 `/cheng/` 目录
-- 测试：全量 113+ 通过（2 个历史遗留失败文件：App.test/Dashboard.test localStorage 环境问题，与业务无关）
+- **活动 config 数据流**：onsite_config/extra_params 为服务端透明 JSON，前端多处原对象透传合并（bg_screen/groups/routine/deduct_done_at/onsite_qrcode）；任何入口打开弹窗必须先拉最新详情，否则旧行数据会覆盖新配置（899952f 教训）
+- **各组代表性别**：groupRepGenderRef 类型 LuckyGender|null，startGroupRep 里 `override?.gender ?? null`，slowRoll 里 `groupRepGenderRef.current ?? groupRepGender`；封面阶段改性别有 useEffect 重建（与幸运之星一致）
+- **扣分标记**：DEDUCT_DONE_KEY='deduct_done_at'（OnsiteDeductScoreModal 导出），写入前重拉详情防覆盖
+- **分页响应**：xpay/idverify 等新接口为 data 数组 + 顶层 pagination，拦截器已转 {list,total}；页面统一用 formatResponse 兜底两种形态
+- **金额**：接口存「分」，展示用 formatCents（元）；idverify/靠谱值页面价格单位按用户要求为「元」
+
+## 四、测试环境坑（写测试时注意）
+
+- Node 25 实验性 localStorage 遮蔽 jsdom → setupTests.ts 已打补丁（内存实现）
+- rc-picker DatePicker：面板 click 打开（非 mousedown）、点日期格后需点 `.ant-picker-ok button` 提交、关闭面板不卸载（取最后一个 dropdown）
+- 嵌套弹窗查询用最后一个 `.ant-modal`；antd 两字按钮文本带空格（「保 存」→ /保\s*存/ 匹配）
+- jsdom 下 userEvent.click 在表单校验重渲染时极慢 → 提交按钮用 fireEvent.click
+- **存量失败测试（与本轮改动无关）**：App.test.tsx（Node25 undici AbortSignal 环境问题）、Dashboard.test.tsx（旧测试未包 Router + OldSun 同步新版 Dashboard）
+
+## 五、待用户确认
+
+- 是否构建正式版 + 推送（见待办 1/2）
+- 投诉管理是否需要「处理中(1)」状态的处理操作（当前仅前端筛选值，后端状态枚举无 1）
