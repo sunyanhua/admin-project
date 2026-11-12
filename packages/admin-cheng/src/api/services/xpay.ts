@@ -54,6 +54,12 @@ export enum PayBillChannel {
   APPLE = 2, // Apple IAP
 }
 
+/** 充值档位状态（全站统一标准：0=启用 1=停用） */
+export enum CoinProductStatus {
+  ENABLED = 0,
+  DISABLED = 1,
+}
+
 /** 投诉处理状态（列表筛选含 1=处理中） */
 export enum PayComplaintStatus {
   PENDING = 0, // 待处理
@@ -236,6 +242,38 @@ export interface AdminFundSummaryResponse {
   withdraw: AdminFundWithdrawSummary;
 }
 
+/** 代币充值档位列表项 */
+export interface CoinProductItem {
+  id: string;
+  name: string;
+  /** 代币数 */
+  coin_amount: number;
+  /** 价格（分） */
+  price_cents: number;
+  /** 内部档位唯一标识（对账/幂等用，不传给微信） */
+  mp_product_id: string;
+  sort_order: number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 新增代币充值档位请求 */
+export interface CreateCoinProductRequest {
+  name: string;
+  /** 代币数（≥1） */
+  coin_amount: number;
+  /** 价格（分，≥1；iOS 最低 100） */
+  price_cents: number;
+  /** 内部档位唯一标识（对账/幂等用，不传给微信） */
+  mp_product_id: string;
+  sort_order?: number;
+  status?: number;
+}
+
+/** 生成充值档位内部唯一标识（对账/幂等用，不传给微信）——实现见 utils/mpProductId */
+export { buildMpProductId } from '@/utils/mpProductId';
+
 /** 对账汇总条目（按账期日 + 渠道） */
 export interface AdminReconcileSummaryItem {
   /** 账期日 YYYYMMDD */
@@ -263,6 +301,11 @@ export const xpayApi = {
   /** 资金汇总统计（北京时间自然日，缺省近 30 天，显式窗口 ≤366 天，超限后端返回 400） */
   getFundSummary: (params?: { from_date?: string; to_date?: string }) => {
     return request.get('/admin/v1/xpay/fund/summary', { params });
+  },
+
+  /** 新增代币充值档位（mp_product_id 全局唯一，对账/幂等用；响应经拦截器解包为 CoinProductItem） */
+  createCoinProduct: (data: CreateCoinProductRequest): Promise<any> => {
+    return request.post('/admin/v1/xpay/coin-products', data);
   },
 
   /** 对账汇总（按账期日 + 渠道；start/end 必填，channel 缺省=全部渠道） */

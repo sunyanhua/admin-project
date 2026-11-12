@@ -83,6 +83,8 @@ export interface CreatePriceRuleRequest {
   price_coins: number;
   /** 0=无原价 */
   original_price_coins?: number;
+  /** 付费价格（price_coins>0）关联的等额启用充值档位 ID（免费不传） */
+  recharge_product_id?: string;
   remark?: string;
   /** 0=启用 1=停用 */
   status?: number;

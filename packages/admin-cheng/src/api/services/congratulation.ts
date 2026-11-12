@@ -102,6 +102,39 @@ export interface AdminTributeSummaryResponse {
   groups: AdminTributeGroup[];
 }
 
+/** 现金红包档位（随份子金额） */
+export interface AdminCashTierItem {
+  id: string;
+  name: string;
+  /** 红包金额（分，100~520） */
+  amount_cents: number;
+  /** 代币数（与金额等额） */
+  coin_amount: number;
+  /** 关联充值档位 ID（历史/异常数据可能为 null） */
+  recharge_product_id: string | null;
+  sort_order: number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** 新增现金红包档位请求（必须关联启用中的等额充值档位，实报实销） */
+export interface CreateCashTierRequest {
+  name: string;
+  /** 红包金额（分，100~520） */
+  amount_cents: number;
+  /** 代币数（与金额等额） */
+  coin_amount: number;
+  /** 关联充值档位 v6_pay_coin_product.id */
+  recharge_product_id: string;
+  sort_order?: number;
+  /** 0=启用 1=停用 */
+  status?: number;
+}
+
+/** 更新现金红包档位请求（PUT 语义：未传字段保持原值） */
+export type UpdateCashTierRequest = Partial<CreateCashTierRequest>;
+
 /** 附件信息（照片/结婚证通用） */
 export interface CongratulationAttachment {
   url?: string;
@@ -184,6 +217,21 @@ export const congratulationApi = {
   /** 报喜赠送账单汇总（按筛选条件统计；金额仅统计已完成记录） */
   getTributeSummary: (data: AdminTributeSummaryRequest) => {
     return request.post('/admin/v1/bizops/congratulation/finance/summary', data);
+  },
+
+  /** 现金红包档位列表（按 sort_order 升序） */
+  getCashTiers: (params?: { page?: number; size?: number; status?: number }) => {
+    return request.get('/admin/v1/bizops/congratulation/cash-tiers', { params });
+  },
+
+  /** 新增现金红包档位（必须关联启用中的等额充值档位） */
+  createCashTier: (data: CreateCashTierRequest) => {
+    return request.post('/admin/v1/bizops/congratulation/cash-tiers', data);
+  },
+
+  /** 编辑现金红包档位 */
+  updateCashTier: (id: string, data: UpdateCashTierRequest) => {
+    return request.put(`/admin/v1/bizops/congratulation/cash-tiers/${id}`, data);
   },
 
   /** 报喜详情 */

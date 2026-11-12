@@ -4,6 +4,7 @@ import { Button, Form, Input, InputNumber, Radio, DatePicker } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { idverifyApi, PriceRule, PriceRuleStatus } from '@/api/services/idverify';
+import { xpayApi, buildMpProductId, CoinProductStatus, CoinProductItem } from '@/api/services/xpay';
 import { parseApiTime, dayjsToApi } from '@/utils/format';
 
 export interface IdVerifyPriceRuleModalProps {
@@ -65,12 +66,33 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
   }, [visible, mode, rule, form]);
 
   const handleSubmit = async (values: PriceRuleFormValues) => {
+    if (loading) return; // 防 Enter 重复提交
     setLoading(true);
+    /** 充值档位是否已成功创建（第二步失败时提示部分成功，运营可感知孤儿档位） */
+    let tierCreated = false;
     try {
+      const priceCoins = values.price_coins ?? 0;
+      // 价格不为 0：先创建等额虚拟支付充值档位（1 金币 = 1 元 = 100 分），拿到 ID 保存到价格规则；
+      // 管理端列表不返回规则已有档位 ID，编辑保存同样新建（旧档位闲置）；免费不创建
+      let rechargeProductId: string | undefined;
+      if (priceCoins > 0) {
+        const tier: CoinProductItem = await xpayApi.createCoinProduct({
+          name: values.name.trim(),
+          coin_amount: priceCoins,
+          price_cents: priceCoins * 100,
+          mp_product_id: buildMpProductId('idv'),
+          sort_order: 0,
+          status: CoinProductStatus.ENABLED,
+        });
+        rechargeProductId = tier?.id;
+        tierCreated = Boolean(rechargeProductId);
+        if (!rechargeProductId) throw new Error('创建充值档位失败');
+      }
       const payload = {
         name: values.name.trim(),
-        price_coins: values.price_coins ?? 0,
+        price_coins: priceCoins,
         original_price_coins: values.original_price_coins ?? 0,
+        recharge_product_id: rechargeProductId,
         start_at: dayjsToApi(values.start_at) || '',
         end_at: dayjsToApi(values.end_at) || '',
         status: values.status,
@@ -86,7 +108,8 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
       onClose();
       onSuccess();
     } catch (err: any) {
-      showError(err?.response?.data?.message || '保存失败');
+      const msg = err?.response?.data?.message || err?.message || '保存失败';
+      showError(tierCreated ? `充值档位已创建，但保存失败：${msg}` : msg);
     } finally {
       setLoading(false);
     }
@@ -113,7 +136,7 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
         <Form.Item
           label="规则名称"
           name="name"
-          rules={[{ required: true, message: '请输入规则名称' }]}
+          rules={[{ required: true, whitespace: true, message: '请输入规则名称' }]}
         >
           <Input placeholder="请输入规则名称" maxLength={50} />
         </Form.Item>

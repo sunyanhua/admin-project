@@ -53,6 +53,7 @@ const getPriceRulesMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: PRI
 const getRecordsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: RECORDS, total: 2 }));
 const createMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const createCoinProductMock = vi.hoisted(() => vi.fn().mockResolvedValue({ id: 'cp1' }));
 
 vi.mock('@/api/services/user', () => ({
   userApi: {
@@ -63,6 +64,14 @@ vi.mock('@/api/services/user', () => ({
     getReliabilityLogs: vi.fn(),
     auditMatchProfile: vi.fn(),
     adjustDivineChance: vi.fn(),
+  },
+}));
+
+vi.mock('@/api/services/xpay', () => ({
+  CoinProductStatus: { ENABLED: 0, DISABLED: 1 },
+  buildMpProductId: (prefix: string) => `${prefix}-20261112-a1b2`,
+  xpayApi: {
+    createCoinProduct: createCoinProductMock,
   },
 }));
 
@@ -96,6 +105,7 @@ beforeEach(() => {
   getRecordsMock.mockClear();
   createMock.mockClear();
   updateMock.mockClear();
+  createCoinProductMock.mockClear();
 });
 
 const renderPage = () =>
@@ -191,7 +201,65 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     const payload = createMock.mock.calls[0][0];
     expect(payload.start_at).toBeTruthy();
     expect(payload.end_at).toBeTruthy();
+    // 免费价格不创建充值档位
+    expect(createCoinProductMock).not.toHaveBeenCalled();
   }, 20000);
+
+  it('新增付费价格规则：先创建等额充值档位，携带档位 ID 保存', async () => {
+    renderPage();
+    await openRulesTab();
+
+    await userEvent.click(screen.getByRole('button', { name: /新增规则/ }));
+    await screen.findByText('新增价格规则');
+
+    fireEvent.change(screen.getByPlaceholderText('请输入规则名称'), { target: { value: '付费规则' } });
+    // 价格默认 0，改为 1 元
+    fireEvent.change(screen.getByPlaceholderText('0 表示免费'), { target: { value: '1' } });
+
+    const pickers = document.querySelectorAll('.ant-picker input');
+    await pickDate(pickers[0], 6);
+    await pickDate(pickers[1], 7);
+
+    fireEvent.click(screen.getByRole('button', { name: /保\s*存/ }));
+
+    // 先创建等额充值档位：1 金币 = 1 元 = 100 分，启用状态
+    await waitFor(() => expect(createCoinProductMock).toHaveBeenCalled(), { timeout: 8000 });
+    expect(createCoinProductMock).toHaveBeenCalledWith(expect.objectContaining({
+      name: '付费规则',
+      coin_amount: 1,
+      price_cents: 100,
+      mp_product_id: 'idv-20261112-a1b2',
+      status: 0,
+    }));
+    // 再携带档位 ID 创建价格规则
+    await waitFor(() => expect(createMock).toHaveBeenCalled(), { timeout: 8000 });
+    expect(createMock).toHaveBeenCalledWith(expect.objectContaining({
+      name: '付费规则',
+      price_coins: 1,
+      recharge_product_id: 'cp1',
+    }));
+  }, 30000);
+
+  it('付费规则档位创建无返回 ID：不创建规则并提示', async () => {
+    createCoinProductMock.mockResolvedValueOnce(null);
+    renderPage();
+    await openRulesTab();
+
+    await userEvent.click(screen.getByRole('button', { name: /新增规则/ }));
+    await screen.findByText('新增价格规则');
+
+    fireEvent.change(screen.getByPlaceholderText('请输入规则名称'), { target: { value: '无ID规则' } });
+    fireEvent.change(screen.getByPlaceholderText('0 表示免费'), { target: { value: '1' } });
+
+    const pickers = document.querySelectorAll('.ant-picker input');
+    await pickDate(pickers[0], 6);
+    await pickDate(pickers[1], 7);
+
+    fireEvent.click(screen.getByRole('button', { name: /保\s*存/ }));
+
+    await waitFor(() => expect(screen.getByText('创建充值档位失败')).toBeInTheDocument(), { timeout: 8000 });
+    expect(createMock).not.toHaveBeenCalled();
+  }, 30000);
 
   it('结束时间校验规则：不晚于开始时间时拒绝、晚于时通过', async () => {
     // 校验规则已抽为纯函数（endAfterStartRule），直接验证规则逻辑（UI 级表单校验在 jsdom 下受 rc-picker 拖累不可靠）

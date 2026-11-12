@@ -5,17 +5,20 @@ import { EyeOutlined, PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined
 import type { ColumnsType } from 'antd/es/table';
 import { GiftStatus, CongratulationStatus, CongratulationStatusLabels, CongratulationStatusColors } from '@shared/constants';
 import { getAvatarUrl, getSmallUrl } from '@/utils/imageUtils';
+import { formatCents } from '@/utils/format';
 import UserAvatar from '@/components/user/UserAvatar';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
-import { congratulationApi, AdminCongratulationItem, CongratulationGiftItem } from '@/api/services/congratulation';
+import { congratulationApi, AdminCongratulationItem, CongratulationGiftItem, AdminCashTierItem } from '@/api/services/congratulation';
 import { useListPage } from '@/hooks/useListPage';
 import { StandardPage } from '@/components/templates/StandardPage';
 import { StandardTable } from '@/components/templates/StandardTable';
+import { ActionColumn } from '@/components/templates/ActionColumn';
 import { confirmDelete } from '@/components/templates/ConfirmDelete';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import CongratulationDetailModal from '@/components/operation/CongratulationDetailModal';
 import CongratulationGiftModal from '@/components/operation/CongratulationGiftModal';
+import CongratulationCashTierModal from '@/components/operation/CongratulationCashTierModal';
 
 // ======================== 报喜信息管理 ========================
 
@@ -338,6 +341,135 @@ const CongratulationGiftTab: React.FC<{ onRefreshRef: (fn: () => void) => void }
   );
 };
 
+// ======================== 红包管理（现金红包档位 = 随份子金额） ========================
+
+const CASH_TIER_FILTERS: FilterConfig[] = [
+  { name: 'status', placeholder: '全部状态', type: 'select',
+    options: [
+      { label: '启用', value: GiftStatus.ENABLED },
+      { label: '停用', value: GiftStatus.DISABLED },
+    ],
+  },
+];
+
+const CashTierTab: React.FC<{ onRefreshRef: (fn: () => void) => void }> = ({ onRefreshRef }) => {
+  const { success, error: showError } = useAppNotification();
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
+  const [editingTier, setEditingTier] = useState<AdminCashTierItem | null>(null);
+
+  const fetchTiers = useCallback(async (params: any) => {
+    return congratulationApi.getCashTiers({
+      page: params.page, size: params.page_size,
+      status: params.status,
+    });
+  }, []);
+
+  const formatTierResponse = useCallback((res: any) => {
+    const list = Array.isArray(res) ? res : (res?.list || []);
+    const total = Array.isArray(res) ? res.length : (res?.total ?? 0);
+    return { list, count: total };
+  }, []);
+
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<AdminCashTierItem>({
+    fetchFn: fetchTiers,
+    formatResponse: formatTierResponse,
+  });
+
+  onRefreshRef(refresh);
+
+  const handleSearchChange = (name: string, value: any) => setSearchValues((p) => ({ ...p, [name]: value }));
+  const handleSearch = (vals: Record<string, any>) => search(vals);
+  const handleReset = () => { setSearchValues({}); search({}); };
+
+  const handleToggleStatus = async (record: AdminCashTierItem, enabled: boolean) => {
+    try {
+      await congratulationApi.updateCashTier(record.id, { status: enabled ? GiftStatus.ENABLED : GiftStatus.DISABLED });
+      success('状态更新成功');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '状态更新失败');
+    }
+  };
+
+  const handleSortChange = async (record: AdminCashTierItem, value: number | null) => {
+    if (value == null) return;
+    try {
+      await congratulationApi.updateCashTier(record.id, { sort_order: value });
+      success('排序已更新');
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '排序更新失败');
+    }
+  };
+
+  const columns: ColumnsType<AdminCashTierItem> = [
+    {
+      title: '档位名称', dataIndex: 'name', key: 'name',
+      render: (text: string) => <span style={{ wordBreak: 'break-word' }}>{text}</span>,
+    },
+    {
+      title: '红包金额（元）', dataIndex: 'amount_cents', key: 'amount_cents', width: 110,
+      render: (v: number) => formatCents(v),
+    },
+    { title: '代币数', dataIndex: 'coin_amount', key: 'coin_amount', width: 90 },
+    {
+      title: '排序', dataIndex: 'sort_order', key: 'sort_order', width: 120,
+      render: (v: number | null | undefined, r: AdminCashTierItem) => (
+        <InputNumber
+          min={0}
+          precision={0}
+          value={v ?? 0}
+          style={{ width: 70 }}
+          onBlur={(e) => {
+            const val = e.target.value;
+            const num = val === '' ? undefined : parseInt(val, 10);
+            if (num == null || num < 0 || num === (r.sort_order ?? 0)) return;
+            handleSortChange(r, num);
+          }}
+        />
+      ),
+    },
+    {
+      title: '状态', dataIndex: 'status', key: 'status', width: 100,
+      render: (v: number, r: AdminCashTierItem) => (
+        <Switch
+          checked={v === GiftStatus.ENABLED}
+          checkedChildren="启用"
+          unCheckedChildren="停用"
+          onChange={(checked) => handleToggleStatus(r, checked)}
+        />
+      ),
+    },
+    ActionColumn({
+      onEdit: (r: AdminCashTierItem) => { setModalMode('edit'); setEditingTier(r); setModalVisible(true); },
+      showDelete: false,
+      width: 100,
+    }),
+  ];
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <SearchPanel filters={CASH_TIER_FILTERS} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
+        <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+          <Button icon={<PlusOutlined />} onClick={() => { setModalMode('create'); setEditingTier(null); setModalVisible(true); }}>添加红包档位</Button>
+          <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
+        </Space>
+      </div>
+      <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+      <CongratulationCashTierModal
+        visible={modalVisible}
+        mode={modalMode}
+        tier={editingTier}
+        onClose={() => { setModalVisible(false); setEditingTier(null); }}
+        onSuccess={refresh}
+      />
+    </div>
+  );
+};
+
 // ======================== 页面 ========================
 
 const CongratulationManagement = () => {
@@ -351,7 +483,7 @@ const CongratulationManagement = () => {
   return (
     <StandardPage
       title="报喜管理"
-      description="管理用户提交的报喜资料并执行审核，维护报喜虚拟礼物配置。"
+      description="管理用户提交的报喜资料并执行审核，维护报喜虚拟礼物与现金红包档位配置。"
       showRefreshButton
       onRefresh={handleRefresh}
       showAddButton={false}
@@ -362,6 +494,7 @@ const CongratulationManagement = () => {
           items={[
             { key: 'congrats', label: '报喜信息管理', children: <CongratulationListTab onRefreshRef={(fn) => { refreshRefs.congrats = fn; }} /> },
             { key: 'gifts', label: '礼物管理', children: <CongratulationGiftTab onRefreshRef={(fn) => { refreshRefs.gifts = fn; }} /> },
+            { key: 'cash', label: '红包管理', children: <CashTierTab onRefreshRef={(fn) => { refreshRefs.cash = fn; }} /> },
           ]}
         />
       }
