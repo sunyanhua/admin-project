@@ -34,6 +34,16 @@ export const endAfterStartRule = (getFieldValue: (name: string) => any) => ({
   },
 });
 
+/** 价格校验：0=免费，付费价格最低 1 元（独立导出便于测试） */
+export const priceFloorRule = {
+  validator(_: unknown, value: number | null | undefined) {
+    if (value != null && value !== 0 && value < 1) {
+      return Promise.reject(new Error('付费价格最低 1 元（0 表示免费）'));
+    }
+    return Promise.resolve();
+  },
+};
+
 /** 新增/编辑实人认证价格规则弹窗（时间区间启用规则不可重叠，后端 42226 兜底） */
 const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
   visible, mode, rule, onClose, onSuccess,
@@ -142,11 +152,14 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
         </Form.Item>
 
         <Form.Item
-          label="价格（元，0 表示免费）"
+          label="价格（元，0 表示免费，付费最低 1 元）"
           name="price_coins"
-          rules={[{ required: true, message: '请输入价格' }]}
+          rules={[
+            { required: true, message: '请输入价格' },
+            priceFloorRule,
+          ]}
         >
-          <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="0 表示免费" />
+          <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="0 表示免费，付费最低 1 元" />
         </Form.Item>
 
         <Form.Item

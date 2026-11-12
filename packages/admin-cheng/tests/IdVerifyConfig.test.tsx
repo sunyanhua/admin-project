@@ -261,6 +261,19 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     expect(createMock).not.toHaveBeenCalled();
   }, 30000);
 
+  it('价格下限校验：0 免费放行，付费价格最低 1 元', async () => {
+    const { priceFloorRule } = await import('@/components/system/IdVerifyPriceRuleModal');
+    // 0 = 免费，放行
+    await expect(priceFloorRule.validator(null, 0)).resolves.toBeUndefined();
+    // 付费价格 ≥ 1 元，放行
+    await expect(priceFloorRule.validator(null, 1)).resolves.toBeUndefined();
+    await expect(priceFloorRule.validator(null, 99)).resolves.toBeUndefined();
+    // 低于 1 元的付费价格，拒绝
+    await expect(priceFloorRule.validator(null, 0.5)).rejects.toThrow('付费价格最低 1 元');
+    // 缺省值交由必填规则处理，放行
+    await expect(priceFloorRule.validator(null, null)).resolves.toBeUndefined();
+  });
+
   it('结束时间校验规则：不晚于开始时间时拒绝、晚于时通过', async () => {
     // 校验规则已抽为纯函数（endAfterStartRule），直接验证规则逻辑（UI 级表单校验在 jsdom 下受 rc-picker 拖累不可靠）
     const { endAfterStartRule } = await import('@/components/system/IdVerifyPriceRuleModal');
