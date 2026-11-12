@@ -13,7 +13,7 @@ import IdVerifyPriceRuleModal from '@/components/system/IdVerifyPriceRuleModal';
 import UserAvatar from '@/components/user/UserAvatar';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import { idverifyApi, PriceRule, PriceRuleStatus, IdVerifyRecord, IdVerifyRecordStatus } from '@/api/services/idverify';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, formatCents } from '@/utils/format';
 
 const STATUS_OPTIONS = [
   { label: '启用', value: PriceRuleStatus.ENABLED },
@@ -109,14 +109,14 @@ const RecordsTab: React.FC = () => {
       dataIndex: 'price_coins',
       key: 'price_coins',
       width: 100,
-      render: (v: number) => (v === 0 ? <Tag color="green" title="免费">免费</Tag> : v),
+      render: (v: number) => (v === 0 ? <Tag color="green" title="免费">免费</Tag> : formatCents(v)),
     },
     {
       title: '原价（元）',
       dataIndex: 'original_price_coins',
       key: 'original_price_coins',
       width: 100,
-      render: (v: number) => (v > 0 ? v : '-'),
+      render: (v: number) => (v > 0 ? formatCents(v) : '-'),
     },
     {
       title: '尝试次数',
@@ -237,14 +237,14 @@ const PriceRulesTab: React.FC = () => {
       dataIndex: 'price_coins',
       key: 'price_coins',
       width: 100,
-      render: (v: number) => (v === 0 ? <Tag color="green" title="免费">免费</Tag> : v),
+      render: (v: number) => (v === 0 ? <Tag color="green" title="免费">免费</Tag> : formatCents(v)),
     },
     {
       title: '原价（元）',
       dataIndex: 'original_price_coins',
       key: 'original_price_coins',
       width: 100,
-      render: (v: number) => (v > 0 ? v : '-'),
+      render: (v: number) => (v > 0 ? formatCents(v) : '-'),
     },
     {
       title: '生效开始',

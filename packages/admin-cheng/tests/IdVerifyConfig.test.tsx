@@ -214,7 +214,7 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
 
     fireEvent.change(screen.getByPlaceholderText('请输入规则名称'), { target: { value: '付费规则' } });
     // 价格默认 0，改为 1 元
-    fireEvent.change(screen.getByPlaceholderText('0 表示免费'), { target: { value: '1' } });
+    fireEvent.change(screen.getByPlaceholderText('0 表示免费，付费最低 1 元'), { target: { value: '1' } });
 
     const pickers = document.querySelectorAll('.ant-picker input');
     await pickDate(pickers[0], 6);
@@ -222,20 +222,20 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /保\s*存/ }));
 
-    // 先创建等额充值档位：1 金币 = 1 元 = 100 分，启用状态
+    // 先创建等额充值档位：1 元 = 100 金币 = 100 分（1 金币 = 1 分，与红包档位同口径），启用状态
     await waitFor(() => expect(createCoinProductMock).toHaveBeenCalled(), { timeout: 8000 });
     expect(createCoinProductMock).toHaveBeenCalledWith(expect.objectContaining({
       name: '付费规则',
-      coin_amount: 1,
+      coin_amount: 100,
       price_cents: 100,
       mp_product_id: 'idv-20261112-a1b2',
       status: 0,
     }));
-    // 再携带档位 ID 创建价格规则
+    // 再携带档位 ID 创建价格规则（价格以金币保存 = 100）
     await waitFor(() => expect(createMock).toHaveBeenCalled(), { timeout: 8000 });
     expect(createMock).toHaveBeenCalledWith(expect.objectContaining({
       name: '付费规则',
-      price_coins: 1,
+      price_coins: 100,
       recharge_product_id: 'cp1',
     }));
   }, 30000);
@@ -249,7 +249,7 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     await screen.findByText('新增价格规则');
 
     fireEvent.change(screen.getByPlaceholderText('请输入规则名称'), { target: { value: '无ID规则' } });
-    fireEvent.change(screen.getByPlaceholderText('0 表示免费'), { target: { value: '1' } });
+    fireEvent.change(screen.getByPlaceholderText('0 表示免费，付费最低 1 元'), { target: { value: '1' } });
 
     const pickers = document.querySelectorAll('.ant-picker input');
     await pickDate(pickers[0], 6);

@@ -17,8 +17,9 @@ export interface IdVerifyPriceRuleModalProps {
 
 interface PriceRuleFormValues {
   name: string;
-  price_coins: number;
-  original_price_coins?: number;
+  /** 价格（元，两位小数；0 表示免费）——提交时 ×100 转金币（1 金币 = 1 分） */
+  price_yuan: number;
+  original_price_yuan?: number;
   start_at: Dayjs;
   end_at: Dayjs;
   status: number;
@@ -59,8 +60,9 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
       const timer = setTimeout(() => {
         form.setFieldsValue({
           name: rule.name || '',
-          price_coins: rule.price_coins ?? 0,
-          original_price_coins: rule.original_price_coins ?? 0,
+          // 金币 → 元（1 金币 = 1 分）
+          price_yuan: (rule.price_coins ?? 0) / 100,
+          original_price_yuan: (rule.original_price_coins ?? 0) / 100,
           start_at: parseApiTime(rule.start_at),
           end_at: parseApiTime(rule.end_at),
           status: rule.status ?? PriceRuleStatus.ENABLED,
@@ -71,7 +73,7 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
     }
     // 新增：重置表单并落默认值（状态默认启用）
     form.resetFields();
-    form.setFieldsValue({ status: PriceRuleStatus.ENABLED, price_coins: 0, original_price_coins: 0 });
+    form.setFieldsValue({ status: PriceRuleStatus.ENABLED, price_yuan: 0, original_price_yuan: 0 });
     return undefined;
   }, [visible, mode, rule, form]);
 
@@ -81,15 +83,17 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
     /** 充值档位是否已成功创建（第二步失败时提示部分成功，运营可感知孤儿档位） */
     let tierCreated = false;
     try {
-      const priceCoins = values.price_coins ?? 0;
-      // 价格不为 0：先创建等额虚拟支付充值档位（1 金币 = 1 元 = 100 分），拿到 ID 保存到价格规则；
-      // 管理端列表不返回规则已有档位 ID，编辑保存同样新建（旧档位闲置）；免费不创建
+      // 元 → 金币（1 金币 = 1 分，与红包档位等额口径一致）
+      const priceCoins = Math.round((values.price_yuan ?? 0) * 100);
+      const originalPriceCoins = Math.round((values.original_price_yuan ?? 0) * 100);
+      // 价格不为 0：先创建等额虚拟支付充值档位（coin_amount = price_cents = 金币数，1 金币 = 1 分），
+      // 拿到 ID 保存到价格规则；管理端列表不返回规则已有档位 ID，编辑保存同样新建（旧档位闲置）；免费不创建
       let rechargeProductId: string | undefined;
       if (priceCoins > 0) {
         const tier: CoinProductItem = await xpayApi.createCoinProduct({
           name: values.name.trim(),
           coin_amount: priceCoins,
-          price_cents: priceCoins * 100,
+          price_cents: priceCoins,
           mp_product_id: buildMpProductId('idv'),
           sort_order: 0,
           status: CoinProductStatus.ENABLED,
@@ -101,7 +105,7 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
       const payload = {
         name: values.name.trim(),
         price_coins: priceCoins,
-        original_price_coins: values.original_price_coins ?? 0,
+        original_price_coins: originalPriceCoins,
         recharge_product_id: rechargeProductId,
         start_at: dayjsToApi(values.start_at) || '',
         end_at: dayjsToApi(values.end_at) || '',
@@ -153,20 +157,20 @@ const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
 
         <Form.Item
           label="价格（元，0 表示免费，付费最低 1 元）"
-          name="price_coins"
+          name="price_yuan"
           rules={[
             { required: true, message: '请输入价格' },
             priceFloorRule,
           ]}
         >
-          <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="0 表示免费，付费最低 1 元" />
+          <InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="0 表示免费，付费最低 1 元" />
         </Form.Item>
 
         <Form.Item
           label="原价（元，0 表示无原价）"
-          name="original_price_coins"
+          name="original_price_yuan"
         >
-          <InputNumber min={0} precision={0} style={{ width: '100%' }} placeholder="0 表示无原价" />
+          <InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="0 表示无原价" />
         </Form.Item>
 
         <Form.Item
