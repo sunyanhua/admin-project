@@ -4693,6 +4693,212 @@
                 }
             }
         },
+        "/admin/v1/bizops/congratulation/cash-tiers": {
+            "get": {
+                "description": "管理后台分页查询现金红包档位，支持状态筛选。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "现金红包档位列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "状态筛选：0=启用 1=停用；不传返回全部",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCashTierItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "新增档位；金额 1–520 分（沙盒最低 1 分，正式最低 100 分），必须关联一个启用中的等额充值档位（金额与代币数完全一致，实报实销）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "新增现金红包档位",
+                "parameters": [
+                    {
+                        "description": "档位参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateCashTierRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "创建成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCashTierItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或关联充值档位不等额",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/congratulation/cash-tiers/{id}": {
+            "put": {
+                "description": "PATCH 语义：仅传需修改字段。金额 1–520 分（沙盒最低 1 分，正式最低 100 分）；金额/代币数/关联档位变更时重新校验等额；关联充值档位被引用后不可停用/改金额。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜管理"
+                ],
+                "summary": "编辑现金红包档位",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "档位 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "档位修改参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.UpdateCashTierRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCashTierItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误或关联充值档位不等额",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "权限不足",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "档位不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/congratulation/finance/bills": {
             "post": {
                 "description": "管理后台分页查询随份子记录（站内礼物/现金红包共用），支持报喜、赠送人、礼物、类型、状态、时间区间与赠送人昵称筛选。财务读取留痕：POST 承载查询条件 + 审计上报。",
@@ -6570,6 +6776,88 @@
                     },
                     "404": {
                         "description": "认证记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/idverify/records/{id}/revoke": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "撤销已通过（status=2）的实人认证：记录置为已撤销（6）并解除脱单档案实名标记，允许用户重新认证；**不进行虚拟支付退款**（订单保持已支付），已撤销记录不可申请退款；实名姓名/身份证密文保留，二次认证仍与档案交叉对比。写操作 audit.Set 留痕。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证管理"
+                ],
+                "summary": "撤销实人认证",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "认证记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "撤销参数",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RevokeRecordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "撤销成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RecordRevokeResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "认证记录不存在（42007）或状态不允许（42008）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -21976,6 +22264,52 @@
                 }
             }
         },
+        "/api/v1/wxa/congratulation/cash-tiers": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "返回启用中的现金红包档位（按排序升序）；金额与扣减代币数由管理后台配置，用户只能选档不能自填金额。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "现金红包档位",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCashTierItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/congratulation/gifts": {
             "get": {
                 "description": "返回启用且在可购买窗口内的站内礼物；price_coins=0 表示免费。",
@@ -22752,7 +23086,7 @@
         },
         "/api/v1/wxa/congratulation/{id}/tribute": {
             "post": {
-                "description": "kind=1：扣钱包金币（0=免费）并直接完成；kind=2：现金红包（1–520 分），同步扣代币成功即完成，结果未知时返回待支付记录供轮询。",
+                "description": "kind=1：扣钱包金币（0=免费）并直接完成；kind=2：现金红包，金额由管理后台档位决定（请求传 cash_tier_id），按档位扣代币，结果未知时返回待支付记录供轮询。",
                 "consumes": [
                     "application/json"
                 ],
@@ -28575,6 +28909,70 @@
             }
         },
         "/api/v1/wxa/xpay/coin-recharges": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户的代币充值记录，按创建时间倒序；可按状态筛选。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付"
+                ],
+                "summary": "我的充值记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "充值状态：0=处理中 1=成功 2=失败（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.MyCoinRechargeItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            },
             "post": {
                 "security": [
                     {
@@ -28688,6 +29086,78 @@
                     },
                     "404": {
                         "description": "充值记录不存在",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/xpay/orders": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "分页查询当前用户的虚拟支付订单（报喜现金红包/代币充值/实人认证），按创建时间倒序；可按 biz_type / status 筛选。不返回微信交易号等内部字段。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付"
+                ],
+                "summary": "我的代币消费记录",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "业务类型：2=报喜现金红包 3=代币充值 4=实人认证（不传=全部）",
+                        "name": "biz_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "订单状态：0=待支付 1=已支付 2=已退款 3=已关闭（不传=全部）",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.MyOrderItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -32191,6 +32661,38 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCashTierItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "coin_amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "recharge_product_id": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.AdminCongratulationDetailResponse": {
             "type": "object",
             "properties": {
@@ -32968,6 +33470,9 @@
                 "amount_coins": {
                     "type": "integer"
                 },
+                "cash_tier_id": {
+                    "type": "string"
+                },
                 "congratulation_id": {
                     "type": "string"
                 },
@@ -33012,6 +33517,46 @@
                 },
                 "nickname": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CreateCashTierRequest": {
+            "type": "object",
+            "required": [
+                "amount_cents",
+                "coin_amount",
+                "name",
+                "recharge_product_id"
+            ],
+            "properties": {
+                "amount_cents": {
+                    "description": "AmountCents 红包金额（分）：1–520；正式环境服务层要求 ≥100（沙盒允许 1 分，2026-11-12）。",
+                    "type": "integer",
+                    "maximum": 520,
+                    "minimum": 1
+                },
+                "coin_amount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 64
+                },
+                "recharge_product_id": {
+                    "description": "RechargeProductID 关联充值档位 v6_pay_coin_product.id；金额/代币数必须与其一致。",
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
                 }
             }
         },
@@ -33185,6 +33730,27 @@
                 },
                 "source": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationInviteSource"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.PublicCashTierItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "coin_amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "recharge_product_id": {
+                    "description": "RechargeProductID 关联充值档位 ID：余额不足时前端据此引导充值对应档位。",
+                    "type": "string"
                 }
             }
         },
@@ -33392,18 +33958,16 @@
                 "kind"
             ],
             "properties": {
-                "amount_cents": {
-                    "description": "AmountCents kind=2 现金红包金额（1–5.20 元 = 100–520 分）；kind=1 不使用。",
-                    "type": "integer",
-                    "maximum": 520,
-                    "minimum": 100
+                "cash_tier_id": {
+                    "description": "CashTierID kind=2 必填（现金红包档位 ID）；kind=1 不使用。",
+                    "type": "string"
                 },
                 "gift_id": {
                     "description": "GiftID kind=1 必填；kind=2 不使用。",
                     "type": "string"
                 },
                 "kind": {
-                    "description": "Kind 1=站内礼物 2=现金红包（需启用中的虚拟支付配置）；*int 允许显式 1。",
+                    "description": "Kind 1=站内礼物 2=现金红包（金额由管理后台档位决定）；*int 允许显式 1。",
                     "type": "integer",
                     "enum": [
                         1,
@@ -33475,6 +34039,38 @@
                 },
                 "marriage_certificate_supplemented_at": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.UpdateCashTierRequest": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "description": "AmountCents 红包金额（分）：1–520；正式环境服务层要求 ≥100（沙盒允许 1 分，2026-11-12）。",
+                    "type": "integer",
+                    "maximum": 520,
+                    "minimum": 1
+                },
+                "coin_amount": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "name": {
+                    "type": "string"
+                },
+                "recharge_product_id": {
+                    "type": "string"
+                },
+                "sort_order": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "status": {
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1
+                    ]
                 }
             }
         },
@@ -34419,6 +35015,10 @@
                 "price_coins": {
                     "type": "integer"
                 },
+                "recharge_product_id": {
+                    "description": "RechargeProductID 付费价格对应的等额启用充值档位 ID（免费/无档位时为 null）；\n前端余额不足时据此引导充值（POST /wxa/xpay/coin-recharges { product_id }）。",
+                    "type": "string"
+                },
                 "start_at": {
                     "type": "string"
                 }
@@ -34539,6 +35139,21 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.RecordRevokeResponse": {
+            "type": "object",
+            "properties": {
+                "real_verified": {
+                    "description": "RealVerified 档案当前是否仍标记为已实名（撤销后恒 false；档案不存在同为 false）。",
+                    "type": "boolean"
+                },
+                "record_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_idverify_model.RefundApplyItem": {
             "type": "object",
             "properties": {
@@ -34640,6 +35255,19 @@
             ],
             "properties": {
                 "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.RevokeRecordRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "description": "Reason 撤销原因（写入审计日志留痕）。*string：required 只检查非 nil。",
                     "type": "string",
                     "maxLength": 500
                 }
@@ -38051,7 +38679,7 @@
                     "type": "string"
                 },
                 "price_cents": {
-                    "description": "分；iOS 最低 100",
+                    "description": "PriceCents 金额（分）：沙盒最低 1，正式最低 100（iOS 虚拟支付最低 1 元）。",
                     "type": "integer",
                     "minimum": 1
                 },
@@ -38498,6 +39126,67 @@
                         0,
                         1
                     ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.MyCoinRechargeItem": {
+            "type": "object",
+            "properties": {
+                "coin_amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "type": "string"
+                },
+                "price_cents": {
+                    "type": "integer"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CoinRechargeStatus"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.MyOrderItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "biz_id": {
+                    "type": "string"
+                },
+                "biz_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PayBizType"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_no": {
+                    "type": "string"
+                },
+                "paid_at": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.OrderStatus"
                 }
             }
         },
@@ -44532,7 +45221,8 @@
                 2,
                 3,
                 4,
-                5
+                5,
+                6
             ],
             "x-enum-comments": {
                 "IDVerifyRecordStatusClosed": "已关闭/过期",
@@ -44540,7 +45230,8 @@
                 "IDVerifyRecordStatusPassed": "已通过（订单权益失效）",
                 "IDVerifyRecordStatusPendingPayment": "待支付",
                 "IDVerifyRecordStatusPendingVerify": "待认证/可重试",
-                "IDVerifyRecordStatusRefunded": "已退款"
+                "IDVerifyRecordStatusRefunded": "已退款",
+                "IDVerifyRecordStatusRevoked": "已撤销（管理后台）"
             },
             "x-enum-descriptions": [
                 "待支付",
@@ -44548,7 +45239,8 @@
                 "已通过（订单权益失效）",
                 "重试次数耗尽",
                 "已关闭/过期",
-                "已退款"
+                "已退款",
+                "已撤销（管理后台）"
             ],
             "x-enum-varnames": [
                 "IDVerifyRecordStatusPendingPayment",
@@ -44556,7 +45248,8 @@
                 "IDVerifyRecordStatusPassed",
                 "IDVerifyRecordStatusExhausted",
                 "IDVerifyRecordStatusClosed",
-                "IDVerifyRecordStatusRefunded"
+                "IDVerifyRecordStatusRefunded",
+                "IDVerifyRecordStatusRevoked"
             ]
         },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRefundApplyStatus": {
