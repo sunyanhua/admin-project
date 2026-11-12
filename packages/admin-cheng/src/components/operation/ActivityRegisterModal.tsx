@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
-import { Button, Tag, Space, Tabs, Avatar } from 'antd';
+import { Button, Tag, Space, Tabs, Avatar, App } from 'antd';
 import { ReloadOutlined, EyeOutlined, ExportOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
@@ -46,7 +46,11 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   visible, activityId, activityTitle, activityType, formConfig, onClose, privacyBatchFetcher,
 }) => {
   const { success, error: showError } = useAppNotification();
+  const { modal } = App.useApp();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
+  /** 勾选的报名记录 ID（仅待审核筛选下使用） */
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [batchSubmitting, setBatchSubmitting] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailRecord, setDetailRecord] = useState<RegisterRecord | null>(null);
   /** 详情弹窗是否只读（「查看」入口只读；「审核」入口开放审核操作区） */
@@ -100,7 +104,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     return { list, count: total };
   }, []);
 
-  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<RegisterRecord>({
+  const { data, loading, pagination, onPageChange, refresh, search, searchValues: appliedSearchValues } = useListPage<RegisterRecord>({
     fetchFn: fetchRegisters,
     formatResponse,
   });
@@ -121,6 +125,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     if (activityId && key !== prevKeyRef.current) {
       prevKeyRef.current = key;
       setSearchValues({});
+      setSelectedIds([]);
       search({ _t: Date.now() });
       setPresignReloadKey((k) => k + 1);
       setTabKey('register');
@@ -128,8 +133,17 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   }, [visible, activityId, search]);
 
   const handleSearchChange = (name: string, value: any) => setSearchValues(p => ({ ...p, [name]: value }));
-  const handleSearch = (vals: Record<string, any>) => search(vals);
-  const handleReset = () => { setSearchValues({}); search({}); };
+  const handleSearch = (vals: Record<string, any>) => {
+    setSelectedIds([]);
+    search(vals);
+  };
+  const handleReset = () => { setSearchValues({}); setSelectedIds([]); search({}); };
+
+  /** 刷新列表并清空勾选（工具栏刷新与详情弹窗审核成功后共用） */
+  const handleRefresh = () => { setSelectedIds([]); refresh(); };
+
+  /** 翻页前清空勾选（勾选语义为「当前页」，与 antd 默认全选范围一致） */
+  const handlePageChange = (page: number, pageSize: number) => { setSelectedIds([]); onPageChange(page, pageSize); };
 
   const handleExport = async () => {
     setExporting(true);
@@ -191,6 +205,55 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
     setDetailRecord(record);
     setDetailReadonly(false);
     setDetailVisible(true);
+  };
+
+  /** 当前生效筛选是否为「待审核」（决定勾选列与批量入选按钮是否展示） */
+  const isPendingFilter = appliedSearchValues.audit_status === RegisterAuditStatus.PENDING;
+
+  /** 批量审核并发分块大小（对齐仓库内同类逐条批量操作） */
+  const BATCH_AUDIT_SIZE = 8;
+
+  /** 批量入选：对勾选记录执行审核通过（先剔除脏选——只保留当前列表中仍为待审核的记录；分块并发，部分失败提示成功/失败数） */
+  const handleBatchApprove = () => {
+    if (!activityId) return;
+    const pendingIds = selectedIds.filter((id) => {
+      const rec = data.find((r) => r.id === id);
+      return rec && rec.audit_status === RegisterAuditStatus.PENDING;
+    });
+    const count = pendingIds.length;
+    if (!count) return;
+    modal.confirm({
+      title: '批量入选确认',
+      content: `将把已勾选的 ${count} 名用户全部审核通过并入选，确定执行？`,
+      okText: '确认入选',
+      cancelText: '取消',
+      onOk: async () => {
+        setBatchSubmitting(true);
+        try {
+          const results: PromiseSettledResult<any>[] = [];
+          for (let i = 0; i < pendingIds.length; i += BATCH_AUDIT_SIZE) {
+            const chunk = pendingIds.slice(i, i + BATCH_AUDIT_SIZE);
+            const settled = await Promise.allSettled(
+              chunk.map((id) => activityApi.auditRegister(activityId, id, { approved: true })),
+            );
+            results.push(...settled);
+          }
+          const okCount = results.filter((r) => r.status === 'fulfilled').length;
+          const failCount = results.length - okCount;
+          setSelectedIds([]);
+          refresh();
+          if (failCount > 0) {
+            showError(`批量入选完成：成功 ${okCount} 条，失败 ${failCount} 条，失败记录请查看后重试`);
+          } else {
+            success(`已批量入选 ${okCount} 名用户`);
+          }
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '批量入选失败');
+        } finally {
+          setBatchSubmitting(false);
+        }
+      },
+    });
   };
 
   /** 现场签到/序号/排序/添加等现场管理操作已迁移至「现场管理」弹窗（OnsiteManageModal） */
@@ -347,11 +410,32 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
       <Space style={{ marginLeft: 12, flexShrink: 0 }}>
+        {isFreeReview && isPendingFilter && (
+          <Button
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            loading={batchSubmitting}
+            disabled={selectedIds.length === 0}
+            onClick={handleBatchApprove}
+          >
+            批量入选{selectedIds.length > 0 ? `（${selectedIds.length}）` : ''}
+          </Button>
+        )}
         <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
-        <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
+        <Button icon={<ReloadOutlined />} onClick={handleRefresh}>刷新</Button>
       </Space>
       </div>
-      <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
+      <StandardTable
+        columns={columns}
+        dataSource={data}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
+        rowSelection={isFreeReview && isPendingFilter ? {
+          selectedRowKeys: selectedIds,
+          onChange: (keys) => setSelectedIds(keys.map(String)),
+        } : undefined}
+      />
     </div>
   );
 
@@ -390,7 +474,7 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         activityType={activityType}
         readonly={detailReadonly}
         onClose={() => { setDetailVisible(false); setDetailRecord(null); }}
-        onSuccess={refresh}
+        onSuccess={handleRefresh}
       />
 
       <UserDetailCardModal

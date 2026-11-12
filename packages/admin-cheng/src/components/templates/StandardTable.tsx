@@ -1,6 +1,5 @@
 import { Table, Empty, Grid, Flex, Select, Pagination } from 'antd';
-import type { TablePaginationConfig } from 'antd/es/table';
-import type { ColumnsType } from 'antd/es/table';
+import type { TablePaginationConfig, TableProps, ColumnsType } from 'antd/es/table';
 
 const { useBreakpoint } = Grid;
 
@@ -12,6 +11,8 @@ export interface StandardTableProps<T = any> {
   onPageChange?: (page: number, pageSize: number) => void;
   rowKey?: string | ((record: T) => string);
   scroll?: { x?: number | string; y?: number | string };
+  /** 行选择（透传 antd rowSelection，用于批量操作场景） */
+  rowSelection?: TableProps<T>['rowSelection'];
   /** 外层容器 className（用于局部样式定制） */
   className?: string;
 }
@@ -24,6 +25,7 @@ export const StandardTable: React.FC<StandardTableProps> = ({
   onPageChange,
   rowKey = 'id',
   scroll,
+  rowSelection,
   className,
 }) => {
   const screens = useBreakpoint();
@@ -43,6 +45,7 @@ export const StandardTable: React.FC<StandardTableProps> = ({
         rowKey={rowKey}
         loading={loading}
         pagination={false}
+        rowSelection={rowSelection}
         scroll={scroll ?? (isMobile ? { x: 800 } : undefined)}
         size={isMobile ? 'small' : 'middle'}
         locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无数据" /> }}
