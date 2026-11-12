@@ -95,7 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
-| 2026-11-12 | 认证价格规则与红包档位联动虚拟支付充值档位（价格≠0 先建等额充值档位再保存 recharge_product_id；报喜管理新增红包管理 TAB——现金红包档位列表/新增/编辑/状态/排序）；**测试版构建发布**（build:test，产物待上传） | IdVerifyPriceRuleModal + CongratulationCashTierModal + CongratulationManagement + xpay/congratulation/idverify 服务 + mpProductId utils + tests | 1445baa（构建产物未提交） |
+| 2026-11-12 | 认证价格规则与红包档位联动虚拟支付充值档位（价格≠0 先建等额充值档位再保存 recharge_product_id；报喜管理新增红包管理 TAB——现金红包档位列表/新增/编辑/状态/排序）；**测试版+正式版构建发布**（build:test / build:prod，产物待上传） | IdVerifyPriceRuleModal + CongratulationCashTierModal + CongratulationManagement + xpay/congratulation/idverify 服务 + mpProductId utils + tests | 1445baa（构建产物未提交） |
 | 2026-11-12 | 报名名单待审核筛选下支持勾选批量入选（勾选列+全选、批量入选按钮、确认弹窗、分块并发逐条审核、部分失败提示）；**正式版构建发布**（build:prod，产物待上传） | ActivityRegisterModal + StandardTable（rowSelection 透传）+ tests | 249266b（构建产物未提交） |
 | 2026-11-11 | 财务统计页落地（资金汇总/对账汇总/报喜赠送账单，xpay + congratulation 汇总接口）；订单/退款/提现用户列展示头像昵称并点击查看用户资料卡片（后端 user 简报挂载）；用户认证记录用户列同样改造；**测试版构建发布**（build:test，产物待上传） | FinanceStats + OrderManagement/RefundManagement/WithdrawManagement + UserVerify + xpay/congratulation 服务 + router/menu + tests | b9e892b、dbccdef、82839d4、ff39a25（构建产物未提交） |
 | 2026-11-11 | 互动管理新增「投诉管理」（列表/详情/回复/结案，xpay 投诉接口）；**测试版构建发布**（build:test，产物待上传） | xpay + ComplaintManagement + router/menu + tests | 6399b29（构建产物未提交） |
