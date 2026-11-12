@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-11-12 17:27 | 249266b | feat: 报名名单待审核筛选下支持勾选批量入选——审核状态为「待审核」时行前显示勾选框（含表头全选），「导出」前新增「批量入选」按钮（显示勾选数量）；确认后分块并发（每批 8 条）逐条审核通过，部分失败提示成功/失败条数；勾选语义为当前页（搜索/重置/翻页/刷新/重开弹窗均清空勾选，执行时按当前列表待审核记录过滤脏选）；筛选状态读 useListPage 生效 searchValues；StandardTable 新增 rowSelection 透传；新增 6 项单测 |
 | 2026-11-11 17:58 | b9e892b | feat: 财务统计页落地（替换占位页）——①资金汇总（GET /xpay/fund/summary）：日期区间（缺省近30天，超366天前端拦截），支付（含业务类型拆分表）/入账/退费/提现四张统计卡，显示接口纠偏后实际统计区间；②对账汇总（GET /xpay/reconcile-summary）：账期区间+渠道筛选，按账期日×渠道表格（交易额/手续费/净额/一致/差异标红）；③赠送账单（POST /congratulation/finance/summary）：时间/类型/状态/昵称筛选，统计卡+状态分布+类型与礼物分组表；竞态防护（reqId 丢弃过期响应）、空值兜底、失败清空旧数据、各 TAB 内联刷新；xpay/congratulation 服务补 3 接口与类型枚举；SITEMAP 同步；新增 6 项单测 |
 | 2026-11-11 16:51 | dbccdef | feat: 订单/退款/提现用户列对齐后端 user 简报字段——后端三接口已挂载 user（user_id/nickname/avatar，swagger 已同步）：订单页用户列改读 user 字段（修正此前 user_profile 猜测），退款管理、提现申请新增用户列（头像+昵称，点击打开 UserDetailCardModal 标准资料卡片，缺失回退/空 user_id 禁用点击）；XpayOrder/XpayRefund/WithdrawItem 类型补 user 简报；测试补三页用户列与资料卡片用例 |
 | 2026-11-11 16:02 | ff39a25 | feat: 用户认证记录用户列展示头像昵称——用户ID列替换为头像+昵称（user_profile 挂载，缺失回退用户ID，user_id 为空禁用点击），点击打开 UserDetailCardModal 标准用户资料卡片；IdVerifyRecord 类型补充 user_data/user_profile/user_match_profile（swagger 已同步挂载）；测试补用户列与资料卡片用例 |
