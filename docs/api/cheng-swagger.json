@@ -22404,6 +22404,70 @@
                 }
             }
         },
+        "/api/v1/wxa/congratulation/tributes/{id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "仅本人待支付的现金红包记录可取消。取消前查询关联支付订单：已支付/已退款拒绝；待支付则关闭订单并同步关闭记录。取消后可重新发起（唯一索引仅覆盖待支付/已完成）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "取消待支付随份子",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "随份子 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取消成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.CongratulationTributeItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "记录状态不允许取消（41820）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "记录不存在（41823）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/congratulation/withdraw": {
             "post": {
                 "description": "提现报喜现金收入：最低 10 元，每日一次，仅报喜发布人且已完成实名认证（收款人姓名必填）。",
@@ -33339,7 +33403,7 @@
                     "type": "string"
                 },
                 "kind": {
-                    "description": "Kind 1=站内礼物 2=现金红包（需虚拟支付配置与 cash_pay_product_id）；*int 允许显式 1。",
+                    "description": "Kind 1=站内礼物 2=现金红包（需启用中的虚拟支付配置）；*int 允许显式 1。",
                     "type": "integer",
                     "enum": [
                         1,
@@ -37886,6 +37950,7 @@
                     "type": "string"
                 },
                 "mp_product_id": {
+                    "description": "MpProductID 内部档位唯一标识（对账/幂等用），不传给微信。",
                     "type": "string"
                 },
                 "name": {
@@ -37979,6 +38044,7 @@
                     "minimum": 1
                 },
                 "mp_product_id": {
+                    "description": "MpProductID 内部档位唯一标识（对账/幂等用），不传给微信。",
                     "type": "string"
                 },
                 "name": {
@@ -38534,6 +38600,7 @@
                     "minimum": 1
                 },
                 "mp_product_id": {
+                    "description": "MpProductID 内部档位唯一标识（对账/幂等用），不传给微信。",
                     "type": "string"
                 },
                 "name": {

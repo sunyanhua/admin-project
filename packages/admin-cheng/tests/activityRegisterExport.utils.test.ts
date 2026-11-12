@@ -10,6 +10,7 @@ import {
   buildExportHeaders,
   buildExportRow,
   buildRegisterExportSheet,
+  buildOnsiteExportSheet,
 } from '@/components/operation/activityRegisterExport.utils';
 
 const sampleFormConfig: FormField[] = [{ id: 'f1', label: '健康承诺', type: 'text', required: false }];
@@ -205,6 +206,61 @@ describe('buildRegisterExportSheet', () => {
     const row = sheet.rows[0];
     const idx = (name: string) => sheet.headers.indexOf(name);
     expect(row[idx('现场序号')]).toBe('');
+    expect(row[idx('用户名')]).toBe('未注册');
+    expect(row[idx('姓名')]).toBe('张三');
+    expect(row[idx('性别')]).toBe('男');
+    expect(row[idx('手机号')]).toBe('13800000000');
+    expect(row[idx('个人主页')]).toBe('');
+  });
+});
+
+describe('buildOnsiteExportSheet（现场入选名单导出）', () => {
+  it('表头 = 基础列 + 签到状态/签到时间 + 表单列 + 个人主页（无照片列）', () => {
+    const sheet = buildOnsiteExportSheet([sampleRecord()], { idCardMap: {}, formConfig: sampleFormConfig });
+    expect(sheet.headers).toEqual([
+      ...BASE_HEADERS,
+      '签到状态', '签到时间',
+      '健康承诺',
+      '个人主页',
+    ]);
+    expect(sheet.photoColCount).toBe(0);
+  });
+
+  it('有照片时追加照片列，行长度与表头一致', () => {
+    const record = sampleRecord({
+      user_match_profile: { photos: ['http://cdn.vbegin.com/a.jpg', 'http://cdn.vbegin.com/b.jpg'] } as any,
+    });
+    const sheet = buildOnsiteExportSheet([record], { idCardMap: {}, formConfig: [] });
+    const idx = (name: string) => sheet.headers.indexOf(name);
+    expect(idx('照片')).toBe(BASE_HEADERS.length);
+    expect(sheet.rows[0].length).toBe(sheet.headers.length);
+    expect(sheet.rows[0][idx('照片')]).toBe('http://cdn.vbegin.com/a.jpg');
+  });
+
+  it('签到状态/签到时间按 checkin_at 填充', () => {
+    const checked = sampleRecord({ checkin_at: '2026-11-05T12:30:00+08:00' });
+    const unchecked = sampleRecord({ id: 'r2', checkin_at: null });
+    const sheet = buildOnsiteExportSheet([checked, unchecked], { idCardMap: {}, formConfig: [] });
+    const idx = (name: string) => sheet.headers.indexOf(name);
+    expect(sheet.rows[0][idx('签到状态')]).toBe('已签到');
+    expect(sheet.rows[0][idx('签到时间')]).toBe('2026-11-05 12:30:00');
+    expect(sheet.rows[1][idx('签到状态')]).toBe('未签到');
+    expect(sheet.rows[1][idx('签到时间')]).toBe('');
+  });
+
+  it('基础列/个人主页取值与报名名单导出一致（含免报名未注册行）', () => {
+    const record = sampleRecord({
+      user_id: '',
+      presign_id: 'p1',
+      presign_real_name: '张三',
+      presign_gender: 1,
+      presign_phone: '13800000000',
+      onsite_number: 5,
+    });
+    const sheet = buildOnsiteExportSheet([record], { idCardMap: {}, formConfig: [] });
+    const row = sheet.rows[0];
+    const idx = (name: string) => sheet.headers.indexOf(name);
+    expect(row[idx('现场序号')]).toBe('5');
     expect(row[idx('用户名')]).toBe('未注册');
     expect(row[idx('姓名')]).toBe('张三');
     expect(row[idx('性别')]).toBe('男');

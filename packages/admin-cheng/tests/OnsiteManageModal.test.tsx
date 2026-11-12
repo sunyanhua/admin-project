@@ -2,7 +2,19 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from 'antd';
+import * as XLSX from 'xlsx';
+import { RegisterAuditStatus } from '@shared/constants';
 import OnsiteManageModal from '@/components/operation/OnsiteManageModal';
+
+vi.mock('xlsx', () => ({
+  utils: {
+    aoa_to_sheet: vi.fn(() => ({})),
+    book_new: vi.fn(() => ({})),
+    book_append_sheet: vi.fn(),
+    encode_cell: vi.fn(({ r, c }: { r: number; c: number }) => `R${r}C${c}`),
+  },
+  writeFile: vi.fn(),
+}));
 
 const ACTIVITY = vi.hoisted(() => ({
   id: 'a1',
@@ -45,6 +57,7 @@ vi.mock('@/api/services/user', () => ({
   userApi: {
     getCommunityUser: vi.fn(),
     getCommunityUserPrivacy: vi.fn(),
+    getUserPrivacyBatch: vi.fn().mockResolvedValue({}),
     auditMatchProfile: vi.fn(),
     getMatchProfile: vi.fn(),
     adjustReliabilityScore: adjustReliabilityMock,
@@ -212,5 +225,21 @@ describe('OnsiteManageModal 入选名单签到筛选', () => {
       expect(screen.getByText('已完成扣分')).toBeInTheDocument();
     });
     expect(screen.queryByRole('button', { name: /扣分/ })).toBeNull();
+  }, 30000);
+
+  it('入选名单导出：按已入选分页拉取并生成 Excel 文件', async () => {
+    (XLSX.writeFile as any).mockClear();
+    renderModal();
+    await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+
+    fireEvent.click(screen.getByRole('button', { name: /导\s*出/ }));
+
+    // 导出先走 size=100 分页拉取，且固定 audit_status=已入选
+    await waitFor(() => expect(getRegistersMock).toHaveBeenCalledWith('a1', expect.objectContaining({
+      size: 100,
+      audit_status: RegisterAuditStatus.APPROVED,
+    })), { timeout: 5000 });
+    await waitFor(() => expect(XLSX.writeFile).toHaveBeenCalled(), { timeout: 5000 });
+    expect(XLSX.writeFile).toHaveBeenCalledWith(expect.anything(), '测试活动_入选名单.xlsx');
   }, 30000);
 });

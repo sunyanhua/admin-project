@@ -67,8 +67,8 @@ export function buildRegisterExportSheet(items: RegisterRecord[], ctx: RegisterE
   };
 }
 
-/** 构建单条报名记录的数据行（长度与表头一致，无照片用空串补齐） */
-export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext & { photoCount: number }): string[] {
+/** 基础信息单元格（与 BASE_HEADERS 一一对应；报名名单与入选名单导出共用） */
+export function buildUserBaseCells(item: RegisterRecord, idCardMap: Record<string, string>): string[] {
   const up = item.user_profile;
   const mp = item.user_match_profile as any;
   // 免报名入选（未注册，无 user_id）：导出预报名反查补齐的可用信息（姓名/性别/手机号），与列表展示一致
@@ -83,8 +83,17 @@ export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext 
   const household = mp?.household_registration || '';
   const workplace = mp?.workplace || '';
   const onsite = item.onsite_number != null ? String(item.onsite_number) : '';
-  const createdAt = item.created_at ? item.created_at.replace('T', ' ').substring(0, 19) : '';
-  const completedAt = item.completed_at ? item.completed_at.replace('T', ' ').substring(0, 19) : '';
+  return [onsite, nickname, name, idCardMap[item.user_id] || '', genderLabel, String(age), phone, marital, edu, household, workplace];
+}
+
+/** 照片单元格（只取第一张，无照片用空串补齐） */
+export function buildPhotoCells(item: RegisterRecord, photoCount: number): string[] {
+  const photoUrls = splitPhotos(item.user_match_profile?.photos).slice(0, 1);
+  return [...photoUrls, ...new Array(Math.max(0, photoCount - photoUrls.length)).fill('')];
+}
+
+/** 表单配置单元格（值 + 附件 URL 逗号分隔，与表头表单列一一对应） */
+export function buildFormCells(item: RegisterRecord, formConfig: FormField[]): string[] {
   let formDataMap: Record<string, any> = {};
   try { formDataMap = JSON.parse(item.form_data || '{}'); } catch { /* ignore */ }
   const attsByField: Record<string, string[]> = {};
@@ -93,11 +102,25 @@ export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext 
     if (!attsByField[tag]) attsByField[tag] = [];
     attsByField[tag].push(att.url);
   }
+  return formConfig.map((f) => {
+    const val = formDataMap[f.id];
+    const urls = attsByField[f.id] || [];
+    const parts: string[] = [];
+    if (val != null) parts.push(String(val));
+    parts.push(...urls);
+    return parts.join(', ');
+  });
+}
 
-  const row = [onsite, nickname, name, ctx.idCardMap[item.user_id] || '', genderLabel, String(age), phone, marital, edu, household, workplace];
-  // 照片只导出第一张
-  const photoUrls = splitPhotos(item.user_match_profile?.photos).slice(0, 1);
-  row.push(...photoUrls, ...new Array(Math.max(0, ctx.photoCount - photoUrls.length)).fill(''));
+/** 构建单条报名记录的数据行（长度与表头一致，无照片用空串补齐） */
+export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext & { photoCount: number }): string[] {
+  const createdAt = item.created_at ? item.created_at.replace('T', ' ').substring(0, 19) : '';
+  const completedAt = item.completed_at ? item.completed_at.replace('T', ' ').substring(0, 19) : '';
+
+  const row = [
+    ...buildUserBaseCells(item, ctx.idCardMap),
+    ...buildPhotoCells(item, ctx.photoCount),
+  ];
   if (ctx.activityType === ActivityType.FREE_FCFS) { row.push(FreeFCFSStatusLabels[item.pay_status] || String(item.pay_status)); }
   else if (ctx.activityType === ActivityType.PAID_FCFS) { row.push(RegisterPayStatusLabels[item.pay_status] || String(item.pay_status), completedAt); }
   else if (ctx.activityType === ActivityType.FREE_REVIEW) {
@@ -110,14 +133,52 @@ export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext 
     row.push(auditLabel, item.audit_reason || '', createdAt);
   }
   if (ctx.activityType !== ActivityType.FREE_REVIEW) row.push(createdAt);
-  ctx.formConfig.forEach((f) => {
-    const val = formDataMap[f.id];
-    const urls = attsByField[f.id] || [];
-    const parts: string[] = [];
-    if (val != null) parts.push(String(val));
-    parts.push(...urls);
-    row.push(parts.join(', '));
-  });
+  row.push(...buildFormCells(item, ctx.formConfig));
+  // user_id 为空时不生成死链接
+  row.push(item.user_id ? buildProfileUrl(item.user_id) : '');
+  return row;
+}
+
+/** 现场入选名单导出表头：基础列 + 照片（如有）+ 签到状态/签到时间 + 表单配置列 + 个人主页 */
+export function buildOnsiteExportHeaders(formConfig: FormField[], photoCount: number): string[] {
+  const headers = [...BASE_HEADERS];
+  if (photoCount > 0) headers.push('照片');
+  headers.push('签到状态', '签到时间');
+  formConfig.forEach((f) => headers.push(f.label));
+  headers.push('个人主页');
+  return headers;
+}
+
+/** 现场入选名单导出上下文（无活动类型维度：状态列固定为签到状态/签到时间） */
+export interface OnsiteExportContext {
+  idCardMap: Record<string, string>;
+  formConfig: FormField[];
+}
+
+/** 组装现场入选名单导出工作表数据（参考报名名单导出：基础列/照片/表单列/个人主页一致） */
+export function buildOnsiteExportSheet(items: RegisterRecord[], ctx: OnsiteExportContext): RegisterExportSheet {
+  const photoCount = items.some((i) => splitPhotos(i.user_match_profile?.photos).length > 0) ? 1 : 0;
+  const headers = buildOnsiteExportHeaders(ctx.formConfig, photoCount);
+  const rows = items.map((item) => buildOnsiteExportRow(item, { ...ctx, photoCount }));
+  return {
+    headers,
+    rows,
+    photoColStart: BASE_HEADERS.length,
+    photoColCount: photoCount,
+    profileCol: headers.length - 1,
+  };
+}
+
+/** 构建单条入选名单记录的数据行（签到状态/签到时间替代报名状态列，其余与报名名单导出一致） */
+export function buildOnsiteExportRow(item: RegisterRecord, ctx: OnsiteExportContext & { photoCount: number }): string[] {
+  const checkinAt = item.checkin_at ? item.checkin_at.replace('T', ' ').substring(0, 19) : '';
+  const row = [
+    ...buildUserBaseCells(item, ctx.idCardMap),
+    ...buildPhotoCells(item, ctx.photoCount),
+    item.checkin_at ? '已签到' : '未签到',
+    checkinAt,
+    ...buildFormCells(item, ctx.formConfig),
+  ];
   // user_id 为空时不生成死链接
   row.push(item.user_id ? buildProfileUrl(item.user_id) : '');
   return row;

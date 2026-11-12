@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Button, Space, Tag, Tabs, Avatar, InputNumber } from 'antd';
-import { DesktopOutlined, CheckCircleOutlined, ReloadOutlined, PlusOutlined, OrderedListOutlined, CheckSquareOutlined, UserOutlined, MinusCircleOutlined } from '@ant-design/icons';
+import { DesktopOutlined, CheckCircleOutlined, ReloadOutlined, PlusOutlined, OrderedListOutlined, CheckSquareOutlined, UserOutlined, MinusCircleOutlined, ExportOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import type { ColumnsType } from 'antd/es/table';
+import * as XLSX from 'xlsx';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { activityApi, RegisterRecord, PresignRecord, Activity } from '@/api/services/activity-v1';
+import { userApi } from '@/api/services/user';
 import { RegisterAuditStatus, RegisterGender, RegisterGenderLabels } from '@shared/constants';
 import UserAvatar from '@/components/user/UserAvatar';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
@@ -19,6 +21,9 @@ import OnsiteGroupTab from '@/components/operation/OnsiteGroupTab';
 import OnsiteRoutineTab from '@/components/operation/OnsiteRoutineTab';
 import OnsiteDeductScoreModal from '@/components/operation/OnsiteDeductScoreModal';
 import { formatDateTime, parseApiTime } from '@/utils/format';
+import { buildOnsiteExportSheet } from './activityRegisterExport.utils';
+import { applyLinkColumns } from './excelExport.utils';
+import type { FormField } from './FormConfigEditor';
 
 interface OnsiteManageModalProps {
   visible: boolean;
@@ -60,6 +65,7 @@ const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string; act
   const [assigning, setAssigning] = useState(false);
   const [checkingIds, setCheckingIds] = useState<Set<string>>(new Set());
   const [deductVisible, setDeductVisible] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   /** 已完成扣分标记（onsite_config.deduct_done_at） */
   const deductDoneAt = (() => {
@@ -106,6 +112,55 @@ const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string; act
   const handleSearchChange = (name: string, value: any) => setSearchValues((p) => ({ ...p, [name]: value }));
   const handleSearch = (vals: Record<string, any>) => search(vals);
   const handleReset = () => { setSearchValues({}); search({}); };
+
+  /** 入选名单导出（参考报名名单导出：基础列/照片/表单列/个人主页一致，状态列替换为签到状态/签到时间） */
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      // 按当前筛选条件循环分页拉取（与列表一致：已入选 + 签到状态/性别/关键词）
+      const allData: RegisterRecord[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await activityApi.getRegisters(activityId, {
+          page, size: 100,
+          audit_status: RegisterAuditStatus.APPROVED,
+          checked_in: searchValues.check_status === CHECKED ? true : searchValues.check_status === UNCHECKED ? false : undefined,
+          gender: searchValues.gender,
+          keyword: searchValues.keyword || undefined,
+        });
+        const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        allData.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      // 批量拉取脱敏身份证号（隐私接口，读取留痕）
+      const userIds = allData.map(i => i.user_id).filter(Boolean);
+      const idCardMap = userIds.length ? await userApi.getUserPrivacyBatch(userIds) : {};
+      // 免报名入选（未注册）记录反查预报名补齐姓名/性别/手机号——导出与列表展示一致
+      const enriched = await enrichAdminRecords(allData);
+      // 表单配置列与报名名单导出同源
+      let formConfig: FormField[] = [];
+      try {
+        const fc = typeof activity?.form_config === 'string' ? JSON.parse(activity.form_config) : activity?.form_config;
+        formConfig = Array.isArray(fc) ? fc : [];
+      } catch { /* 配置解析失败按无表单列处理 */ }
+
+      const { headers, rows, photoColStart, photoColCount, profileCol } = buildOnsiteExportSheet(enriched, { idCardMap, formConfig });
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      // 照片列/个人主页列：列宽 + 单元格链接（与报名名单导出一致）
+      applyLinkColumns(ws, { headers, rowsCount: rows.length, photoColStart, photoColCount, profileCol });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '入选名单');
+      XLSX.writeFile(wb, `${activityTitle}_入选名单.xlsx`);
+      success('导出成功');
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '导出失败');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   /** 单条修改现场编号（≥1） */
   const handleOnsiteNumberChange = async (record: RegisterRecord, num: number) => {
@@ -329,6 +384,7 @@ const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string; act
               <Button danger icon={<MinusCircleOutlined />} onClick={() => setDeductVisible(true)}>扣分</Button>
             )
           )}
+          <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
           <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
         </Space>
       </div>
