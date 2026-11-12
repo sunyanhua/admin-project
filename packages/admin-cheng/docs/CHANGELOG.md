@@ -14,6 +14,7 @@
 
 | 时间 | 版本号 | 主要修改内容 |
 |------|--------|-------------|
+| 2026-11-12 18:52 | 1445baa | feat: 认证价格规则与红包档位联动虚拟支付充值档位——①认证价格管理：价格不为 0 时保存前先创建等额充值档位（coin_amount=价格、price_cents=价格×100），拿 ID 随 recharge_product_id 保存到价格规则，免费不建档位，编辑同样处理；②报喜管理新增「红包管理」TAB（现金红包档位）：新增/金额变化先创建等额充值档位（coin_amount=price_cents=金额分，实报实销）再创建/更新红包档位，金额未变复用旧档位 ID；③服务层：xpay createCoinProduct+CoinProductStatus、congratulation cash-tiers 三接口、idverify 请求补 recharge_product_id；④mp_product_id 前端生成唯一串（buildMpProductId：前缀-日期-6位随机，独立 utils 可测）；⑤提交锁防 Enter 重复提交、名称 whitespace 校验、第二步失败提示部分成功、tier 类型化；新增测试 10 项（含失败路径） |
 | 2026-11-12 18:00 | 6687adb | feat: 现场管理入选名单新增导出——内容参考报名名单导出（基础列/照片/表单列/个人主页一致，状态列替换为签到状态/签到时间）；按当前筛选分页拉取全量已入选记录，免报名入选反查预报名补齐，身份证号走隐私批量接口；导出工具重构抽取共享单元格逻辑，新增 buildOnsiteExportSheet/buildOnsiteExportRow；测试 5 项（注：本提交被 OldSun 自动同步合并，含 swagger 同步产物） |
 | 2026-11-12 17:27 | 249266b | feat: 报名名单待审核筛选下支持勾选批量入选——审核状态为「待审核」时行前显示勾选框（含表头全选），「导出」前新增「批量入选」按钮（显示勾选数量）；确认后分块并发（每批 8 条）逐条审核通过，部分失败提示成功/失败条数；勾选语义为当前页（搜索/重置/翻页/刷新/重开弹窗均清空勾选，执行时按当前列表待审核记录过滤脏选）；筛选状态读 useListPage 生效 searchValues；StandardTable 新增 rowSelection 透传；新增 6 项单测 |
 | 2026-11-11 17:58 | b9e892b | feat: 财务统计页落地（替换占位页）——①资金汇总（GET /xpay/fund/summary）：日期区间（缺省近30天，超366天前端拦截），支付（含业务类型拆分表）/入账/退费/提现四张统计卡，显示接口纠偏后实际统计区间；②对账汇总（GET /xpay/reconcile-summary）：账期区间+渠道筛选，按账期日×渠道表格（交易额/手续费/净额/一致/差异标红）；③赠送账单（POST /congratulation/finance/summary）：时间/类型/状态/昵称筛选，统计卡+状态分布+类型与礼物分组表；竞态防护（reqId 丢弃过期响应）、空值兜底、失败清空旧数据、各 TAB 内联刷新；xpay/congratulation 服务补 3 接口与类型枚举；SITEMAP 同步；新增 6 项单测 |
