@@ -148,7 +148,7 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
   const fontSize = `${Math.min(4, 10 / longestLen, 8 / parts.length)}vw`;
   return (
     <div style={{
-      width: '10vw', height: '10vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: '10vw', height: '10vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontSize, fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
       textAlign: 'center', lineHeight: 1.25, wordBreak: 'break-all', padding: '0.5vw',
       background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : state === 'bright' ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.22)',
