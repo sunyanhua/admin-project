@@ -243,3 +243,87 @@ describe('OnsiteManageModal 入选名单签到筛选', () => {
     expect(XLSX.writeFile).toHaveBeenCalledWith(expect.anything(), '测试活动_入选名单.xlsx');
   }, 30000);
 });
+
+describe('OnsiteManageModal 跨活动切换', () => {
+  it('从活动 A 切到活动 B：入选名单重拉 B 的数据（不残留 A 的名单）', async () => {
+    const { rerender } = render(
+      <App>
+        <OnsiteManageModal
+          visible
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={ACTIVITY as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+    await waitFor(() => expect(getRegistersMock).toHaveBeenCalledWith('a1', expect.anything()));
+
+    // 关闭 A 后打开 B（同一弹窗实例复用，模拟实际交互）
+    rerender(
+      <App>
+        <OnsiteManageModal
+          visible={false}
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={ACTIVITY as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+    rerender(
+      <App>
+        <OnsiteManageModal
+          visible
+          activityId="a2"
+          activityTitle="活动B"
+          activity={{ ...ACTIVITY, id: 'a2' } as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+
+    await waitFor(() => expect(getRegistersMock).toHaveBeenCalledWith('a2', expect.anything()));
+  }, 30000);
+
+  it('同一活动关闭后重开：入选名单重拉（不显示过期数据）', async () => {
+    const { rerender } = render(
+      <App>
+        <OnsiteManageModal
+          visible
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={ACTIVITY as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+    await waitFor(() => expect(getRegistersMock).toHaveBeenCalledWith('a1', expect.anything()));
+    const callsBefore = getRegistersMock.mock.calls.length;
+
+    rerender(
+      <App>
+        <OnsiteManageModal
+          visible={false}
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={ACTIVITY as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+    rerender(
+      <App>
+        <OnsiteManageModal
+          visible
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={ACTIVITY as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+
+    await waitFor(() => expect(getRegistersMock.mock.calls.length).toBeGreaterThan(callsBefore));
+  }, 30000);
+});

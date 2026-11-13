@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button, Space, Tag, Tabs, Avatar, InputNumber } from 'antd';
 import { DesktopOutlined, CheckCircleOutlined, ReloadOutlined, PlusOutlined, OrderedListOutlined, CheckSquareOutlined, UserOutlined, MinusCircleOutlined, ExportOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -55,7 +55,14 @@ const LIST_FILTERS: FilterConfig[] = [
 ];
 
 /** 入选名单 TAB：已入选用户管理（添加/排序/签到/序号），未注册用户展示与报名名单一致 */
-const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string; activity?: Activity | null; onDeducted?: () => void }> = ({ activityId, activityTitle, activity, onDeducted }) => {
+const ApprovedListTab: React.FC<{
+  activityId: string;
+  activityTitle: string;
+  activity?: Activity | null;
+  /** 弹窗打开序号（每次打开 +1）：活动切换/重开时触发重拉，避免面板保持挂载显示旧活动名单 */
+  reloadKey?: number;
+  onDeducted?: () => void;
+}> = ({ activityId, activityTitle, activity, reloadKey = 0, onDeducted }) => {
   const { success, error: showError } = useAppNotification();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [userDetailVisible, setUserDetailVisible] = useState(false);
@@ -107,7 +114,18 @@ const ApprovedListTab: React.FC<{ activityId: string; activityTitle: string; act
 
   const { data, loading, pagination, onPageChange, refresh, search } = useListPage<RegisterRecord>({
     fetchFn: fetchList,
+    resetOnSearch: true,
   });
+
+  /** 活动切换/弹窗重开：重置筛选与页码并重拉（useListPage 不监听 fetchFn 变化，面板跨活动保持挂载会残留旧名单） */
+  const prevKeyRef = useRef(`${activityId}-${reloadKey}`);
+  useEffect(() => {
+    const key = `${activityId}-${reloadKey}`;
+    if (key === prevKeyRef.current) return;
+    prevKeyRef.current = key;
+    setSearchValues({});
+    search({ _t: Date.now() });
+  }, [activityId, reloadKey, search]);
 
   const handleSearchChange = (name: string, value: any) => setSearchValues((p) => ({ ...p, [name]: value }));
   const handleSearch = (vals: Record<string, any>) => search(vals);
@@ -435,6 +453,8 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
 
   /** 弹窗内实时活动数据：任一分组/配置 TAB 保存后重新拉取，同步给所有 TAB（2026-11-10 用户定：保存分组后编排等 TAB 免刷新页面） */
   const [liveActivity, setLiveActivity] = useState<Activity | null | undefined>(activity);
+  /** 弹窗打开序号（每次打开 +1）：驱动入选名单在活动切换/重开时重拉，避免残留旧活动名单 */
+  const [openKey, setOpenKey] = useState(0);
 
   /** 重拉活动详情并同步给弹窗内所有 TAB（分组配置保存后 / 每次打开弹窗时调用） */
   const refreshLiveActivity = useCallback(async () => {
@@ -451,8 +471,9 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
       setTabKey(defaultTabKey);
       setLiveActivity(activity);
       refreshLiveActivity();
+      setOpenKey((k) => k + 1);
     }
-  }, [visible, defaultTabKey, activity, refreshLiveActivity]);
+  }, [visible, defaultTabKey, activity, activityId, refreshLiveActivity]);
 
   const openBigScreen = () => {
     const base = window.location.href.split('#')[0];
@@ -475,7 +496,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
         }}
         items={[
           { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} activity={liveActivity} /> },
-          { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} activityTitle={activityTitle} activity={liveActivity} onDeducted={refreshLiveActivity} /> },
+          { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} activityTitle={activityTitle} activity={liveActivity} reloadKey={openKey} onDeducted={refreshLiveActivity} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
           { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={liveActivity} onSaved={refreshLiveActivity} /> },
           { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={liveActivity} /> : null },
