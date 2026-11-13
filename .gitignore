@@ -52,4 +52,5 @@ test-results/
 # ====== 6. AI / 工具 ======
 .claude/
 .claudeignore
+.superpowers/
 *.zip

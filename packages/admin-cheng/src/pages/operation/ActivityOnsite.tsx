@@ -7,7 +7,9 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { RegisterAuditStatus } from '@shared/constants';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
-import { parseGroupIndex, splitGroupLabel } from '@/components/operation/onsiteGrouping.utils';
+import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
+import { BlockCard, BlockItem } from '@/components/operation/OnsiteBlockCard';
+import { chunkBalancedRows } from '@/utils/balancedRows';
 import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
@@ -28,6 +30,8 @@ interface WallUser {
   nick: string;
   gender: 'male' | 'female' | '';
   userId: string;
+  /** 报名记录 ID（免报名入选记录 user_id 为空时作为卡片唯一标识兜底） */
+  regId: string;
   photo: string;
   /** 分组名（已分组时展示在卡片上） */
   group?: string;
@@ -99,70 +103,6 @@ const RankSide: React.FC<{ nick: string; photo: string; gender?: number; number?
     </div>
   </div>
 );
-
-/** 组中抽组/单组选人的展示块 */
-interface BlockItem {
-  key: string;
-  label: string;
-  photo?: string;
-  number?: number | null;
-  gender?: 'male' | 'female' | '';
-  group?: string;
-}
-
-/** 组中抽组/单组选人展示块：组名方块或用户卡片（bright=明暗跳动中亮起、win=中奖金色放大、normal/drawn=灰度+蒙版降亮） */
-const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' | 'drawn' }> = ({ item, state }) => {
-  const border = state === 'win' ? '3px solid #ffd700' : state === 'bright' ? '2px solid rgba(255,255,255,.8)' : '1px solid rgba(255,255,255,.35)';
-  const shadow = state === 'win' ? '0 0 40px rgba(255,215,0,.95)' : 'none';
-  const scale = state === 'win' ? 'scale(1.15)' : 'scale(1)';
-  const transition = 'transform .3s, box-shadow .3s, opacity .3s';
-  if (item.photo) {
-    // 未选中：灰度 + 蒙版 + 徽章/昵称同步降亮；已抽：更深；明暗跳动亮起/中奖：全彩醒目
-    const mask = state === 'drawn' ? 'rgba(0,0,0,.8)' : state === 'normal' ? 'rgba(0,0,0,.6)' : 'transparent';
-    const filter = state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.6)' : 'none';
-    const opacity = state === 'drawn' ? 0.55 : 1;
-    const badgeDim = state === 'drawn' ? 0.3 : state === 'normal' ? 0.5 : 1;
-    return (
-      <div style={{ position: 'relative', width: '12vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition, opacity }}>
-        <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block', filter, transition: 'filter .3s' }} />
-        {mask !== 'transparent' && <div style={{ position: 'absolute', inset: 0, background: mask }} />}
-        <span className="onsite-nick" style={{
-          opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
-          transition: 'opacity .3s, background .3s, color .3s',
-          // 中奖：昵称金色底 + 深色加粗大字，视觉突出
-          ...(state === 'win' ? { background: '#ffd700', color: '#3d2a00', fontWeight: 800, fontSize: '1.35vw' } : {}),
-        }}>
-          <span className={`onsite-number-inline gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>
-          {item.label}
-        </span>
-      </div>
-    );
-  }
-  // 组名排版规则（用户定 2026-11-13，见 splitGroupLabel）：
-  //   ≤3 字单行；4 字 2×2；5~6 字两行每行≤3；7~9 字三行每行≤3；10 字以上每行≤4 最多 4 行；有「+」以 + 拆分为准
-  //   字号 = min(3.6vw, 内容区宽 8vw ÷ 最长行字数, 内容区高 8vw ÷ 行数 ÷ 行高 1.25)，各行纵向堆叠居中
-  //   （方块 10vw，四周内边距 1vw，短组名也保留明显留白）
-  // 防御式：label 非字符串时 String 化（历史 HMR/异常数据兜底，避免 [...label] 不可迭代崩溃）
-  const labelText = typeof item.label === 'string' ? item.label : String(item.label ?? '');
-  const labelParts = splitGroupLabel(labelText);
-  const parts = labelParts.length > 0 ? labelParts : [labelText];
-  const longestLen = Math.max(1, ...parts.map((p) => [...p].length));
-  const fontSize = `${Math.min(3.6, 8 / longestLen, 6.4 / parts.length)}vw`;
-  return (
-    <div style={{
-      width: '10vw', height: '10vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      fontSize, fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
-      textAlign: 'center', lineHeight: 1.25, wordBreak: 'break-all', padding: '1vw',
-      background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : state === 'bright' ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.22)',
-      transform: scale, transition,
-      opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
-      filter: state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.5)' : 'none',
-      textShadow: state === 'win' ? '0 2px 8px rgba(255,255,255,.6)' : 'none',
-    }}>
-      {parts.map((part, i) => <div key={i}>{part}</div>)}
-    </div>
-  );
-};
 
 const ActivityOnsite: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -373,6 +313,7 @@ const ActivityOnsite: React.FC = () => {
   /** 签到用户照片墙数据：报名记录全量过滤已签到；返回刷新后的照片墙（3/4 先查询再以此为筛选来源） */
   const fetchWall = useCallback(async (): Promise<WallUser[] | null> => {
     if (!id) return null;
+    if (demoRef.current) return null; // 演示模式：真实签到墙数据不拉取
     try {
       const regs: RegisterRecord[] = [];
       let page = 1;
@@ -403,6 +344,7 @@ const ActivityOnsite: React.FC = () => {
           nick,
           gender: g === 1 ? 'male' : g === 2 ? 'female' : '',
           userId: r.user_id,
+          regId: r.id,
           photo: photoMapRef.current.get(r.user_id) || getFullWidthUrl(r.user_profile?.avatar || r.avatar || ''),
           group,
         };
@@ -411,6 +353,8 @@ const ActivityOnsite: React.FC = () => {
       const ordered = interleaveGenders(base);
       // 用拉取到的照片重建（保持交错顺序）
       const final = ordered.map((u) => ({ ...u, photo: photoMapRef.current.get(u.userId) || u.photo }));
+      // 演示模式：取数期间进入了演示 → 丢弃迟到的真实签到墙，避免覆盖演示名单
+      if (demoRef.current) return null;
       setWall(final);
       return final;
     } catch { /* 查询失败静默，调用方回退现有数据 */ }
@@ -420,6 +364,7 @@ const ActivityOnsite: React.FC = () => {
   /** 心动排名数据（有现场心动的配对，按现场心动次数倒序）；返回拉取到的列表（↓ 耗尽重拉用） */
   const fetchCouples = useCallback(async (): Promise<OnsiteCouple[]> => {
     if (!id) return [];
+    if (demoRef.current) return []; // 演示模式：真实配对数据不拉取
     try {
       const all: OnsiteCouple[] = [];
       let page = 1;
@@ -431,9 +376,12 @@ const ActivityOnsite: React.FC = () => {
         if (list.length < 100) break;
         page++;
       }
+      // 演示模式：取数期间进入了演示 → 丢弃迟到的真实配对，避免覆盖演示配对
+      if (demoRef.current) return [];
       setCouples(all);
       const ids = all.flatMap((c) => [c.female?.user?.user_id, c.male?.user?.user_id]).filter(Boolean) as string[];
       await upgradePhotos(ids);
+      if (demoRef.current) return [];
       setCouples([...all]); // 照片就绪后重建渲染
       return all;
     } catch { /* 查询失败静默 */ }
@@ -443,6 +391,7 @@ const ActivityOnsite: React.FC = () => {
   /** 默契度排名数据：未完成答题的配对不显示；现场序号从报名记录反查 */
   const fetchCpRank = useCallback(async () => {
     if (!id) return;
+    if (demoRef.current) return; // 演示模式：真实排名数据不拉取
     try {
       // ① 报名记录反查现场序号（配对条目只回基础公开资料）
       const numMap = new Map<string, number>();
@@ -476,10 +425,13 @@ const ActivityOnsite: React.FC = () => {
         page++;
       }
       const ranked = all.filter((c) => c.diff_total != null);
+      // 演示模式：取数期间进入了演示 → 丢弃迟到的真实排名，避免覆盖演示排名
+      if (demoRef.current) return;
       setCpRanks(ranked);
       // ③ 批量补拉脱单照片（配对接口只回基础头像）；照片就绪后重建渲染
       const ids = ranked.flatMap((c) => [c.male?.user?.user_id, c.female?.user?.user_id]).filter(Boolean) as string[];
       await upgradePhotos(ids);
+      if (demoRef.current) return;
       setCpRanks([...ranked]);
     } catch { /* 查询失败静默 */ }
   }, [id, upgradePhotos]);
@@ -515,6 +467,7 @@ const ActivityOnsite: React.FC = () => {
           nick,
           gender: g === 1 ? 'male' : g === 2 ? 'female' : '',
           userId: r.user_id,
+          regId: r.id,
           photo: photoMapRef.current.get(r.user_id) || getFullWidthUrl(r.user_profile?.avatar || r.avatar || ''),
           group,
         };
@@ -587,9 +540,10 @@ const ActivityOnsite: React.FC = () => {
         userDisplayRef.current = wantRealName ? 'real_name' : 'nickname';
         setUserDisplay(userDisplayRef.current);
         if (demoRef.current) {
-          // 演示模式：用最新显示方式重建演示名单（不拉真实签到数据）
+          // 演示模式：用最新显示方式重建演示名单（不拉真实签到数据）；
+          // 落地前复查 demoRef——重建期间退出演示则丢弃，避免迟到的演示名单覆盖真实墙
           buildDemoData().then((data) => {
-            if (data) { setWall(data.wall); setCouples(data.couples); }
+            if (data && demoRef.current) { setWall(data.wall); setCouples(data.couples); }
           });
         } else {
           fetchWall();
@@ -603,8 +557,16 @@ const ActivityOnsite: React.FC = () => {
           groupsRef.current = groups;
           setHasGroups(groups.length > 0);
           // 组名变化 → 照片墙/配对卡片的组名与组筛选立即重建（2026-11-10 用户定：后台保存分组后大屏免整页刷新）
-          fetchWall();
-          fetchCouples();
+          if (demoRef.current) {
+            // 演示模式：按新分组重建演示名单（不拉真实签到数据，避免覆盖演示墙）；
+            // 落地前复查 demoRef——重建期间退出演示则丢弃，避免迟到的演示名单覆盖真实墙
+            buildDemoData().then((data) => {
+              if (data && demoRef.current) { setWall(data.wall); setCouples(data.couples); }
+            });
+          } else {
+            fetchWall();
+            fetchCouples();
+          }
         }
       }
       const routineRaw = JSON.stringify((obj && typeof obj === 'object' ? obj.routine : undefined) ?? null);
@@ -991,14 +953,14 @@ const ActivityOnsite: React.FC = () => {
   const startBlockDraw = useCallback((kind: 'group' | 'person', override?: { group?: string }) => {
     clearDrawTimer();
     if (kind === 'group') {
-      const blocks: BlockItem[] = groupsRef.current.map((g) => ({ key: g, label: g }));
+      const blocks: BlockItem[] = groupsRef.current.map((g) => ({ key: g, label: g, kind: 'group' }));
       setBlockAll(blocks);
       blockCandidatesRef.current = blocks.map((b) => b.key);
     } else {
       const g = override?.group || personGroup || groupsRef.current[0] || '';
       const blocks: BlockItem[] = wall
         .filter((u) => u.group === g)
-        .map((u) => ({ key: u.userId, label: u.nick, photo: u.photo, number: u.number, gender: u.gender, group: u.group }));
+        .map((u) => ({ key: u.userId || u.regId, label: u.nick, kind: 'person', userId: u.userId, photo: u.photo, number: u.number, gender: u.gender, group: u.group }));
       // 编排模式：指定组暂无已签到成员时提示跳过（按 → 切换步骤）
       if (routineModeRef.current && blocks.length === 0) {
         setRoutineNotice(`分组「${g}」暂无已签到成员，本步已跳过`);
@@ -1460,12 +1422,33 @@ const ActivityOnsite: React.FC = () => {
   const toolBtnActive: React.CSSProperties = { ...toolBtn, background: '#e04d2c' };
 
   /**
-   * 幸运之星/各组代表转轮排版规则：转轮宽度自适应（单个 18vw），
-   * 每行最多容纳 5 个（宽度低于 12vw 即换行），多行居中；卡片保持 3:4。
+   * 幸运之星/各组代表转轮排版规则：转轮宽度自适应（单个 18vw，每行最多 5 个），
+   * 多行时按行均衡分布（行间数量差 ≤ 1，如 8 个转轮 = 4+4 而非 5+3），各行居中；卡片保持 3:4。
+   * 转轮总高度受视口高度约束（宽屏 21:9 上两行 18vw 转轮会超出 100vh 被裁切，按 75vh 预算折算 vw）。
    */
   const LUCKY_PER_ROW = 5;
-  const luckyReelW = Math.min(18, (80 - (Math.min(luckyStrips.length, LUCKY_PER_ROW) - 1) * 1.5) / Math.min(luckyStrips.length, LUCKY_PER_ROW));
-  const luckyReelH = (luckyReelW * 4) / 3;
+  const LUCKY_AREA_VH = 75;
+  /** 转轮按行均衡拆分（保留全局下标 i，供偏移/快照/条带引用） */
+  const luckyRows: { strip: WallUser[]; i: number }[][] = chunkBalancedRows(
+    luckyStrips.map((strip, i) => ({ strip, i })),
+    LUCKY_PER_ROW,
+  );
+  const luckyRowCount = Math.max(1, luckyRows.length);
+  const luckyMaxPerRow = luckyRows.length > 0 ? Math.max(...luckyRows.map((r) => r.length)) : 1;
+  const luckyReelWFull = Math.min(18, (80 - (luckyMaxPerRow - 1) * 1.5) / luckyMaxPerRow);
+  // 1vh 折算为 vw 的系数；高度预算扣掉行距后除以行数，得每行转轮高度上限
+  const vwPerVh = window.innerHeight / window.innerWidth;
+  const luckyReelH = Math.min(
+    (luckyReelWFull * 4) / 3,
+    Math.max(10, (LUCKY_AREA_VH * vwPerVh - (luckyRowCount - 1) * 1.5) / luckyRowCount),
+  );
+  const luckyReelW = (luckyReelH * 3) / 4;
+
+  /** 组中抽组/单组选人卡片排版：组块 10vw、人卡 12vw（容器 84vw），多行时按行均衡分布（行间差 ≤ 1） */
+  const BLOCK_GROUP_PER_ROW = 6;
+  const BLOCK_PERSON_PER_ROW = 5;
+  /** 组中抽组/单组选人：卡片按行均衡拆分后的行数组 */
+  const blockRows: BlockItem[][] = chunkBalancedRows(blockAll, tab === 'groupDraw' ? BLOCK_GROUP_PER_ROW : BLOCK_PERSON_PER_ROW);
 
   /** 编排模式当前步骤参数（驱动封面人数/组名等展示；自由模式沿用右上角配置） */
   const routineStepNow = routineMode && routine[routineIdx] ? routine[routineIdx] : null;
@@ -1749,23 +1732,27 @@ const ActivityOnsite: React.FC = () => {
               </>
             ) : (
               <>
-                {luckyStrips.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5vw', maxWidth: '80vw', justifyContent: 'center' }}>
-                    {luckyStrips.map((strip, i) => (
-                      <div key={i} className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`} style={{ width: `${luckyReelW}vw` }}>
-                        <div className="draw-reel-window" style={{ height: `${luckyReelH}vw` }}>
-                          <div className="draw-reel-strip" style={{ transform: `translateY(calc(${luckyReelH}vw * (${luckyOffsets[i]} - ${strip.length} + 1)))`, transition: luckySnaps[i] ? 'none' : `transform ${reelSpeed}ms linear` }}>
-                            {strip.map((u, j) => (
-                              <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
-                                <img src={u.photo} alt={u.nick} />
-                                <span className="draw-nick">
-                                  <span className={`onsite-number-inline gender-${u.gender}`}>{u.number || '-'}</span>
-                                  {u.nick}
-                                </span>
+                {luckyRows.length > 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5vw', maxWidth: '80vw', alignItems: 'center' }}>
+                    {luckyRows.map((row, r) => (
+                      <div key={r} style={{ display: 'flex', gap: '1.5vw', justifyContent: 'center' }}>
+                        {row.map(({ strip, i }) => (
+                          <div key={i} className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`} style={{ width: `${luckyReelW}vw` }}>
+                            <div className="draw-reel-window" style={{ height: `${luckyReelH}vw` }}>
+                              <div className="draw-reel-strip" style={{ transform: `translateY(calc(${luckyReelH}vw * (${luckyOffsets[i]} - ${strip.length} + 1)))`, transition: luckySnaps[i] ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                                {strip.map((u, j) => (
+                                  <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
+                                    <img src={u.photo} alt={u.nick} />
+                                    <span className="draw-nick">
+                                      <span className={`onsite-number-inline gender-${u.gender}`}>{u.number || '-'}</span>
+                                      {u.nick}
+                                    </span>
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -1795,20 +1782,24 @@ const ActivityOnsite: React.FC = () => {
             ) : (
               <>
                 <div className="draw-cover-title" style={{ fontSize: '4.5vh' }}>{tab === 'groupDraw' ? '组中抽组' : '单组选人'}</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2vw 2.6vw', maxWidth: '84vw', justifyContent: 'center' }}>
-                  {/* 原始顺序展示：本轮定格金色、更早已抽带蒙版、滚动高亮去蒙版 */}
-                  {blockAll.map((b) => {
-                    const isWin = blockRoundWinners.includes(b.key);
-                    const isDrawn = !isWin && blockDrawnKeys.includes(b.key);
-                    const isBright = blockPhase !== 'done' && blockBright.has(b.key);
-                    return (
-                      <BlockCard
-                        key={b.key}
-                        item={b}
-                        state={isWin ? 'win' : isDrawn ? 'drawn' : isBright ? 'bright' : 'normal'}
-                      />
-                    );
-                  })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2vw', maxWidth: '84vw', alignItems: 'center' }}>
+                  {/* 原始顺序展示：本轮定格金色、更早已抽带蒙版、滚动高亮去蒙版；多行按行均衡分布（行间差 ≤ 1） */}
+                  {blockRows.map((row, r) => (
+                    <div key={r} style={{ display: 'flex', gap: '2.6vw', justifyContent: 'center' }}>
+                      {row.map((b) => {
+                        const isWin = blockRoundWinners.includes(b.key);
+                        const isDrawn = !isWin && blockDrawnKeys.includes(b.key);
+                        const isBright = blockPhase !== 'done' && blockBright.has(b.key);
+                        return (
+                          <BlockCard
+                            key={b.key}
+                            item={b}
+                            state={isWin ? 'win' : isDrawn ? 'drawn' : isBright ? 'bright' : 'normal'}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               </>
             )}
