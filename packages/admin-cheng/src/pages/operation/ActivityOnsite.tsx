@@ -275,6 +275,11 @@ const ActivityOnsite: React.FC = () => {
   const onsiteNumMapRef = useRef<Map<string, number>>(new Map());
   /** 分组名称（onsite_config.groups，照片墙与默契度排名展示用） */
   const groupsRef = useRef<string[]>([]);
+  /** 大屏用户显示方式（onsite_config.user_display）：nickname=昵称（默认） real_name=姓名；state 驱动重渲染，ref 供回调读最新值 */
+  const [userDisplay, setUserDisplay] = useState<'nickname' | 'real_name'>('nickname');
+  const userDisplayRef = useRef<'nickname' | 'real_name'>('nickname');
+  /** 报名用户真实姓名映射（用户显示=姓名时，配对/排名等仅带昵称的数据源据此替换） */
+  const realNameMapRef = useRef<Map<string, string>>(new Map());
   /** 最近一次同步的编排原始 JSON（轮询去重——内容未变不触发重渲染） */
   const routineRawRef = useRef<string>('');
   /** 活动是否已配置分组（驱动各组代表/组中抽组/单组选人入口显隐） */
@@ -379,9 +384,15 @@ const ActivityOnsite: React.FC = () => {
         // 已分组的用户展示分组名（extra_data.group_index → onsite_config.groups）
         const groupIdx = parseGroupIndex(r.extra_data);
         const group = groupIdx != null ? (groupsRef.current[groupIdx - 1] || '') : '';
+        // 真实姓名入映射（用户显示=姓名时供配对/排名等数据源替换）；配置为姓名且有名 → 显示姓名，否则昵称
+        const realName = r.user_match_profile?.real_name || '';
+        if (realName) realNameMapRef.current.set(r.user_id, realName);
+        const nick = userDisplayRef.current === 'real_name' && realName
+          ? realName
+          : (r.user_profile?.nickname || r.nickname || r.user_id);
         return {
           number: r.onsite_number ?? 0,
-          nick: r.user_profile?.nickname || r.nickname || r.user_id,
+          nick,
           gender: g === 1 ? 'male' : g === 2 ? 'female' : '',
           userId: r.user_id,
           photo: photoMapRef.current.get(r.user_id) || getFullWidthUrl(r.user_profile?.avatar || r.avatar || ''),
@@ -475,6 +486,14 @@ const ActivityOnsite: React.FC = () => {
       const obj = JSON.parse(res?.onsite_config || '{}');
       if (!obj || typeof obj !== 'object') return;
       if (obj.bg_screen) setBgScreen((prev) => (prev === String(obj.bg_screen) ? prev : String(obj.bg_screen)));
+      // 用户显示方式：real_name=姓名，其余（含未配置）=昵称；变化时重建照片墙与配对（名称立即切换）
+      const wantRealName = obj.user_display === 'real_name';
+      if (wantRealName !== (userDisplayRef.current === 'real_name')) {
+        userDisplayRef.current = wantRealName ? 'real_name' : 'nickname';
+        setUserDisplay(userDisplayRef.current);
+        fetchWall();
+        fetchCouples();
+      }
       if (typeof obj.groups === 'string') {
         const groups: string[] = obj.groups.split('|').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
         const changed = groups.length !== groupsRef.current.length || groups.some((g, i) => g !== groupsRef.current[i]);
@@ -895,7 +914,10 @@ const ActivityOnsite: React.FC = () => {
     const avatar = u?.profile?.avatar || '';
     const raw = photoMapRef.current.get(userId) || avatar;
     return {
-      nick: u?.profile?.nickname || userId || '-',
+      // 用户显示=姓名且报名记录可反查姓名 → 显示姓名；否则昵称
+      nick: userDisplayRef.current === 'real_name'
+        ? (realNameMapRef.current.get(userId) || u?.profile?.nickname || userId || '-')
+        : (u?.profile?.nickname || userId || '-'),
       photo: raw ? getMediumUrl(raw) : '',
       gender: u?.profile?.gender,
       number: userId ? onsiteNumMapRef.current.get(userId) : undefined,

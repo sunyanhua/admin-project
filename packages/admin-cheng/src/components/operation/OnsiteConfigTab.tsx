@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Space, Form, Switch, InputNumber, DatePicker } from 'antd';
+import { Button, Space, Form, Switch, InputNumber, DatePicker, Radio } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity } from '@/api/services/activity-v1';
 import ImageUpload from '@/components/common/ImageUpload';
 import SourceQrcodeModal from '@/components/common/SourceQrcodeModal';
 import { parseApiTime, dayjsToApi } from '@/utils/format';
+
+/** 大屏用户显示方式（onsite_config.user_display）：昵称（默认）/ 姓名 */
+export const USER_DISPLAY_NICKNAME = 'nickname';
+export const USER_DISPLAY_REAL_NAME = 'real_name';
 
 interface OnsiteConfigTabProps {
   activityId: string;
@@ -41,9 +45,14 @@ const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId, activity:
   const fillForm = useCallback((data: any) => {
     const checkinStart = data?.checkin_start ? parseApiTime(data.checkin_start) : undefined;
     let onsiteBgScreen = '';
+    let onsiteUserDisplay: string = USER_DISPLAY_NICKNAME;
     try {
       const obj = JSON.parse(data?.onsite_config || '{}');
-      if (obj && typeof obj === 'object') onsiteBgScreen = obj.bg_screen || '';
+      if (obj && typeof obj === 'object') {
+        onsiteBgScreen = obj.bg_screen || '';
+        // 用户显示：real_name=姓名；其余（含未配置）=昵称
+        onsiteUserDisplay = obj.user_display === USER_DISPLAY_REAL_NAME ? USER_DISPLAY_REAL_NAME : USER_DISPLAY_NICKNAME;
+      }
     } catch { /* 原值非法则留空 */ }
     form.setFieldsValue({
       checkin_enabled: data?.checkin_enabled ?? false,
@@ -51,6 +60,7 @@ const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId, activity:
       checkin_start: checkinStart && checkinStart.year() >= 1970 ? checkinStart : undefined,
       onsite_loves_chances: data?.onsite_loves_chances ?? 0,
       onsite_bg_screen: onsiteBgScreen,
+      onsite_user_display: onsiteUserDisplay,
       onsite_qrcode: parseOnsiteQrcodeFromExtra(data?.extra_params),
     });
   }, [form]);
@@ -100,7 +110,7 @@ const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId, activity:
         payload.onsite_loves_chances = values.onsite_loves_chances ?? 0;
       }
 
-      // onsite_config 为 JSON（服务端透明存储），原对象透传 + 仅管理 bg_screen 键（现场大屏背景图）
+      // onsite_config 为 JSON（服务端透明存储），原对象透传 + 仅管理 bg_screen（大屏背景图）/ user_display（用户显示）键
       let checkinObj: Record<string, any> = {};
       try {
         const parsed = JSON.parse(activity?.onsite_config || '{}');
@@ -111,6 +121,15 @@ const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId, activity:
         checkinObj.bg_screen = onsiteBg;
       } else {
         delete checkinObj.bg_screen;
+      }
+      // 用户显示：姓名显式存 real_name；昵称为默认语义，删除键（未配置=昵称）
+      const onsiteUserDisplay = form.getFieldValue('onsite_user_display') === USER_DISPLAY_REAL_NAME
+        ? USER_DISPLAY_REAL_NAME
+        : USER_DISPLAY_NICKNAME;
+      if (onsiteUserDisplay === USER_DISPLAY_REAL_NAME) {
+        checkinObj.user_display = USER_DISPLAY_REAL_NAME;
+      } else {
+        delete checkinObj.user_display;
       }
       payload.onsite_config = JSON.stringify(checkinObj);
 
@@ -182,6 +201,17 @@ const OnsiteConfigTab: React.FC<OnsiteConfigTabProps> = ({ activityId, activity:
               extra="用于活动现场大屏的背景画面展示"
             >
               <ImageUpload />
+            </Form.Item>
+
+            <Form.Item
+              label="用户显示"
+              name="onsite_user_display"
+              extra="现场大屏上用户名称的展示方式，默认昵称"
+            >
+              <Radio.Group>
+                <Radio value={USER_DISPLAY_NICKNAME}>昵称</Radio>
+                <Radio value={USER_DISPLAY_REAL_NAME}>姓名</Radio>
+              </Radio.Group>
             </Form.Item>
           </>
         )}

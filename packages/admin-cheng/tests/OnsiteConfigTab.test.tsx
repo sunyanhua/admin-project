@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { App, Tabs } from 'antd';
 import OnsiteConfigTab from '@/components/operation/OnsiteConfigTab';
 
@@ -14,11 +14,13 @@ const ACTIVITY = vi.hoisted(() => ({
   extra_params: JSON.stringify({ onsite_qrcode: 'https://cdn.example.com/qr.png' }),
 }));
 
+const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+
 // 模拟 activity-v1 服务：getDetail 返回含 onsite_config / extra_params 的活动
 vi.mock('@/api/services/activity-v1', () => ({
   activityApi: {
     getDetail: vi.fn().mockResolvedValue(ACTIVITY),
-    update: vi.fn().mockResolvedValue({}),
+    update: updateMock,
   },
 }));
 
@@ -40,6 +42,10 @@ beforeAll(() => {
     removeEventListener: () => {},
     dispatchEvent: () => false,
   });
+});
+
+beforeEach(() => {
+  updateMock.mockClear();
 });
 
 const imageValues = () => screen.getAllByTestId('image-upload-value').map((n) => n.textContent);
@@ -85,5 +91,59 @@ describe('OnsiteConfigTab 回填', () => {
       expect(imageValues()).toContain('https://cdn.example.com/bg.png');
       expect(imageValues()).toContain('https://cdn.example.com/qr.png');
     });
+  });
+});
+
+describe('OnsiteConfigTab 用户显示配置', () => {
+  it('未配置时「用户显示」默认选中昵称', async () => {
+    render(
+      <App>
+        <OnsiteConfigTab activityId="a1" activity={ACTIVITY as any} />
+      </App>,
+    );
+    await waitFor(() => expect(screen.getByText('用户显示')).toBeInTheDocument());
+    expect(screen.getByRole('radio', { name: '昵称' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: '姓名' })).not.toBeChecked();
+  });
+
+  it('选择「姓名」保存：onsite_config 写入 user_display=real_name，其余键透传', async () => {
+    render(
+      <App>
+        <OnsiteConfigTab activityId="a1" activity={ACTIVITY as any} />
+      </App>,
+    );
+    await waitFor(() => expect(screen.getByRole('radio', { name: '姓名' })).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('radio', { name: '姓名' }));
+    fireEvent.click(screen.getByRole('button', { name: /保\s*存/ }));
+
+    await waitFor(() => expect(updateMock).toHaveBeenCalled());
+    const payload = updateMock.mock.calls[0][1] as any;
+    const cfg = JSON.parse(payload.onsite_config);
+    expect(cfg.user_display).toBe('real_name');
+    expect(cfg.bg_screen).toBe('https://cdn.example.com/bg.png');
+  });
+
+  it('回填已配置姓名的活动，改回「昵称」保存：移除 user_display 键', async () => {
+    const namedActivity = {
+      ...ACTIVITY,
+      onsite_config: JSON.stringify({ bg_screen: 'https://cdn.example.com/bg.png', user_display: 'real_name' }),
+    };
+    render(
+      <App>
+        <OnsiteConfigTab activityId="a1" activity={namedActivity as any} />
+      </App>,
+    );
+    // 回填为姓名选中
+    await waitFor(() => expect(screen.getByRole('radio', { name: '姓名' })).toBeChecked());
+
+    fireEvent.click(screen.getByRole('radio', { name: '昵称' }));
+    fireEvent.click(screen.getByRole('button', { name: /保\s*存/ }));
+
+    await waitFor(() => expect(updateMock).toHaveBeenCalled());
+    const payload = updateMock.mock.calls[0][1] as any;
+    const cfg = JSON.parse(payload.onsite_config);
+    expect(cfg.user_display).toBeUndefined();
+    expect(cfg.bg_screen).toBe('https://cdn.example.com/bg.png');
   });
 });
