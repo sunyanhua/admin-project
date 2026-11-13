@@ -139,7 +139,9 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
     );
   }
   // 组名长度自适应字号：短名保持醒目大字，长名（如「动作电影」4 字）按方块宽度缩字不溢出；横向居中 + 超长允许折行
-  const labelLen = Math.max(1, [...item.label].length);
+  // 防御式：label 非字符串时 String 化（历史 HMR/异常数据兜底，避免 [...label] 不可迭代崩溃）
+  const labelText = typeof item.label === 'string' ? item.label : String(item.label ?? '');
+  const labelLen = Math.max(1, [...labelText].length);
   const fontSize = `${Math.min(4, 10 / labelLen)}vw`;
   return (
     <div style={{
@@ -152,7 +154,7 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
       filter: state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.5)' : 'none',
       textShadow: state === 'win' ? '0 2px 8px rgba(255,255,255,.6)' : 'none',
     }}>
-      {item.label}
+      {labelText}
     </div>
   );
 };
