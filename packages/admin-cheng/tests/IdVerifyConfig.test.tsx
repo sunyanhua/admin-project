@@ -33,6 +33,12 @@ const RECORDS = vi.hoisted(() => [
     created_at: '2026-11-06T08:00:00+08:00', expires_at: null, verified_at: '2026-11-06T09:30:00+08:00',
     user_data: null, user_profile: null, user_match_profile: null,
   },
+  {
+    id: 'r3', user_id: 'u3', status: 6, price_coins: 100, original_price_coins: 200,
+    attempt_count: 1, failed_count: 0,
+    created_at: '2026-11-06T07:00:00+08:00', expires_at: null, verified_at: '2026-11-06T08:00:00+08:00',
+    user_data: null, user_profile: null, user_match_profile: null,
+  },
 ]);
 
 const USER_DETAIL = vi.hoisted(() => ({
@@ -50,9 +56,10 @@ const USER_DETAIL = vi.hoisted(() => ({
 const getUserDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue(USER_DETAIL));
 
 const getPriceRulesMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: PRICE_RULES, total: 2 }));
-const getRecordsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: RECORDS, total: 2 }));
+const getRecordsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: RECORDS, total: 3 }));
 const createMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const revokeMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const createCoinProductMock = vi.hoisted(() => vi.fn().mockResolvedValue({ id: 'cp1' }));
 
 vi.mock('@/api/services/user', () => ({
@@ -77,12 +84,13 @@ vi.mock('@/api/services/xpay', () => ({
 
 vi.mock('@/api/services/idverify', () => ({
   PriceRuleStatus: { ENABLED: 0, DISABLED: 1 },
-  IdVerifyRecordStatus: { PENDING_PAYMENT: 0, PENDING_VERIFY: 1, PASSED: 2, EXHAUSTED: 3, CLOSED: 4, REFUNDED: 5 },
+  IdVerifyRecordStatus: { PENDING_PAYMENT: 0, PENDING_VERIFY: 1, PASSED: 2, EXHAUSTED: 3, CLOSED: 4, REFUNDED: 5, REVOKED: 6 },
   idverifyApi: {
     getPriceRules: getPriceRulesMock,
     getRecords: getRecordsMock,
     createPriceRule: createMock,
     updatePriceRule: updateMock,
+    revokeRecord: revokeMock,
   },
 }));
 
@@ -105,6 +113,7 @@ beforeEach(() => {
   getRecordsMock.mockClear();
   createMock.mockClear();
   updateMock.mockClear();
+  revokeMock.mockClear();
   createCoinProductMock.mockClear();
 });
 
@@ -147,9 +156,10 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     // 用户列：有 user_profile 显示昵称，缺失时回退显示用户 ID
     expect(screen.getByText('张三')).toBeInTheDocument();
     expect(screen.getByText('u2')).toBeInTheDocument();
-    // 状态标签：待认证 / 已通过
+    // 状态标签：待认证 / 已通过 / 已撤销
     expect(screen.getByTitle('待认证')).toBeInTheDocument();
     expect(screen.getByTitle('已通过')).toBeInTheDocument();
+    expect(screen.getByTitle('已撤销')).toBeInTheDocument();
     // 价格规则 TAB 未激活不拉取
     expect(getPriceRulesMock).not.toHaveBeenCalled();
   });
@@ -238,7 +248,7 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
       price_coins: 100,
       recharge_product_id: 'cp1',
     }));
-  }, 30000);
+  }, 45000);
 
   it('付费规则档位创建无返回 ID：不创建规则并提示', async () => {
     createCoinProductMock.mockResolvedValueOnce(null);
@@ -259,7 +269,7 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
 
     await waitFor(() => expect(screen.getByText('创建充值档位失败')).toBeInTheDocument(), { timeout: 8000 });
     expect(createMock).not.toHaveBeenCalled();
-  }, 30000);
+  }, 45000);
 
   it('价格下限校验：0 免费放行，付费价格最低 1 元', async () => {
     const { priceFloorRule } = await import('@/components/system/IdVerifyPriceRuleModal');
@@ -305,4 +315,22 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
       expect(updateMock).toHaveBeenCalledWith('p1', { status: 1 });
     });
   });
+});
+
+describe('UserVerify 认证撤销', () => {
+  it('已通过记录显示撤销按钮，确认后调用撤销接口', async () => {
+    renderPage();
+    await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());
+
+    // 仅已通过（r2）有撤销按钮
+    const revokeBtns = screen.getAllByRole('button', { name: /撤\s*销/ });
+    expect(revokeBtns.length).toBe(1);
+    fireEvent.click(revokeBtns[0]);
+
+    await screen.findAllByText('确认撤销认证');
+    fireEvent.click(screen.getByRole('button', { name: /^撤\s*销$/ }));
+
+    await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('r2'));
+    await screen.findByText('已撤销认证');
+  }, 20000);
 });

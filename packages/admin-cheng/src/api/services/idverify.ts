@@ -19,6 +19,7 @@ export enum IdVerifyRecordStatus {
   EXHAUSTED = 3, // 重试次数耗尽
   CLOSED = 4, // 已关闭/过期
   REFUNDED = 5, // 已退款
+  REVOKED = 6, // 已撤销（管理后台）
 }
 
 /** 价格规则列表项（响应经拦截器转换：{ list, total }） */
@@ -112,5 +113,10 @@ export const idverifyApi = {
   /** 分页查询认证记录（按创建时间倒序） */
   getRecords: (params?: { page?: number; size?: number; status?: number; user_id?: string }) => {
     return request.get('/admin/v1/bizops/idverify/records', { params });
+  },
+
+  /** 撤销已通过（status=2）的实人认证：置已撤销（6），解除脱单档案实名标记，允许重新认证；不退款 */
+  revokeRecord: (id: string) => {
+    return request.post(`/admin/v1/bizops/idverify/records/${id}/revoke`);
   },
 };

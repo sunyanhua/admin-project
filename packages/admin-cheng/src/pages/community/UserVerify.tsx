@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { Button, Tag, Tabs, Space } from 'antd';
-import { PlusOutlined, SafetyCertificateOutlined, OrderedListOutlined } from '@ant-design/icons';
+import { Button, Tag, Tabs, Space, App } from 'antd';
+import { PlusOutlined, SafetyCertificateOutlined, OrderedListOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
@@ -27,6 +27,7 @@ const RECORD_STATUS_OPTIONS = [
   { label: '重试耗尽', value: IdVerifyRecordStatus.EXHAUSTED },
   { label: '已关闭', value: IdVerifyRecordStatus.CLOSED },
   { label: '已退款', value: IdVerifyRecordStatus.REFUNDED },
+  { label: '已撤销', value: IdVerifyRecordStatus.REVOKED },
 ];
 
 const RECORD_STATUS_META: Record<number, { label: string; color: string }> = {
@@ -36,6 +37,7 @@ const RECORD_STATUS_META: Record<number, { label: string; color: string }> = {
   [IdVerifyRecordStatus.EXHAUSTED]: { label: '重试耗尽', color: 'red' },
   [IdVerifyRecordStatus.CLOSED]: { label: '已关闭', color: 'default' },
   [IdVerifyRecordStatus.REFUNDED]: { label: '已退款', color: 'purple' },
+  [IdVerifyRecordStatus.REVOKED]: { label: '已撤销', color: 'volcano' },
 };
 
 /** 响应结构统一解析（拦截器可能返回 { list, total } 或原始数组） */
@@ -47,6 +49,8 @@ const formatResponse = (res: any) => {
 
 /** 认证记录 TAB（默认）：只读列表（按创建时间倒序；不含真实姓名/身份证号） */
 const RecordsTab: React.FC = () => {
+  const { success, error: showError } = useAppNotification();
+  const { modal } = App.useApp();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState('');
@@ -60,10 +64,31 @@ const RecordsTab: React.FC = () => {
     });
   }, []);
 
-  const { data, loading, pagination, onPageChange, search } = useListPage<IdVerifyRecord>({
+  const { data, loading, pagination, onPageChange, refresh, search } = useListPage<IdVerifyRecord>({
     fetchFn: fetchRecords,
     formatResponse,
   });
+
+  /** 撤销已通过的实人认证（二次确认；不退款，解除实名标记并允许重新认证） */
+  const handleRevoke = (record: IdVerifyRecord) => {
+    modal.confirm({
+      title: '确认撤销认证',
+      content: `撤销用户「${record.user_profile?.nickname || record.user_id}」的实人认证后，其实名状态将解除并可重新认证；不进行退款，且已撤销记录不可再申请退款。`,
+      okText: '撤销',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await idverifyApi.revokeRecord(record.id);
+          success('已撤销认证');
+          refresh();
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '撤销失败');
+          throw err; // 保持弹窗打开语义由 antd 处理
+        }
+      },
+    });
+  };
 
   const handleSearchChange = (name: string, value: any) => setSearchValues((p) => ({ ...p, [name]: value }));
   const handleSearch = (vals: Record<string, any>) => search(vals);
@@ -163,6 +188,18 @@ const RecordsTab: React.FC = () => {
         const t = formatDateTime(v);
         return <div style={{ fontSize: 12, lineHeight: 1.6 }}><div>{t.slice(0, 10)}</div><div>{t.slice(11)}</div></div>;
       },
+    },
+    {
+      title: '操作',
+      key: 'action',
+      width: 90,
+      render: (_: any, r: IdVerifyRecord) => (
+        <Space size={4} className="action-buttons">
+          {r.status === IdVerifyRecordStatus.PASSED && (
+            <Button type="link" size="small" danger icon={<UndoOutlined />} onClick={() => handleRevoke(r)}>撤销</Button>
+          )}
+        </Space>
+      ),
     },
   ];
 
