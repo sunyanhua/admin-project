@@ -115,8 +115,8 @@ export const idverifyApi = {
     return request.get('/admin/v1/bizops/idverify/records', { params });
   },
 
-  /** 撤销已通过（status=2）的实人认证：置已撤销（6），解除脱单档案实名标记，允许重新认证；不退款 */
-  revokeRecord: (id: string) => {
-    return request.post(`/admin/v1/bizops/idverify/records/${id}/revoke`);
+  /** 撤销已通过（status=2）的实人认证：置已撤销（6），解除脱单档案实名标记，允许重新认证；不退款。reason 撤销原因（必填，≤500 字，写入审计日志） */
+  revokeRecord: (id: string, data: { reason: string }) => {
+    return request.post(`/admin/v1/bizops/idverify/records/${id}/revoke`, data);
   },
 };

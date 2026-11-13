@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Button, Tag, Tabs, Space, App } from 'antd';
+import { Button, Tag, Tabs, Space, Form, Input } from 'antd';
 import { PlusOutlined, SafetyCertificateOutlined, OrderedListOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -10,6 +10,7 @@ import { ActionColumn } from '@/components/templates/ActionColumn';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { statusSwitchColumn } from '@/components/templates/ColumnHelpers';
 import IdVerifyPriceRuleModal from '@/components/system/IdVerifyPriceRuleModal';
+import ScrollableModal from '@/components/templates/ScrollableModal';
 import UserAvatar from '@/components/user/UserAvatar';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import { idverifyApi, PriceRule, PriceRuleStatus, IdVerifyRecord, IdVerifyRecordStatus } from '@/api/services/idverify';
@@ -50,10 +51,13 @@ const formatResponse = (res: any) => {
 /** 认证记录 TAB（默认）：只读列表（按创建时间倒序；不含真实姓名/身份证号） */
 const RecordsTab: React.FC = () => {
   const { success, error: showError } = useAppNotification();
-  const { modal } = App.useApp();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState('');
+  const [revokeVisible, setRevokeVisible] = useState(false);
+  const [revokingRecord, setRevokingRecord] = useState<IdVerifyRecord | null>(null);
+  const [revokeSubmitting, setRevokeSubmitting] = useState(false);
+  const [revokeForm] = Form.useForm<{ reason: string }>();
 
   const fetchRecords = useCallback(async (params: any) => {
     return idverifyApi.getRecords({
@@ -69,25 +73,30 @@ const RecordsTab: React.FC = () => {
     formatResponse,
   });
 
-  /** 撤销已通过的实人认证（二次确认；不退款，解除实名标记并允许重新认证） */
+  /** 打开撤销弹窗（填写撤销理由，必填 ≤500 字，写入审计日志） */
   const handleRevoke = (record: IdVerifyRecord) => {
-    modal.confirm({
-      title: '确认撤销认证',
-      content: `撤销用户「${record.user_profile?.nickname || record.user_id}」的实人认证后，其实名状态将解除并可重新认证；不进行退款，且已撤销记录不可再申请退款。`,
-      okText: '撤销',
-      okButtonProps: { danger: true },
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          await idverifyApi.revokeRecord(record.id);
-          success('已撤销认证');
-          refresh();
-        } catch (err: any) {
-          showError(err?.response?.data?.message || '撤销失败');
-          throw err; // 保持弹窗打开语义由 antd 处理
-        }
-      },
-    });
+    setRevokingRecord(record);
+    setRevokeVisible(true);
+  };
+
+  /** 提交撤销：撤销已通过的实人认证（不退款，解除实名标记并允许重新认证） */
+  const handleRevokeSubmit = async () => {
+    if (!revokingRecord) return;
+    try {
+      const values = await revokeForm.validateFields();
+      setRevokeSubmitting(true);
+      await idverifyApi.revokeRecord(revokingRecord.id, { reason: values.reason.trim() });
+      success('已撤销认证');
+      setRevokeVisible(false);
+      setRevokingRecord(null);
+      revokeForm.resetFields();
+      refresh();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      showError(err?.response?.data?.message || '撤销失败');
+    } finally {
+      setRevokeSubmitting(false);
+    }
   };
 
   const handleSearchChange = (name: string, value: any) => setSearchValues((p) => ({ ...p, [name]: value }));
@@ -214,6 +223,34 @@ const RecordsTab: React.FC = () => {
         userId={userDetailUserId}
         onClose={() => { setUserDetailVisible(false); setUserDetailUserId(''); }}
       />
+
+      <ScrollableModal
+        title="确认撤销认证"
+        open={revokeVisible}
+        onCancel={() => { setRevokeVisible(false); setRevokingRecord(null); revokeForm.resetFields(); }}
+        width={480}
+        destroyOnHidden
+        footer={
+          <Button type="primary" danger loading={revokeSubmitting} onClick={() => revokeForm.submit()}>
+            确认撤销
+          </Button>
+        }
+      >
+        <Form form={revokeForm} layout="vertical" onFinish={handleRevokeSubmit}>
+          <Form.Item
+            label={`撤销理由（用户「${revokingRecord?.user_profile?.nickname || revokingRecord?.user_id || ''}」）`}
+            name="reason"
+            rules={[{ required: true, message: '请输入撤销理由' }]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="撤销后用户实名状态解除并可重新认证；不进行退款，且已撤销记录不可再申请退款"
+              maxLength={500}
+              showCount
+            />
+          </Form.Item>
+        </Form>
+      </ScrollableModal>
     </div>
   );
 };

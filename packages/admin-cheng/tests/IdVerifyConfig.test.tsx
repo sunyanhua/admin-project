@@ -327,10 +327,12 @@ describe('UserVerify 认证撤销', () => {
     expect(revokeBtns.length).toBe(1);
     fireEvent.click(revokeBtns[0]);
 
+    // 弹窗填写撤销理由后确认
     await screen.findAllByText('确认撤销认证');
-    fireEvent.click(screen.getByRole('button', { name: /^撤\s*销$/ }));
+    fireEvent.change(screen.getByPlaceholderText(/撤销后用户实名状态解除/), { target: { value: '测试撤销原因' } });
+    fireEvent.click(screen.getByRole('button', { name: /确认撤销/ }));
 
-    await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('r2'));
+    await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('r2', { reason: '测试撤销原因' }));
     await screen.findByText('已撤销认证');
   }, 20000);
 });
