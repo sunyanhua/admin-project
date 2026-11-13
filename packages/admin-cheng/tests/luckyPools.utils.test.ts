@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, filterGroupRepPoolsWithNames, LUCKY_GENDER_OPTIONS } from '@/pages/operation/luckyPools.utils';
 import type { LuckyGuest } from '@/pages/operation/luckyPools.utils';
 
 const male = (i: number): LuckyGuest => ({ userId: `m${i}`, gender: 'male' });
@@ -193,5 +193,18 @@ describe('filterGroupRepPools（各组代表候选组过滤）', () => {
 
   it('无符合性别的组：返回空数组（不出转轮）', () => {
     expect(filterGroupRepPools([[male(1)], [male(2)]], 'female')).toEqual([]);
+  });
+
+  it('带组名过滤：性别=男剔除纯女组，保留的组名与池对齐；any/mix 保留全部', () => {
+    const named = [
+      { name: '一组', pool: [male(1), female(1)] },
+      { name: '二组', pool: [female(2)] },
+      { name: '三组', pool: [male(2)] },
+    ];
+    const keptMale = filterGroupRepPoolsWithNames(named, 'male');
+    expect(keptMale.map((g) => g.name)).toEqual(['一组', '三组']);
+    expect(keptMale[0].pool).toEqual([male(1), female(1)]);
+    expect(filterGroupRepPoolsWithNames(named, 'any').map((g) => g.name)).toEqual(['一组', '二组', '三组']);
+    expect(filterGroupRepPoolsWithNames(named, 'mix').map((g) => g.name)).toEqual(['一组', '二组', '三组']);
   });
 });

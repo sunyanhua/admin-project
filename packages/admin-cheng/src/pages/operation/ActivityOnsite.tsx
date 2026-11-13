@@ -10,7 +10,7 @@ import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
 import { BlockCard, BlockItem } from '@/components/operation/OnsiteBlockCard';
 import { chunkBalancedRows } from '@/utils/balancedRows';
-import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPoolsWithNames, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -179,6 +179,8 @@ const ActivityOnsite: React.FC = () => {
   /** 各转轮回卷当帧的过渡禁用标记（仅回卷的转轮置位） */
   const [luckySnaps, setLuckySnaps] = useState<boolean[]>([]);
   const [drawWinners, setDrawWinners] = useState<WallUser[]>([]);
+  /** 各组代表：各转轮对应组名（与 luckyStrips 下标对齐，卡片上方展示；幸运之星为空） */
+  const [reelGroupNames, setReelGroupNames] = useState<string[]>([]);
   /** 幸运之星配置：人数=转轮数（1~5，默认 1）、性别要求（默认混搭） */
   const [luckyCount, setLuckyCount] = useState(1);
   const [luckyGender, setLuckyGender] = useState<LuckyGender>('mix');
@@ -869,6 +871,7 @@ const ActivityOnsite: React.FC = () => {
     setTab('lucky');
     setDrawPhase('cover');
     setDrawWinners([]);
+    setReelGroupNames([]); // 幸运之星无组名
   }, [clearDrawTimer, wall, luckyCount, luckyGender, buildStrip, fetchWall]);
 
   /** 进入默契度排名（快捷键 5）：演示模式用演示配对生成随机差异分排名 */
@@ -925,12 +928,14 @@ const ActivityOnsite: React.FC = () => {
     groupRepGenderRef.current = override?.gender ?? null;
     const gender = override?.gender ?? groupRepGender;
     // 指定性别严格过滤：组内无该性别则整组不出转轮（与幸运之星缩减转轮同口径）
-    const pools = filterGroupRepPools(
+    const namedPools = filterGroupRepPoolsWithNames(
       groupsRef.current
-        .map((g) => wall.filter((u) => u.group === g))
-        .filter((p) => p.length > 0),
+        .map((g) => ({ name: g, pool: wall.filter((u) => u.group === g) }))
+        .filter((g) => g.pool.length > 0),
       gender,
     );
+    const pools = namedPools.map((g) => g.pool);
+    setReelGroupNames(namedPools.map((g) => g.name));
     // 编排模式：无已签到且已分组的成员时提示跳过（按 → 切换步骤）
     if (routineModeRef.current && pools.length === 0) {
       setRoutineNotice('本步暂无已签到且已分组的成员，已跳过');
@@ -1739,18 +1744,24 @@ const ActivityOnsite: React.FC = () => {
                     {luckyRows.map((row, r) => (
                       <div key={r} style={{ display: 'flex', gap: '1.5vw', justifyContent: 'center' }}>
                         {row.map(({ strip, i }) => (
-                          <div key={i} className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`} style={{ width: `${luckyReelW}vw` }}>
-                            <div className="draw-reel-window" style={{ height: `${luckyReelH}vw` }}>
-                              <div className="draw-reel-strip" style={{ transform: `translateY(calc(${luckyReelH}vw * (${luckyOffsets[i]} - ${strip.length} + 1)))`, transition: luckySnaps[i] ? 'none' : `transform ${reelSpeed}ms linear` }}>
-                                {strip.map((u, j) => (
-                                  <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
-                                    <img src={u.photo} alt={u.nick} />
-                                    <span className="draw-nick">
-                                      <span className={`onsite-number-inline gender-${u.gender}`}>{u.number || '-'}</span>
-                                      {u.nick}
-                                    </span>
-                                  </div>
-                                ))}
+                          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1vh' }}>
+                            {/* 各组代表：转轮上方显示组名 */}
+                            {tab === 'groupRep' && reelGroupNames[i] && (
+                              <div style={{ color: '#ffd700', fontWeight: 700, fontSize: '3vh', letterSpacing: 2, textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>{reelGroupNames[i]}</div>
+                            )}
+                            <div className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`} style={{ width: `${luckyReelW}vw` }}>
+                              <div className="draw-reel-window" style={{ height: `${luckyReelH}vw` }}>
+                                <div className="draw-reel-strip" style={{ transform: `translateY(calc(${luckyReelH}vw * (${luckyOffsets[i]} - ${strip.length} + 1)))`, transition: luckySnaps[i] ? 'none' : `transform ${reelSpeed}ms linear` }}>
+                                  {strip.map((u, j) => (
+                                    <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
+                                      <img src={u.photo} alt={u.nick} />
+                                      <span className="draw-nick">
+                                        <span className={`onsite-number-inline gender-${u.gender}`}>{u.number || '-'}</span>
+                                        {u.nick}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>

@@ -99,14 +99,30 @@ export function buildLuckyPools<T extends LuckyGuest>(
   return pools;
 }
 
+/** 候选组是否符合性别要求（male/female 仅含该性别即符合；any/mix 恒符合） */
+const poolMatchesGender = <T extends LuckyGuest>(pool: T[], gender: LuckyGender): boolean => {
+  if (gender === 'male') return pool.some((u) => u.gender === 'male');
+  if (gender === 'female') return pool.some((u) => u.gender === 'female');
+  return true;
+};
+
 /**
  * 各组代表候选组过滤：male / female 仅保留组内含该性别的组（无符合条件的组不出转轮，
  * 与幸运之星缩减转轮同口径）；any / mix 保留全部非空组。
  */
 export function filterGroupRepPools<T extends LuckyGuest>(pools: T[][], gender: LuckyGender): T[][] {
-  if (gender === 'male') return pools.filter((p) => p.some((u) => u.gender === 'male'));
-  if (gender === 'female') return pools.filter((p) => p.some((u) => u.gender === 'female'));
-  return pools;
+  return pools.filter((p) => poolMatchesGender(p, gender));
+}
+
+/** 带组名的候选组（各组代表转轮需在卡片上方显示组名） */
+export interface NamedGroupPool<T extends LuckyGuest> {
+  name: string;
+  pool: T[];
+}
+
+/** 各组代表候选组过滤（带组名版）：过滤口径与 filterGroupRepPools 完全一致，保留的组名与池一一对应 */
+export function filterGroupRepPoolsWithNames<T extends LuckyGuest>(groups: NamedGroupPool<T>[], gender: LuckyGender): NamedGroupPool<T>[] {
+  return groups.filter((g) => poolMatchesGender(g.pool, gender));
 }
 
 /**

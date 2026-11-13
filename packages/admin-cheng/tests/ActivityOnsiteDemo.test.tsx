@@ -180,4 +180,39 @@ describe('ActivityOnsite 演示模式', () => {
     await waitFor(() => expect(screen.getByText('组中抽组')).toBeInTheDocument());
     expect(screen.queryByText('第一轮组队')).toBeNull();
   });
+
+  it('各组代表滚动时每个转轮上方显示组名', async () => {
+    vi.mocked(activityApi.getDetail).mockReset().mockResolvedValue({
+      onsite_config: JSON.stringify({ groups: '甲组|乙组' }),
+    });
+    vi.mocked(activityApi.getRegisters).mockReset().mockImplementation((_id: string, params?: { audit_status?: number }) =>
+      Promise.resolve(params?.audit_status === 1 ? mocks.demoRecords : [
+        { user_id: 'u1', checkin_at: '2026-11-13T08:00:00Z', gender: 1, onsite_number: 1, user_profile: { nickname: '张三', avatar: 'https://cdn.example.com/a1.jpg' }, extra_data: '{"group_index":1}' },
+        { user_id: 'u2', checkin_at: '2026-11-13T08:00:00Z', gender: 2, onsite_number: 2, user_profile: { nickname: '李四', avatar: 'https://cdn.example.com/a2.jpg' }, extra_data: '{"group_index":2}' },
+      ]));
+
+    render(
+      <App>
+        <MemoryRouter initialEntries={['/activity-onsite/a1']}>
+          <Routes>
+            <Route path="/activity-onsite/:id" element={<ActivityOnsite />} />
+          </Routes>
+        </MemoryRouter>
+      </App>,
+    );
+
+    // 等待分组配置与签到墙就绪后，按 6 进入各组代表、按 O 开始滚动
+    await waitFor(() => {
+      expect(screen.getByText('各组代表(6)')).toBeInTheDocument();
+      expect(screen.getByAltText('张三')).toBeInTheDocument();
+    });
+    fireEvent.keyDown(document.body, { key: '6' });
+    fireEvent.keyDown(document.body, { key: 'o' });
+    await waitFor(() => {
+      expect(screen.getByText('甲组')).toBeInTheDocument();
+      expect(screen.getByText('乙组')).toBeInTheDocument();
+    }, { timeout: 3000 });
+    // 重置回封面并停掉滚动定时器
+    fireEvent.keyDown(document.body, { key: '6' });
+  });
 });
