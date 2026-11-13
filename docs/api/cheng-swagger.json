@@ -33210,20 +33210,21 @@
                     "minimum": 1
                 },
                 "start_date": {
-                    "description": "StartDate / EndDate 提现日期 YYYY-MM-DD（闭区间）。",
+                    "description": "StartDate / EndDate 提现日期 YYYY-MM-DD（闭区间）；空串=不筛选。",
                     "type": "string"
                 },
                 "status": {
-                    "description": "Status 0=处理中 1=成功 2=失败；空串=不筛选。",
+                    "description": "Status 0=处理中 1=成功 2=失败 3=待审核；缺省/null=不筛选。",
                     "type": "integer",
                     "enum": [
                         0,
                         1,
-                        2
+                        2,
+                        3
                     ]
                 },
                 "user_id": {
-                    "description": "UserID 精确筛选用户。",
+                    "description": "UserID 精确筛选用户；缺省/null=不筛选（空串按非法 UUID 拒绝）。",
                     "type": "string"
                 }
             }
