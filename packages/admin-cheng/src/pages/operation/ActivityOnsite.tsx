@@ -359,6 +359,9 @@ const ActivityOnsite: React.FC = () => {
           const d: any = await userApi.getUserDetail(uid);
           const p = d?.match_profile?.photos?.[0];
           if (p) photoMapRef.current.set(uid, p);
+          // 真实姓名映射（用户显示=姓名时使用；报名记录未挂载姓名时以此兜底）
+          const rn = d?.match_profile?.real_name;
+          if (rn) realNameMapRef.current.set(uid, rn);
         } catch { /* 拉取失败保持头像 */ }
       }));
     }
@@ -379,13 +382,15 @@ const ActivityOnsite: React.FC = () => {
         page++;
       }
       const checked = regs.filter((r) => !!r.checkin_at);
+      // 先批量补拉用户详情（脱单照片 + 真实姓名映射），照片墙构建时姓名即可用（报名挂载缺失时兜底）
+      await upgradePhotos(checked.map((u) => u.user_id));
       const base: WallUser[] = checked.map((r) => {
         const g = r.user_profile?.gender ?? r.gender;
         // 已分组的用户展示分组名（extra_data.group_index → onsite_config.groups）
         const groupIdx = parseGroupIndex(r.extra_data);
         const group = groupIdx != null ? (groupsRef.current[groupIdx - 1] || '') : '';
-        // 真实姓名入映射（用户显示=姓名时供配对/排名等数据源替换）；配置为姓名且有名 → 显示姓名，否则昵称
-        const realName = r.user_match_profile?.real_name || '';
+        // 真实姓名：报名挂载优先，缺失时用用户详情 match_profile.real_name；配置为姓名且有名 → 显示姓名，否则昵称
+        const realName = r.user_match_profile?.real_name || realNameMapRef.current.get(r.user_id) || '';
         if (realName) realNameMapRef.current.set(r.user_id, realName);
         const nick = userDisplayRef.current === 'real_name' && realName
           ? realName
@@ -401,7 +406,6 @@ const ActivityOnsite: React.FC = () => {
       });
       base.sort((a, b) => a.number - b.number);
       const ordered = interleaveGenders(base);
-      await upgradePhotos(ordered.map((u) => u.userId));
       // 用拉取到的照片重建（保持交错顺序）
       const final = ordered.map((u) => ({ ...u, photo: photoMapRef.current.get(u.userId) || u.photo }));
       setWall(final);
