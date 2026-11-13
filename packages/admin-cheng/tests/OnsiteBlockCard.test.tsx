@@ -64,4 +64,18 @@ describe('OnsiteBlockCard', () => {
     expect(screen.queryByText('已抽')).toBeNull();
     expect(screen.queryByText(/未注册/)).toBeNull();
   });
+
+  it('组名方块：未选中/已抽/亮起均用深色底衬白字，浅色大屏背景下依然可读', () => {
+    // Arrange / Act
+    const { container, rerender } = render(<BlockCard item={groupItem} state="normal" />);
+    const root = container.firstChild as HTMLElement;
+
+    // Assert：深色底 + 白字（背景色不随大屏背景变淡；jsdom 将 #fff 归一化为 rgb）
+    expect(root.style.background).toBe('rgba(0, 0, 0, 0.4)');
+    expect(root.style.color).toBe('rgb(255, 255, 255)');
+    rerender(<BlockCard item={groupItem} state="drawn" />);
+    expect((container.firstChild as HTMLElement).style.background).toBe('rgba(0, 0, 0, 0.55)');
+    rerender(<BlockCard item={groupItem} state="bright" />);
+    expect((container.firstChild as HTMLElement).style.background).toBe('rgba(0, 0, 0, 0.25)');
+  });
 });
