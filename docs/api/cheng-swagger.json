@@ -17369,7 +17369,7 @@
                         "AdminAuth": []
                     }
                 ],
-                "description": "实时调用微信 query_biz_balance；内存缓存 45 秒。只读，不提供提现接口。",
+                "description": "实时调用微信 query_biz_balance；响应 amount_cents 为整数分（微信元字符串已在适配器边界转换）；内存缓存 45 秒。只读，不提供提现接口。",
                 "produces": [
                     "application/json"
                 ],
@@ -17535,6 +17535,55 @@
                         "description": "日期格式错误或窗口超限（code=40001）",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/xpay/fund/user-balance": {
+            "get": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "用户侧可提现余额存量（总账 + 来源子账）、当前待审核/处理中提现与退款处理中积压；快照接口不受日期窗口限制。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "虚拟支付管理"
+                ],
+                "summary": "用户可提现余额快照",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundUserBalanceResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "401": {
@@ -22583,6 +22632,66 @@
                 }
             }
         },
+        "/api/v1/wxa/congratulation/mine/received-tributes": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "分页查询报喜发布人收到的随份子（仅已完成）。礼物返回送礼人昵称/头像，现金红包保持匿名；报喜撤销后记录仍展示，congratulation_available=false 时不可跳转报喜详情。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "我收到的随份子列表",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 100）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.ReceivedTributeItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/congratulation/mine/tributes": {
             "get": {
                 "description": "分页查询本人送出的随份子记录；可按报喜 ID 筛选。",
@@ -22804,7 +22913,7 @@
         },
         "/api/v1/wxa/congratulation/withdraw": {
             "post": {
-                "description": "提现报喜现金收入：最低 10 元，每日一次，仅报喜发布人且已完成实名认证（收款人姓名必填）。",
+                "description": "提现报喜现金收入：最低 0.1 元（10 分），每日一次，已完成实名认证即可（收款人姓名必填）。报喜撤销后钱包金额仍可提现（2026-11-13 裁决）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -22817,7 +22926,7 @@
                 "summary": "申请提现",
                 "parameters": [
                     {
-                        "description": "提现金额（分）",
+                        "description": "提现金额（分）与提现审核订阅授权",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -23142,6 +23251,70 @@
                     },
                     "401": {
                         "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/wxa/congratulation/{id}/tribute-eligibility": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "只读判定当前登录用户能否对指定报喜随份子：报喜未通过/已隐藏、本人参与、已随过均返回 allowed=false，原因码与送随份子接口一致（41815/41816/41817）。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-随份子"
+                ],
+                "summary": "随份子资格判定",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "报喜 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "判定结果",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.TributeEligibilityResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误（40001）",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务端错误",
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
@@ -24678,7 +24851,7 @@
                         "BearerAuth": []
                     }
                 ],
-                "description": "分页查询当前用户站内消息（4 个审核场景 + 活动开始提醒；可选 scene 筛选，created_at 倒序）",
+                "description": "分页查询当前用户站内消息（审核场景 + 活动开始提醒 + 报喜相关明细；可选 scene 筛选，created_at 倒序）",
                 "produces": [
                     "application/json"
                 ],
@@ -24701,7 +24874,7 @@
                     },
                     {
                         "type": "integer",
-                        "description": "场景筛选：100 脱单资料/101 投稿/102 专区申请/103 活动报名/104 活动开始提醒（不传=全部）",
+                        "description": "场景筛选：100 脱单资料/101 投稿/102 专区申请/103 活动报名/104 活动开始提醒/105 报喜礼物/106 报喜邀请/107 报喜审核/108 提现审核（不传=全部）",
                         "name": "scene",
                         "in": "query"
                     }
@@ -27841,6 +28014,66 @@
                 }
             }
         },
+        "/api/v1/wxa/user/balance/transaction": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "分页查询可提现余额（现金）收支流水，按 created_at DESC 排序。通用账本：包含报喜现金红包、抽奖现金、提现扣减、提现失败/拒绝冲正；金额单位为分，方向由 direction 表达（1=获得 2=提现 3=退款冲正）。默认 page=1 / size=20 / max=50。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "C端-用户"
+                ],
+                "summary": "现金收支流水",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "页码（1-based，默认 1）",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "每页条数（默认 20，最大 50）",
+                        "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.PagedResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.BalanceTransactionItem"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未登录或 Token 已过期",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/user/checkin": {
             "get": {
                 "description": "分页返回当前用户的签到记录列表，按签到日期倒序排列。",
@@ -29851,7 +30084,9 @@
                     "type": "string"
                 },
                 "fee": {
-                    "type": "integer"
+                    "description": "报名费用（分，非负整数），0=免费",
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "female_slots": {
                     "description": "女性名额（gender_enabled=true 时必填）",
@@ -30661,7 +30896,9 @@
                     "type": "string"
                 },
                 "fee": {
-                    "type": "integer"
+                    "description": "报名费用（分，非负整数），0=免费",
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "female_slots": {
                     "description": "女性名额",
@@ -32676,6 +32913,9 @@
                 "id": {
                     "type": "string"
                 },
+                "image": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -33539,6 +33779,11 @@
                     "type": "integer",
                     "minimum": 1
                 },
+                "image": {
+                    "description": "Image 红包档位图片 URL（VARCHAR(512)，允许为空）；下单时快照到随份子记录 gift_image。",
+                    "type": "string",
+                    "maxLength": 512
+                },
                 "name": {
                     "type": "string",
                     "maxLength": 64
@@ -33794,6 +34039,14 @@
                     "items": {
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
+                },
+                "tribute_amount_cents": {
+                    "description": "TributeAmountCents 已完成现金红包金额合计（分；站内礼物无金额、不计入）。",
+                    "type": "integer"
+                },
+                "tribute_count": {
+                    "description": "TributeCount 已完成随份子人数（站内礼物 + 现金红包，status=1）。",
+                    "type": "integer"
                 }
             }
         },
@@ -33847,7 +34100,12 @@
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_attachment.AttachmentInfo"
                     }
                 },
+                "tribute_amount_cents": {
+                    "description": "TributeAmountCents 已完成现金红包金额合计（分；站内礼物无金额、不计入）。",
+                    "type": "integer"
+                },
                 "tribute_count": {
+                    "description": "TributeCount 已完成随份子人数（站内礼物 + 现金红包，status=1）。",
                     "type": "integer"
                 }
             }
@@ -33866,6 +34124,9 @@
                 },
                 "gift_name": {
                     "type": "string"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeKind"
                 },
                 "nickname": {
                     "type": "string"
@@ -33901,6 +34162,53 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.ReceivedTributeItem": {
+            "type": "object",
+            "properties": {
+                "amount_cents": {
+                    "type": "integer"
+                },
+                "amount_coins": {
+                    "type": "integer"
+                },
+                "congratulation_available": {
+                    "description": "CongratulationAvailable 报喜当前是否可对外展示（未撤销且未隐藏）；\nfalse 时钱包记录仍展示，但前端不应跳转报喜详情。",
+                    "type": "boolean"
+                },
+                "congratulation_id": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "gift_image": {
+                    "type": "string"
+                },
+                "gift_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CongratulationTributeKind"
+                },
+                "sender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.ReceivedTributeSender"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.ReceivedTributeSender": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "nickname": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.RejectWithdrawRequest": {
             "type": "object",
             "required": [
@@ -33921,7 +34229,11 @@
             "properties": {
                 "amount_cents": {
                     "type": "integer",
-                    "minimum": 1000
+                    "minimum": 10
+                },
+                "audit_template": {
+                    "description": "AuditTemplate 提现审核场景订阅授权（2026-11-13，R12 授权寄生）：\ntrue=已接受该场景订阅授权（额度与提现记录同一事务落库）；\nnil/false=未授权（reject/ban 同义），不落库。",
+                    "type": "boolean"
                 }
             }
         },
@@ -33931,6 +34243,10 @@
                 "photos"
             ],
             "properties": {
+                "audit_template": {
+                    "description": "AuditTemplate 报喜审核场景订阅授权（2026-11-13）：重提后同样需要授权才能收到下一次审核通知\n（一次性订阅额度已被上次审核消耗，SaveQuota UPSERT re-arm 同一行）。",
+                    "type": "boolean"
+                },
                 "marriage_certificate": {
                     "type": "array",
                     "maxItems": 1,
@@ -33983,6 +34299,10 @@
                 "photos"
             ],
             "properties": {
+                "audit_template": {
+                    "description": "AuditTemplate 报喜审核场景订阅授权（2026-11-13，R12 授权寄生）：\ntrue=已接受该场景订阅授权；nil/false=未授权（reject/ban 同义），不落库。",
+                    "type": "boolean"
+                },
                 "marriage_certificate": {
                     "description": "MarriageCertificate 结婚证（选填，最多 1 张；仅管理后台可见）。",
                     "type": "array",
@@ -34042,6 +34362,23 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.TributeEligibilityResponse": {
+            "type": "object",
+            "properties": {
+                "allowed": {
+                    "description": "Allowed 当前用户是否可对该报喜发起随份子。",
+                    "type": "boolean"
+                },
+                "reason": {
+                    "description": "Reason 不可随时的提示文案；可随时为空串。",
+                    "type": "string"
+                },
+                "reason_code": {
+                    "description": "ReasonCode 不可随时的原因码；可随时为 0。",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.UpdateCashTierRequest": {
             "type": "object",
             "properties": {
@@ -34054,6 +34391,10 @@
                 "coin_amount": {
                     "type": "integer",
                     "minimum": 1
+                },
+                "image": {
+                    "type": "string",
+                    "maxLength": 512
                 },
                 "name": {
                     "type": "string"
@@ -36560,7 +36901,7 @@
             "type": "object",
             "properties": {
                 "biz_id": {
-                    "description": "BizID 业务关联 ID（与订阅消息页面地址参数一致，2026-08-25 老大定稿）：\n专区=zone_id（pages/zone/index?id=）/ 活动=activityID（pages/activity-detail/index?id=）；\n脱单/投稿页面无参数 → null。前端跳转直接用本值拼页面地址。",
+                    "description": "BizID 业务关联 ID（与订阅消息页面地址参数一致，2026-08-25 老大定稿）：\n专区=zone_id（pages/zone/index?id=）/ 活动=activityID（pages/activity-detail/index?id=）/\n报喜=报喜 ID（pages/congratulation/index?id=，2026-11-13）/\n提现=提现记录 ID（页面 pages/me/index 无参数，仅作业务关联，2026-11-13）；\n脱单/投稿页面无参数 → null。前端跳转直接用本值拼页面地址。",
                     "type": "string"
                 },
                 "content": {
@@ -36580,7 +36921,7 @@
                     "type": "boolean"
                 },
                 "scene": {
-                    "description": "Scene 通知场景（轨 A 类型化常量 100-104）。",
+                    "description": "Scene 通知场景（轨 A 类型化常量 100-108）。",
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.NotificationScene"
@@ -37542,8 +37883,8 @@
         "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminBizBalanceResponse": {
             "type": "object",
             "properties": {
-                "amount": {
-                    "type": "string"
+                "amount_cents": {
+                    "type": "integer"
                 },
                 "currency_code": {
                     "type": "string"
@@ -37788,6 +38129,20 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundBacklog": {
+            "type": "object",
+            "properties": {
+                "refund_processing_count": {
+                    "type": "integer"
+                },
+                "withdraw_pending_review_count": {
+                    "type": "integer"
+                },
+                "withdraw_processing_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundDailyItem": {
             "type": "object",
             "properties": {
@@ -37795,16 +38150,56 @@
                     "description": "YYYYMMDD（北京时间自然日）",
                     "type": "string"
                 },
+                "pay_cash_in_cents": {
+                    "description": "现金流入金额（分）",
+                    "type": "integer"
+                },
+                "pay_cash_in_count": {
+                    "description": "现金流入笔数（biz_type=3）",
+                    "type": "integer"
+                },
                 "pay_cents": {
-                    "description": "支付成功金额（分）",
+                    "description": "支付成功金额（分，订单面额合计）",
+                    "type": "integer"
+                },
+                "pay_coin_spend_cents": {
+                    "description": "代币消费金额（分）",
+                    "type": "integer"
+                },
+                "pay_coin_spend_count": {
+                    "description": "代币消费笔数（biz_type IN (2,4)）",
                     "type": "integer"
                 },
                 "pay_count": {
-                    "description": "支付成功笔数（含后来退款）",
+                    "description": "支付成功笔数（订单面额合计，含后来退款）",
+                    "type": "integer"
+                },
+                "platform_reward_cents": {
+                    "description": "平台奖励支出金额（分）",
+                    "type": "integer"
+                },
+                "platform_reward_count": {
+                    "description": "平台奖励支出笔数（抽奖现金）",
+                    "type": "integer"
+                },
+                "refund_cash_cents": {
+                    "description": "退现金金额（分）",
+                    "type": "integer"
+                },
+                "refund_cash_count": {
+                    "description": "退现金笔数（关联订单 biz_type=3）",
                     "type": "integer"
                 },
                 "refund_cents": {
                     "description": "退款成功金额（分）",
+                    "type": "integer"
+                },
+                "refund_coin_cents": {
+                    "description": "退代币金额（分）",
+                    "type": "integer"
+                },
+                "refund_coin_count": {
+                    "description": "退代币笔数（关联订单 biz_type IN (2,4)）",
                     "type": "integer"
                 },
                 "refund_count": {
@@ -37837,6 +38232,17 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundFlowItem": {
+            "type": "object",
+            "properties": {
+                "cents": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPayBizTypeItem": {
             "type": "object",
             "properties": {
@@ -37847,6 +38253,9 @@
                     "type": "integer"
                 },
                 "count": {
+                    "type": "integer"
+                },
+                "fee_cents": {
                     "type": "integer"
                 },
                 "refunded_count": {
@@ -37863,10 +38272,30 @@
                         "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPayBizTypeItem"
                     }
                 },
+                "cash_in": {
+                    "description": "biz_type=3 代币充值",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundFlowItem"
+                        }
+                    ]
+                },
                 "cents": {
                     "type": "integer"
                 },
+                "coin_spend": {
+                    "description": "biz_type IN (2,4) 代币消费",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundFlowItem"
+                        }
+                    ]
+                },
                 "count": {
+                    "type": "integer"
+                },
+                "fee_cents": {
+                    "description": "账单回填手续费合计（代币消费订单恒 0）",
                     "type": "integer"
                 },
                 "refunded_count": {
@@ -37875,10 +38304,27 @@
                 }
             }
         },
-        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRefundSummary": {
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPendingWithdraw": {
             "type": "object",
             "properties": {
+                "cents": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRefundBizTypeItem": {
+            "type": "object",
+            "properties": {
+                "biz_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PayBizType"
+                },
                 "failed_count": {
+                    "type": "integer"
+                },
+                "fee_cents": {
                     "type": "integer"
                 },
                 "processing_count": {
@@ -37892,9 +38338,94 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRefundSummary": {
+            "type": "object",
+            "properties": {
+                "by_biz_type": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRefundBizTypeItem"
+                    }
+                },
+                "cash_refund": {
+                    "description": "关联订单 biz_type=3（退现金）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundFlowItem"
+                        }
+                    ]
+                },
+                "coin_refund": {
+                    "description": "关联订单 biz_type IN (2,4)（退代币）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundFlowItem"
+                        }
+                    ]
+                },
+                "failed_count": {
+                    "type": "integer"
+                },
+                "fee_cents": {
+                    "type": "integer"
+                },
+                "processing_count": {
+                    "type": "integer"
+                },
+                "success_cents": {
+                    "type": "integer"
+                },
+                "success_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRewardSummary": {
+            "type": "object",
+            "properties": {
+                "cents": {
+                    "type": "integer"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundSettleChannelItem": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.PayBillChannel"
+                },
+                "count": {
+                    "type": "integer"
+                },
+                "diff_count": {
+                    "type": "integer"
+                },
+                "fee_cents": {
+                    "type": "integer"
+                },
+                "gross_cents": {
+                    "type": "integer"
+                },
+                "matched_count": {
+                    "type": "integer"
+                },
+                "net_cents": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundSettleSummary": {
             "type": "object",
             "properties": {
+                "by_channel": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundSettleChannelItem"
+                    }
+                },
                 "count": {
                     "type": "integer"
                 },
@@ -37925,6 +38456,9 @@
                 "pay": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPaySummary"
                 },
+                "platform_reward": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRewardSummary"
+                },
                 "refund": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundRefundSummary"
                 },
@@ -37937,6 +38471,87 @@
                 },
                 "withdraw": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundWithdrawSummary"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundUserBalanceResponse": {
+            "type": "object",
+            "properties": {
+                "as_of": {
+                    "description": "快照时刻（RFC3339 UTC）",
+                    "type": "string"
+                },
+                "backlog": {
+                    "description": "当前积压（非窗口）",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundBacklog"
+                        }
+                    ]
+                },
+                "by_source": {
+                    "description": "来源子账",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundUserBalanceSourceItem"
+                    }
+                },
+                "pending_withdraw": {
+                    "description": "当前待审核/处理中提现",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundPendingWithdraw"
+                        }
+                    ]
+                },
+                "total": {
+                    "description": "总账",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundUserBalanceTotal"
+                        }
+                    ]
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundUserBalanceSourceItem": {
+            "type": "object",
+            "properties": {
+                "balance_cents": {
+                    "type": "integer"
+                },
+                "earned_cents": {
+                    "type": "integer"
+                },
+                "refunded_cents": {
+                    "type": "integer"
+                },
+                "source_type": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BalanceSourceType"
+                },
+                "withdrawn_cents": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_pay_model.AdminFundUserBalanceTotal": {
+            "type": "object",
+            "properties": {
+                "balance_cents": {
+                    "description": "当前可提现余额合计（分）",
+                    "type": "integer"
+                },
+                "earned_cents": {
+                    "description": "累计获得（分）",
+                    "type": "integer"
+                },
+                "user_count": {
+                    "description": "余额 > 0 的用户数",
+                    "type": "integer"
+                },
+                "withdrawn_cents": {
+                    "description": "累计提现（分）",
+                    "type": "integer"
                 }
             }
         },
@@ -42258,12 +42873,47 @@
             "type": "object",
             "properties": {
                 "balance": {
+                    "description": "当前可提现余额（分）",
                     "type": "integer"
                 },
                 "earned": {
+                    "description": "累计获得（分）",
                     "type": "integer"
                 },
                 "withdrawn": {
+                    "description": "累计提现（分）",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.BalanceTransactionItem": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "direction": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.BalanceDirection"
+                },
+                "earned_after": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "ref_id": {
+                    "type": "string"
+                },
+                "ref_type": {
+                    "type": "string"
+                },
+                "withdrawn_after": {
                     "type": "integer"
                 }
             }
@@ -44884,6 +45534,50 @@
                 "AdminUserStatusDisabled"
             ]
         },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.BalanceDirection": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2,
+                3
+            ],
+            "x-enum-comments": {
+                "BalanceDirectionEarned": "获得",
+                "BalanceDirectionRefundReversal": "退款冲正（D16/D13）",
+                "BalanceDirectionWithdraw": "提现"
+            },
+            "x-enum-descriptions": [
+                "获得",
+                "提现",
+                "退款冲正（D16/D13）"
+            ],
+            "x-enum-varnames": [
+                "BalanceDirectionEarned",
+                "BalanceDirectionWithdraw",
+                "BalanceDirectionRefundReversal"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_pkg_status.BalanceSourceType": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                1,
+                2
+            ],
+            "x-enum-comments": {
+                "BalanceSourceTypeCongratulation": "报喜现金（用户出资）",
+                "BalanceSourceTypeLottery": "抽奖现金（平台出资）"
+            },
+            "x-enum-descriptions": [
+                "抽奖现金（平台出资）",
+                "报喜现金（用户出资）"
+            ],
+            "x-enum-varnames": [
+                "BalanceSourceTypeLottery",
+                "BalanceSourceTypeCongratulation"
+            ]
+        },
         "github_com_vbegin_tlnc_v6_internal_pkg_status.BloodType": {
             "type": "integer",
             "format": "int32",
@@ -45624,6 +46318,8 @@
                 104,
                 105,
                 106,
+                107,
+                108,
                 200,
                 201,
                 202,
@@ -45636,6 +46332,7 @@
             "x-enum-comments": {
                 "NotificationSceneActivityAudit": "活动报名审核",
                 "NotificationSceneActivityStartReminder": "活动开始提醒（调度器触发）",
+                "NotificationSceneCongratulationAudit": "报喜审核",
                 "NotificationSceneCongratulationInvite": "收到报喜邀请",
                 "NotificationSceneCongratulationTribute": "收到报喜站内礼物",
                 "NotificationSceneCouple1314": "达成 1314",
@@ -45647,6 +46344,7 @@
                 "NotificationSceneProfileAudit": "脱单资料审核",
                 "NotificationSceneRankAward": "榜单（获得神助攻）",
                 "NotificationSceneSubmissionAudit": "投稿审核",
+                "NotificationSceneWithdrawAudit": "提现审核",
                 "NotificationSceneZoneApplyAudit": "专区申请审核"
             },
             "x-enum-descriptions": [
@@ -45658,6 +46356,8 @@
                 "活动开始提醒（调度器触发）",
                 "收到报喜站内礼物",
                 "收到报喜邀请",
+                "报喜审核",
+                "提现审核",
                 "心动",
                 "关注",
                 "私信",
@@ -45676,6 +46376,8 @@
                 "NotificationSceneActivityStartReminder",
                 "NotificationSceneCongratulationTribute",
                 "NotificationSceneCongratulationInvite",
+                "NotificationSceneCongratulationAudit",
+                "NotificationSceneWithdrawAudit",
                 "NotificationSceneHeartbeat",
                 "NotificationSceneFollow",
                 "NotificationSceneMessage",
