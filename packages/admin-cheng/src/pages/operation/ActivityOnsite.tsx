@@ -563,6 +563,7 @@ const ActivityOnsite: React.FC = () => {
     setCouples(data.couples);
     demoRef.current = true;
     setDemo(true);
+  }, [fetchWall, fetchCouples, buildDemoData]);
 
   /** 拉取活动配置（bg_screen / 分组 / 编排）：分组变化时重拉照片墙与配对（组名渲染与组筛选同源）；
    *  编排步骤仅在未执行时同步（播放中不被后台配置变更打断） */
@@ -623,8 +624,6 @@ const ActivityOnsite: React.FC = () => {
     const timer = setInterval(() => { refreshConfig(); }, 10000);
     return () => clearInterval(timer);
   }, [id, refreshConfig]);
-
-  }, [fetchWall, fetchCouples, buildDemoData]);
 
   // 聚焦动画：逐张放大高亮停留 2 秒，无限循环。
   // 依赖 wall.length 而非 wall 数组本身——轮询刷新不重置索引、不打断轮播序列
