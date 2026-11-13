@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-11-13 | 大屏系列——①用户显示配置（昵称/姓名 radio，onsite_config.user_display，大屏热切换，姓名双源兜底）；②演示模式改为模拟本场所有入选用户均已签到（真实入选名单+分组+序号，流程编排可用）；③修复跨活动切换入选名单残留旧数据；④组中抽组组名排版（按字数折行规则 + 加号换行 + 留白调整）；⑤修复大屏初始加载与分组读取失效（代码搬移事故）；**测试版+正式版构建发布**（build:test / build:prod，产物待上传） | ActivityOnsite + OnsiteConfigTab + OnsiteGroupTab + OnsiteManageModal + onsiteGrouping.utils + tests | 1b146e8、c110087、12ed16e、24b79e1、4b1220a、c9d02b6、912c77f、4dd71c6、0c24581、d13f7cb、94d2d93、013ed30、b6eff14、47d90c7（构建产物未提交） |
 | 2026-11-12 | 认证价格规则付费价格最低 1 元限制；**认证价格单位修正**（price_coins 为金币、1 金币=1 分：表单元输入 ÷100/×100 转换、档位联动改为等额 coin_amount=price_cents、列表 formatCents 展示）；**测试版构建发布**（build:test，产物待上传） | IdVerifyPriceRuleModal + UserVerify + tests | 50e327e、5ce0c84（构建产物未提交） |
 | 2026-11-12 | 认证价格规则与红包档位联动虚拟支付充值档位（价格≠0 先建等额充值档位再保存 recharge_product_id；报喜管理新增红包管理 TAB——现金红包档位列表/新增/编辑/状态/排序）；**测试版+正式版构建发布**（build:test / build:prod，产物待上传） | IdVerifyPriceRuleModal + CongratulationCashTierModal + CongratulationManagement + xpay/congratulation/idverify 服务 + mpProductId utils + tests | 1445baa（构建产物未提交） |
 | 2026-11-12 | 报名名单待审核筛选下支持勾选批量入选（勾选列+全选、批量入选按钮、确认弹窗、分块并发逐条审核、部分失败提示）；**正式版构建发布**（build:prod，产物待上传） | ActivityRegisterModal + StandardTable（rowSelection 透传）+ tests | 249266b（构建产物未提交） |
