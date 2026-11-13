@@ -7,6 +7,8 @@ import { activityApi } from '@/api/services/activity-v1';
 
 afterEach(() => {
   vi.useRealTimers();
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
 });
 
 /** 演示模式竞态复现：初始加载的真实签到墙取数挂起（迟到返回），按 0 进入演示后迟到的真实数据不得覆盖演示墙 */
@@ -214,5 +216,72 @@ describe('ActivityOnsite 演示模式', () => {
     }, { timeout: 3000 });
     // 重置回封面并停掉滚动定时器
     fireEvent.keyDown(document.body, { key: '6' });
+  });
+
+  it('单组选人卡片 3 排时整体等比缩小，保证上下完整显示', async () => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1920 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1080 });
+    vi.mocked(activityApi.getDetail).mockReset().mockResolvedValue({ onsite_config: JSON.stringify({ groups: '甲组|乙组' }) });
+    const people = (n: number, group: number) => Array.from({ length: n }, (_, i) => ({
+      user_id: `p${i}`, checkin_at: '2026-11-13T08:00:00Z', gender: i % 2 === 0 ? 1 : 2, onsite_number: i + 1,
+      user_profile: { nickname: `成员${i}`, avatar: 'https://cdn.example.com/a.jpg' },
+      extra_data: `{"group_index":${group}}`,
+    }));
+    vi.mocked(activityApi.getRegisters).mockReset().mockImplementation((_id: string, params?: { audit_status?: number }) =>
+      Promise.resolve(params?.audit_status === 1 ? mocks.demoRecords : people(13, 1)));
+
+    render(
+      <App>
+        <MemoryRouter initialEntries={['/activity-onsite/a1']}>
+          <Routes>
+            <Route path="/activity-onsite/:id" element={<ActivityOnsite />} />
+          </Routes>
+        </MemoryRouter>
+      </App>,
+    );
+
+    // 等待分组配置与签到墙就绪后，按 8 进入单组选人、按 O 开始跳动
+    await waitFor(() => {
+      expect(screen.getByText('单组选人(8)')).toBeInTheDocument();
+      expect(screen.getByAltText('成员0')).toBeInTheDocument();
+    });
+    fireEvent.keyDown(document.body, { key: '8' });
+    fireEvent.keyDown(document.body, { key: 'o' });
+    // 13 人 3 排（5+4+4）：卡片区按 86vh 预算等比缩小（1920×1080 下 48.375/52 ≈ 0.930）
+    const rows = await screen.findByTestId('block-rows');
+    expect(rows.style.transform).toMatch(/^scale\(0\.93/);
+    // 重置回封面并停掉跳动定时器
+    fireEvent.keyDown(document.body, { key: '8' });
+  });
+
+  it('单组选人卡片较少（单行）时不缩放', async () => {
+    vi.mocked(activityApi.getDetail).mockReset().mockResolvedValue({ onsite_config: JSON.stringify({ groups: '甲组|乙组' }) });
+    const people = (n: number, group: number) => Array.from({ length: n }, (_, i) => ({
+      user_id: `q${i}`, checkin_at: '2026-11-13T08:00:00Z', gender: i % 2 === 0 ? 1 : 2, onsite_number: i + 1,
+      user_profile: { nickname: `成员${i}`, avatar: 'https://cdn.example.com/a.jpg' },
+      extra_data: `{"group_index":${group}}`,
+    }));
+    vi.mocked(activityApi.getRegisters).mockReset().mockImplementation((_id: string, params?: { audit_status?: number }) =>
+      Promise.resolve(params?.audit_status === 1 ? mocks.demoRecords : people(5, 1)));
+
+    render(
+      <App>
+        <MemoryRouter initialEntries={['/activity-onsite/a1']}>
+          <Routes>
+            <Route path="/activity-onsite/:id" element={<ActivityOnsite />} />
+          </Routes>
+        </MemoryRouter>
+      </App>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('单组选人(8)')).toBeInTheDocument();
+      expect(screen.getByAltText('成员0')).toBeInTheDocument();
+    });
+    fireEvent.keyDown(document.body, { key: '8' });
+    fireEvent.keyDown(document.body, { key: 'o' });
+    const rows = await screen.findByTestId('block-rows');
+    expect(rows.style.transform).toBe('');
+    fireEvent.keyDown(document.body, { key: '8' });
   });
 });

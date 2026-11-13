@@ -1454,6 +1454,14 @@ const ActivityOnsite: React.FC = () => {
   const BLOCK_PERSON_PER_ROW = 5;
   /** 组中抽组/单组选人：卡片按行均衡拆分后的行数组 */
   const blockRows: BlockItem[][] = chunkBalancedRows(blockAll, tab === 'groupDraw' ? BLOCK_GROUP_PER_ROW : BLOCK_PERSON_PER_ROW);
+  /**
+   * 单组选人卡片区高度适配：人多排数多（3 排及以上）时整体等比缩小，保证上下完整显示。
+   * 预算 86vh（标题 4.5vh + 间距 4vh + 余量），人卡 12vw×3:4 = 高 16vw、行距 2vw。
+   */
+  const BLOCK_ROWS_AREA_VH = 86;
+  const blockScale = tab === 'personDraw' && blockRows.length > 0
+    ? Math.min(1, (BLOCK_ROWS_AREA_VH * vwPerVh) / (blockRows.length * 16 + (blockRows.length - 1) * 2))
+    : 1;
 
   /** 编排模式当前步骤参数（驱动封面人数/组名等展示；自由模式沿用右上角配置） */
   const routineStepNow = routineMode && routine[routineIdx] ? routine[routineIdx] : null;
@@ -1795,8 +1803,11 @@ const ActivityOnsite: React.FC = () => {
             ) : (
               <>
                 <div className="draw-cover-title" style={{ fontSize: '4.5vh' }}>{stepName(tab === 'groupDraw' ? '组中抽组' : '单组选人')}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2vw', maxWidth: '84vw', alignItems: 'center' }}>
-                  {/* 原始顺序展示：本轮定格金色、更早已抽带蒙版、滚动高亮去蒙版；多行按行均衡分布（行间差 ≤ 1） */}
+                <div
+                  data-testid="block-rows"
+                  style={{ display: 'flex', flexDirection: 'column', gap: '2vw', maxWidth: '84vw', alignItems: 'center', transform: blockScale < 1 ? `scale(${blockScale})` : undefined }}
+                >
+                  {/* 原始顺序展示：本轮定格金色、更早已抽带蒙版、滚动高亮去蒙版；多行按行均衡分布（行间差 ≤ 1），单组选人多行时整体等比缩小 */}
                   {blockRows.map((row, r) => (
                     <div key={r} style={{ display: 'flex', gap: '2.6vw', justifyContent: 'center' }}>
                       {row.map((b) => {
