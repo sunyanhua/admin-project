@@ -371,7 +371,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
             label="分组名称"
             name="groups"
             rules={[{ required: true, message: '请输入分组名称' }]}
-            extra='用「|」分隔各组，例如：A|B|C|D|E|F|G；组名内用「+」分隔时，组中抽组将按符号换行显示，例如：动作电影+奇幻电影'
+            extra='用「|」分隔各组，例如：A|B|C|D|E|F|G；组名内用「+」分隔时，组中抽组将按符号换行显示，例如：动作+电影'
             style={{ flex: 1, marginBottom: 0 }}
           >
             <Input placeholder="A|B|C|D|E|F|G" maxLength={512} />
