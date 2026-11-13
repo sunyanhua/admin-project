@@ -5,6 +5,7 @@ import { HeartFilled } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, OnsitePairingUserAdmin } from '@/api/services/activity-v1';
 import { userApi } from '@/api/services/user';
+import { RegisterAuditStatus } from '@shared/constants';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
 import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
@@ -154,15 +155,6 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
       {item.label}
     </div>
   );
-};
-
-/** 演示模式占位头像（SVG 数据 URI，无网络依赖） */
-const demoAvatar = (i: number, gender: 'male' | 'female') => {
-  const palettes = ['#e04d2c', '#eb5482', '#0088cc', '#6c5ce7', '#00b894', '#f0932b', '#e056fd'];
-  const c = palettes[i % palettes.length];
-  const label = gender === 'male' ? '男' : '女';
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><rect width='240' height='240' fill='${c}'/><text x='50%' y='58%' font-size='96' text-anchor='middle' fill='rgba(255,255,255,.9)'>${label}</text></svg>`;
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 const ActivityOnsite: React.FC = () => {
@@ -485,6 +477,93 @@ const ActivityOnsite: React.FC = () => {
     } catch { /* 查询失败静默 */ }
   }, [id, upgradePhotos]);
 
+  /** 构建演示数据：模拟本场所有入选用户均已签到——拉取本活动全部入选报名记录（不筛 checkin_at），
+   *  与真实签到墙同口径（脱单照片/真实姓名映射/分组/现场序号/用户显示配置），拉取失败返回 null */
+  const buildDemoData = useCallback(async (): Promise<{ wall: WallUser[]; couples: OnsiteCouple[] } | null> => {
+    if (!id) return null;
+    try {
+      const regs: RegisterRecord[] = [];
+      let page = 1;
+      while (true) {
+        const res: any = await activityApi.getRegisters(id, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
+        const list: RegisterRecord[] = Array.isArray(res) ? res : (res?.list || []);
+        if (!list.length) break;
+        regs.push(...list);
+        if (list.length < 100) break;
+        page++;
+      }
+      // 批量补拉脱单照片 + 真实姓名映射（照片墙与「用户显示=姓名」同真实模式）
+      await upgradePhotos(regs.map((r) => r.user_id));
+      const base: WallUser[] = regs.map((r) => {
+        const g = r.user_profile?.gender ?? r.gender;
+        const groupIdx = parseGroupIndex(r.extra_data);
+        const group = groupIdx != null ? (groupsRef.current[groupIdx - 1] || '') : '';
+        const realName = r.user_match_profile?.real_name || realNameMapRef.current.get(r.user_id) || '';
+        if (realName) realNameMapRef.current.set(r.user_id, realName);
+        const nick = userDisplayRef.current === 'real_name' && realName
+          ? realName
+          : (r.user_profile?.nickname || r.nickname || r.user_id);
+        return {
+          number: r.onsite_number ?? 0,
+          nick,
+          gender: g === 1 ? 'male' : g === 2 ? 'female' : '',
+          userId: r.user_id,
+          photo: photoMapRef.current.get(r.user_id) || getFullWidthUrl(r.user_profile?.avatar || r.avatar || ''),
+          group,
+        };
+      });
+      // 未分配现场序号的在各自性别内按最大序号 +1 补齐（与一键分配同口径），模拟全员签到后的完整名单
+      let maxM = Math.max(0, ...base.filter((u) => u.gender === 'male').map((u) => u.number));
+      let maxF = Math.max(0, ...base.filter((u) => u.gender === 'female').map((u) => u.number));
+      const numbered = base.map((u) => {
+        let number = u.number;
+        if (!number) {
+          if (u.gender === 'male') number = ++maxM;
+          else if (u.gender === 'female') number = ++maxF;
+        }
+        return { ...u, number };
+      });
+      const demoWall = interleaveGenders(numbered);
+      // 演示配对：男女按序号两两配对，随机心形计数
+      const females = numbered.filter((u) => u.gender === 'female').sort((a, b) => a.number - b.number);
+      const males = numbered.filter((u) => u.gender === 'male').sort((a, b) => a.number - b.number);
+      const demoCouples: OnsiteCouple[] = [];
+      for (let i = 0; i < females.length && i < males.length; i++) {
+        const f = females[i];
+        const m = males[i];
+        demoCouples.push({
+          couple_id: `demo-couple-${i}`,
+          female: { onsite_number: f.number, profile: { nickname: f.nick, avatar: f.photo }, user: { user_id: f.userId } },
+          male: { onsite_number: m.number, profile: { nickname: m.nick, avatar: m.photo }, user: { user_id: m.userId } },
+          female_loves_count: 1 + Math.floor(Math.random() * 3),
+          male_loves_count: 1 + Math.floor(Math.random() * 3),
+          onsite_loves_count: 1,
+          matching: 1,
+        });
+      }
+      return { wall: demoWall, couples: demoCouples };
+    } catch { return null; }
+  }, [id, upgradePhotos]);
+
+  /** 演示模式开关：按 0 键——进入：用本场入选用户模拟全量签到（照片墙/配对/各组代表/组中抽组/单组选人/流程编排均基于该名单）；
+   *  退出：恢复真实已签到数据 */
+  const toggleDemo = useCallback(async () => {
+    if (demoRef.current) {
+      demoRef.current = false;
+      setDemo(false);
+      setFocusIdx(0);
+      fetchWall();
+      fetchCouples();
+      return;
+    }
+    const data = await buildDemoData();
+    if (!data) return; // 演示数据拉取失败保持现状
+    setFocusIdx(0);
+    setWall(data.wall);
+    setCouples(data.couples);
+    demoRef.current = true;
+    setDemo(true);
+
   /** 拉取活动配置（bg_screen / 分组 / 编排）：分组变化时重拉照片墙与配对（组名渲染与组筛选同源）；
    *  编排步骤仅在未执行时同步（播放中不被后台配置变更打断） */
   const refreshConfig = useCallback(async () => {
@@ -499,8 +578,15 @@ const ActivityOnsite: React.FC = () => {
       if (wantRealName !== (userDisplayRef.current === 'real_name')) {
         userDisplayRef.current = wantRealName ? 'real_name' : 'nickname';
         setUserDisplay(userDisplayRef.current);
-        fetchWall();
-        fetchCouples();
+        if (demoRef.current) {
+          // 演示模式：用最新显示方式重建演示名单（不拉真实签到数据）
+          buildDemoData().then((data) => {
+            if (data) { setWall(data.wall); setCouples(data.couples); }
+          });
+        } else {
+          fetchWall();
+          fetchCouples();
+        }
       }
       if (typeof obj.groups === 'string') {
         const groups: string[] = obj.groups.split('|').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
@@ -519,7 +605,7 @@ const ActivityOnsite: React.FC = () => {
         setRoutine(parseRoutine(res?.onsite_config));
       }
     } catch { /* 配置拉取失败静默——保留现有配置 */ }
-  }, [id, fetchWall, fetchCouples]);
+  }, [id, fetchWall, fetchCouples, buildDemoData]);
 
   useEffect(() => {
     if (!id) return;
@@ -538,76 +624,7 @@ const ActivityOnsite: React.FC = () => {
     return () => clearInterval(timer);
   }, [id, refreshConfig]);
 
-  /** 演示模式：按 0 键从系统随机抽 50 名左右男女用户模拟心形照片墙与配对 */
-  const toggleDemo = useCallback(async () => {
-    if (demoRef.current) {
-      demoRef.current = false;
-      setDemo(false);
-      setFocusIdx(0);
-      fetchWall();
-      fetchCouples();
-      return;
-    }
-    try {
-      // 演示数据优先取脱单档案审核通过的用户（match_audit_status 0=审核通过）
-      const res: any = await userApi.getUsers({ page: 1, size: 100, match_audit_status: 0 });
-      const audited: any[] = Array.isArray(res) ? res : (res?.list || []);
-      let shuffled = [...audited].sort(() => Math.random() - 0.5);
-      // 审核通过用户不足 50 时，从全量用户补齐（保证心形演示效果）
-      if (shuffled.length < 50) {
-        try {
-          const res2: any = await userApi.getUsers({ page: 1, size: 100 });
-          const all: any[] = Array.isArray(res2) ? res2 : (res2?.list || []);
-          const existing = new Set(shuffled.map((u) => u?.user?.user_id).filter(Boolean));
-          const extra = all
-            .filter((u) => u && !existing.has(u?.user?.user_id))
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 50 - shuffled.length);
-          shuffled = [...shuffled, ...extra];
-        } catch { /* 全量补齐失败则用合成嘉宾 */ }
-      }
-      // 仍不足时用合成嘉宾补足到 50
-      while (shuffled.length < 50) shuffled.push(null);
-      const females = shuffled.filter((u) => u?.profile?.gender === 2);
-      const males = shuffled.filter((u) => u?.profile?.gender === 1);
-      const others = shuffled.filter((u) => u?.profile?.gender !== 1 && u?.profile?.gender !== 2);
-      // 其余（含合成）用户交替补入男女，保证演示性别均衡
-      others.forEach((u, i) => (i % 2 === 0 ? males : females).push(u));
-      const toWall = (list2: any[], offset: number, gender: 'male' | 'female'): WallUser[] =>
-        list2.map((u, i) => ({
-          number: i + 1,
-          nick: u?.profile?.nickname || `演示嘉宾${offset + i + 1}`,
-          gender,
-          userId: `demo-${gender}-${i}`,
-          photo: u?.match_profile?.photos?.[0] || u?.profile?.avatar || demoAvatar(offset + i, gender),
-          // 演示数据带分组，展示分组徽章效果
-          group: ['A', 'B', 'C'][i % 3],
-        }));
-      const femaleWall = toWall(females, 0, 'female');
-      const maleWall = toWall(males, females.length, 'male');
-      const demoWall = interleaveGenders([...femaleWall, ...maleWall]);
-      setFocusIdx(0);
-      setWall(demoWall);
-      // 演示配对：男女顺序两两配对，随机心形计数
-      const demoCouples: OnsiteCouple[] = [];
-      for (let i = 0; i < femaleWall.length && i < maleWall.length; i++) {
-        const f = femaleWall[i];
-        const m = maleWall[i];
-        demoCouples.push({
-          couple_id: `demo-couple-${i}`,
-          female: { onsite_number: f.number, profile: { nickname: f.nick, avatar: f.photo }, user: { user_id: f.userId } },
-          male: { onsite_number: m.number, profile: { nickname: m.nick, avatar: m.photo }, user: { user_id: m.userId } },
-          female_loves_count: 1 + Math.floor(Math.random() * 3),
-          male_loves_count: 1 + Math.floor(Math.random() * 3),
-          onsite_loves_count: 1,
-          matching: 1,
-        });
-      }
-      setCouples(demoCouples);
-      demoRef.current = true;
-      setDemo(true);
-    } catch { /* 演示数据拉取失败保持现状 */ }
-  }, [fetchWall, fetchCouples]);
+  }, [fetchWall, fetchCouples, buildDemoData]);
 
   // 聚焦动画：逐张放大高亮停留 2 秒，无限循环。
   // 依赖 wall.length 而非 wall 数组本身——轮询刷新不重置索引、不打断轮播序列
@@ -1382,7 +1399,7 @@ const ActivityOnsite: React.FC = () => {
     switchTab('list');
   }, [clearDrawTimer, switchTab]);
 
-  // 键盘切换（每次按键先查询对应数据）：0 演示 / 1 嘉宾展示 / 2 心动互选 / 3 我钟意你 / 4 幸运之星 / 5 默契度 / 6 各组代表 / 7 组中抽组 / 8 单组选人 / ↓↑ 切换配对 / o 开始滚动 / p 减速停下 / 9 编排执行（O 开始、P 停止、R 重抽、←→ 切换步骤、Esc 退出）
+  // 键盘切换（每次按键先查询对应数据）：0 演示（模拟本场所有入选用户均已签到） / 1 嘉宾展示 / 2 心动互选 / 3 我钟意你 / 4 幸运之星 / 5 默契度 / 6 各组代表 / 7 组中抽组 / 8 单组选人 / ↓↑ 切换配对 / o 开始滚动 / p 减速停下 / 9 编排执行（O 开始、P 停止、R 重抽、←→ 切换步骤、Esc 退出；演示模式下同样可用）
   // 能成时刻入口已隐藏（2026-11-03，功能保留）：恢复时把 4 改回 startCouple 并在工具区加回按钮
   useEffect(() => {
     const onkey = (e: KeyboardEvent) => {
