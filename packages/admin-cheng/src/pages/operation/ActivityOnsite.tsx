@@ -7,7 +7,7 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { RegisterAuditStatus } from '@shared/constants';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
-import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
+import { parseGroupIndex, splitGroupLabel } from '@/components/operation/onsiteGrouping.utils';
 import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPools, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
@@ -138,12 +138,12 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
       </div>
     );
   }
-  // 组名排版规则（无「+」单行、有「+」按符号拆行，各行纵向堆叠居中）：
-  //   字号 = min(4vw, 内容区宽 9.2vw ÷ 最长行字数, 方块高 10vw ÷ 行数 ÷ 行高 1.25)
-  //   即每行文字总宽不超过方块内容区（10vw − 左右内边距 0.8vw），所有行高之和不超过方块高度
+  // 组名排版规则（用户定 2026-11-13，见 splitGroupLabel）：
+  //   ≤3 字单行；4 字 2×2；5~6 字两行每行≤3；7~9 字三行每行≤3；10 字以上每行≤4 最多 4 行；有「+」以 + 拆分为准
+  //   字号 = min(4vw, 内容区宽 9.2vw ÷ 最长行字数, 方块高 10vw ÷ 行数 ÷ 行高 1.25)，各行纵向堆叠居中
   // 防御式：label 非字符串时 String 化（历史 HMR/异常数据兜底，避免 [...label] 不可迭代崩溃）
   const labelText = typeof item.label === 'string' ? item.label : String(item.label ?? '');
-  const labelParts = labelText.split('+').map((s) => s.trim()).filter((s) => s.length > 0);
+  const labelParts = splitGroupLabel(labelText);
   const parts = labelParts.length > 0 ? labelParts : [labelText];
   const longestLen = Math.max(1, ...parts.map((p) => [...p].length));
   const fontSize = `${Math.min(4, 9.2 / longestLen, 8 / parts.length)}vw`;

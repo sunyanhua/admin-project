@@ -108,3 +108,28 @@ export function stripGroupInfo(extraData: string): string {
   delete obj[GROUP_NAME_KEY];
   return JSON.stringify(obj);
 }
+
+/**
+ * 组中抽组组名折行规则（用户定 2026-11-13）：
+ * - ≤3 字：单行
+ * - 4 字：两行，每行 2 字
+ * - 5~6 字：两行，每行 ≤3 字（第一行 3 字）
+ * - 7~9 字：三行，每行 ≤3 字
+ * - 10 字以上：每行 ≤4 字，最多 4 行（超出截断）
+ * - 组名含「+」时以 + 拆分为准：各段一行，段内不按字数再折
+ */
+export function splitGroupLabel(text: string): string[] {
+  const raw = typeof text === 'string' ? text : String(text ?? '');
+  const plusParts = raw.split('+').map((s) => s.trim()).filter((s) => s.length > 0);
+  if (plusParts.length > 1) return plusParts;
+  const s = plusParts.length === 1 ? plusParts[0] : raw;
+  const chars = [...s];
+  if (chars.length === 0) return [];
+  if (chars.length <= 3) return [s];
+  const perLine = chars.length === 4 ? 2 : chars.length <= 9 ? 3 : 4;
+  const lines: string[] = [];
+  for (let i = 0; i < chars.length && lines.length < 4; i += perLine) {
+    lines.push(chars.slice(i, i + perLine).join(''));
+  }
+  return lines;
+}

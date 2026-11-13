@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseGroupNames, parseGroupIndex, autoAssignGroups, stripGroupInfo, GROUP_INDEX_KEY, GROUP_NAME_KEY } from '@/components/operation/onsiteGrouping.utils';
+import { parseGroupNames, parseGroupIndex, splitGroupLabel, autoAssignGroups, stripGroupInfo, GROUP_INDEX_KEY, GROUP_NAME_KEY } from '@/components/operation/onsiteGrouping.utils';
 
 const user = (userId: string, gender: 'male' | 'female' | '', number?: number) => ({ userId, gender, number });
 
@@ -131,5 +131,44 @@ describe('autoAssignGroups', () => {
     expect(JSON.parse(stripGroupInfo(JSON.stringify({ [GROUP_INDEX_KEY]: 2 })))).toEqual({});
     // 非法 JSON 不抛错
     expect(JSON.parse(stripGroupInfo('not-json{'))).toEqual({});
+  });
+});
+
+describe('splitGroupLabel 组中抽组组名折行', () => {
+  it('1~3 字单行显示', () => {
+    expect(splitGroupLabel('一')).toEqual(['一']);
+    expect(splitGroupLabel('动作')).toEqual(['动作']);
+    expect(splitGroupLabel('动作片')).toEqual(['动作片']);
+  });
+
+  it('4 字两行每行 2 字', () => {
+    expect(splitGroupLabel('动画电影')).toEqual(['动画', '电影']);
+  });
+
+  it('5~6 字两行，第一行 3 字', () => {
+    expect(splitGroupLabel('动作喜剧片')).toEqual(['动作喜', '剧片']);
+    expect(splitGroupLabel('动作喜剧电影')).toEqual(['动作喜', '剧电影']);
+  });
+
+  it('7~9 字三行每行 ≤3 字', () => {
+    expect(splitGroupLabel('一二三四五六七')).toEqual(['一二三', '四五六', '七']);
+    expect(splitGroupLabel('一二三四五六七八')).toEqual(['一二三', '四五六', '七八']);
+    expect(splitGroupLabel('一二三四五六七八九')).toEqual(['一二三', '四五六', '七八九']);
+  });
+
+  it('10 字以上每行 ≤4 字、最多 4 行', () => {
+    expect(splitGroupLabel('一二三四五六七八九十')).toEqual(['一二三四', '五六七八', '九十']);
+    expect(splitGroupLabel('一二三四五六七八九十一二三四五六')).toEqual(['一二三四', '五六七八', '九十一二', '三四五六']);
+  });
+
+  it('有「+」以 + 拆分为准，段内不按字数再折', () => {
+    expect(splitGroupLabel('动作+电影')).toEqual(['动作', '电影']);
+    expect(splitGroupLabel('动作电影+奇幻')).toEqual(['动作电影', '奇幻']);
+    expect(splitGroupLabel('动作电影 + 奇幻电影')).toEqual(['动作电影', '奇幻电影']);
+  });
+
+  it('空串与非字符串防御', () => {
+    expect(splitGroupLabel('')).toEqual([]);
+    expect(splitGroupLabel('+')).toEqual(['+']);
   });
 });
