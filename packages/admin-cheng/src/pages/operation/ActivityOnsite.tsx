@@ -137,11 +137,15 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
       </div>
     );
   }
+  // 组名长度自适应字号：短名保持醒目大字，长名（如「动作电影」4 字）按方块宽度缩字不溢出；横向居中 + 超长允许折行
+  const labelLen = Math.max(1, [...item.label].length);
+  const fontSize = `${Math.min(4, 10 / labelLen)}vw`;
   return (
     <div style={{
       width: '10vw', height: '10vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: '4vw', fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
-      background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : state === 'bright' ? 'rgba(255,255,255,.32)' : 'rgba(255,255,255,.12)',
+      fontSize, fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
+      textAlign: 'center', lineHeight: 1.25, wordBreak: 'break-all', padding: '0.5vw',
+      background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : state === 'bright' ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.22)',
       transform: scale, transition,
       opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
       filter: state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.5)' : 'none',
