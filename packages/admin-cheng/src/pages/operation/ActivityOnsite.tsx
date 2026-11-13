@@ -140,18 +140,19 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
   }
   // 组名排版规则（用户定 2026-11-13，见 splitGroupLabel）：
   //   ≤3 字单行；4 字 2×2；5~6 字两行每行≤3；7~9 字三行每行≤3；10 字以上每行≤4 最多 4 行；有「+」以 + 拆分为准
-  //   字号 = min(4vw, 内容区宽 9.2vw ÷ 最长行字数, 方块高 10vw ÷ 行数 ÷ 行高 1.25)，各行纵向堆叠居中
+  //   字号 = min(3.6vw, 内容区宽 8vw ÷ 最长行字数, 内容区高 8vw ÷ 行数 ÷ 行高 1.25)，各行纵向堆叠居中
+  //   （方块 10vw，四周内边距 1vw，短组名也保留明显留白）
   // 防御式：label 非字符串时 String 化（历史 HMR/异常数据兜底，避免 [...label] 不可迭代崩溃）
   const labelText = typeof item.label === 'string' ? item.label : String(item.label ?? '');
   const labelParts = splitGroupLabel(labelText);
   const parts = labelParts.length > 0 ? labelParts : [labelText];
   const longestLen = Math.max(1, ...parts.map((p) => [...p].length));
-  const fontSize = `${Math.min(4, 9.2 / longestLen, 8 / parts.length)}vw`;
+  const fontSize = `${Math.min(3.6, 8 / longestLen, 6.4 / parts.length)}vw`;
   return (
     <div style={{
       width: '10vw', height: '10vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontSize, fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
-      textAlign: 'center', lineHeight: 1.25, wordBreak: 'break-all', padding: '0.4vw',
+      textAlign: 'center', lineHeight: 1.25, wordBreak: 'break-all', padding: '1vw',
       background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : state === 'bright' ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.22)',
       transform: scale, transition,
       opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
