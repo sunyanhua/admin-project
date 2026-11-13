@@ -39,7 +39,9 @@ dist/
    ```
 4. 登录后台抽查受影响功能
 
-## 4. Linksy AI 接口当前状态（临时直连）
+## 4. 六空改图 AI 接口当前状态（临时直连）
 
-- 当前为**直连模式**：前端携带密钥请求 `linksy.liteweb.cn`（密钥在 gitignore 的 `.env.*.local`，构建时注入），线上 CORS 白名单已配置。
+> 2026-11-13：接口由「灵犀/Linksy」更名为「六空改图」，域名由 `linksy.liteweb.cn` 更换为 `luckon.liteweb.cn`（代码内部标识 linksy 与环境变量名 VITE_LINKSY_* 保持不变）。
+
+- 当前为**直连模式**：前端携带密钥请求 `luckon.liteweb.cn`（密钥在 gitignore 的 `.env.*.local`，构建时注入），线上 CORS 白名单需按新域名配置。
 - **恢复网关模式**：`git revert 21075a7` 重新构建，并按 [linksy-ai-gateway.md](./linksy-ai-gateway.md) 在测试/正式网关配置 `location /linksy-api/` 转发（密钥改由网关注入，前端不再携带）。

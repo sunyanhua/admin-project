@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 /**
- * Linksy 图片分辨率改版接口（AI 图片调整尺寸）
+ * 六空改图接口（原灵犀/Linksy，2026-11-13 更名，域名 luckon.liteweb.cn）——AI 图片调整尺寸
  * 文档：D:\GitHub\Linksy\docs\open-api.md
  *
  * 流程：POST 提交图片+目标宽高 → 秒回 job_id → 轮询 GET → 完成后响应体即图片字节
@@ -9,7 +9,7 @@ import axios from 'axios';
  * 鉴权说明（两种模式，由环境变量切换）：
  * - 网关模式（目标态）：VITE_LINKSY_BASE_URL=/linksy-api，同域请求由网关注入 X-API-Key，
  *   前端不持有密钥
- * - 直连模式（临时回退）：VITE_LINKSY_BASE_URL 为完整 Linksy 地址并配置 VITE_LINKSY_API_KEY，
+ * - 直连模式（临时回退）：VITE_LINKSY_BASE_URL 为完整六空改图地址并配置 VITE_LINKSY_API_KEY，
  *   前端携带密钥直接请求（密钥暴露于浏览器）；服务器网关配置好后恢复网关模式
  */
 
