@@ -24,13 +24,15 @@ const STEP_TYPE_OPTIONS = (Object.keys(ROUTINE_STEP_TYPE_LABELS) as RoutineStepT
   label: ROUTINE_STEP_TYPE_LABELS[v],
 }));
 
-/** 各类型默认参数（切换类型时重置，备注保留） */
-const defaultStepOf = (type: RoutineStepType, note = ''): RoutineStep =>
-  type === 'lucky' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
-  : type === 'groupRep' ? { type, gender: 'mix' as LuckyGender, note }
-  : type === 'groupDraw' ? { type, count: 1, note }
-  : type === 'personDraw' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
-  : { type, note };
+/** 各类型默认参数（切换类型时重置，流程名称与备注保留） */
+const defaultStepOf = (type: RoutineStepType, note = '', name = ''): RoutineStep => {
+  const base = type === 'lucky' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
+    : type === 'groupRep' ? { type, gender: 'mix' as LuckyGender, note }
+    : type === 'groupDraw' ? { type, count: 1, note }
+    : type === 'personDraw' ? { type, count: 1, gender: 'mix' as LuckyGender, note }
+    : { type, note };
+  return name ? { ...base, name } : base;
+};
 
 /**
  * 流程编排 TAB：提前编排现场大屏的操作步骤（幸运之星/分组代表/组中选组/单组选人）。
@@ -92,9 +94,9 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
     setSteps((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
   };
 
-  /** 切换步骤类型：重置为该类型默认参数（备注保留） */
+  /** 切换步骤类型：重置为该类型默认参数（流程名称与备注保留） */
   const changeType = (idx: number, type: RoutineStepType) => {
-    setSteps((prev) => prev.map((s, i) => (i === idx ? defaultStepOf(type, s.note) : s)));
+    setSteps((prev) => prev.map((s, i) => (i === idx ? defaultStepOf(type, s.note, s.name) : s)));
   };
 
   const addStep = () => setSteps((prev) => [...prev, defaultStepOf('lucky')]);
@@ -127,6 +129,8 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
       if (steps.length) {
         obj.routine = steps.map((s) => {
           const clean: RoutineStep = { type: s.type, note: (s.note || '').trim() };
+          const name = (s.name || '').trim();
+          if (name) clean.name = name;
           if (s.type === 'lucky') { clean.count = s.count ?? 1; clean.gender = s.gender ?? 'mix'; }
           else if (s.type === 'groupRep') { clean.gender = s.gender ?? 'mix'; }
           else if (s.type === 'groupDraw') {
@@ -251,6 +255,14 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
                     <Select size="small" value={s.gender ?? 'mix'} onChange={(v: LuckyGender) => updateStep(idx, { gender: v })} style={{ width: 78 }} options={LUCKY_GENDER_OPTIONS} />
                   </Space>
                 )}
+                <Input
+                  size="small"
+                  value={s.name || ''}
+                  onChange={(e) => updateStep(idx, { name: e.target.value })}
+                  placeholder="流程名称（填写后大屏环节名显示该名称）"
+                  maxLength={20}
+                  style={{ width: 200, flexShrink: 0 }}
+                />
                 <Input
                   size="small"
                   value={s.note || ''}

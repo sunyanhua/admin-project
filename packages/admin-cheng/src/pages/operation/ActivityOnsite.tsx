@@ -1452,6 +1452,8 @@ const ActivityOnsite: React.FC = () => {
 
   /** 编排模式当前步骤参数（驱动封面人数/组名等展示；自由模式沿用右上角配置） */
   const routineStepNow = routineMode && routine[routineIdx] ? routine[routineIdx] : null;
+  /** 大屏环节名：编排步骤填写了流程名称则显示该名称，否则显示默认环节名（组中抽组等） */
+  const stepName = (defaultName: string): string => (routineStepNow?.name ? routineStepNow.name : defaultName);
   const effLuckyCount = routineStepNow?.type === 'lucky' ? (routineStepNow.count ?? 1) : luckyCount;
   const effLuckyGender = routineStepNow?.type === 'lucky' ? (routineStepNow.gender ?? 'mix') : luckyGender;
   // 组中选组指定结果时抽组数=所选中组数（进度条/封面不泄露具体组名）
@@ -1722,7 +1724,7 @@ const ActivityOnsite: React.FC = () => {
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '5vh' }}>
             {drawPhase === 'cover' ? (
               <>
-                <div className="draw-cover-title">{tab === 'lucky' ? '幸运之星' : '各组代表'}</div>
+                <div className="draw-cover-title">{stepName(tab === 'lucky' ? '幸运之星' : '各组代表')}</div>
                 {tab === 'lucky' && luckyReelCount > 0 && (
                   <div style={{ color: 'rgba(255,255,255,.75)', fontSize: '3vh' }}>
                     从现场嘉宾中随机抽取 {luckyReelCount} 位幸运之星
@@ -1772,7 +1774,7 @@ const ActivityOnsite: React.FC = () => {
           <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4vh' }}>
             {blockPhase === 'cover' ? (
               <>
-                <div className="draw-cover-title">{tab === 'groupDraw' ? '组中抽组' : '单组选人'}</div>
+                <div className="draw-cover-title">{stepName(tab === 'groupDraw' ? '组中抽组' : '单组选人')}</div>
                 <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '2.8vh' }}>
                   {tab === 'groupDraw'
                     ? `共 ${blockAll.length} 组 · 每轮抽取 ${effGroupDrawCount} 组`
@@ -1781,7 +1783,7 @@ const ActivityOnsite: React.FC = () => {
               </>
             ) : (
               <>
-                <div className="draw-cover-title" style={{ fontSize: '4.5vh' }}>{tab === 'groupDraw' ? '组中抽组' : '单组选人'}</div>
+                <div className="draw-cover-title" style={{ fontSize: '4.5vh' }}>{stepName(tab === 'groupDraw' ? '组中抽组' : '单组选人')}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2vw', maxWidth: '84vw', alignItems: 'center' }}>
                   {/* 原始顺序展示：本轮定格金色、更早已抽带蒙版、滚动高亮去蒙版；多行按行均衡分布（行间差 ≤ 1） */}
                   {blockRows.map((row, r) => (

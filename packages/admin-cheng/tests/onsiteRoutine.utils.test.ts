@@ -120,4 +120,18 @@ describe('onsiteRoutine.utils', () => {
     expect(ROUTINE_STEP_TYPE_LABELS.groupDraw).toBe('组中选组');
     expect(ROUTINE_STEP_TYPE_LABELS.personDraw).toBe('单组选人');
   });
+
+  it('流程名称：合法字符串去首尾空格保留，空串/非字符串丢弃', () => {
+    const cfg = JSON.stringify({
+      routine: [
+        { type: 'groupDraw', count: 1, name: ' 第一轮组队 ' },
+        { type: 'lucky', count: 1, name: '   ' },
+        { type: 'lucky', count: 1, name: 123 },
+      ],
+    });
+    const steps = parseRoutine(cfg);
+    expect(steps[0].name).toBe('第一轮组队');
+    expect(steps[1].name).toBeUndefined();
+    expect(steps[2].name).toBeUndefined();
+  });
 });

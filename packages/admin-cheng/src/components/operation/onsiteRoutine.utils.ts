@@ -14,6 +14,8 @@ export interface RoutineStep {
   group?: string;
   /** 组中选组：指定抽中的组名（按序落地，数量即抽组数）；缺省则随机抽取 */
   fixed?: string[];
+  /** 流程名称（填写后大屏环节名显示该名称，缺省显示默认环节名） */
+  name?: string;
   /** 现场备注（大屏进度条展示） */
   note?: string;
 }
@@ -37,6 +39,7 @@ const sanitizeStep = (raw: Record<string, unknown>): RoutineStep => {
     const fixed = [...new Set(raw.fixed.filter((g): g is string => typeof g === 'string').map((g) => g.trim()).filter((g) => g))];
     if (fixed.length) step.fixed = fixed;
   }
+  if (typeof raw.name === 'string' && raw.name.trim()) step.name = raw.name.trim();
   if (typeof raw.note === 'string' && raw.note.trim()) step.note = raw.note.trim();
   return step;
 };

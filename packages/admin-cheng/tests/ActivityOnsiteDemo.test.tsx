@@ -127,4 +127,57 @@ describe('ActivityOnsite 演示模式', () => {
     expect(screen.queryByAltText('演示甲')).toBeNull();
     expect(screen.queryByText('演示模式')).toBeNull();
   });
+
+  it('编排步骤填写流程名称时，大屏环节名显示该名称', async () => {
+    vi.mocked(activityApi.getDetail).mockReset().mockResolvedValue({
+      onsite_config: JSON.stringify({
+        groups: '甲组|乙组',
+        routine: [{ type: 'groupDraw', count: 1, name: '第一轮组队' }],
+      }),
+    });
+    vi.mocked(activityApi.getRegisters).mockReset().mockImplementation((_id: string, params?: { audit_status?: number }) =>
+      Promise.resolve(params?.audit_status === 1 ? mocks.demoRecords : []));
+
+    render(
+      <App>
+        <MemoryRouter initialEntries={['/activity-onsite/a1']}>
+          <Routes>
+            <Route path="/activity-onsite/:id" element={<ActivityOnsite />} />
+          </Routes>
+        </MemoryRouter>
+      </App>,
+    );
+
+    // 等待编排配置回填（工具区出现「流程编排(9)」入口）后按 9 进入编排执行
+    await waitFor(() => expect(screen.getByText('流程编排(9)')).toBeInTheDocument());
+    fireEvent.keyDown(document.body, { key: '9' });
+    await waitFor(() => expect(screen.getByText('第一轮组队')).toBeInTheDocument());
+    expect(screen.queryByText('组中抽组')).toBeNull();
+  });
+
+  it('编排步骤未填写流程名称时，大屏显示默认环节名', async () => {
+    vi.mocked(activityApi.getDetail).mockReset().mockResolvedValue({
+      onsite_config: JSON.stringify({
+        groups: '甲组|乙组',
+        routine: [{ type: 'groupDraw', count: 1 }],
+      }),
+    });
+    vi.mocked(activityApi.getRegisters).mockReset().mockImplementation((_id: string, params?: { audit_status?: number }) =>
+      Promise.resolve(params?.audit_status === 1 ? mocks.demoRecords : []));
+
+    render(
+      <App>
+        <MemoryRouter initialEntries={['/activity-onsite/a1']}>
+          <Routes>
+            <Route path="/activity-onsite/:id" element={<ActivityOnsite />} />
+          </Routes>
+        </MemoryRouter>
+      </App>,
+    );
+
+    await waitFor(() => expect(screen.getByText('流程编排(9)')).toBeInTheDocument());
+    fireEvent.keyDown(document.body, { key: '9' });
+    await waitFor(() => expect(screen.getByText('组中抽组')).toBeInTheDocument());
+    expect(screen.queryByText('第一轮组队')).toBeNull();
+  });
 });

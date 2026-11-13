@@ -101,6 +101,25 @@ describe('OnsiteRoutineTab', () => {
     expect(screen.getAllByTitle('删除本步').length).toBe(2);
   });
 
+  it('填写流程名称后保存：routine 步骤序列化包含 name', async () => {
+    render(
+      <App>
+        <OnsiteRoutineTab activityId="a1" activity={ACTIVITY as any} />
+      </App>,
+    );
+    await waitFor(() => expect(screen.getAllByTitle('删除本步').length).toBe(2));
+    // 第 1 步（幸运之星）填写流程名称
+    const nameInputs = screen.getAllByPlaceholderText(/流程名称/);
+    await userEvent.type(nameInputs[0], '开场幸运抽');
+    await userEvent.click(btnByText('保存'));
+    await waitFor(() => {
+      expect(updateMock).toHaveBeenCalled();
+      const payload = updateMock.mock.calls[0][1];
+      const obj = JSON.parse(payload.onsite_config);
+      expect(obj.routine[0]).toEqual({ type: 'lucky', count: 2, gender: 'mix', note: '第1轮', name: '开场幸运抽' });
+    });
+  });
+
   it('添加与删除步骤', async () => {
     render(
       <App>
