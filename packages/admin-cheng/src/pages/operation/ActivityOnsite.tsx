@@ -139,10 +139,13 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
     );
   }
   // 组名长度自适应字号：短名保持醒目大字，长名（如「动作电影」4 字）按方块宽度缩字不溢出；横向居中 + 超长允许折行
-  // 防御式：label 非字符串时 String 化（历史 HMR/异常数据兜底，避免 [...label] 不可迭代崩溃）
+  // 组名含「+」分隔时按符号换行展示（如「动作电影+奇幻电影」分两行）；防御式：label 非字符串时 String 化
   const labelText = typeof item.label === 'string' ? item.label : String(item.label ?? '');
-  const labelLen = Math.max(1, [...labelText].length);
-  const fontSize = `${Math.min(4, 10 / labelLen)}vw`;
+  const labelParts = labelText.split('+').map((s) => s.trim()).filter((s) => s.length > 0);
+  const parts = labelParts.length > 0 ? labelParts : [labelText];
+  const longestLen = Math.max(1, ...parts.map((p) => [...p].length));
+  // 行数越多字号越小：单行最长 4vw，多行按 10vw 方块高度（行高 1.25）均摊
+  const fontSize = `${Math.min(4, 10 / longestLen, 8 / parts.length)}vw`;
   return (
     <div style={{
       width: '10vw', height: '10vw', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -154,7 +157,7 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
       filter: state === 'drawn' ? 'grayscale(.9)' : state === 'normal' ? 'grayscale(.5)' : 'none',
       textShadow: state === 'win' ? '0 2px 8px rgba(255,255,255,.6)' : 'none',
     }}>
-      {labelText}
+      {parts.map((part, i) => <div key={i}>{part}</div>)}
     </div>
   );
 };
