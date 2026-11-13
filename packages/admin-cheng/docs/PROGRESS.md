@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-11-11**
+**2026-11-13**
 
 ---
 
@@ -95,6 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
+| 2026-11-13 | 大屏系列——①抽卡状态改用滤镜压暗方案（去黑蒙版：未选中 brightness 压暗、已抽更深+金色角标；无照片用户卡 12vw 占位卡与照片卡同尺寸显示序号+昵称，免报名入选标注（未注册），BlockCard 抽为独立组件）；②均衡换行（各组代表转轮/组中抽组组块/单组选人人卡多行时行差≤1，转轮高度受视口约束防宽屏裁切，空 user_id 卡片键兜底）；③演示模式竞态修复（初始加载/分组变更的迟到真实数据不再覆盖演示名单，重建落地前复查 demoRef 双向防护）；④流程编排步骤新增流程名称（大屏环节名优先显示该名称，未填回退默认）；⑤各组代表转轮上方显示组名；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite + OnsiteBlockCard + balancedRows + luckyPools.utils + OnsiteRoutineTab + onsiteRoutine.utils + tests | db9408a、1c5c5dd、ec4302b（构建产物未提交） |
 | 2026-11-13 | 认证记录新增撤销操作——已通过记录「撤销」（弹窗填写撤销理由必填 ≤500 字，写入审计日志），状态枚举新增 REVOKED=6（已撤销）含展示与筛选；**测试版构建发布**（build:test，产物待上传） | idverify 服务 + UserVerify + tests | fab3fed、2d5958a（构建产物未提交） |
 | 2026-11-13 | 大屏系列——①用户显示配置（昵称/姓名 radio，onsite_config.user_display，大屏热切换，姓名双源兜底）；②演示模式改为模拟本场所有入选用户均已签到（真实入选名单+分组+序号，流程编排可用）；③修复跨活动切换入选名单残留旧数据；④组中抽组组名排版（按字数折行规则 + 加号换行 + 留白调整）；⑤修复大屏初始加载与分组读取失效（代码搬移事故）；**测试版+正式版构建发布**（build:test / build:prod，产物待上传） | ActivityOnsite + OnsiteConfigTab + OnsiteGroupTab + OnsiteManageModal + onsiteGrouping.utils + tests | 1b146e8、c110087、12ed16e、24b79e1、4b1220a、c9d02b6、912c77f、4dd71c6、0c24581、d13f7cb、94d2d93、013ed30、b6eff14、47d90c7（构建产物未提交） |
 | 2026-11-12 | 认证价格规则付费价格最低 1 元限制；**认证价格单位修正**（price_coins 为金币、1 金币=1 分：表单元输入 ÷100/×100 转换、档位联动改为等额 coin_amount=price_cents、列表 formatCents 展示）；**测试版构建发布**（build:test，产物待上传） | IdVerifyPriceRuleModal + UserVerify + tests | 50e327e、5ce0c84（构建产物未提交） |
