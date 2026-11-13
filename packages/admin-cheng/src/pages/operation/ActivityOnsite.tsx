@@ -138,19 +138,20 @@ const BlockCard: React.FC<{ item: BlockItem; state: 'normal' | 'bright' | 'win' 
       </div>
     );
   }
-  // 组名长度自适应字号：短名保持醒目大字，长名（如「动作电影」4 字）按方块宽度缩字不溢出；横向居中 + 超长允许折行
-  // 组名含「+」分隔时按符号换行展示（如「动作电影+奇幻电影」分两行）；防御式：label 非字符串时 String 化
+  // 组名排版规则（无「+」单行、有「+」按符号拆行，各行纵向堆叠居中）：
+  //   字号 = min(4vw, 内容区宽 9.2vw ÷ 最长行字数, 方块高 10vw ÷ 行数 ÷ 行高 1.25)
+  //   即每行文字总宽不超过方块内容区（10vw − 左右内边距 0.8vw），所有行高之和不超过方块高度
+  // 防御式：label 非字符串时 String 化（历史 HMR/异常数据兜底，避免 [...label] 不可迭代崩溃）
   const labelText = typeof item.label === 'string' ? item.label : String(item.label ?? '');
   const labelParts = labelText.split('+').map((s) => s.trim()).filter((s) => s.length > 0);
   const parts = labelParts.length > 0 ? labelParts : [labelText];
   const longestLen = Math.max(1, ...parts.map((p) => [...p].length));
-  // 行数越多字号越小：单行最长 4vw，多行按 10vw 方块高度（行高 1.25）均摊
-  const fontSize = `${Math.min(4, 10 / longestLen, 8 / parts.length)}vw`;
+  const fontSize = `${Math.min(4, 9.2 / longestLen, 8 / parts.length)}vw`;
   return (
     <div style={{
       width: '10vw', height: '10vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       fontSize, fontWeight: 'bold', color: state === 'win' ? '#3d2a00' : '#fff', borderRadius: '1vh', border, boxShadow: shadow, boxSizing: 'border-box',
-      textAlign: 'center', lineHeight: 1.25, wordBreak: 'break-all', padding: '0.5vw',
+      textAlign: 'center', lineHeight: 1.25, wordBreak: 'break-all', padding: '0.4vw',
       background: state === 'win' ? 'linear-gradient(135deg,#f7b733,#fc4a1a)' : state === 'bright' ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.22)',
       transform: scale, transition,
       opacity: state === 'drawn' ? 0.35 : state === 'normal' ? 0.55 : 1,
