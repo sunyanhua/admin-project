@@ -157,6 +157,8 @@ export interface AdminCongratulationItem {
   /** 官方随份子金额（分） */
   gift_amount?: number;
   gift_set_at?: string;
+  /** 是否已有结婚证（列表筛选/展示；详情返回附件 URL） */
+  has_marriage_certificate?: boolean;
   male_id?: string;
   male_nickname?: string;
   male_avatar?: string;

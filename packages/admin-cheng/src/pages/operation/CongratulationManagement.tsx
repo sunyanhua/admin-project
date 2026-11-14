@@ -19,6 +19,7 @@ import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import CongratulationDetailModal from '@/components/operation/CongratulationDetailModal';
 import CongratulationGiftModal from '@/components/operation/CongratulationGiftModal';
 import CongratulationCashTierModal from '@/components/operation/CongratulationCashTierModal';
+import CongratulationGiftStatusTag from '@/components/operation/CongratulationGiftStatusTag';
 
 // ======================== 报喜信息管理 ========================
 
@@ -127,8 +128,8 @@ const CongratulationListTab: React.FC<{ onRefreshRef: (fn: () => void) => void }
     },
     dateTimeColumn<AdminCongratulationItem>('created_at', '提交时间'),
     {
-      title: '官方随份子', key: 'gift', width: 110,
-      render: (_: any, r: AdminCongratulationItem) => (r.is_official_gift ? `¥${((r.gift_amount ?? 0) / 100).toFixed(2)}` : <span style={{ color: '#999' }}>-</span>),
+      title: '官方随份子', key: 'gift', width: 170,
+      render: (_: any, r: AdminCongratulationItem) => <CongratulationGiftStatusTag item={r} />,
     },
     {
       title: '隐藏', key: 'hidden', width: 100,
