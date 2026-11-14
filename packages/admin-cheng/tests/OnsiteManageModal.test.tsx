@@ -51,6 +51,7 @@ const getRegistersMock = vi.hoisted(() => vi.fn().mockResolvedValue(REGISTERS));
 const adjustReliabilityMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const getDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue(ACTIVITY));
+const getOnsiteLovesCouplesMock = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 
 // 阻断真实 API 模块链（src/api/index.ts 顶层依赖 localStorage，jsdom 下不可用）
 vi.mock('@/api/services/user', () => ({
@@ -76,6 +77,7 @@ vi.mock('@/api/services/activity-v1', () => ({
     updateOnsiteNumber: vi.fn(),
     clearOnsiteNumber: vi.fn(),
     assignOnsiteNumbers: vi.fn(),
+    getOnsiteLovesCouples: getOnsiteLovesCouplesMock,
   },
 }));
 
@@ -98,6 +100,8 @@ beforeEach(() => {
   updateMock.mockClear();
   getDetailMock.mockClear();
   getDetailMock.mockImplementation(() => Promise.resolve(ACTIVITY));
+  getOnsiteLovesCouplesMock.mockClear();
+  getOnsiteLovesCouplesMock.mockResolvedValue([]);
 });
 
 /** 打开签到状态下拉并选择指定选项（rc-select 选项带 title 属性，避开状态列同名 Tag 文本） */
@@ -326,4 +330,29 @@ describe('OnsiteManageModal 跨活动切换', () => {
 
     await waitFor(() => expect(getRegistersMock.mock.calls.length).toBeGreaterThan(callsBefore));
   }, 30000);
+});
+
+describe('OnsiteManageModal 心动排名 TAB', () => {
+  const renderModal = () =>
+    render(
+      <App>
+        <OnsiteManageModal
+          visible
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={ACTIVITY as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+
+  it('心动排名 TAB 位于末尾，点击后按活动拉取心动配对并显示空状态', async () => {
+    renderModal();
+    await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs[tabs.length - 1]).toHaveTextContent('心动排名');
+    fireEvent.click(tabs[tabs.length - 1]);
+    await waitFor(() => expect(getOnsiteLovesCouplesMock).toHaveBeenCalledWith('a1', expect.objectContaining({ size: 100 })));
+    expect(await screen.findByText('暂无现场心动配对')).toBeInTheDocument();
+  });
 });

@@ -19,6 +19,7 @@ import ActivityRegisterAddModal from '@/components/operation/ActivityRegisterAdd
 import OnsiteConfigTab from '@/components/operation/OnsiteConfigTab';
 import OnsiteGroupTab from '@/components/operation/OnsiteGroupTab';
 import OnsiteRoutineTab from '@/components/operation/OnsiteRoutineTab';
+import OnsiteLoveRankTab from '@/components/operation/OnsiteLoveRankTab';
 import OnsiteDeductScoreModal from '@/components/operation/OnsiteDeductScoreModal';
 import { formatDateTime, parseApiTime } from '@/utils/format';
 import { buildOnsiteExportSheet } from './activityRegisterExport.utils';
@@ -500,6 +501,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
           { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={liveActivity} onSaved={refreshLiveActivity} /> },
           { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={liveActivity} /> : null },
+          { key: 'loveRank', label: '心动排名', children: tabKey === 'loveRank' ? <OnsiteLoveRankTab activityId={activityId} /> : null },
         ]}
       />
     </ScrollableModal>
