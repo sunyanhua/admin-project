@@ -501,7 +501,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
           { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={liveActivity} onSaved={refreshLiveActivity} /> },
           { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={liveActivity} /> : null },
-          { key: 'loveRank', label: '心动排名', children: tabKey === 'loveRank' ? <OnsiteLoveRankTab activityId={activityId} /> : null },
+          { key: 'loveRank', label: '心动排名', children: tabKey === 'loveRank' ? <OnsiteLoveRankTab key={activityId} activityId={activityId} /> : null },
         ]}
       />
     </ScrollableModal>

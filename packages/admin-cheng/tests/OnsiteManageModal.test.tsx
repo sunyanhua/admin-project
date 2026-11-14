@@ -349,6 +349,8 @@ describe('OnsiteManageModal 心动排名 TAB', () => {
   it('心动排名 TAB 位于末尾，点击后按活动拉取心动配对并显示空状态', async () => {
     renderModal();
     await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+    // 懒挂载：未点击 TAB 前不发起心动配对请求
+    expect(getOnsiteLovesCouplesMock).not.toHaveBeenCalled();
     const tabs = screen.getAllByRole('tab');
     expect(tabs[tabs.length - 1]).toHaveTextContent('心动排名');
     fireEvent.click(tabs[tabs.length - 1]);

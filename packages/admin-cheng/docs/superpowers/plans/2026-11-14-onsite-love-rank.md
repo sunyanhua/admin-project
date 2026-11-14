@@ -1,5 +1,7 @@
 # 现场管理弹窗「心动排名」TAB 实施计划
 
+> ⚠️ 2026-11-15 用户调整（本计划交付后）：左男右女、去掉发起方文字与「共 N 次心动」统计——见设计文档 `2026-11-14-onsite-love-rank-design.md` 的调整注记。本计划为实施历史记录，不再据此重做。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 现场管理弹窗末尾新增「心动排名」TAB：心动配对排名列表（左女右男卡片、中间红/蓝心形、右侧刷新按钮），点击卡片打开用户资料卡片。

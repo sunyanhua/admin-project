@@ -59,7 +59,8 @@ beforeAll(() => {
 
 beforeEach(() => {
   getOnsiteLovesCouplesMock.mockReset();
-  getOnsiteLovesCouplesMock.mockResolvedValue(COUPLES);
+  // 生产响应形态（拦截器解包为 {list,total,pagination}），走 res?.list 分支
+  getOnsiteLovesCouplesMock.mockResolvedValue({ list: COUPLES, total: 2 });
   getUserDetailMock.mockReset();
 });
 
@@ -70,15 +71,17 @@ const renderTab = () => render(
 );
 
 describe('OnsiteLoveRankTab 心动排名', () => {
-  it('渲染排名列表：女卡在左、中间列居中、男卡在右，且显示排名与总心动次数', async () => {
+  it('渲染排名列表：男卡在左、中间列居中、女卡在右，显示排名且不含心动统计', async () => {
     renderTab();
     await screen.findByText('6 - 小红');
     const row = screen.getAllByTestId('love-row')[0];
-    expect((row.children[0] as HTMLElement).dataset.testid).toBe('love-card-female');
+    expect((row.children[0] as HTMLElement).dataset.testid).toBe('love-card-male');
     expect((row.children[1] as HTMLElement).dataset.testid).toBe('love-center');
-    expect((row.children[2] as HTMLElement).dataset.testid).toBe('love-card-male');
+    expect((row.children[2] as HTMLElement).dataset.testid).toBe('love-card-female');
     expect(screen.getByText('第 1 名')).toBeInTheDocument();
-    expect(screen.getByText('共 3 次心动')).toBeInTheDocument();
+    expect(screen.queryByText('共 3 次心动')).toBeNull();
+    // 卡片键盘可访问（role=button）
+    expect(screen.getAllByTestId('love-card-male')[0]).toHaveAttribute('role', 'button');
   });
 
   it('心形按次数渲染且上限 3：红行=女方发起、蓝行=男方发起', async () => {
@@ -95,9 +98,11 @@ describe('OnsiteLoveRankTab 心动排名', () => {
     // 第 2 对：女 5 → 上限 3
     const r2f = within(rows[1]).getByTestId('love-hearts-female');
     expect(r2f.querySelectorAll('.anticon-heart').length).toBe(3);
-    // 标签
-    expect(screen.getAllByText('女方发起').length).toBe(2);
-    expect(screen.getAllByText('男方发起').length).toBe(2);
+    // 不显示发起方文字，仅保留心形图标；语义通过 title/aria 保留（不可见）
+    expect(screen.queryByText('女方发起')).toBeNull();
+    expect(screen.queryByText('男方发起')).toBeNull();
+    expect(r1f).toHaveAttribute('title', '女方心动');
+    expect(r1m).toHaveAttribute('title', '男方心动');
   });
 
   it('单方心动：计数为 0 的一行不渲染心形', async () => {
@@ -114,8 +119,8 @@ describe('OnsiteLoveRankTab 心动排名', () => {
       male: { profile: { nickname: `男${i}` }, user: { user_id: `m${i}` } },
     }));
     getOnsiteLovesCouplesMock
-      .mockResolvedValueOnce(page1)
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce({ list: page1, total: 100 })
+      .mockResolvedValueOnce({ list: [], total: 0 });
     renderTab();
     await screen.findByText('- - 女0');
     expect(getOnsiteLovesCouplesMock).toHaveBeenCalledWith('a1', { page: 1, size: 100 });
@@ -132,28 +137,34 @@ describe('OnsiteLoveRankTab 心动排名', () => {
   });
 
   it('空数据显示空状态', async () => {
-    getOnsiteLovesCouplesMock.mockResolvedValue([]);
+    getOnsiteLovesCouplesMock.mockResolvedValue({ list: [], total: 0 });
     renderTab();
     expect(await screen.findByText('暂无现场心动配对')).toBeInTheDocument();
   });
 
-  it('接口失败弹错误提示', async () => {
+  it('接口失败弹错误提示并展示失败态（loading 已结束）', async () => {
     getOnsiteLovesCouplesMock.mockRejectedValue({ response: { data: { message: '接口错误' } } });
     renderTab();
     expect(await screen.findByText('接口错误')).toBeInTheDocument();
+    // 失败态替代空态文案，且不再停留加载中（若 loading 未结束只会渲染 Spin，找不到该文案）
+    expect(await screen.findByText('加载失败，点击刷新重试')).toBeInTheDocument();
   });
 
   it('缺字段防御：female 缺失与昵称/序号为空显示 -', async () => {
-    getOnsiteLovesCouplesMock.mockResolvedValue([{
-      couple_id: 'c9', onsite_loves_count: 1, female_loves_count: 1, male_loves_count: 0,
-      male: { onsite_number: null, profile: { nickname: '' }, user: { user_id: 'm9' } },
-    }]);
+    getOnsiteLovesCouplesMock.mockResolvedValue({
+      list: [{
+        couple_id: 'c9', onsite_loves_count: 1, female_loves_count: 1, male_loves_count: 0,
+        male: { onsite_number: null, profile: { nickname: '' }, user: { user_id: 'm9' } },
+      }], total: 1,
+    });
     renderTab();
     const card = await screen.findByTestId('love-card-female');
     expect(card.textContent).toContain('-');
+    // 男卡昵称空/序号 null 同样兜底 '-'
+    expect(screen.getByTestId('love-card-male').textContent).toContain('-');
   });
 
-  it('点击嘉宾卡片打开用户资料卡片弹窗', async () => {
+  it('点击嘉宾卡片打开用户资料卡片弹窗（按点击人 user_id 拉取）', async () => {
     getUserDetailMock.mockResolvedValue({
       user: { user_id: 'um1', phone: '', is_migrated: false },
       profile: {}, match_profile: null, wallet: null,
@@ -161,5 +172,6 @@ describe('OnsiteLoveRankTab 心动排名', () => {
     renderTab();
     fireEvent.click(await screen.findByText('3 - 小刚'));
     expect(await screen.findByText('用户详情')).toBeInTheDocument();
+    expect(getUserDetailMock).toHaveBeenCalledWith('um1');
   });
 });
