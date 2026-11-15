@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Tag, Button, Space, Radio, Input, Image } from 'antd';
+import { Tag, Button, Space, Radio, Input, InputNumber, Image } from 'antd';
 import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useListPage } from '@/hooks/useListPage';
@@ -14,6 +14,7 @@ import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import { getMediumUrl } from '@/utils/imageUtils';
 import { formatDateTime } from '@/utils/format';
 import { UserGenderLabels } from '@/api/types/status';
+import { userApi } from '@/api/services/user';
 import {
   reportApi, ReportStatus, REPORT_STATUS_LABELS, REPORT_STATUS_COLORS,
   AdminReportListItem, AdminReportDetailResponse, AdminReportUserCard,
@@ -66,12 +67,18 @@ const ReportDetailModal: React.FC<{
   const [action, setAction] = useState(ReportStatus.HANDLED);
   const [remark, setRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  /** 已处理时扣除被举报人靠谱值（默认 20，0=不扣；2026-11-15 用户定，参考现场管理未签到扣分） */
+  const [deductScore, setDeductScore] = useState(20);
+  /** 本次提交是否已执行扣分（处理失败重试时防重复扣分） */
+  const [deducted, setDeducted] = useState(false);
 
   // 打开/切换举报/关闭时重置处理表单，不残留上一条的选择与意见
   useEffect(() => {
     setAction(ReportStatus.HANDLED);
     setRemark('');
     setSubmitting(false);
+    setDeductScore(20);
+    setDeducted(false);
   }, [open, detail?.id]);
 
   const handleSubmit = async () => {
@@ -84,6 +91,17 @@ const ReportDetailModal: React.FC<{
     const key = activeKeyRef.current;
     setSubmitting(true);
     try {
+      // 已处理且需扣分：先扣被举报人靠谱值（0=跳过；被举报人无 user_id 跳过）
+      if (action === ReportStatus.HANDLED && deductScore > 0 && !deducted && detail.target_user_id) {
+        const reason = `举报处理扣分（能成号 ${detail.target_match_code || '-'}）`;
+        try {
+          await userApi.adjustReliabilityScore(detail.target_user_id, -deductScore, reason);
+          setDeducted(true);
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '扣分失败，未执行处理');
+          return;
+        }
+      }
       await reportApi.handle(id, { status: action, remark: remark.trim() });
       // 写入已发生：无论弹窗是否仍打开都刷新列表
       onHandled();
@@ -151,6 +169,20 @@ const ReportDetailModal: React.FC<{
                 <Radio value={ReportStatus.HANDLED}>已处理</Radio>
                 <Radio value={ReportStatus.REJECTED}>已驳回</Radio>
               </Radio.Group>
+              {action === ReportStatus.HANDLED && (
+                <div style={{ marginBottom: 12 }}>
+                  <span style={{ marginRight: 8 }}>扣除被举报人靠谱值</span>
+                  <InputNumber
+                    min={0}
+                    max={10000}
+                    precision={0}
+                    value={deductScore}
+                    onChange={(v) => setDeductScore(v ?? 0)}
+                    style={{ width: 120 }}
+                  />
+                  <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>默认 20，0 表示不扣；展示值下次周算后生效</span>
+                </div>
+              )}
               <TextArea
                 rows={4}
                 value={remark}

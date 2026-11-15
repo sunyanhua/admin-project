@@ -8,16 +8,19 @@ import ReportManagement from '@/pages/community/ReportManagement';
 const REPORTS = vi.hoisted(() => [
   {
     id: 'r1', status: 0, content: '该用户言语骚扰', created_at: '2026-11-15T09:00:00+08:00', target_match_code: '12345678',
+    reporter_id: 'u1', target_user_id: 'u2',
     reporter: { user_id: 'u1', nickname: '张三', avatar: '', gender: 1, match_code: '87654321' },
     target: { user_id: 'u2', nickname: '李四', avatar: '', gender: 2, match_code: '12345678' },
   },
   {
     id: 'r2', status: 1, content: '虚假资料', created_at: '2026-11-15T10:00:00+08:00', target_match_code: '11111111',
+    reporter_id: 'u3', target_user_id: 'u4',
     reporter: { user_id: 'u3', nickname: '王五', avatar: '', gender: 1, match_code: '22222222' },
     target: { user_id: 'u4', nickname: '赵六', avatar: '', gender: 2, match_code: '11111111' },
   },
   {
     id: 'r3', status: 2, content: '刷单广告', created_at: '2026-11-15T11:00:00+08:00', target_match_code: '33333333',
+    reporter_id: 'u5', target_user_id: 'u6',
     reporter: { user_id: 'u5', nickname: '钱七', avatar: '', gender: 1, match_code: '44444444' },
     target: { user_id: 'u6', nickname: '孙八', avatar: '', gender: 2, match_code: '33333333' },
   },
@@ -27,6 +30,7 @@ const getListMock = vi.hoisted(() => vi.fn());
 const getDetailMock = vi.hoisted(() => vi.fn());
 const handleMock = vi.hoisted(() => vi.fn());
 const getUserDetailMock = vi.hoisted(() => vi.fn());
+const adjustReliabilityMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 
 vi.mock('@/api/services/report', () => ({
   ReportStatus: { PENDING: 0, HANDLED: 1, REJECTED: 2 },
@@ -50,7 +54,7 @@ vi.mock('@/api/services/user', () => ({
     getReliabilityLogs: vi.fn(),
     setMatchProfileRecommend: vi.fn(),
     adjustDivineChance: vi.fn(),
-    adjustReliabilityScore: vi.fn(),
+    adjustReliabilityScore: adjustReliabilityMock,
     auditMatchProfile: vi.fn(),
     getMatchProfile: vi.fn(),
   },
@@ -61,6 +65,8 @@ beforeEach(() => {
   getDetailMock.mockReset();
   handleMock.mockReset();
   getUserDetailMock.mockReset();
+  adjustReliabilityMock.mockReset();
+  adjustReliabilityMock.mockResolvedValue({});
   getListMock.mockResolvedValue({ list: REPORTS, total: 3 });
 });
 
@@ -134,7 +140,7 @@ describe('ReportManagement 举报管理', () => {
     expect(within(handle).getByRole('radio', { checked: true })).toHaveAccessibleName('已处理');
   }, 20000);
 
-  it('处理提交：按 status+remark 传参，成功后刷新列表', async () => {
+  it('处理提交：已处理默认扣靠谱值 20 分（先扣分后处理），按 status+remark 传参，成功后刷新列表', async () => {
     getListMock.mockResolvedValue({ list: [REPORTS[0]], total: 1 });
     getDetailMock.mockResolvedValue({ ...REPORTS[0], attachments: [] });
     handleMock.mockResolvedValue({});
@@ -142,12 +148,46 @@ describe('ReportManagement 举报管理', () => {
     fireEvent.click(await screen.findByRole('button', { name: /详\s*情/ }));
     const handle = await screen.findByTestId('report-handle-section');
     fireEvent.click(within(handle).getByText('已处理'));
+    // 默认扣分值 20
+    expect(within(handle).getByRole('spinbutton')).toHaveValue('20');
     fireEvent.change(within(handle).getByPlaceholderText(/处理意见/), { target: { value: '已警告该用户' } });
     const callsBefore = getListMock.mock.calls.length;
     fireEvent.click(within(handle).getByRole('button', { name: /提交处理/ }));
+    await waitFor(() => expect(adjustReliabilityMock).toHaveBeenCalledWith('u2', -20, expect.stringContaining('举报')));
     await waitFor(() => expect(handleMock).toHaveBeenCalledWith('r1', { status: 1, remark: '已警告该用户' }));
     await waitFor(() => expect(getListMock.mock.calls.length).toBeGreaterThan(callsBefore));
-  });
+  }, 20000);
+
+  it('处理提交：扣分值改为 0 时不调扣分接口，仅处理', async () => {
+    getListMock.mockResolvedValue({ list: [REPORTS[0]], total: 1 });
+    getDetailMock.mockResolvedValue({ ...REPORTS[0], attachments: [] });
+    handleMock.mockResolvedValue({});
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /详\s*情/ }));
+    const handle = await screen.findByTestId('report-handle-section');
+    fireEvent.click(within(handle).getByText('已处理'));
+    fireEvent.change(within(handle).getByRole('spinbutton'), { target: { value: '0' } });
+    fireEvent.change(within(handle).getByPlaceholderText(/处理意见/), { target: { value: '无需扣分' } });
+    fireEvent.click(within(handle).getByRole('button', { name: /提交处理/ }));
+    await waitFor(() => expect(handleMock).toHaveBeenCalledWith('r1', { status: 1, remark: '无需扣分' }));
+    expect(adjustReliabilityMock).not.toHaveBeenCalled();
+  }, 20000);
+
+  it('处理提交：已驳回不扣靠谱值', async () => {
+    getListMock.mockResolvedValue({ list: [REPORTS[0]], total: 1 });
+    getDetailMock.mockResolvedValue({ ...REPORTS[0], attachments: [] });
+    handleMock.mockResolvedValue({});
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: /详\s*情/ }));
+    const handle = await screen.findByTestId('report-handle-section');
+    fireEvent.click(within(handle).getByText('已驳回'));
+    // 已驳回不显示扣分输入
+    expect(within(handle).queryByRole('spinbutton')).toBeNull();
+    fireEvent.change(within(handle).getByPlaceholderText(/处理意见/), { target: { value: '证据不足' } });
+    fireEvent.click(within(handle).getByRole('button', { name: /提交处理/ }));
+    await waitFor(() => expect(handleMock).toHaveBeenCalledWith('r1', { status: 2, remark: '证据不足' }));
+    expect(adjustReliabilityMock).not.toHaveBeenCalled();
+  }, 20000);
 
   it('已处理举报：只读展示处理记录，无处理表单', async () => {
     getListMock.mockResolvedValue({ list: [REPORTS[1]], total: 1 });
