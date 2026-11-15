@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
-import { Button, Space, Spin, Tag, Radio, Input, Checkbox, InputNumber, Image } from 'antd';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Button, Space, Spin, Tag, Radio, Input, Checkbox, InputNumber, Image, App } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
-import { formatDateTime } from '@/utils/format';
+import { formatDateTime, formatCents } from '@/utils/format';
 import { congratulationApi, AdminCongratulationDetail } from '@/api/services/congratulation';
 import { CongratulationStatus, CongratulationStatusLabels, CongratulationStatusColors } from '@shared/constants';
 
@@ -28,6 +28,7 @@ const { TextArea } = Input;
  */
 const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ visible, congratulationId, onClose, onSuccess }) => {
   const { success, error: showError } = useAppNotification();
+  const { modal } = App.useApp();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [detail, setDetail] = useState<AdminCongratulationDetail | null>(null);
@@ -38,23 +39,43 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
   /** 独立设置随份子（仅已通过状态；2026-11-15 用户定） */
   const [newGiftChecked, setNewGiftChecked] = useState(false);
   const [newGiftYuan, setNewGiftYuan] = useState<number | null>(DEFAULT_GIFT_YUAN);
-  const [settingGift, setSettingGift] = useState(false);
+  /** 当前打开中的报喜 ID：异步完成后校验，防止关闭后旧请求的回调误关新弹窗 */
+  const activeIdRef = useRef('');
+  /** 请求序号：晚到的旧详情响应不得覆盖新记录（跨记录竞态防护） */
+  const reqTokenRef = useRef(0);
 
-  useEffect(() => {
-    if (!visible || !congratulationId) return;
+  const loadDetail = useCallback((id: string) => {
+    const token = ++reqTokenRef.current;
     setLoading(true);
     setDetail(null);
+    congratulationApi.getDetail(id)
+      .then((res: any) => {
+        if (token === reqTokenRef.current && activeIdRef.current === id) setDetail(res);
+      })
+      .catch((err: any) => showError(err?.response?.data?.message || '获取报喜详情失败'))
+      .finally(() => {
+        if (token === reqTokenRef.current) setLoading(false);
+      });
+  }, [showError]);
+
+  useEffect(() => {
+    if (!visible || !congratulationId) {
+      // 关闭即清空详情与活动标记，避免残留旧记录数据
+      activeIdRef.current = '';
+      setDetail(null);
+      setLoading(false);
+      return;
+    }
+    activeIdRef.current = congratulationId;
     setAction(1);
     setReason('');
     setOfficialGift(false);
     setGiftYuan(DEFAULT_GIFT_YUAN);
     setNewGiftChecked(false);
     setNewGiftYuan(DEFAULT_GIFT_YUAN);
-    congratulationApi.getDetail(congratulationId)
-      .then((res: any) => setDetail(res))
-      .catch((err: any) => showError(err?.response?.data?.message || '获取报喜详情失败'))
-      .finally(() => setLoading(false));
-  }, [visible, congratulationId, showError]);
+    setSubmitting(false);
+    loadDetail(congratulationId);
+  }, [visible, congratulationId, loadDetail]);
 
   const handleAudit = async () => {
     if (!detail) return;
@@ -74,6 +95,8 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
         is_official_gift: action === 1 ? officialGift : undefined,
         gift_amount: action === 1 && officialGift && giftYuan != null ? Math.round(giftYuan * 100) : undefined,
       });
+      // 弹窗已关闭/切到其它记录时不触发旧记录的回调
+      if (activeIdRef.current !== detail.id) return;
       success(action === 1 ? '已通过' : '已退回');
       onSuccess();
       onClose();
@@ -87,8 +110,8 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
   /** 仅「已提交」状态可审核；已审核完成（通过/未通过）不可重新提交审核（2026-11-15 用户定） */
   const canAudit = detail != null && detail.status === CongratulationStatus.SUBMITTED;
 
-  /** 独立设置官方随份子（仅已通过状态；提交后不可变更） */
-  const handleSetGift = async () => {
+  /** 独立设置官方随份子（仅已通过状态；不可逆写入先弹确认，与提现审核同先例） */
+  const handleSetGift = () => {
     if (!detail) return;
     if (!newGiftChecked) {
       showError('请勾选官方随份子');
@@ -98,17 +121,32 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
       showError('请填写大于 0 的金额');
       return;
     }
-    setSettingGift(true);
-    try {
-      await congratulationApi.setGift(detail.id, { is_official_gift: true, gift_amount: Math.round(newGiftYuan * 100) });
-      success('官方随份子已设置');
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '设置失败');
-    } finally {
-      setSettingGift(false);
+    if (detail.status !== CongratulationStatus.APPROVED || detail.is_official_gift) {
+      showError('该报喜当前不可设置官方随份子');
+      loadDetail(detail.id);
+      return;
     }
+    const id = detail.id;
+    const yuan = newGiftYuan;
+    modal.confirm({
+      title: '确认设置官方随份子？',
+      content: `设置金额 ￥${yuan.toFixed(2)} 元，提交后不可变更。`,
+      okText: '确认设置',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await congratulationApi.setGift(id, { is_official_gift: true, gift_amount: Math.round(yuan * 100) });
+          if (activeIdRef.current !== id) return;
+          success('官方随份子已设置');
+          onSuccess();
+          onClose();
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '设置失败');
+          loadDetail(id); // 失败后重拉详情，避免本地状态与服务端（如他人已设置）不一致
+          throw err; // 保持确认弹窗打开语义由 antd 处理
+        }
+      },
+    });
   };
 
   return (
@@ -140,7 +178,7 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
               <span style={{ fontSize: 13, color: '#666' }}>提交人：{detail.submitter_nickname || '-'}</span>
               <span style={{ fontSize: 13, color: '#666' }}>提交时间：{detail.created_at ? formatDateTime(detail.created_at) : '-'}</span>
               <span style={{ fontSize: 13, color: '#666' }}>
-                官方随份子：{detail.is_official_gift ? `¥${((detail.gift_amount ?? 0) / 100).toFixed(2)}` : '未设置'}
+                官方随份子：{detail.is_official_gift ? `已随￥${formatCents(detail.gift_amount ?? 0)}` : '未设置'}
               </span>
               {detail.audited_at && <span style={{ fontSize: 13, color: '#666' }}>审核时间：{formatDateTime(detail.audited_at)}</span>}
               {detail.audit_reason && <span style={{ fontSize: 13, color: '#666' }}>审核意见：{detail.audit_reason}</span>}
@@ -223,13 +261,13 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
                       <span style={{ marginLeft: 12 }}>
                         {detail.is_official_gift ? (
                           <span style={{ fontSize: 12, color: '#999' }}>
-                            已设置 ¥{((detail.gift_amount ?? 0) / 100).toFixed(2)}，一经提交不可变更
+                            已设置 ￥{formatCents(detail.gift_amount ?? 0)}，一经提交不可变更
                           </span>
                         ) : (
                           <>
                             金额
                             <InputNumber min={0.01} precision={2} value={giftYuan ?? undefined} onChange={(v) => setGiftYuan(v ?? null)}
-                              placeholder="元" style={{ width: 120, marginLeft: 6 }} />
+                              placeholder="元" aria-label="金额（元）" style={{ width: 120, marginLeft: 6 }} />
                             <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>提交后不可变更</span>
                           </>
                         )}
@@ -246,7 +284,7 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
                 <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>官方随份子</div>
                 {detail.is_official_gift ? (
                   <span style={{ fontSize: 13, color: '#666' }}>
-                    已设置 ¥{((detail.gift_amount ?? 0) / 100).toFixed(2)}，一经提交不可变更
+                    已设置 ￥{formatCents(detail.gift_amount ?? 0)}，一经提交不可变更
                   </span>
                 ) : (
                   <div>
@@ -260,12 +298,12 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
                       <span style={{ marginLeft: 12 }}>
                         金额
                         <InputNumber min={0.01} precision={2} value={newGiftYuan ?? undefined} onChange={(v) => setNewGiftYuan(v ?? null)}
-                          placeholder="元" style={{ width: 120, marginLeft: 6 }} />
+                          placeholder="元" aria-label="金额（元）" style={{ width: 120, marginLeft: 6 }} />
                         <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>提交后不可变更</span>
                       </span>
                     )}
                     <div style={{ marginTop: 12 }}>
-                      <Button type="primary" loading={settingGift} onClick={handleSetGift}>设置随份子</Button>
+                      <Button type="primary" onClick={handleSetGift}>设置随份子</Button>
                     </div>
                   </div>
                 )}

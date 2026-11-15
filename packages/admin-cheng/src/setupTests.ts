@@ -34,5 +34,17 @@ if (typeof globalThis.AbortSignal === 'undefined') {
   }
 }
 
-// 可以在这里添加全局测试配置
+// antd 组件依赖 window.matchMedia（jsdom 未实现）——全局兜底，测试文件无需再各自定义
+if (typeof window.matchMedia !== 'function') {
+  (window as any).matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
+}
 // 例如：配置测试前后要执行的代码
