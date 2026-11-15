@@ -112,7 +112,27 @@ describe('ReportManagement 举报管理', () => {
     fireEvent.click(within(handle).getByRole('button', { name: /提交处理/ }));
     expect(await screen.findByText('请填写处理意见')).toBeInTheDocument();
     expect(handleMock).not.toHaveBeenCalled();
-  });
+  }, 20000);
+
+  it('切换举报后处理表单状态重置（不残留上一条的选择与意见）', async () => {
+    const twoPending = [REPORTS[0], { ...REPORTS[0], id: 'r2', target_match_code: '99999999' }];
+    getListMock.mockResolvedValue({ list: twoPending, total: 2 });
+    getDetailMock.mockResolvedValue({ ...REPORTS[0], attachments: [] });
+    renderPage();
+    // 打开第一条：选已驳回 + 填意见
+    fireEvent.click((await screen.findAllByRole('button', { name: /详\s*情/ }))[0]);
+    let handle = await screen.findByTestId('report-handle-section');
+    fireEvent.click(within(handle).getByText('已驳回'));
+    fireEvent.change(within(handle).getByPlaceholderText(/处理意见/), { target: { value: '上一单的意见' } });
+    // 关闭弹窗（右上角 X）
+    fireEvent.click(document.querySelector('.ant-modal-close')!);
+    // 打开第二条（仍待处理）：应回到默认已处理 + 意见为空
+    fireEvent.click(screen.getAllByRole('button', { name: /详\s*情/ })[1]);
+    handle = await screen.findByTestId('report-handle-section');
+    const textarea = within(handle).getByPlaceholderText(/处理意见/) as HTMLTextAreaElement;
+    expect(textarea.value).toBe('');
+    expect(within(handle).getByRole('radio', { checked: true })).toHaveAccessibleName('已处理');
+  }, 20000);
 
   it('处理提交：按 status+remark 传参，成功后刷新列表', async () => {
     getListMock.mockResolvedValue({ list: [REPORTS[0]], total: 1 });

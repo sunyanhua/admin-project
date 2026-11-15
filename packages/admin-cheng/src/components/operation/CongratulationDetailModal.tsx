@@ -39,34 +39,40 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
   /** 独立设置随份子（仅已通过状态；2026-11-15 用户定） */
   const [newGiftChecked, setNewGiftChecked] = useState(false);
   const [newGiftYuan, setNewGiftYuan] = useState<number | null>(DEFAULT_GIFT_YUAN);
-  /** 当前打开中的报喜 ID：异步完成后校验，防止关闭后旧请求的回调误关新弹窗 */
-  const activeIdRef = useRef('');
+  /** 当前打开凭证（id@序号）：异步完成后校验，防止关闭后旧回调误关新弹窗（同 ID 重开也区分） */
+  const activeKeyRef = useRef('');
+  const openSeqRef = useRef(0);
   /** 请求序号：晚到的旧详情响应不得覆盖新记录（跨记录竞态防护） */
   const reqTokenRef = useRef(0);
 
   const loadDetail = useCallback((id: string) => {
+    const key = activeKeyRef.current;
     const token = ++reqTokenRef.current;
     setLoading(true);
     setDetail(null);
     congratulationApi.getDetail(id)
       .then((res: any) => {
-        if (token === reqTokenRef.current && activeIdRef.current === id) setDetail(res);
+        if (token === reqTokenRef.current && activeKeyRef.current === key) setDetail(res);
       })
-      .catch((err: any) => showError(err?.response?.data?.message || '获取报喜详情失败'))
+      .catch((err: any) => {
+        if (token === reqTokenRef.current && activeKeyRef.current === key) {
+          showError(err?.response?.data?.message || '获取报喜详情失败');
+        }
+      })
       .finally(() => {
-        if (token === reqTokenRef.current) setLoading(false);
+        if (token === reqTokenRef.current && activeKeyRef.current === key) setLoading(false);
       });
   }, [showError]);
 
   useEffect(() => {
     if (!visible || !congratulationId) {
       // 关闭即清空详情与活动标记，避免残留旧记录数据
-      activeIdRef.current = '';
+      activeKeyRef.current = '';
       setDetail(null);
       setLoading(false);
       return;
     }
-    activeIdRef.current = congratulationId;
+    activeKeyRef.current = `${congratulationId}@${++openSeqRef.current}`;
     setAction(1);
     setReason('');
     setOfficialGift(false);
@@ -88,20 +94,23 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
       return;
     }
     setSubmitting(true);
+    const id = detail.id;
+    const key = activeKeyRef.current;
     try {
-      await congratulationApi.audit(detail.id, {
+      await congratulationApi.audit(id, {
         approved: action === 1,
         reason: action === 2 ? reason.trim() : undefined,
         is_official_gift: action === 1 ? officialGift : undefined,
         gift_amount: action === 1 && officialGift && giftYuan != null ? Math.round(giftYuan * 100) : undefined,
       });
-      // 弹窗已关闭/切到其它记录时不触发旧记录的回调
-      if (activeIdRef.current !== detail.id) return;
-      success(action === 1 ? '已通过' : '已退回');
+      // 写入已发生：无论弹窗是否仍打开都刷新列表；toast/关闭仅对当前打开的弹窗生效
       onSuccess();
-      onClose();
+      if (activeKeyRef.current === key) {
+        success(action === 1 ? '已通过' : '已退回');
+        onClose();
+      }
     } catch (err: any) {
-      showError(err?.response?.data?.message || '审核失败');
+      if (activeKeyRef.current === key) showError(err?.response?.data?.message || '审核失败');
     } finally {
       setSubmitting(false);
     }
@@ -128,6 +137,7 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
     }
     const id = detail.id;
     const yuan = newGiftYuan;
+    const key = activeKeyRef.current;
     modal.confirm({
       title: '确认设置官方随份子？',
       content: `设置金额 ￥${yuan.toFixed(2)} 元，提交后不可变更。`,
@@ -136,14 +146,18 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
       onOk: async () => {
         try {
           await congratulationApi.setGift(id, { is_official_gift: true, gift_amount: Math.round(yuan * 100) });
-          if (activeIdRef.current !== id) return;
-          success('官方随份子已设置');
+          // 写入已发生：无论弹窗是否仍打开都刷新列表；toast/关闭仅对当前打开的弹窗生效
           onSuccess();
-          onClose();
+          if (activeKeyRef.current === key) {
+            success('官方随份子已设置');
+            onClose();
+          }
         } catch (err: any) {
-          showError(err?.response?.data?.message || '设置失败');
-          loadDetail(id); // 失败后重拉详情，避免本地状态与服务端（如他人已设置）不一致
-          throw err; // 保持确认弹窗打开语义由 antd 处理
+          if (activeKeyRef.current === key) {
+            showError(err?.response?.data?.message || '设置失败');
+            loadDetail(id); // 失败后重拉详情，避免本地状态与服务端（如他人已设置）不一致
+          }
+          // 不 rethrow：避免 antd ActionButton 二次 reject 产生未处理 Promise 拒绝；失败后确认框关闭由 toast 说明
         }
       },
     });

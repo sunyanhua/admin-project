@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Tag, Button, Space, Radio, Input, Image } from 'antd';
 import { EyeOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -58,11 +58,21 @@ const ReportDetailModal: React.FC<{
   loading: boolean;
   onClose: () => void;
   onHandled: () => void;
-}> = ({ open, detail, loading, onClose, onHandled }) => {
+  onReloadDetail: () => void;
+  /** 当前打开凭证 ref（id@token）：异步回调前读取实时值校验，防止旧请求误关新弹窗 */
+  activeKeyRef: React.MutableRefObject<string>;
+}> = ({ open, detail, loading, onClose, onHandled, onReloadDetail, activeKeyRef }) => {
   const { success, error: showError } = useAppNotification();
   const [action, setAction] = useState(ReportStatus.HANDLED);
   const [remark, setRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // 打开/切换举报/关闭时重置处理表单，不残留上一条的选择与意见
+  useEffect(() => {
+    setAction(ReportStatus.HANDLED);
+    setRemark('');
+    setSubmitting(false);
+  }, [open, detail?.id]);
 
   const handleSubmit = async () => {
     if (!detail) return;
@@ -70,14 +80,22 @@ const ReportDetailModal: React.FC<{
       showError('请填写处理意见');
       return;
     }
+    const id = detail.id;
+    const key = activeKeyRef.current;
     setSubmitting(true);
     try {
-      await reportApi.handle(detail.id, { status: action, remark: remark.trim() });
-      success('处理成功');
+      await reportApi.handle(id, { status: action, remark: remark.trim() });
+      // 写入已发生：无论弹窗是否仍打开都刷新列表
       onHandled();
-      onClose();
+      if (activeKeyRef.current === key) {
+        success('处理成功');
+        onClose();
+      }
     } catch (err: any) {
-      showError(err?.response?.data?.message || '处理失败');
+      if (activeKeyRef.current === key) {
+        showError(err?.response?.data?.message || '处理失败');
+        onReloadDetail(); // 重拉详情同步状态（如他人已处理）
+      }
     } finally {
       setSubmitting(false);
     }
@@ -172,6 +190,9 @@ const ReportManagement = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState('');
+  /** 详情请求序号 + 当前打开凭证（id@token）：晚到旧响应不覆盖新记录，旧回调不误关新弹窗 */
+  const detailTokenRef = useRef(0);
+  const activeKeyRef = useRef('');
 
   const fetchList = useCallback(async (params: any) => {
     return reportApi.getList({
@@ -191,26 +212,47 @@ const ReportManagement = () => {
   const handleSearch = (vals: Record<string, any>) => search(vals);
   const handleReset = () => { setSearchValues({}); search({}); };
 
-  /** 打开详情：重新拉取最新举报数据 */
+  /** 打开详情：重新拉取最新举报数据（带请求序号防竞态） */
   const openDetail = async (record: AdminReportListItem) => {
+    const token = ++detailTokenRef.current;
+    activeKeyRef.current = `${record.id}@${token}`;
     setDetailVisible(true);
     setDetail(null);
     setDetailLoading(true);
     try {
       const res: any = await reportApi.getDetail(record.id);
       const d: AdminReportDetailResponse = Array.isArray(res) ? res[0] : res;
-      if (d && typeof d === 'object') setDetail({ ...record, ...d });
+      if (token === detailTokenRef.current && d && typeof d === 'object') setDetail({ ...record, ...d });
     } catch (err: any) {
-      showError(err?.response?.data?.message || '获取举报详情失败');
+      if (token === detailTokenRef.current) showError(err?.response?.data?.message || '获取举报详情失败');
     } finally {
-      setDetailLoading(false);
+      if (token === detailTokenRef.current) setDetailLoading(false);
     }
   };
 
   const closeDetail = () => {
+    detailTokenRef.current++;
+    activeKeyRef.current = '';
     setDetailVisible(false);
     setDetail(null);
   };
+
+  /** 失败后重拉当前打开的详情（同步服务端状态，如他人已处理） */
+  const reloadDetail = useCallback(async () => {
+    const key = activeKeyRef.current;
+    if (!key) return;
+    const id = key.split('@')[0];
+    const token = ++detailTokenRef.current;
+    activeKeyRef.current = `${id}@${token}`;
+    setDetailLoading(true);
+    try {
+      const res: any = await reportApi.getDetail(id);
+      const d: AdminReportDetailResponse = Array.isArray(res) ? res[0] : res;
+      if (token === detailTokenRef.current && d && typeof d === 'object') setDetail(d);
+    } catch { /* 重拉失败静默：保留现有详情与错误提示 */ } finally {
+      if (token === detailTokenRef.current) setDetailLoading(false);
+    }
+  }, []);
 
   const columns: ColumnsType<AdminReportListItem> = [
     {
@@ -266,8 +308,6 @@ const ReportManagement = () => {
     <StandardPage
       title="举报管理"
       description="管理用户提交的举报信息，查看举报双方资料与凭证并完成处理。"
-      showRefreshButton
-      onRefresh={refresh}
       showAddButton={false}
       table={
         <>
@@ -283,6 +323,8 @@ const ReportManagement = () => {
             loading={detailLoading}
             onClose={closeDetail}
             onHandled={refresh}
+            onReloadDetail={reloadDetail}
+            activeKeyRef={activeKeyRef}
           />
 
           <UserDetailCardModal

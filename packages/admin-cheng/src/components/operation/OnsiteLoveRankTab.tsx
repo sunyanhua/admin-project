@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button, Empty, Spin } from 'antd';
 import { ReloadOutlined, HeartFilled } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -32,6 +32,8 @@ const CoupleCard: React.FC<{
   const userId = member?.user?.user_id || '';
   const nickname = member?.profile?.nickname || '-';
   const number = member?.onsite_number ?? '-';
+  /** 头像加载失败（CDN 失效等）时回退昵称首字兜底 */
+  const [imgFailed, setImgFailed] = useState(false);
   return (
     <div
       data-testid={testId}
@@ -46,9 +48,9 @@ const CoupleCard: React.FC<{
       }}
       title={userId ? '查看用户资料' : undefined}
     >
-      {member?.profile?.avatar ? (
+      {member?.profile?.avatar && !imgFailed ? (
         /* 有人像图：顶部对齐裁切，保证人头完整显示（2026-11-15 用户定） */
-        <img src={getAvatarUrl(member.profile.avatar)} alt={nickname}
+        <img src={getAvatarUrl(member.profile.avatar)} alt={nickname} onError={() => setImgFailed(true)}
           style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
       ) : (
         <UserAvatar nick={member?.profile?.nickname} size={48} />
@@ -69,8 +71,11 @@ const OnsiteLoveRankTab: React.FC<OnsiteLoveRankTabProps> = ({ activityId }) => 
   const [failed, setFailed] = useState(false);
   const [detailUserId, setDetailUserId] = useState('');
   const [detailVisible, setDetailVisible] = useState(false);
+  /** 请求序号：组件卸载/新请求开始后旧请求不再写状态（防迟到覆盖与卸载后弹错） */
+  const reqTokenRef = useRef(0);
 
   const fetchList = useCallback(async () => {
+    const token = ++reqTokenRef.current;
     if (!activityId) { setLoading(false); return; }
     setLoading(true);
     try {
@@ -78,24 +83,29 @@ const OnsiteLoveRankTab: React.FC<OnsiteLoveRankTabProps> = ({ activityId }) => 
       let page = 1;
       while (true) {
         const res: any = await activityApi.getOnsiteLovesCouples(activityId, { page, size: 100 });
+        if (token !== reqTokenRef.current) return;
         const list: OnsiteCouple[] = Array.isArray(res) ? res : (res?.list || []);
         if (!list.length) break;
         all.push(...list);
         if (list.length < 100) break;
         page++;
       }
+      if (token !== reqTokenRef.current) return;
       setCouples(all);
       setFailed(false);
     } catch (err: any) {
+      if (token !== reqTokenRef.current) return;
       setFailed(true);
       showError(err?.response?.data?.message || '获取心动排名失败');
     } finally {
-      setLoading(false);
+      if (token === reqTokenRef.current) setLoading(false);
     }
   }, [activityId, showError]);
 
   useEffect(() => {
     fetchList();
+    // 卸载即失效在途请求（懒挂载切走 TAB 后不再写状态/弹错）
+    return () => { reqTokenRef.current++; };
   }, [fetchList]);
 
   return (
@@ -106,7 +116,7 @@ const OnsiteLoveRankTab: React.FC<OnsiteLoveRankTabProps> = ({ activityId }) => 
       </div>
       {loading && couples.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px 0' }}><Spin /></div>
-      ) : failed ? (
+      ) : failed && couples.length === 0 ? (
         <Empty description="加载失败，点击刷新重试" />
       ) : couples.length === 0 ? (
         <Empty description="暂无现场心动配对" />

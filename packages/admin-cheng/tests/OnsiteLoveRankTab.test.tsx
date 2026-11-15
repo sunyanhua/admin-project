@@ -147,6 +147,17 @@ describe('OnsiteLoveRankTab 心动排名', () => {
     await waitFor(() => expect(getOnsiteLovesCouplesMock.mock.calls.length).toBe(before + 1));
   });
 
+  it('刷新失败时保留已加载的排名数据（不整体替换为失败空态）', async () => {
+    renderTab();
+    await screen.findByText('6 - 小红');
+    getOnsiteLovesCouplesMock.mockRejectedValue({ response: { data: { message: '刷新失败' } } });
+    fireEvent.click(screen.getByRole('button', { name: /刷新/ }));
+    expect(await screen.findByText('刷新失败')).toBeInTheDocument();
+    // 已加载列表仍在，不被失败空态覆盖
+    expect(screen.getByText('6 - 小红')).toBeInTheDocument();
+    expect(screen.queryByText('加载失败，点击刷新重试')).toBeNull();
+  });
+
   it('空数据显示空状态', async () => {
     getOnsiteLovesCouplesMock.mockResolvedValue({ list: [], total: 0 });
     renderTab();
