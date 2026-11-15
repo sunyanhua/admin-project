@@ -114,8 +114,8 @@ const RecordsTab: React.FC = () => {
       key: 'user',
       width: 150,
       render: (_: any, r: IdVerifyRecord) => {
-        const nickname = r.user_profile?.nickname || r.user_id || '-';
-        const avatar = r.user_profile?.avatar || '';
+        const nickname = r.user?.nickname || r.user_id || '-';
+        const avatar = r.user?.avatar || '';
         return (
           <Button type="link" style={{ padding: 0, height: 'auto' }}
             disabled={!r.user_id}
@@ -238,7 +238,7 @@ const RecordsTab: React.FC = () => {
       >
         <Form form={revokeForm} layout="vertical" onFinish={handleRevokeSubmit}>
           <Form.Item
-            label={`撤销理由（用户「${revokingRecord?.user_profile?.nickname || revokingRecord?.user_id || ''}」）`}
+            label={`撤销理由（用户「${revokingRecord?.user?.nickname || revokingRecord?.user_id || ''}」）`}
             name="reason"
             rules={[{ required: true, message: '请输入撤销理由' }]}
           >

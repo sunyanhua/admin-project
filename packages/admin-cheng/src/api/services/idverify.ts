@@ -44,22 +44,12 @@ export interface PriceRule {
 export interface IdVerifyRecord {
   id: string;
   user_id: string;
-  /** 申请用户数据（后端挂载，可能为 null） */
-  user_data?: {
-    phone?: string;
-    credits?: number;
-    is_activated?: boolean;
-  } | null;
-  /** 申请用户资料（昵称/头像，可能为 null） */
-  user_profile?: {
+  /** 关联用户简介（仅 user_id + 昵称 + 头像；可能为 null——用户已注销或数据缺失。
+   *  2026-11-13 裁决 M-32：列表不再返回手机号与真实姓名，敏感字段走 user:privacy:read 专用接口） */
+  user?: {
+    user_id?: string;
     nickname?: string;
     avatar?: string;
-    gender?: number;
-    age?: number;
-  } | null;
-  /** 申请用户脱单资料（可能为 null） */
-  user_match_profile?: {
-    real_name?: string;
   } | null;
   status: number;
   price_coins: number;

@@ -23,21 +23,19 @@ const RECORDS = vi.hoisted(() => [
     id: 'r1', user_id: 'u1', status: 1, price_coins: 0, original_price_coins: 0,
     attempt_count: 0, failed_count: 0,
     created_at: '2026-11-06T09:00:00+08:00', expires_at: '2026-11-06T10:00:00+08:00', verified_at: null,
-    user_data: { phone: '13800000000' },
-    user_profile: { nickname: '张三', avatar: '', gender: 1, age: 28 },
-    user_match_profile: null,
+    user: { user_id: 'u1', nickname: '张三', avatar: '' },
   },
   {
     id: 'r2', user_id: 'u2', status: 2, price_coins: 100, original_price_coins: 200,
     attempt_count: 1, failed_count: 0,
     created_at: '2026-11-06T08:00:00+08:00', expires_at: null, verified_at: '2026-11-06T09:30:00+08:00',
-    user_data: null, user_profile: null, user_match_profile: null,
+    user: null,
   },
   {
     id: 'r3', user_id: 'u3', status: 6, price_coins: 100, original_price_coins: 200,
     attempt_count: 1, failed_count: 0,
     created_at: '2026-11-06T07:00:00+08:00', expires_at: null, verified_at: '2026-11-06T08:00:00+08:00',
-    user_data: null, user_profile: null, user_match_profile: null,
+    user: null,
   },
 ]);
 
@@ -153,7 +151,7 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     renderPage();
     // 默认 TAB 即认证记录，无需点击
     await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());
-    // 用户列：有 user_profile 显示昵称，缺失时回退显示用户 ID
+    // 用户列：有 user 简介显示昵称，缺失时回退显示用户 ID
     expect(screen.getByText('张三')).toBeInTheDocument();
     expect(screen.getByText('u2')).toBeInTheDocument();
     // 状态标签：待认证 / 已通过 / 已撤销
