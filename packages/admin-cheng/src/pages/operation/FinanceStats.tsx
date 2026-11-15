@@ -23,7 +23,7 @@ const FUND_MAX_SPAN_DAYS = 366;
 const BIZ_TYPE_META: Record<number, { label: string; color: string }> = {
   [PayBizType.CONGRATULATION_CASH]: { label: '报喜现金红包', color: 'magenta' },
   [PayBizType.COIN_RECHARGE]: { label: '代币充值', color: 'blue' },
-  [PayBizType.ID_VERIFY]: { label: '实人认证', color: 'purple' },
+  [PayBizType.ID_VERIFY]: { label: '实名认证', color: 'purple' },
 };
 
 const CHANNEL_META: Record<number, { label: string; title: string; color: string }> = {

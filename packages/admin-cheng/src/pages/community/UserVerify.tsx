@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Button, Tag, Tabs, Space, Form, Input } from 'antd';
-import { PlusOutlined, SafetyCertificateOutlined, OrderedListOutlined, UndoOutlined } from '@ant-design/icons';
+import { PlusOutlined, SafetyCertificateOutlined, OrderedListOutlined, UndoOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { useListPage } from '@/hooks/useListPage';
@@ -79,7 +79,7 @@ const RecordsTab: React.FC = () => {
     setRevokeVisible(true);
   };
 
-  /** 提交撤销：撤销已通过的实人认证（不退款，解除实名标记并允许重新认证） */
+  /** 提交撤销：撤销已通过的实名认证（不退款，解除实名标记并允许重新认证） */
   const handleRevokeSubmit = async () => {
     if (!revokingRecord) return;
     try {
@@ -214,8 +214,9 @@ const RecordsTab: React.FC = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
+        <Button icon={<ReloadOutlined />} style={{ marginLeft: 12, flexShrink: 0 }} onClick={refresh}>刷新</Button>
       </div>
       <StandardTable columns={columns} dataSource={data} loading={loading} pagination={pagination} onPageChange={onPageChange} />
       <UserDetailCardModal

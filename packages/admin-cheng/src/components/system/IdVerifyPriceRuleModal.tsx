@@ -45,7 +45,7 @@ export const priceFloorRule = {
   },
 };
 
-/** 新增/编辑实人认证价格规则弹窗（时间区间启用规则不可重叠，后端 42226 兜底） */
+/** 新增/编辑实名认证价格规则弹窗（时间区间启用规则不可重叠，后端 42226 兜底） */
 const IdVerifyPriceRuleModal: React.FC<IdVerifyPriceRuleModalProps> = ({
   visible, mode, rule, onClose, onSuccess,
 }) => {

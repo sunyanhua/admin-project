@@ -162,6 +162,14 @@ describe('UserVerify 用户认证（实名认证配置）', () => {
     expect(getPriceRulesMock).not.toHaveBeenCalled();
   });
 
+  it('认证记录列表右上角刷新按钮重新拉取记录', async () => {
+    renderPage();
+    await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());
+    const before = getRecordsMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: /刷\s*新/ }));
+    await waitFor(() => expect(getRecordsMock.mock.calls.length).toBeGreaterThan(before));
+  });
+
   it('认证记录：点击用户头像昵称打开用户资料卡片', async () => {
     renderPage();
     await waitFor(() => expect(getRecordsMock).toHaveBeenCalled());

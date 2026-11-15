@@ -9,7 +9,7 @@ import request from '..';
 export enum PayBizType {
   CONGRATULATION_CASH = 2, // 报喜现金红包
   COIN_RECHARGE = 3, // 代币充值
-  ID_VERIFY = 4, // 实人认证
+  ID_VERIFY = 4, // 实名认证
 }
 
 /** 订单状态 */

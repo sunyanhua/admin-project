@@ -13,7 +13,7 @@ import { formatDateTime, formatCents } from '@/utils/format';
 const BIZ_TYPE_META: Record<number, { label: string; color: string }> = {
   [PayBizType.CONGRATULATION_CASH]: { label: '报喜现金红包', color: 'magenta' },
   [PayBizType.COIN_RECHARGE]: { label: '代币充值', color: 'blue' },
-  [PayBizType.ID_VERIFY]: { label: '实人认证', color: 'purple' },
+  [PayBizType.ID_VERIFY]: { label: '实名认证', color: 'purple' },
 };
 
 const ORDER_STATUS_META: Record<number, { label: string; color: string }> = {
@@ -26,7 +26,7 @@ const ORDER_STATUS_META: Record<number, { label: string; color: string }> = {
 const BIZ_TYPE_OPTIONS = [
   { label: '报喜现金红包', value: PayBizType.CONGRATULATION_CASH },
   { label: '代币充值', value: PayBizType.COIN_RECHARGE },
-  { label: '实人认证', value: PayBizType.ID_VERIFY },
+  { label: '实名认证', value: PayBizType.ID_VERIFY },
 ];
 
 const ORDER_STATUS_OPTIONS = [
@@ -154,7 +154,7 @@ const OrderManagement = () => {
   return (
     <StandardPage
       title="订单管理"
-      description="查看报喜红包、代币充值与实人认证等业务的支付订单及支付状态，点击用户头像或昵称可查看该用户的完整资料。"
+      description="查看报喜红包、代币充值与实名认证等业务的支付订单及支付状态，点击用户头像或昵称可查看该用户的完整资料。"
       table={
         <div>
           <div style={{ marginBottom: 12 }}>
