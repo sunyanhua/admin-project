@@ -7034,23 +7034,29 @@
                 }
             }
         },
-        "/admin/v1/bizops/idverify/refund-applications/{id}/reject": {
+        "/admin/v1/bizops/idverify/refund-applications/{id}/mark-refunded": {
             "post": {
                 "security": [
                     {
                         "AdminAuth": []
+                    },
+                    {
+                        "AdminAuth": []
                     }
                 ],
+                "description": "2026-11-13 裁决 M-33：人工标记退款已完成，同事务把申请置为已退款、认证记录置为已退款（双字段双数据）；记录已通过/已撤销时拒绝；已退款幂等返回。",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
+                    "application/json",
                     "application/json"
                 ],
                 "tags": [
+                    "实人认证管理",
                     "实人认证管理"
                 ],
-                "summary": "审核拒绝实人认证退款申请",
+                "summary": "标记实人认证退款申请已完成（Apple / 线下兜底）",
                 "parameters": [
                     {
                         "type": "string",
@@ -7067,11 +7073,18 @@
                         "schema": {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RejectRefundApplyRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "退款申请 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "拒绝成功",
+                        "description": "标记成功",
                         "schema": {
                             "allOf": [
                                 {
@@ -7086,6 +7099,112 @@
                                     }
                                 }
                             ]
+                        }
+                    },
+                    "400": {
+                        "description": "状态不允许",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/v1/bizops/idverify/refund-applications/{id}/reject": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    },
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "2026-11-13 裁决 M-33：人工标记退款已完成，同事务把申请置为已退款、认证记录置为已退款（双字段双数据）；记录已通过/已撤销时拒绝；已退款幂等返回。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json",
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证管理",
+                    "实人认证管理"
+                ],
+                "summary": "标记实人认证退款申请已完成（Apple / 线下兜底）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "退款申请 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "拒绝原因",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RejectRefundApplyRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "退款申请 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "标记成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.RefundApplyItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "状态不允许",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
                         }
                     }
                 }
@@ -20613,6 +20732,64 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.PopularityRankResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "请求参数格式错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "服务器内部错误",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/rank/reliability": {
+            "get": {
+                "description": "靠谱值榜 TOP N（gender=male|female 可选；top_n 1-100 默认 100）。公开接口无需登录、无 JWT 鉴权——my_value/my_rank/my_last_week_rank 恒为零值/null，rank_time 恒 null（靠谱值无结算快照）。数值=reliability_display_score（公开展示靠谱值，每周全量重算后实时生效）；排序=展示值降序、同分按 user_id 升序；上榜资格同「人气/礼物榜」；展示值 ≤ 0 不上榜。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "公开接口"
+                ],
+                "summary": "靠谱值榜",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "性别筛选 male|female（可选）",
+                        "name": "gender",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "TOP N（1-100，默认 100）",
+                        "name": "top_n",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.ReliabilityRankResponse"
                                         }
                                     }
                                 }
@@ -35422,22 +35599,16 @@
                 "sub_code": {
                     "type": "string"
                 },
-                "user_data": {
-                    "description": "关联用户数据（批量查询填充；允许 null——用户可能已注销或数据缺失）",
+                "user": {
+                    "description": "User 关联用户简介（仅 user_id + 昵称 + 头像；允许 null——用户可能已注销或数据缺失）。\n\n2026-11-13 裁决 M-32：认证记录列表不再返回手机号与真实姓名；\n需要查看敏感字段时走 user:privacy:read 专用接口（带读取审计）。",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserDataForAdmin"
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserBriefForAdmin"
                         }
                     ]
                 },
                 "user_id": {
                     "type": "string"
-                },
-                "user_match_profile": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserMatchProfileDataForAdmin"
-                },
-                "user_profile": {
-                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.UserProfileDataForAdmin"
                 },
                 "verified_at": {
                     "type": "string"
@@ -43052,6 +43223,10 @@
                 "nickname": {
                     "type": "string"
                 },
+                "reliability_display_score": {
+                    "description": "ReliabilityDisplayScore 公开展示靠谱值（2026-11-15 老大需求）——所有榜单条目\n均输出，供前端在榜单卡片上展示；无脱单档案的用户（牵线榜亲友团）为 0。",
+                    "type": "integer"
+                },
                 "top_gifter": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.TopGifterCard"
                 },
@@ -43446,6 +43621,10 @@
                 "nickname": {
                     "type": "string"
                 },
+                "reliability_display_score": {
+                    "description": "ReliabilityDisplayScore 公开展示靠谱值（2026-11-15 老大需求）——所有榜单条目\n均输出，供前端在榜单卡片上展示；无脱单档案的用户（牵线榜亲友团）为 0。",
+                    "type": "integer"
+                },
                 "user_id": {
                     "type": "string"
                 },
@@ -43498,6 +43677,10 @@
                     "type": "string"
                 },
                 "popularity": {
+                    "type": "integer"
+                },
+                "reliability_display_score": {
+                    "description": "ReliabilityDisplayScore 公开展示靠谱值（2026-11-15 老大需求）——所有榜单条目\n均输出，供前端在榜单卡片上展示；无脱单档案的用户（牵线榜亲友团）为 0。",
                     "type": "integer"
                 },
                 "user_id": {
@@ -43621,6 +43804,61 @@
                 },
                 "user_id": {
                     "description": "UserID 新创建的用户 ID。",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.ReliabilityRankItem": {
+            "type": "object",
+            "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "avatar": {
+                    "type": "string"
+                },
+                "gender": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.UserGender"
+                },
+                "nickname": {
+                    "type": "string"
+                },
+                "reliability_display_score": {
+                    "description": "ReliabilityDisplayScore 公开展示靠谱值（2026-11-15 老大需求）——所有榜单条目\n均输出，供前端在榜单卡片上展示；无脱单档案的用户（牵线榜亲友团）为 0。",
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "zodiac": {
+                    "description": "星座（如\"双子座\"；资料未填为空串）",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_user_model.ReliabilityRankResponse": {
+            "type": "object",
+            "properties": {
+                "list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_user_model.ReliabilityRankItem"
+                    }
+                },
+                "my_last_week_rank": {
+                    "description": "上周结算名次快照（仅 week 视图；total 恒 null；结算范围=本周活跃用户）",
+                    "type": "integer"
+                },
+                "my_rank": {
+                    "description": "week=实时名次；total=结算总榜名次快照（未上榜 null，R12 修订）",
+                    "type": "integer"
+                },
+                "my_value": {
+                    "description": "本人数值（实时字段）",
+                    "type": "integer"
+                },
+                "rank_time": {
+                    "description": "排行时间（RFC3339）——对应排名数据字段的 *_at 数据值：week=*_weekly_rank_at / total=*_rank_at（迁移 000086 字段族，最近一次结算锚点）；从未结算或榜单未启用 null",
                     "type": "string"
                 }
             }
