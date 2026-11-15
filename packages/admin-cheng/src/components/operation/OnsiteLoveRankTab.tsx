@@ -5,6 +5,7 @@ import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, OnsiteCouple, OnsiteCoupleUser } from '@/api/services/activity-v1';
 import UserDetailCardModal from '@/components/user/UserDetailCardModal';
 import UserAvatar from '@/components/user/UserAvatar';
+import { getAvatarUrl } from '@/utils/imageUtils';
 
 interface OnsiteLoveRankTabProps {
   activityId: string;
@@ -45,7 +46,13 @@ const CoupleCard: React.FC<{
       }}
       title={userId ? '查看用户资料' : undefined}
     >
-      <UserAvatar src={member?.profile?.avatar || ''} nick={member?.profile?.nickname} size={48} />
+      {member?.profile?.avatar ? (
+        /* 有人像图：顶部对齐裁切，保证人头完整显示（2026-11-15 用户定） */
+        <img src={getAvatarUrl(member.profile.avatar)} alt={nickname}
+          style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', flexShrink: 0 }} />
+      ) : (
+        <UserAvatar nick={member?.profile?.nickname} size={48} />
+      )}
       <span style={{ fontSize: 14 }}>{number} - {nickname}</span>
     </div>
   );

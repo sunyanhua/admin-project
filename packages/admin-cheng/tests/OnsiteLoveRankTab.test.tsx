@@ -112,6 +112,17 @@ describe('OnsiteLoveRankTab 心动排名', () => {
     expect(r2m.querySelectorAll('.anticon-heart').length).toBe(0);
   });
 
+  it('卡片缩略图顶部对齐：有人像图的卡片 objectPosition 为 top，保证人头完整显示', async () => {
+    renderTab();
+    await screen.findByText('6 - 小红');
+    const femaleCard = screen.getAllByTestId('love-card-female')[0];
+    const img = femaleCard.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img).toHaveStyle({ objectPosition: 'top' });
+    // 无头像（avatar 为空）的卡片兜底昵称首字，不渲染 img
+    expect(screen.getAllByTestId('love-card-male')[0].querySelector('img')).toBeNull();
+  });
+
   it('配对超过 100 条时分页循环拉全量', async () => {
     const page1 = Array.from({ length: 100 }, (_, i) => ({
       couple_id: `c${i}`, onsite_loves_count: 1, female_loves_count: 1, male_loves_count: 0,
