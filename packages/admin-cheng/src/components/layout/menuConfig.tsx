@@ -32,7 +32,7 @@ import {
   ScheduleOutlined,
   CalendarOutlined,
   BellOutlined,
-  AlertOutlined,
+  FlagOutlined,
 } from '@ant-design/icons';
 
 /** 顶部一级菜单配置 */
@@ -130,7 +130,7 @@ export const sidebarMenuConfig: Record<string, any[]> = {
         { key: '/operation/lottery', icon: <TrophyOutlined />, label: '抽奖管理' },
         { key: '/operation/subscribe-notification', icon: <BellOutlined />, label: '订阅通知发送' },
         { key: '/operation/congratulations', icon: <SmileOutlined />, label: '报喜管理' },
-        { key: '/operation/complaints', icon: <AlertOutlined />, label: '投诉管理' },
+        { key: '/operation/reports', icon: <FlagOutlined />, label: '举报管理' },
       ],
     },
 

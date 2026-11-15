@@ -44,7 +44,7 @@ import ActivityOnsite from '@/pages/operation/ActivityOnsite';
 import HomePopupManagement from '@/pages/system/HomePopupManagement';
 // 礼物管理
 import GiftManagement from '@/pages/community/GiftManagement';
-import ComplaintManagement from '@/pages/community/ComplaintManagement';
+import ReportManagement from '@/pages/community/ReportManagement';
 
 // 抽奖管理
 import LotteryManagement from '@/pages/community/LotteryManagement';
@@ -130,7 +130,7 @@ const router = createHashRouter([
           { path: 'lottery', element: <LotteryManagement /> },
           { path: 'subscribe-notification', element: <SubscribeNotificationSend /> },
           { path: 'congratulations', element: <CongratulationManagement /> },
-          { path: 'complaints', element: <ComplaintManagement /> },
+          { path: 'reports', element: <ReportManagement /> },
           // 社区统计（原社区管理）
           { path: 'stats', element: <PlatformStats /> },
           { path: 'trends', element: <TrendStats /> },
