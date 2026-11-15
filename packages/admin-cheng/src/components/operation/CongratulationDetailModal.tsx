@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Space, Spin, Tag, Radio, Input, Checkbox, InputNumber, Image, Alert } from 'antd';
+import { Button, Space, Spin, Tag, Radio, Input, Checkbox, InputNumber, Image } from 'antd';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import { getAvatarUrl, getMediumUrl } from '@/utils/imageUtils';
@@ -17,6 +17,9 @@ interface CongratulationDetailModalProps {
 /** 审核状态：1=通过 2=未通过（与列表枚举不同，仅本表单内部语义） */
 type AuditAction = 1 | 2;
 
+/** 官方随份子默认金额（元，2026-11-15 用户定） */
+const DEFAULT_GIFT_YUAN = 520;
+
 const { TextArea } = Input;
 
 /**
@@ -31,10 +34,10 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
   const [action, setAction] = useState<AuditAction>(1);
   const [reason, setReason] = useState('');
   const [officialGift, setOfficialGift] = useState(false);
-  const [giftYuan, setGiftYuan] = useState<number | null>(null);
+  const [giftYuan, setGiftYuan] = useState<number | null>(DEFAULT_GIFT_YUAN);
   /** 独立设置随份子（仅已通过状态；2026-11-15 用户定） */
   const [newGiftChecked, setNewGiftChecked] = useState(false);
-  const [newGiftYuan, setNewGiftYuan] = useState<number | null>(null);
+  const [newGiftYuan, setNewGiftYuan] = useState<number | null>(DEFAULT_GIFT_YUAN);
   const [settingGift, setSettingGift] = useState(false);
 
   useEffect(() => {
@@ -44,9 +47,9 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
     setAction(1);
     setReason('');
     setOfficialGift(false);
-    setGiftYuan(null);
+    setGiftYuan(DEFAULT_GIFT_YUAN);
     setNewGiftChecked(false);
-    setNewGiftYuan(null);
+    setNewGiftYuan(DEFAULT_GIFT_YUAN);
     congratulationApi.getDetail(congratulationId)
       .then((res: any) => setDetail(res))
       .catch((err: any) => showError(err?.response?.data?.message || '获取报喜详情失败'))
@@ -81,8 +84,8 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
     }
   };
 
-  /** 任意状态均可审核（已通过/未通过支持重新审核，界面给出提醒） */
-  const canAudit = detail != null;
+  /** 仅「已提交」状态可审核；已审核完成（通过/未通过）不可重新提交审核（2026-11-15 用户定） */
+  const canAudit = detail != null && detail.status === CongratulationStatus.SUBMITTED;
 
   /** 独立设置官方随份子（仅已通过状态；提交后不可变更） */
   const handleSetGift = async () => {
@@ -195,18 +198,10 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
               </div>
             )}
 
-            {/* 审核操作（任意状态可审核；已完成审核的给出重新审核提醒） */}
+            {/* 审核操作（仅「已提交」状态；已审核完成不可重新提交审核） */}
             {canAudit && (
               <div data-testid="audit-section" style={{ borderTop: '1px solid #e8e8e8', paddingTop: 12, marginTop: 4 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>审核</div>
-                {detail.status !== CongratulationStatus.SUBMITTED && (
-                  <Alert
-                    type="warning"
-                    showIcon
-                    style={{ marginBottom: 12 }}
-                    message="该报喜已经完成审核，审核结果已通知用户。如无特殊原因，建议不要重新修改审核状态。"
-                  />
-                )}
                 <Radio.Group value={action} onChange={(e) => setAction(e.target.value)} style={{ marginBottom: 12 }}>
                   <Radio value={1}>通过</Radio>
                   <Radio value={2}>未通过</Radio>
@@ -215,7 +210,7 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
                   <TextArea rows={3} value={reason} onChange={(e) => setReason(e.target.value)}
                     placeholder="未通过原因（必填）" maxLength={1000} style={{ marginBottom: 12 }} />
                 )}
-                {action === 1 && detail.status !== CongratulationStatus.APPROVED && (
+                {action === 1 && (
                   <div style={{ marginBottom: 12 }}>
                     <Checkbox
                       checked={officialGift || !!detail.is_official_gift}

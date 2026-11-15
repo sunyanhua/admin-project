@@ -64,41 +64,60 @@ describe('CongratulationDetailModal 独立设置官方随份子', () => {
     expect(within(section).queryByRole('button', { name: /设置随份子/ })).toBeNull();
   });
 
-  it('已提交状态：不显示独立设置区块', async () => {
+  it('已提交状态：不显示独立设置区块，但显示审核区', async () => {
     getDetailMock.mockResolvedValue({ ...DETAIL_APPROVED, status: 0 });
     renderModal();
     await screen.findByText(/张三/);
     expect(screen.queryByTestId('gift-setting-section')).toBeNull();
+    expect(screen.getByTestId('audit-section')).toBeInTheDocument();
   });
 
-  it('勾选后未填金额：拦截并提示，不调接口', async () => {
+  it('勾选后清空金额：拦截并提示，不调接口', async () => {
     renderModal();
     const section = await screen.findByTestId('gift-setting-section');
     fireEvent.click(within(section).getByRole('checkbox'));
+    fireEvent.change(within(section).getByRole('spinbutton'), { target: { value: '' } });
     fireEvent.click(within(section).getByRole('button', { name: /设置随份子/ }));
     expect(await screen.findByText('请填写大于 0 的金额')).toBeInTheDocument();
     expect(setGiftMock).not.toHaveBeenCalled();
   });
 
-  it('勾选并填金额：按分调用 setGift，成功后刷新并关闭', async () => {
+  it('勾选后金额默认 520 元：直接提交按 52000 分调用 setGift，成功后刷新并关闭', async () => {
     setGiftMock.mockResolvedValue({});
     const onClose = vi.fn();
     const onSuccess = vi.fn();
     renderModal(onClose, onSuccess);
     const section = await screen.findByTestId('gift-setting-section');
     fireEvent.click(within(section).getByRole('checkbox'));
-    fireEvent.change(within(section).getByRole('spinbutton'), { target: { value: '5.20' } });
+    expect(within(section).getByRole('spinbutton')).toHaveValue('520.00');
     fireEvent.click(within(section).getByRole('button', { name: /设置随份子/ }));
-    await waitFor(() => expect(setGiftMock).toHaveBeenCalledWith('c1', { is_official_gift: true, gift_amount: 520 }));
+    await waitFor(() => expect(setGiftMock).toHaveBeenCalledWith('c1', { is_official_gift: true, gift_amount: 52000 }));
     await waitFor(() => {
       expect(onSuccess).toHaveBeenCalled();
       expect(onClose).toHaveBeenCalled();
     });
   });
 
-  it('已通过状态：审核区不显示随份子勾选', async () => {
+  it('自定义金额覆盖默认值：填 1.50 元按 150 分提交', async () => {
+    setGiftMock.mockResolvedValue({});
     renderModal();
-    const audit = await screen.findByTestId('audit-section');
-    expect(within(audit).queryByText('官方随份子')).toBeNull();
+    const section = await screen.findByTestId('gift-setting-section');
+    fireEvent.click(within(section).getByRole('checkbox'));
+    fireEvent.change(within(section).getByRole('spinbutton'), { target: { value: '1.50' } });
+    fireEvent.click(within(section).getByRole('button', { name: /设置随份子/ }));
+    await waitFor(() => expect(setGiftMock).toHaveBeenCalledWith('c1', { is_official_gift: true, gift_amount: 150 }));
+  });
+
+  it('已通过状态：审核区整体不显示（审核完成不可重新提交）', async () => {
+    renderModal();
+    await screen.findByTestId('gift-setting-section');
+    expect(screen.queryByTestId('audit-section')).toBeNull();
+  });
+
+  it('未通过状态：审核区同样不显示', async () => {
+    getDetailMock.mockResolvedValue({ ...DETAIL_APPROVED, status: 2 });
+    renderModal();
+    await screen.findByText(/张三/);
+    expect(screen.queryByTestId('audit-section')).toBeNull();
   });
 });
