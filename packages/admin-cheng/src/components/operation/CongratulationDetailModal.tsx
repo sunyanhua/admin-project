@@ -32,6 +32,10 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
   const [reason, setReason] = useState('');
   const [officialGift, setOfficialGift] = useState(false);
   const [giftYuan, setGiftYuan] = useState<number | null>(null);
+  /** 独立设置随份子（仅已通过状态；2026-11-15 用户定） */
+  const [newGiftChecked, setNewGiftChecked] = useState(false);
+  const [newGiftYuan, setNewGiftYuan] = useState<number | null>(null);
+  const [settingGift, setSettingGift] = useState(false);
 
   useEffect(() => {
     if (!visible || !congratulationId) return;
@@ -41,6 +45,8 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
     setReason('');
     setOfficialGift(false);
     setGiftYuan(null);
+    setNewGiftChecked(false);
+    setNewGiftYuan(null);
     congratulationApi.getDetail(congratulationId)
       .then((res: any) => setDetail(res))
       .catch((err: any) => showError(err?.response?.data?.message || '获取报喜详情失败'))
@@ -77,6 +83,30 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
 
   /** 任意状态均可审核（已通过/未通过支持重新审核，界面给出提醒） */
   const canAudit = detail != null;
+
+  /** 独立设置官方随份子（仅已通过状态；提交后不可变更） */
+  const handleSetGift = async () => {
+    if (!detail) return;
+    if (!newGiftChecked) {
+      showError('请勾选官方随份子');
+      return;
+    }
+    if (newGiftYuan == null || newGiftYuan <= 0) {
+      showError('请填写大于 0 的金额');
+      return;
+    }
+    setSettingGift(true);
+    try {
+      await congratulationApi.setGift(detail.id, { is_official_gift: true, gift_amount: Math.round(newGiftYuan * 100) });
+      success('官方随份子已设置');
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '设置失败');
+    } finally {
+      setSettingGift(false);
+    }
+  };
 
   return (
     <ScrollableModal
@@ -167,7 +197,7 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
 
             {/* 审核操作（任意状态可审核；已完成审核的给出重新审核提醒） */}
             {canAudit && (
-              <div style={{ borderTop: '1px solid #e8e8e8', paddingTop: 12, marginTop: 4 }}>
+              <div data-testid="audit-section" style={{ borderTop: '1px solid #e8e8e8', paddingTop: 12, marginTop: 4 }}>
                 <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>审核</div>
                 {detail.status !== CongratulationStatus.SUBMITTED && (
                   <Alert
@@ -185,7 +215,7 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
                   <TextArea rows={3} value={reason} onChange={(e) => setReason(e.target.value)}
                     placeholder="未通过原因（必填）" maxLength={1000} style={{ marginBottom: 12 }} />
                 )}
-                {action === 1 && (
+                {action === 1 && detail.status !== CongratulationStatus.APPROVED && (
                   <div style={{ marginBottom: 12 }}>
                     <Checkbox
                       checked={officialGift || !!detail.is_official_gift}
@@ -210,6 +240,38 @@ const CongratulationDetailModal: React.FC<CongratulationDetailModalProps> = ({ v
                         )}
                       </span>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 独立设置官方随份子（仅已通过状态；2026-11-15 用户定：审核后补设置入口） */}
+            {detail.status === CongratulationStatus.APPROVED && (
+              <div data-testid="gift-setting-section" style={{ borderTop: '1px solid #e8e8e8', paddingTop: 12, marginTop: 12 }}>
+                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 12 }}>官方随份子</div>
+                {detail.is_official_gift ? (
+                  <span style={{ fontSize: 13, color: '#666' }}>
+                    已设置 ¥{((detail.gift_amount ?? 0) / 100).toFixed(2)}，一经提交不可变更
+                  </span>
+                ) : (
+                  <div>
+                    <Checkbox
+                      checked={newGiftChecked}
+                      onChange={(e) => setNewGiftChecked(e.target.checked)}
+                    >
+                      官方随份子
+                    </Checkbox>
+                    {newGiftChecked && (
+                      <span style={{ marginLeft: 12 }}>
+                        金额
+                        <InputNumber min={0.01} precision={2} value={newGiftYuan ?? undefined} onChange={(v) => setNewGiftYuan(v ?? null)}
+                          placeholder="元" style={{ width: 120, marginLeft: 6 }} />
+                        <span style={{ fontSize: 12, color: '#999', marginLeft: 8 }}>提交后不可变更</span>
+                      </span>
+                    )}
+                    <div style={{ marginTop: 12 }}>
+                      <Button type="primary" loading={settingGift} onClick={handleSetGift}>设置随份子</Button>
+                    </div>
                   </div>
                 )}
               </div>
