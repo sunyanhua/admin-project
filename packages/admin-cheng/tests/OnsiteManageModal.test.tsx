@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from 'antd';
 import * as XLSX from 'xlsx';
@@ -47,6 +47,28 @@ const REGISTERS = vi.hoisted(() => [
   },
 ]);
 
+/** 李四已完成签到后的名单（模拟签到成功后后端最新数据） */
+const REGISTERS_CHECKED = vi.hoisted(() => [
+  {
+    id: 'r1',
+    user_id: 'u1',
+    onsite_number: 1,
+    user_profile: { nickname: '张三', gender: 1 },
+    user_match_profile: { real_name: '张三', is_real_verified: true },
+    audit_status: 1,
+    checkin_at: '2026-11-05T12:30:00+08:00',
+  },
+  {
+    id: 'r2',
+    user_id: 'u2',
+    onsite_number: 2,
+    user_profile: { nickname: '李四', gender: 2 },
+    user_match_profile: { real_name: '李四', is_real_verified: false },
+    audit_status: 1,
+    checkin_at: '2026-11-16T14:00:00+08:00',
+  },
+]);
+
 const getRegistersMock = vi.hoisted(() => vi.fn().mockResolvedValue(REGISTERS));
 const adjustReliabilityMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
@@ -78,6 +100,8 @@ vi.mock('@/api/services/activity-v1', () => ({
     clearOnsiteNumber: vi.fn(),
     assignOnsiteNumbers: vi.fn(),
     getOnsiteLovesCouples: getOnsiteLovesCouplesMock,
+    getOnsitePairings: vi.fn().mockResolvedValue([]),
+    updateRegisterExtraData: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -329,6 +353,40 @@ describe('OnsiteManageModal 跨活动切换', () => {
     );
 
     await waitFor(() => expect(getRegistersMock.mock.calls.length).toBeGreaterThan(callsBefore));
+  }, 30000);
+});
+
+describe('OnsiteManageModal 分组管理签到同步', () => {
+  const renderModal = () =>
+    render(
+      <App>
+        <OnsiteManageModal
+          visible
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={{ ...ACTIVITY, onsite_config: JSON.stringify({ groups: 'A|B' }) } as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+
+  it('入选名单手动签到后切到分组管理：成员卡片显示最新签到状态', async () => {
+    // 弹窗打开会重拉详情覆盖 liveActivity——mock 返回带分组配置的最新数据
+    getDetailMock.mockImplementation(() => Promise.resolve({ ...ACTIVITY, onsite_config: JSON.stringify({ groups: 'A|B' }) }));
+    renderModal();
+    await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+    // 在入选名单为李四手动签到
+    fireEvent.click(screen.getByRole('button', { name: /签到/ }));
+    // 签到成功后后端数据已更新（李四带签到时间）
+    getRegistersMock.mockResolvedValue(REGISTERS_CHECKED);
+    // 切到分组管理 TAB
+    fireEvent.click(screen.getByRole('tab', { name: '分组管理' }));
+    // 李四的成员卡片应显示已签到
+    await waitFor(() => {
+      const card = screen.getAllByText(/李四/).find((el) => el.closest('[title="拖拽可移动到其他组"]'));
+      expect(card).toBeTruthy();
+      expect(within(card!.closest('[title="拖拽可移动到其他组"]') as HTMLElement).getByText('已签到')).toBeInTheDocument();
+    });
   }, 30000);
 });
 

@@ -499,7 +499,7 @@ const OnsiteManageModal: React.FC<OnsiteManageModalProps> = ({ visible, activity
           { key: 'config', label: '现场配置', children: <OnsiteConfigTab activityId={activityId} activity={liveActivity} /> },
           { key: 'list', label: '入选名单', children: <ApprovedListTab activityId={activityId} activityTitle={activityTitle} activity={liveActivity} reloadKey={openKey} onDeducted={refreshLiveActivity} /> },
           { key: 'cp', label: '组CP', children: tabKey === 'cp' ? <ActivityCpTab activityId={activityId} /> : null },
-          { key: 'group', label: '分组管理', children: <OnsiteGroupTab activityId={activityId} activity={liveActivity} onSaved={refreshLiveActivity} /> },
+          { key: 'group', label: '分组管理', children: tabKey === 'group' ? <OnsiteGroupTab activityId={activityId} activity={liveActivity} onSaved={refreshLiveActivity} /> : null },
           { key: 'routine', label: '流程编排', children: tabKey === 'routine' ? <OnsiteRoutineTab activityId={activityId} activity={liveActivity} /> : null },
           { key: 'loveRank', label: '心动排名', children: tabKey === 'loveRank' ? <OnsiteLoveRankTab key={activityId} activityId={activityId} /> : null },
         ]}
