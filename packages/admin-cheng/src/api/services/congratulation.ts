@@ -304,8 +304,9 @@ export const congratulationApi = {
     return request.post(`/admin/v1/bizops/congratulation/withdraws/${id}/reject`, { reason });
   },
 
-  /** 撤销提现（处理中：先核微信转账单确认未到账、必要时撤销转账，确认资金不出款后冲正；已成功/已失败不可撤销） */
-  revokeWithdraw: (id: string) => {
-    return request.post(`/admin/v1/bizops/congratulation/withdraws/${id}/revoke`);
+  /** 撤销提现（处理中：先核微信转账单确认未到账、必要时撤销转账，确认资金不出款后冲正；已成功/已失败不可撤销）。
+   *  reason=撤销原因（必填，写入审计日志；后端接口需支持该字段） */
+  revokeWithdraw: (id: string, data: { reason: string }) => {
+    return request.post(`/admin/v1/bizops/congratulation/withdraws/${id}/revoke`, data);
   },
 };

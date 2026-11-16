@@ -86,12 +86,53 @@ const RejectModal: React.FC<{
   );
 };
 
+/** 撤销弹窗（处理中记录）：撤销原因必填，写入审计日志 */
+const RevokeModal: React.FC<{
+  open: boolean;
+  record: WithdrawItem | null;
+  submitting: boolean;
+  onSubmit: (record: WithdrawItem, reason: string) => void;
+  onClose: () => void;
+}> = ({ open, record, submitting, onSubmit, onClose }) => {
+  const [form] = Form.useForm<{ reason: string }>();
+  return (
+    <ScrollableModal
+      title="撤销提现申请"
+      open={open}
+      onCancel={onClose}
+      width={480}
+      destroyOnHidden
+      footer={
+        <Button type="primary" danger loading={submitting} onClick={() => form.submit()}>
+          确认撤销
+        </Button>
+      }
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={(values) => { if (record) onSubmit(record, values.reason.trim()); }}
+      >
+        <Form.Item
+          label="撤销原因"
+          name="reason"
+          rules={[{ required: true, message: '请输入撤销原因' }]}
+        >
+          <Input.TextArea rows={4} placeholder="请填写撤销原因；系统将先核对微信转账单确认资金未出款（必要时撤销转账），确认后冲正退回，不可恢复" maxLength={500} showCount />
+        </Form.Item>
+      </Form>
+    </ScrollableModal>
+  );
+};
+
 const WithdrawManagement = () => {
   const { success, error: showError } = useAppNotification();
   const { modal } = App.useApp();
   const [searchValues, setSearchValues] = useState<Record<string, any>>({});
   const [rejectVisible, setRejectVisible] = useState(false);
   const [rejectRecord, setRejectRecord] = useState<WithdrawItem | null>(null);
+  const [revokeVisible, setRevokeVisible] = useState(false);
+  const [revokeRecord, setRevokeRecord] = useState<WithdrawItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [userDetailVisible, setUserDetailVisible] = useState(false);
   const [userDetailUserId, setUserDetailUserId] = useState('');
@@ -135,24 +176,20 @@ const WithdrawManagement = () => {
     });
   };
 
-  /** 撤销提现（仅处理中；后端先核微信转账单确认未到账、必要时撤销转账，确认资金不出款后冲正，不可恢复） */
-  const handleRevoke = (record: WithdrawItem) => {
-    modal.confirm({
-      title: '确认撤销该提现申请？',
-      content: `系统将先核对微信转账单确认资金未出款（必要时撤销转账），确认后冲正退回（金额 ${formatCents(record.amount_cents)} 元）。撤销后不可恢复。`,
-      okText: '确认撤销',
-      okButtonProps: { danger: true },
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          await congratulationApi.revokeWithdraw(record.id);
-          success('已撤销，金额已退回');
-          refresh();
-        } catch (err: any) {
-          showError(err?.response?.data?.message || '撤销失败');
-        }
-      },
-    });
+  /** 撤销提现（仅处理中）：原因必填，后端先核微信转账单确认未到账、必要时撤销转账，确认资金不出款后冲正，不可恢复 */
+  const handleRevokeSubmit = async (record: WithdrawItem, reason: string) => {
+    setSubmitting(true);
+    try {
+      await congratulationApi.revokeWithdraw(record.id, { reason });
+      success('已撤销，金额已退回');
+      setRevokeVisible(false);
+      setRevokeRecord(null);
+      refresh();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || '撤销失败');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   /** 审核拒绝：待审核 → 失败并冲正来源子账 */
@@ -254,7 +291,7 @@ const WithdrawManagement = () => {
             </>
           )}
           {record.status === WithdrawStatus.PROCESSING && (
-            <Button type="link" size="small" danger icon={<UndoOutlined />} onClick={() => handleRevoke(record)}>撤销</Button>
+            <Button type="link" size="small" danger icon={<UndoOutlined />} onClick={() => { setRevokeRecord(record); setRevokeVisible(true); }}>撤销</Button>
           )}
         </Space>
       ),
@@ -281,6 +318,13 @@ const WithdrawManagement = () => {
         submitting={submitting}
         onSubmit={handleRejectSubmit}
         onClose={() => { setRejectVisible(false); setRejectRecord(null); }}
+      />
+      <RevokeModal
+        open={revokeVisible}
+        record={revokeRecord}
+        submitting={submitting}
+        onSubmit={handleRevokeSubmit}
+        onClose={() => { setRevokeVisible(false); setRevokeRecord(null); }}
       />
       <UserDetailCardModal
         visible={userDetailVisible}

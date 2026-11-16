@@ -233,18 +233,21 @@ describe('财务管理页面', () => {
     await waitFor(() => expect(approveMock).toHaveBeenCalledWith('w1'));
   }, 20000);
 
-  it('提现申请：仅处理中记录显示撤销，确认后调用撤销接口并刷新', async () => {
+  it('提现申请：仅处理中记录显示撤销，填写原因后调用撤销接口并刷新', async () => {
     renderPage(<WithdrawManagement />);
     await waitFor(() => expect(screen.getByText('WD202611100003')).toBeInTheDocument());
     // 仅处理中行有撤销按钮（待审核/已成功无）
     expect(screen.getAllByRole('button', { name: /撤销/ }).length).toBe(1);
     fireEvent.click(screen.getByRole('button', { name: /撤销/ }));
-    await waitFor(() => {
-      expect(screen.getAllByText('确认撤销该提现申请？').length).toBeGreaterThan(0);
-    });
+    await screen.findByText('撤销提现申请');
+    // 原因必填：空提交拦截
+    fireEvent.click(screen.getByRole('button', { name: /确认撤销/ }));
+    expect(await screen.findByText('请输入撤销原因')).toBeInTheDocument();
+    expect(revokeMock).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByPlaceholderText(/撤销原因/), { target: { value: '用户主动联系要求撤销' } });
     const callsBefore = getWithdrawsMock.mock.calls.length;
-    fireEvent.click(screen.getAllByRole('button', { name: /确认撤销/ })[0]);
-    await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('w3'));
+    fireEvent.click(screen.getByRole('button', { name: /确认撤销/ }));
+    await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('w3', { reason: '用户主动联系要求撤销' }));
     await waitFor(() => expect(getWithdrawsMock.mock.calls.length).toBeGreaterThan(callsBefore));
   }, 20000);
 
@@ -253,8 +256,9 @@ describe('财务管理页面', () => {
     renderPage(<WithdrawManagement />);
     await waitFor(() => expect(screen.getByText('WD202611100003')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /撤销/ }));
-    await screen.findByRole('button', { name: '确认撤销' });
-    fireEvent.click(screen.getByRole('button', { name: '确认撤销' }));
+    await screen.findByText('撤销提现申请');
+    fireEvent.change(screen.getByPlaceholderText(/撤销原因/), { target: { value: '测试撤销' } });
+    fireEvent.click(screen.getByRole('button', { name: /确认撤销/ }));
     expect(await screen.findByText('资金已出款，不可撤销')).toBeInTheDocument();
   }, 20000);
 
