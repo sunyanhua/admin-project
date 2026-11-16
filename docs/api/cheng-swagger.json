@@ -23090,7 +23090,7 @@
         },
         "/api/v1/wxa/congratulation/withdraw": {
             "post": {
-                "description": "提现报喜现金收入：最低 0.1 元（10 分），每日一次，已完成实名认证即可（收款人姓名必填）。报喜撤销后钱包金额仍可提现（2026-11-13 裁决）。",
+                "description": "提现报喜现金收入：最低 0.1 元（10 分），每日一次，无需实名认证；单笔金额超过 200 元（20000 分）时必须提交提现人姓名。报喜撤销后钱包金额仍可提现（2026-11-13 裁决）。",
                 "consumes": [
                     "application/json"
                 ],
@@ -23103,7 +23103,7 @@
                 "summary": "申请提现",
                 "parameters": [
                     {
-                        "description": "提现金额（分）与提现审核订阅授权",
+                        "description": "提现金额（分）、提现人姓名（>200 元必填）与提现审核订阅授权",
                         "name": "body",
                         "in": "body",
                         "required": true,
@@ -34412,6 +34412,11 @@
                 "audit_template": {
                     "description": "AuditTemplate 提现审核场景订阅授权（2026-11-13，R12 授权寄生）：\ntrue=已接受该场景订阅授权（额度与提现记录同一事务落库）；\nnil/false=未授权（reject/ban 同义），不落库。",
                     "type": "boolean"
+                },
+                "real_name": {
+                    "description": "RealName 提现人姓名：单笔金额超过 200 元（20000 分）时必填，≤200 元可空。\n提交后加密保存到提现单（v6_pay_withdraw_log.real_name_enc），审核通过发起\n商家转账时作为 user_name 使用；不再要求用户完成实名认证。",
+                    "type": "string",
+                    "maxLength": 64
                 }
             }
         },
