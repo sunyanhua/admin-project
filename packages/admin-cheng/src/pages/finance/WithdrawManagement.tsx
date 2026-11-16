@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Tag, Button, Space, Form, Input, App } from 'antd';
-import { CheckOutlined, StopOutlined } from '@ant-design/icons';
+import { CheckOutlined, StopOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useListPage } from '@/hooks/useListPage';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -135,6 +135,26 @@ const WithdrawManagement = () => {
     });
   };
 
+  /** 撤销提现（仅处理中；后端先核微信转账单确认未到账、必要时撤销转账，确认资金不出款后冲正，不可恢复） */
+  const handleRevoke = (record: WithdrawItem) => {
+    modal.confirm({
+      title: '确认撤销该提现申请？',
+      content: `系统将先核对微信转账单确认资金未出款（必要时撤销转账），确认后冲正退回（金额 ${formatCents(record.amount_cents)} 元）。撤销后不可恢复。`,
+      okText: '确认撤销',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await congratulationApi.revokeWithdraw(record.id);
+          success('已撤销，金额已退回');
+          refresh();
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '撤销失败');
+        }
+      },
+    });
+  };
+
   /** 审核拒绝：待审核 → 失败并冲正来源子账 */
   const handleRejectSubmit = async (record: WithdrawItem, reason: string) => {
     setSubmitting(true);
@@ -233,6 +253,9 @@ const WithdrawManagement = () => {
               <Button type="link" size="small" danger icon={<StopOutlined />} onClick={() => { setRejectRecord(record); setRejectVisible(true); }}>拒绝</Button>
             </>
           )}
+          {record.status === WithdrawStatus.PROCESSING && (
+            <Button type="link" size="small" danger icon={<UndoOutlined />} onClick={() => handleRevoke(record)}>撤销</Button>
+          )}
         </Space>
       ),
     },
@@ -242,7 +265,7 @@ const WithdrawManagement = () => {
     <>
       <StandardPage
         title="提现申请"
-        description="审核用户的报喜提现申请，通过后自动发起转账，拒绝则原路退回；点击用户头像或昵称可查看该用户的完整资料。"
+        description="审核用户的报喜提现申请，通过后自动发起转账，拒绝则原路退回；处理中的申请可撤销（确认资金未出款后冲正退回）；点击用户头像或昵称可查看该用户的完整资料。"
         table={
           <div>
             <div style={{ marginBottom: 12 }}>

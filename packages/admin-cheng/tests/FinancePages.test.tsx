@@ -53,6 +53,11 @@ const WITHDRAWS = vi.hoisted(() => [
     fail_reason: '', created_at: '2026-11-09T08:00:00+08:00', completed_at: '2026-11-09T09:00:00+08:00', package_info: '',
     user: null,
   },
+  {
+    id: 'w3', withdraw_no: 'WD202611100003', wx_transfer_no: 'wxt3', amount_cents: 2000, status: 0,
+    fail_reason: '', created_at: '2026-11-10T09:00:00+08:00', completed_at: null, package_info: '',
+    user: { user_id: 'u1', nickname: '张三', avatar: '' },
+  },
 ]);
 
 const getOrdersMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: ORDERS, total: 2 }));
@@ -73,9 +78,10 @@ const getUserDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue(USER_DETAIL
 const getRefundsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: REFUNDS, total: 1 }));
 const getInquiriesMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: INQUIRIES, total: 1 }));
 const getInquiryMock = vi.hoisted(() => vi.fn().mockResolvedValue(INQUIRIES[0]));
-const getWithdrawsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: WITHDRAWS, total: 2 }));
+const getWithdrawsMock = vi.hoisted(() => vi.fn().mockResolvedValue({ list: WITHDRAWS, total: 3 }));
 const approveMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const rejectMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const revokeMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 
 vi.mock('@/api/services/xpay', () => ({
   PayBizType: { CONGRATULATION_CASH: 2, COIN_RECHARGE: 3, ID_VERIFY: 4 },
@@ -110,6 +116,7 @@ vi.mock('@/api/services/congratulation', () => ({
     getWithdraws: getWithdrawsMock,
     approveWithdraw: approveMock,
     rejectWithdraw: rejectMock,
+    revokeWithdraw: revokeMock,
   },
 }));
 
@@ -224,6 +231,31 @@ describe('财务管理页面', () => {
     });
     fireEvent.click(screen.getAllByRole('button', { name: /确认通过/ })[0]);
     await waitFor(() => expect(approveMock).toHaveBeenCalledWith('w1'));
+  }, 20000);
+
+  it('提现申请：仅处理中记录显示撤销，确认后调用撤销接口并刷新', async () => {
+    renderPage(<WithdrawManagement />);
+    await waitFor(() => expect(screen.getByText('WD202611100003')).toBeInTheDocument());
+    // 仅处理中行有撤销按钮（待审核/已成功无）
+    expect(screen.getAllByRole('button', { name: /撤销/ }).length).toBe(1);
+    fireEvent.click(screen.getByRole('button', { name: /撤销/ }));
+    await waitFor(() => {
+      expect(screen.getAllByText('确认撤销该提现申请？').length).toBeGreaterThan(0);
+    });
+    const callsBefore = getWithdrawsMock.mock.calls.length;
+    fireEvent.click(screen.getAllByRole('button', { name: /确认撤销/ })[0]);
+    await waitFor(() => expect(revokeMock).toHaveBeenCalledWith('w3'));
+    await waitFor(() => expect(getWithdrawsMock.mock.calls.length).toBeGreaterThan(callsBefore));
+  }, 20000);
+
+  it('提现申请：撤销接口失败弹错误提示', async () => {
+    revokeMock.mockRejectedValue({ response: { data: { message: '资金已出款，不可撤销' } } });
+    renderPage(<WithdrawManagement />);
+    await waitFor(() => expect(screen.getByText('WD202611100003')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /撤销/ }));
+    await screen.findByRole('button', { name: '确认撤销' });
+    fireEvent.click(screen.getByRole('button', { name: '确认撤销' }));
+    expect(await screen.findByText('资金已出款，不可撤销')).toBeInTheDocument();
   }, 20000);
 
   it('提现申请：拒绝需填写原因后调用拒绝接口', async () => {
