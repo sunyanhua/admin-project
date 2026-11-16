@@ -43,8 +43,8 @@ export const BlockCard = ({ item, state }: { item: BlockItem; state: BlockCardSt
 
   if (item.photo) {
     return (
-      <div style={{ position: 'relative', width: '12vw', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition }}>
-        <img src={item.photo} alt={item.label} style={{ width: '100%', display: 'block', filter, transition: 'filter .3s' }} />
+      <div style={{ position: 'relative', width: '12vw', aspectRatio: '3 / 4', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition }}>
+        <img src={item.photo} alt={item.label} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', filter, transition: 'filter .3s' }} />
         {drawnTag}
         <span className="onsite-nick" style={{ opacity: nickOpacity, transition: 'opacity .3s, background .3s, color .3s', ...winNickStyle }}>
           <span className={`onsite-number-inline gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>

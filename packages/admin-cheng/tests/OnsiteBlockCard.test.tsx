@@ -9,6 +9,15 @@ const unregistered: BlockItem = { key: 'r3', label: '免报名用户', kind: 'pe
 const groupItem: BlockItem = { key: 'g1', label: '第一组', kind: 'group' };
 
 describe('OnsiteBlockCard', () => {
+  it('有照片用户卡：容器锁定 3:4 比例且图片 cover 顶部对齐（与无照片占位卡同尺寸）', () => {
+    const { container } = render(<BlockCard item={personWithPhoto} state="normal" />);
+    const wrapper = container.querySelector('img')?.parentElement as HTMLElement;
+    expect(wrapper.style.aspectRatio).toBe('3 / 4');
+    const img = container.querySelector('img') as HTMLImageElement;
+    expect(img.style.objectFit).toBe('cover');
+    expect(img.style.objectPosition).toBe('top');
+  });
+
   it('有照片用户卡·未选中：亮度滤镜压暗（无黑蒙版），昵称条降亮，不显示已抽角标', () => {
     // Arrange / Act
     const { container } = render(<BlockCard item={personWithPhoto} state="normal" />);
