@@ -22,7 +22,7 @@
 
 ## 最后更新
 
-**2026-11-13**
+**2026-11-16**
 
 ---
 
@@ -95,7 +95,7 @@
 
 | 日期 | 改造内容 | 影响范围 | commit |
 |------|---------|---------|--------|
-| 2026-11-13 | 大屏系列——①六空改图接口（原灵犀/Linksy）域名更换为 luckon.liteweb.cn（四个环境 .env + 部署文档同步）；②单组选人卡片多排时整体等比缩小（86vh 预算 transform 缩放，上下完整显示）；③组中抽组组名卡片改深色底衬白字（浅色大屏背景下可读）；**正式版构建发布**（build:prod，产物待上传） | .env×4 + linksy.ts + ActivityOnsite + OnsiteBlockCard + docs/deployment + tests | 0dc196f、39d692d、734cfd0（构建产物未提交） |
+| 2026-11-16 | ①现场管理弹窗新增「心动排名」TAB（左男右女卡片+红蓝心形+排名+刷新，接口 getOnsiteLovesCouples，含加载/失败态、竞态防护、缩略图顶部对齐）；②报喜管理「官方随份子」列三态化（未上传结婚证/已传未随/已随￥金额）+ 已通过可独立设置随份子（默认 520 元、确认弹窗、审核完成不可重新提交审核、竞态防护）；③「投诉管理」直接替换为「举报管理」（report 接口三件套：列表/详情/处理，已处理时扣除被举报人靠谱值默认 20 可改，先扣分后处理防重）；④认证记录字段漂移修复（user_profile→user）+ 全站「实人认证」改「实名认证」+ 认证记录列表右上角刷新按钮；**正式版构建发布**（build:prod，已推送） | OnsiteLoveRankTab + OnsiteManageModal + CongratulationDetailModal + CongratulationGiftStatusTag + CongratulationManagement + ReportManagement + report 服务 + UserVerify + idverify 服务 + router/menu + tests | b8d7ee3…be456cb（构建产物未提交） |
 | 2026-11-13 | 大屏系列——①抽卡状态改用滤镜压暗方案（去黑蒙版：未选中 brightness 压暗、已抽更深+金色角标；无照片用户卡 12vw 占位卡与照片卡同尺寸显示序号+昵称，免报名入选标注（未注册），BlockCard 抽为独立组件）；②均衡换行（各组代表转轮/组中抽组组块/单组选人人卡多行时行差≤1，转轮高度受视口约束防宽屏裁切，空 user_id 卡片键兜底）；③演示模式竞态修复（初始加载/分组变更的迟到真实数据不再覆盖演示名单，重建落地前复查 demoRef 双向防护）；④流程编排步骤新增流程名称（大屏环节名优先显示该名称，未填回退默认）；⑤各组代表转轮上方显示组名；**正式版构建发布**（build:prod，产物待上传） | ActivityOnsite + OnsiteBlockCard + balancedRows + luckyPools.utils + OnsiteRoutineTab + onsiteRoutine.utils + tests | db9408a、1c5c5dd、ec4302b（构建产物未提交） |
 | 2026-11-13 | 认证记录新增撤销操作——已通过记录「撤销」（弹窗填写撤销理由必填 ≤500 字，写入审计日志），状态枚举新增 REVOKED=6（已撤销）含展示与筛选；**测试版构建发布**（build:test，产物待上传） | idverify 服务 + UserVerify + tests | fab3fed、2d5958a（构建产物未提交） |
 | 2026-11-13 | 大屏系列——①用户显示配置（昵称/姓名 radio，onsite_config.user_display，大屏热切换，姓名双源兜底）；②演示模式改为模拟本场所有入选用户均已签到（真实入选名单+分组+序号，流程编排可用）；③修复跨活动切换入选名单残留旧数据；④组中抽组组名排版（按字数折行规则 + 加号换行 + 留白调整）；⑤修复大屏初始加载与分组读取失效（代码搬移事故）；**测试版+正式版构建发布**（build:test / build:prod，产物待上传） | ActivityOnsite + OnsiteConfigTab + OnsiteGroupTab + OnsiteManageModal + onsiteGrouping.utils + tests | 1b146e8、c110087、12ed16e、24b79e1、4b1220a、c9d02b6、912c77f、4dd71c6、0c24581、d13f7cb、94d2d93、013ed30、b6eff14、47d90c7（构建产物未提交） |
