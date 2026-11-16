@@ -16,6 +16,7 @@ const REGISTERS = vi.hoisted(() => [
     id: 'r1',
     user_id: 'u1',
     onsite_number: 1,
+    checkin_at: '2026-11-16T10:00:00+08:00',
     user_profile: { nickname: '张三', gender: 1, age: 28 },
     user_match_profile: { real_name: '张三' },
     extra_data: JSON.stringify({ foo: 'bar' }),
@@ -101,6 +102,20 @@ describe('OnsiteGroupTab', () => {
       const input = screen.getByPlaceholderText('A|B|C|D|E|F|G') as HTMLInputElement;
       expect(input.value).toBe('A|B|C');
     });
+  });
+
+  it('成员卡片显示已签到/未签到标记', async () => {
+    render(
+      <App>
+        <OnsiteGroupTab activityId="a1" activity={ACTIVITY as any} />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0);
+    });
+    // 张三有签到时间 → 已签到；其余（含免报名入选）→ 未签到
+    expect(screen.getByText('已签到')).toBeInTheDocument();
+    expect(screen.getAllByText('未签到').length).toBeGreaterThan(0);
   });
 
   it('保存分组名称时 onsite_config 原对象透传——仅更新 groups 键，其他内容保留', async () => {

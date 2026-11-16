@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Button, Form, Input, Select, InputNumber, Space, Empty, Spin } from 'antd';
+import { Button, Form, Input, Select, InputNumber, Space, Empty, Spin, Tag } from 'antd';
 import { SaveOutlined, TeamOutlined, HolderOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity, RegisterRecord, PresignRecord } from '@/api/services/activity-v1';
@@ -30,10 +30,10 @@ interface MemberRow extends RegisterRecord {
   groupIdx: number | null;
 }
 
-/** 成员卡片（拖拽移动分组）：序号 + 昵称（性别）+ 姓名 · 年龄；序号标签男蓝女红 */
+/** 成员卡片（拖拽移动分组）：序号 + 昵称（性别）+ 姓名 · 年龄 + 签到标记；序号标签男蓝女红 */
 const MemberCard: React.FC<{
   uid: string;
-  info: { number: number | null; nickname: string; realName: string; genderLabel: string; age: number | null; genderColor: string };
+  info: { number: number | null; nickname: string; realName: string; genderLabel: string; age: number | null; genderColor: string; checkedIn: boolean };
   dragUid: string | null;
   onDragStart: (uid: string) => void;
   onDragEnd: () => void;
@@ -66,6 +66,14 @@ const MemberCard: React.FC<{
         {info.realName || '-'} · {info.age != null ? `${info.age}岁` : '年龄-'}
       </div>
     </div>
+    {/* 签到标记（与入选名单口径一致：蓝=已签到） */}
+    <Tag
+      color={info.checkedIn ? 'blue' : 'default'}
+      title={info.checkedIn ? '已签到' : '未签到'}
+      style={{ marginLeft: 'auto', marginRight: 0, flexShrink: 0 }}
+    >
+      {info.checkedIn ? '已签到' : '未签到'}
+    </Tag>
   </div>
 );
 
@@ -376,6 +384,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
       genderLabel: g != null ? (RegisterGenderLabels[g] ?? '-') : '-',
       genderColor: g === 1 ? '#0088cc' : g === 2 ? '#eb5482' : '#e04d2c',
       age: m.user_profile?.age ?? m.age ?? null,
+      checkedIn: !!m.checkin_at,
     };
   };
 
