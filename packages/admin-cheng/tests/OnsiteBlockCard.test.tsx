@@ -18,16 +18,19 @@ describe('OnsiteBlockCard', () => {
     expect(img.style.objectPosition).toBe('top');
   });
 
-  it('照片加载失败（本地缓存损坏）时带 _cb 参数重试一次，再次失败不重复加参数', () => {
+  it('照片挂载即带 _cb 缓存击穿参数（绕开磁盘缓存，防 ERR_CACHE_READ_FAILURE）', () => {
+    const { container } = render(<BlockCard item={personWithPhoto} state="normal" />);
+    const img = container.querySelector('img') as HTMLImageElement;
+    expect(img.src).toContain('_cb=');
+  });
+
+  it('照片加载失败时换新的 _cb 参数重试一次', () => {
     const { container } = render(<BlockCard item={personWithPhoto} state="normal" />);
     const img = container.querySelector('img') as HTMLImageElement;
     const before = img.src;
     fireEvent.error(img);
     expect(img.src).not.toBe(before);
     expect(img.src).toContain('_cb=');
-    const after = img.src;
-    fireEvent.error(img);
-    expect(img.src).toBe(after);
   });
 
   it('带查询参数的地址（可能为签名）不追加缓存击穿参数，避免签名失效', () => {

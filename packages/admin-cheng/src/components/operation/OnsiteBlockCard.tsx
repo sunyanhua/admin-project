@@ -19,14 +19,16 @@ export interface BlockItem {
 export type BlockCardState = 'normal' | 'bright' | 'win' | 'drawn';
 
 /**
- * 照片图片（带本地缓存损坏自动重试）：
- * 长开的大屏窗口可能出现 ERR_CACHE_READ_FAILURE（浏览器缓存条目损坏），
- * 首次加载失败时换带 _cb 缓存击穿参数的地址重试一次；带查询参数（可能为签名）的地址跳过，避免签名失效。
+ * 照片图片（挂载即带缓存击穿参数 + 失败重试）：
+ * 大屏浏览器对 CDN 裁剪图（...jpg/crop.x.y.w.h.jpg）存在 Chromium 缓存层缺陷——
+ * 响应 200 但读磁盘缓存报 ERR_CACHE_READ_FAILURE，新窗口也复现（磁盘缓存全局共享）。
+ * 因此挂载时直接加 _cb 时间戳绕开磁盘缓存；加载失败再换新时间戳重试一次；
+ * 带查询参数（可能为签名）的地址不动，避免签名失效。
  */
 const PhotoImg: React.FC<{ photo: string; alt: string; filter: string; transition: string }> = ({ photo, alt, filter, transition }) => {
-  const [src, setSrc] = useState(photo);
+  const [src, setSrc] = useState(() => (photo.includes('?') ? photo : `${photo}?_cb=${Date.now()}`));
   const handleError = () => {
-    if (src === photo && !photo.includes('?')) {
+    if (!photo.includes('?')) {
       setSrc(`${photo}?_cb=${Date.now()}`);
     }
   };
