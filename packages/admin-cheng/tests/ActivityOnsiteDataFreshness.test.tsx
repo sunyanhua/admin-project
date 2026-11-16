@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { App } from 'antd';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ActivityOnsite from '@/pages/operation/ActivityOnsite';
@@ -10,9 +10,9 @@ afterEach(() => {
   Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
 });
 
-/** 签到墙名单（含签到时间，构建 wall 用） */
+/** 签到墙名单（含签到时间，构建 wall 用；甲有 vbegin 头像、乙无头像） */
 const WALL_RECORDS = vi.hoisted(() => [
-  { id: 'reg1', user_id: 'u1', gender: 1, onsite_number: 1, checkin_at: '2026-11-16T10:00:00+08:00', extra_data: '{}', user_profile: { nickname: '甲', avatar: '' } },
+  { id: 'reg1', user_id: 'u1', gender: 1, onsite_number: 1, checkin_at: '2026-11-16T10:00:00+08:00', extra_data: '{}', user_profile: { nickname: '甲', avatar: 'https://img.vbegin.com.cn/a.jpg' } },
   { id: 'reg2', user_id: 'u2', gender: 2, onsite_number: 2, checkin_at: '2026-11-16T10:01:00+08:00', extra_data: '{}', user_profile: { nickname: '乙', avatar: '' } },
 ]);
 
@@ -78,6 +78,12 @@ describe('ActivityOnsite 数据新鲜度', () => {
     // 按 8 进入单组选人：同样重新拉取
     fireEvent.keyDown(document.body, { key: '8' });
     await waitFor(() => expect(getRegistersMock.mock.calls.length).toBeGreaterThan(afterSix));
+  });
+
+  it('嘉宾展示墙照片挂载即带 _cb 缓存击穿参数', async () => {
+    renderPage();
+    const img = await screen.findByAltText('甲');
+    expect((img as HTMLImageElement).src).toContain('_cb=');
   });
 
   it('按键 1/6/8 进入时先刷新分组配置（消除 10 秒轮询窗口）', async () => {

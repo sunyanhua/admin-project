@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { splitGroupLabel } from '@/components/operation/onsiteGrouping.utils';
+import OnsitePhotoImg from '@/components/operation/OnsitePhotoImg';
 
 /** 组中抽组/单组选人的展示块 */
 export interface BlockItem {
@@ -17,30 +17,6 @@ export interface BlockItem {
 
 /** 展示块状态：normal/drawn=滤镜压暗 bright=明暗跳动中亮起 win=中奖金色放大 */
 export type BlockCardState = 'normal' | 'bright' | 'win' | 'drawn';
-
-/**
- * 照片图片（挂载即带缓存击穿参数 + 失败重试）：
- * 大屏浏览器对 CDN 裁剪图（...jpg/crop.x.y.w.h.jpg）存在 Chromium 缓存层缺陷——
- * 响应 200 但读磁盘缓存报 ERR_CACHE_READ_FAILURE，新窗口也复现（磁盘缓存全局共享）。
- * 因此挂载时直接加 _cb 时间戳绕开磁盘缓存；加载失败再换新时间戳重试一次；
- * 带查询参数（可能为签名）的地址不动，避免签名失效。
- */
-const PhotoImg: React.FC<{ photo: string; alt: string; filter: string; transition: string }> = ({ photo, alt, filter, transition }) => {
-  const [src, setSrc] = useState(() => (photo.includes('?') ? photo : `${photo}?_cb=${Date.now()}`));
-  const handleError = () => {
-    if (!photo.includes('?')) {
-      setSrc(`${photo}?_cb=${Date.now()}`);
-    }
-  };
-  return (
-    <img
-      src={src}
-      alt={alt}
-      onError={handleError}
-      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', filter, transition: 'filter .3s' }}
-    />
-  );
-};
 
 /**
  * 组中抽组/单组选人展示块：组名方块或用户卡片。
@@ -69,7 +45,11 @@ export const BlockCard = ({ item, state }: { item: BlockItem; state: BlockCardSt
   if (item.photo) {
     return (
       <div style={{ position: 'relative', width: '12vw', aspectRatio: '3 / 4', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition }}>
-        <PhotoImg photo={item.photo} alt={item.label} filter={filter} transition="filter .3s" />
+        <OnsitePhotoImg
+          photo={item.photo || ''}
+          alt={item.label}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', filter, transition: 'filter .3s' }}
+        />
         {drawnTag}
         <span className="onsite-nick" style={{ opacity: nickOpacity, transition: 'opacity .3s, background .3s, color .3s', ...winNickStyle }}>
           <span className={`onsite-number-inline gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>

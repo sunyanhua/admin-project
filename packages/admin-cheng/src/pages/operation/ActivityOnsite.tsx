@@ -8,6 +8,7 @@ import { userApi } from '@/api/services/user';
 import { RegisterAuditStatus } from '@shared/constants';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
 import { parseGroupIndex, GROUPS_UPDATED_AT_KEY } from '@/components/operation/onsiteGrouping.utils';
+import OnsitePhotoImg from '@/components/operation/OnsitePhotoImg';
 import { BlockCard, BlockItem } from '@/components/operation/OnsiteBlockCard';
 import { chunkBalancedRows } from '@/utils/balancedRows';
 import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPoolsWithNames, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
@@ -1796,7 +1797,7 @@ const ActivityOnsite: React.FC = () => {
                                 <div className="draw-reel-strip" style={{ transform: `translateY(calc(${luckyReelH}vw * (${luckyOffsets[i]} - ${strip.length} + 1)))`, transition: luckySnaps[i] ? 'none' : `transform ${reelSpeed}ms linear` }}>
                                   {strip.map((u, j) => (
                                     <div key={`${u.userId}-${j}`} className="draw-reel-item" style={{ height: `${luckyReelH}vw` }}>
-                                      <img src={u.photo} alt={u.nick} />
+                                      <OnsitePhotoImg photo={u.photo} alt={u.nick} />
                                       <span className="draw-nick">
                                         <span className={`onsite-number-inline gender-${u.gender}`}>{u.number || '-'}</span>
                                         {u.nick}
@@ -1880,7 +1881,7 @@ const ActivityOnsite: React.FC = () => {
                         <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * (${fOffset} - ${femaleStrip.length} + 1)))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                           {femaleStrip.map((u, i) => (
                             <div key={`f-${u.userId}-${i}`} className="draw-reel-item">
-                              <img src={u.photo} alt={u.nick} />
+                              <OnsitePhotoImg photo={u.photo} alt={u.nick} />
                               <span className="draw-nick">
                                 <span className="onsite-number-inline gender-female">{u.number || '-'}</span>
                                 {u.nick}
@@ -1898,7 +1899,7 @@ const ActivityOnsite: React.FC = () => {
                         <div className="draw-reel-strip" style={{ transform: `translateY(calc(20vw * (${mOffset} - ${maleStrip.length} + 1)))`, transition: snapFrame ? 'none' : `transform ${reelSpeed}ms linear` }}>
                           {maleStrip.map((u, i) => (
                             <div key={`m-${u.userId}-${i}`} className="draw-reel-item">
-                              <img src={u.photo} alt={u.nick} />
+                              <OnsitePhotoImg photo={u.photo} alt={u.nick} />
                               <span className="draw-nick">
                                 <span className="onsite-number-inline gender-male">{u.number || '-'}</span>
                                 {u.nick}
@@ -1931,7 +1932,7 @@ const ActivityOnsite: React.FC = () => {
                   {current && (
                     <div key={`cur-${current.userId}-${current.number}`} style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 0 : 1, transition: 'opacity .5s ease' }}>
                       <div style={{ position: 'relative', display: 'inline-block', height: '100%' }}>
-                        <img src={current.photo} alt={current.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)', display: 'block' }} />
+                        <OnsitePhotoImg photo={current.photo} alt={current.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)', display: 'block' }} />
                         <span className="onsite-nick" style={{ fontSize: '3vh', fontWeight: 'bold', padding: '.3em .6em', borderRadius: '0 0 1.3vh 1.3vh' }}>
                           <span className={`onsite-number-inline gender-${current.gender}`}>{current.number || '-'}</span>
                           {current.nick}
@@ -1942,7 +1943,7 @@ const ActivityOnsite: React.FC = () => {
                   {next && (
                     <div key={`next-${next.userId}-${next.number}`} style={{ position: 'absolute', inset: 0, textAlign: 'center', height: '100%', opacity: crossing ? 1 : 0, transition: 'opacity .5s ease' }}>
                       <div style={{ position: 'relative', display: 'inline-block', height: '100%' }}>
-                        <img src={next.photo} alt={next.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)', display: 'block' }} />
+                        <OnsitePhotoImg photo={next.photo} alt={next.nick} style={{ height: '100%', maxWidth: '46vw', borderRadius: '1.3vh', border: 'solid 2px rgba(255,255,255,.6)', boxShadow: '0 8px 30px rgba(0,0,0,.4)', display: 'block' }} />
                         <span className="onsite-nick" style={{ fontSize: '3vh', fontWeight: 'bold', padding: '.3em .6em', borderRadius: '0 0 1.3vh 1.3vh' }}>
                           <span className={`onsite-number-inline gender-${next.gender}`}>{next.number || '-'}</span>
                           {next.nick}
@@ -1962,7 +1963,7 @@ const ActivityOnsite: React.FC = () => {
                       onClick={() => setFocusIdx(i)}
                       style={{ flexShrink: 0, height: '15vh', position: 'relative', cursor: 'pointer', opacity: i === focusIdx % wall.length ? 1 : 0.45, transition: 'opacity .4s ease' }}
                     >
-                      <img src={p.photo} alt={p.nick} onLoad={centerStrip} style={{ height: '100%', borderRadius: 6, border: i === focusIdx % wall.length ? '3px solid #e04d2c' : '2px solid rgba(255,255,255,.5)', objectFit: 'cover', display: 'block' }} />
+                      <OnsitePhotoImg photo={p.photo} alt={p.nick} onLoad={centerStrip} style={{ height: '100%', borderRadius: 6, border: i === focusIdx % wall.length ? '3px solid #e04d2c' : '2px solid rgba(255,255,255,.5)', objectFit: 'cover', display: 'block' }} />
                       <span className={`onsite-number gender-${p.gender}`} style={{ fontSize: '0.9vw', minWidth: '1.9vw', height: '1.9vw' }}>{p.number || '-'}</span>
                     </div>
                   ))}
@@ -1978,7 +1979,7 @@ const ActivityOnsite: React.FC = () => {
                   className={`onsite-photo${i === focusIdx ? ' focus' : ''}`}
                   style={{ left: `${p.left}%`, top: `${p.top}%`, width: `${p.size}vw`, zIndex: i === focusIdx ? 50 : p.z, transform: `translate(-50%,-50%) rotate(${p.rotate}deg)` }}
                 >
-                  <img src={p.photo} alt={p.nick} onLoad={clampWall} />
+                  <OnsitePhotoImg photo={p.photo} alt={p.nick} onLoad={clampWall} />
                   <span className="onsite-nick">
                     <span className={`onsite-number-inline gender-${p.gender}`}>{p.number || '-'}</span>
                     {p.nick}
@@ -2031,7 +2032,7 @@ const ActivityOnsite: React.FC = () => {
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
                   >
-                    <img src={p.photo} alt={p.nick} />
+                    <OnsitePhotoImg photo={p.photo} alt={p.nick} />
                     <span className="onsite-nick">
                       <span className="onsite-number-inline gender-male">{p.number || '-'}</span>
                       {p.nick}
@@ -2079,7 +2080,7 @@ const ActivityOnsite: React.FC = () => {
                       transform: `translate(-50%,-50%) rotate(${isActive ? 0 : p.rotate}deg)`,
                     }}
                   >
-                    <img src={p.photo} alt={p.nick} />
+                    <OnsitePhotoImg photo={p.photo} alt={p.nick} />
                     <span className="onsite-nick">
                       <span className="onsite-number-inline gender-female">{p.number || '-'}</span>
                       {p.nick}
