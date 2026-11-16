@@ -5622,6 +5622,82 @@
                 }
             }
         },
+        "/admin/v1/bizops/congratulation/withdraws/{id}/revoke": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "后台撤销提现：待审核直接失败并冲正；处理中必须先查询微信转账单确认未到账，必要时调用微信撤销转账，确认资金不会出款后再冲正。已成功/已失败不可撤销。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "报喜-财务管理"
+                ],
+                "summary": "撤销提现",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "提现记录 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "撤销原因",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.RevokeWithdrawRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "撤销成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_congratulation_model.WithdrawItem"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "参数错误/状态不允许撤销",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "403": {
+                        "description": "无权限",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/congratulation/{id}": {
             "get": {
                 "description": "查询报喜完整信息，含报喜照片、结婚证（仅管理后台可见）与提交人/男女双方用户数据。",
@@ -34451,6 +34527,18 @@
                 }
             }
         },
+        "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.RevokeWithdrawRequest": {
+            "type": "object",
+            "required": [
+                "reason"
+            ],
+            "properties": {
+                "reason": {
+                    "type": "string",
+                    "maxLength": 500
+                }
+            }
+        },
         "github_com_vbegin_tlnc_v6_internal_module_congratulation_model.SendCongratulationTributeRequest": {
             "type": "object",
             "required": [
@@ -34659,6 +34747,9 @@
                 "amount_cents": {
                     "type": "integer"
                 },
+                "app_id": {
+                    "type": "string"
+                },
                 "completed_at": {
                     "type": "string"
                 },
@@ -34671,8 +34762,12 @@
                 "id": {
                     "type": "string"
                 },
+                "mch_id": {
+                    "description": "MchID / AppID 发起转账的商户号与小程序 AppID 快照（requestMerchantTransfer 必填）。",
+                    "type": "string"
+                },
                 "package_info": {
-                    "description": "PackageInfo 需用户确认收款时返回（前端 wx.requestMerchantTransfer 拉起）。",
+                    "description": "PackageInfo 需用户确认收款时返回（前端 wx.requestMerchantTransfer 的 package）。\n仅状态为处理中且微信转账单处于 WAIT_USER_CONFIRM 时有值；终态清空。",
                     "type": "string"
                 },
                 "status": {
