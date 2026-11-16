@@ -7,6 +7,7 @@ import { zoneApi, Application, DBAttachment } from '@/api/services/zone';
 import type { FormField } from '@/components/operation/FormConfigEditor';
 import ScrollableModal from '@/components/templates/ScrollableModal';
 import RealNameWithTag from '@/components/user/RealNameWithTag';
+import { getMediumUrl } from '@/utils/imageUtils';
 
 const FILE_TYPE_LABELS: Record<number, string> = { 1: '图片', 2: '音频', 3: '视频' };
 
@@ -105,7 +106,8 @@ const ZoneApplicationReviewModal: React.FC<ZoneApplicationReviewModalProps> = ({
     const ft = (att as any).file_type as number;
     const url = att.url;
     if (ft === 1) {
-      return <Image key={att.url} src={url} preview={{ src: url }}
+      // 内联展示用缩略图，点击预览原图（项目缩略图规范，2026-11-16）
+      return <Image key={att.url} src={getMediumUrl(url)} preview={{ src: url }}
         style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, border: '1px solid #e8e8e8' }} />;
     }
     // 音频或视频
