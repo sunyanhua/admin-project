@@ -8,6 +8,8 @@
 /** extra_data 中分组信息的键 */
 export const GROUP_INDEX_KEY = 'group_index';
 export const GROUP_NAME_KEY = 'group_name';
+/** onsite_config 中「人员换组时间戳」键（大屏 10s 轮询据此重建签到墙，2026-11-16 用户定） */
+export const GROUPS_UPDATED_AT_KEY = 'groups_updated_at';
 
 /** 解析分组名称（"A|B|C" → ['A','B','C']；过滤空段） */
 export function parseGroupNames(raw: string): string[] {

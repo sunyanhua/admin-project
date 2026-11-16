@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { render, fireEvent, waitFor, act } from '@testing-library/react';
 import { App } from 'antd';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ActivityOnsite from '@/pages/operation/ActivityOnsite';
@@ -25,10 +25,11 @@ const COUPLE = vi.hoisted(() => ({
 
 const getRegistersMock = vi.hoisted(() => vi.fn().mockResolvedValue(WALL_RECORDS));
 const getOnsiteLovesCouplesMock = vi.hoisted(() => vi.fn().mockResolvedValue([COUPLE]));
+const getDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue({ onsite_config: '{}' }));
 
 vi.mock('@/api/services/activity-v1', () => ({
   activityApi: {
-    getDetail: vi.fn().mockResolvedValue({ onsite_config: '{}' }),
+    getDetail: getDetailMock,
     getRegisters: getRegistersMock,
     getOnsiteLovesCouples: getOnsiteLovesCouplesMock,
     getOnsitePairings: vi.fn().mockResolvedValue([]),
@@ -77,5 +78,36 @@ describe('ActivityOnsite 数据新鲜度', () => {
     // 按 8 进入单组选人：同样重新拉取
     fireEvent.keyDown(document.body, { key: '8' });
     await waitFor(() => expect(getRegistersMock.mock.calls.length).toBeGreaterThan(afterSix));
+  });
+
+  it('按键 1/6/8 进入时先刷新分组配置（消除 10 秒轮询窗口）', async () => {
+    renderPage();
+    await waitFor(() => expect(getRegistersMock).toHaveBeenCalled());
+    // 等初始轮询外的一切就绪：记录 getDetail 基数（初始加载 + 可能已发生的轮询）
+    const baseline = getDetailMock.mock.calls.length;
+    fireEvent.keyDown(document.body, { key: '1' });
+    await waitFor(() => expect(getDetailMock.mock.calls.length).toBe(baseline + 1));
+    fireEvent.keyDown(document.body, { key: '6' });
+    await waitFor(() => expect(getDetailMock.mock.calls.length).toBe(baseline + 2));
+    fireEvent.keyDown(document.body, { key: '8' });
+    await waitFor(() => expect(getDetailMock.mock.calls.length).toBe(baseline + 3));
+  });
+
+  it('人员换组信号：轮询检测 groups_updated_at 变化后重建签到墙', async () => {
+    vi.useFakeTimers();
+    getDetailMock.mockResolvedValue({
+      onsite_config: JSON.stringify({ groups: '甲组|乙组', groups_updated_at: '2026-11-16T10:00:00+08:00' }),
+    });
+    renderPage();
+    // 初始加载（含首次 refreshConfig + 数据源拉取）
+    await act(async () => { await vi.advanceTimersByTimeAsync(200); });
+    const baseline = getRegistersMock.mock.calls.length;
+    // 模拟后台保存人员换组：groups_updated_at 变化（组名不变）
+    getDetailMock.mockResolvedValue({
+      onsite_config: JSON.stringify({ groups: '甲组|乙组', groups_updated_at: '2026-11-16T10:01:00+08:00' }),
+    });
+    await act(async () => { await vi.advanceTimersByTimeAsync(10000); });
+    expect(getRegistersMock.mock.calls.length).toBeGreaterThan(baseline);
+    vi.useRealTimers();
   });
 });

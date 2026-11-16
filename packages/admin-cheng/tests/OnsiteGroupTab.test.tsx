@@ -199,6 +199,12 @@ describe('OnsiteGroupTab', () => {
     expect(obj.group_index).toBeGreaterThanOrEqual(1);
     expect(['A', 'B', 'C']).toContain(obj.group_name);
     expect(obj.foo).toBe('bar'); // 原有 extra_data 内容保留
+    // 成员换组信号：保存后写入 onsite_config.groups_updated_at（大屏轮询据此重建签到墙）
+    await waitFor(() => {
+      const markCall = updateMock.mock.calls.find((c: any[]) =>
+        typeof c?.[1]?.onsite_config === 'string' && c[1].onsite_config.includes('groups_updated_at'));
+      expect(markCall).toBeTruthy();
+    });
   });
 
   it('保存分组名称后触发 onSaved 回调（弹窗层据此同步刷新其它 TAB）', async () => {

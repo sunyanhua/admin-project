@@ -11,7 +11,10 @@ import {
   stripGroupInfo,
   GROUP_INDEX_KEY,
   GROUP_NAME_KEY,
+  GROUPS_UPDATED_AT_KEY,
 } from './onsiteGrouping.utils';
+import dayjs from 'dayjs';
+import { dayjsToApi } from '@/utils/format';
 
 interface OnsiteGroupTabProps {
   activityId: string;
@@ -337,6 +340,19 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
     setSavingAssign(false);
     setSavingProgress(0);
     success(`分组保存完成：成功 ${ok} 条，失败 ${fail} 条`);
+    // 人员换组信号：写入 onsite_config.groups_updated_at（大屏 10s 轮询据此重建签到墙，2026-11-16 用户定）
+    if (ok > 0) {
+      try {
+        const res: any = await activityApi.getDetail(activityId);
+        let obj: Record<string, any> = {};
+        try {
+          const parsed = JSON.parse(res?.onsite_config || '{}');
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) obj = parsed;
+        } catch { /* 原值非法则从空对象开始 */ }
+        obj[GROUPS_UPDATED_AT_KEY] = dayjsToApi(dayjs());
+        await activityApi.update(activityId, { onsite_config: JSON.stringify(obj) });
+      } catch { /* 标记失败静默——不阻断成员保存结果反馈 */ }
+    }
     fetchMembers();
     onSaved?.();
   };

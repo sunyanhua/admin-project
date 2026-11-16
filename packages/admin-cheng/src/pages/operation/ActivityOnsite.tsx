@@ -7,7 +7,7 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { RegisterAuditStatus } from '@shared/constants';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
-import { parseGroupIndex } from '@/components/operation/onsiteGrouping.utils';
+import { parseGroupIndex, GROUPS_UPDATED_AT_KEY } from '@/components/operation/onsiteGrouping.utils';
 import { BlockCard, BlockItem } from '@/components/operation/OnsiteBlockCard';
 import { chunkBalancedRows } from '@/utils/balancedRows';
 import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPoolsWithNames, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
@@ -220,6 +220,8 @@ const ActivityOnsite: React.FC = () => {
   const onsiteNumMapRef = useRef<Map<string, number>>(new Map());
   /** 分组名称（onsite_config.groups，照片墙与默契度排名展示用） */
   const groupsRef = useRef<string[]>([]);
+  /** 最近一次「人员换组」时间戳（onsite_config.groups_updated_at，变化即重建签到墙） */
+  const groupsUpdatedAtRef = useRef('');
   /** 大屏用户显示方式（onsite_config.user_display）：nickname=昵称（默认） real_name=姓名；state 驱动重渲染，ref 供回调读最新值 */
   const [userDisplay, setUserDisplay] = useState<'nickname' | 'real_name'>('nickname');
   const userDisplayRef = useRef<'nickname' | 'real_name'>('nickname');
@@ -571,6 +573,18 @@ const ActivityOnsite: React.FC = () => {
           }
         }
       }
+      // 人员换组信号（组名不变）：后台保存分组后重建签到墙（2026-11-16 用户定）
+      const groupsUpdatedAt = typeof obj[GROUPS_UPDATED_AT_KEY] === 'string' ? obj[GROUPS_UPDATED_AT_KEY] : '';
+      if (groupsUpdatedAt && groupsUpdatedAt !== groupsUpdatedAtRef.current) {
+        groupsUpdatedAtRef.current = groupsUpdatedAt;
+        if (demoRef.current) {
+          buildDemoData().then((data) => {
+            if (data && demoRef.current) { setWall(data.wall); setCouples(data.couples); }
+          });
+        } else {
+          fetchWall();
+        }
+      }
       const routineRaw = JSON.stringify((obj && typeof obj === 'object' ? obj.routine : undefined) ?? null);
       if (routineRawRef.current !== routineRaw && !routineModeRef.current) {
         routineRawRef.current = routineRaw;
@@ -654,13 +668,17 @@ const ActivityOnsite: React.FC = () => {
     centerStrip();
   }, [centerStrip]);
 
-  /** 切换界面并立即拉取对应最新数据（演示模式下保持演示数据不刷新） */
-  const switchTab = useCallback((next: 'list' | 'feeling') => {
+  /** 切换界面并立即拉取对应最新数据（演示模式下保持演示数据不刷新）；嘉宾展示先刷新分组配置再拉签到墙（2026-11-16 用户定） */
+  const switchTab = useCallback(async (next: 'list' | 'feeling') => {
     setTab(next);
     if (demoRef.current) return;
-    if (next === 'list') fetchWall();
-    else fetchCouples();
-  }, [fetchWall, fetchCouples]);
+    if (next === 'list') {
+      await refreshConfig();
+      fetchWall();
+    } else {
+      fetchCouples();
+    }
+  }, [fetchWall, fetchCouples, refreshConfig]);
 
   /** 进入心动互选（2）/ 我钟意你（3）：重置展示状态（跳过原则与历史清零）并拉取最新心动数据 */
   const enterHeartTab = useCallback((next: 'feeling' | 'likeMe') => {
@@ -857,6 +875,7 @@ const ActivityOnsite: React.FC = () => {
   /** 进入幸运之星（快捷键 3）：先查询最新签到数据作为转轮筛选来源，再显示栏目封面，按 O 开始滚动。编排模式传参覆盖右上角配置 */
   const startLucky = useCallback(async (override?: { count?: number; gender?: LuckyGender }) => {
     clearDrawTimer();
+    if (!demoRef.current) await refreshConfig(); // 进入即刷新分组配置（消除轮询窗口，2026-11-16 用户定）
     const source = demoRef.current ? wall : ((await fetchWall()) ?? wall);
     const count = override?.count ?? luckyCount;
     const gender = override?.gender ?? luckyGender;
@@ -880,7 +899,7 @@ const ActivityOnsite: React.FC = () => {
     setDrawPhase('cover');
     setDrawWinners([]);
     setReelGroupNames([]); // 幸运之星无组名
-  }, [clearDrawTimer, wall, luckyCount, luckyGender, buildStrip, fetchWall]);
+  }, [clearDrawTimer, wall, luckyCount, luckyGender, buildStrip, fetchWall, refreshConfig]);
 
   /** 进入默契度排名（快捷键 5）：演示模式用演示配对生成随机差异分排名 */
   const startCpRank = useCallback(() => {
@@ -935,7 +954,8 @@ const ActivityOnsite: React.FC = () => {
     // 仅编排传参时落定覆盖值；手动进入保持 null——按 P 时读取实时配置（与单组选人一致）
     groupRepGenderRef.current = override?.gender ?? null;
     const gender = override?.gender ?? groupRepGender;
-    // 进入即刷新签到名单（2026-11-16 用户定：大屏打开后才签到的用户也要进候选池）
+    // 进入即刷新分组配置与签到名单（2026-11-16 用户定：后台保存分组/换组后按键立即生效）
+    if (!demoRef.current) await refreshConfig();
     const source = demoRef.current ? wall : ((await fetchWall()) ?? wall);
     // 指定性别严格过滤：组内无该性别则整组不出转轮（与幸运之星缩减转轮同口径）
     const namedPools = filterGroupRepPoolsWithNames(
@@ -962,11 +982,13 @@ const ActivityOnsite: React.FC = () => {
     setTab('groupRep');
     setDrawPhase('cover');
     setDrawWinners([]);
-  }, [clearDrawTimer, wall, buildStrip, groupRepGender, fetchWall]);
+  }, [clearDrawTimer, wall, buildStrip, groupRepGender, fetchWall, refreshConfig]);
 
   /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员）。编排模式传参覆盖指定组 */
   const startBlockDraw = useCallback(async (kind: 'group' | 'person', override?: { group?: string }) => {
     clearDrawTimer();
+    // 进入即刷新分组配置（组中抽组用组名列表、单组选人用分组配置+签到名单，2026-11-16 用户定）
+    if (!demoRef.current) await refreshConfig();
     if (kind === 'group') {
       const blocks: BlockItem[] = groupsRef.current.map((g) => ({ key: g, label: g, kind: 'group' }));
       setBlockAll(blocks);
@@ -991,7 +1013,7 @@ const ActivityOnsite: React.FC = () => {
     setBlockPhase('cover');
     blockPhaseRef.current = 'cover';
     setTab(kind === 'group' ? 'groupDraw' : 'personDraw');
-  }, [clearDrawTimer, wall, personGroup, fetchWall]);
+  }, [clearDrawTimer, wall, personGroup, fetchWall, refreshConfig]);
 
   /** O：明暗跳动开始（组中抽组/单组选人）——全部候选错落不规律地随机忽明忽暗；done 后按 O 继续下一轮 */
   const beginBlock = useCallback(() => {
