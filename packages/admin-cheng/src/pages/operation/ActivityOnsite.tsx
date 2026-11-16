@@ -725,7 +725,7 @@ const ActivityOnsite: React.FC = () => {
     }, 520);
   };
 
-  /** ↓：展示下一对心动组合——双方任一已展示过则跳过；池耗尽再拉取一次，仍无则提示 */
+  /** ↓：展示下一对心动组合——每次按键先拉取最新配对（2026-11-16 用户定），再按「双方任一已展示过则跳过」推进 */
   const showNextHeart = useCallback(async () => {
     if (tab !== 'feeling' && tab !== 'likeMe') return;
     const mode: 'mutual' | 'single' = tab === 'likeMe' ? 'single' : 'mutual';
@@ -736,30 +736,38 @@ const ActivityOnsite: React.FC = () => {
       }
       return -1;
     };
-    let idx = tryFind(heartPoolRef.current);
-    if (idx === -1) {
-      if (demoRef.current) {
-        // 演示模式不重拉真实数据，直接提示耗尽（先恢复当前展示）
-        heartDisplayedRef.current = false;
-        showHeartPair(null);
-        setHeartNoMore(true);
-        return;
-      }
-      // 池中无可展示：再拉取一次匹配接口，看是否有新的心动组合
-      const fresh = await fetchCouples();
-      const freshPool = buildHeartPool(fresh, mode);
-      heartPoolRef.current = freshPool;
-      setHeartPool(freshPool);
-      idx = tryFind(freshPool);
+    if (demoRef.current) {
+      // 演示模式不重拉真实数据：直接在当前池推进，耗尽提示
+      const idx = tryFind(heartPoolRef.current);
       if (idx === -1) {
         heartDisplayedRef.current = false;
         showHeartPair(null);
         setHeartNoMore(true);
         return;
       }
+      setHeartNoMore(false);
+      const c = heartPoolRef.current[idx];
+      heartIdsOf(c).forEach((uid) => shownHeartIdsRef.current.add(uid));
+      heartHistoryRef.current.push(c);
+      heartCursorRef.current = heartHistoryRef.current.length - 1;
+      heartDisplayedRef.current = true;
+      showHeartPair(c);
+      return;
+    }
+    // 真实模式：每次 ↓ 都先重拉，保证期间新产生的心动配对即时出现
+    const fresh = await fetchCouples();
+    const freshPool = buildHeartPool(fresh, mode);
+    heartPoolRef.current = freshPool;
+    setHeartPool(freshPool);
+    const idx = tryFind(freshPool);
+    if (idx === -1) {
+      heartDisplayedRef.current = false;
+      showHeartPair(null);
+      setHeartNoMore(true);
+      return;
     }
     setHeartNoMore(false);
-    const c = heartPoolRef.current[idx];
+    const c = freshPool[idx];
     heartIdsOf(c).forEach((uid) => shownHeartIdsRef.current.add(uid));
     heartHistoryRef.current.push(c);
     heartCursorRef.current = heartHistoryRef.current.length - 1;
@@ -922,15 +930,17 @@ const ActivityOnsite: React.FC = () => {
   };
 
   /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（仅已签到成员，滚动形式与幸运之星完全一致）。编排模式传参覆盖右上角配置 */
-  const startGroupRep = useCallback((override?: { gender?: LuckyGender }) => {
+  const startGroupRep = useCallback(async (override?: { gender?: LuckyGender }) => {
     clearDrawTimer();
     // 仅编排传参时落定覆盖值；手动进入保持 null——按 P 时读取实时配置（与单组选人一致）
     groupRepGenderRef.current = override?.gender ?? null;
     const gender = override?.gender ?? groupRepGender;
+    // 进入即刷新签到名单（2026-11-16 用户定：大屏打开后才签到的用户也要进候选池）
+    const source = demoRef.current ? wall : ((await fetchWall()) ?? wall);
     // 指定性别严格过滤：组内无该性别则整组不出转轮（与幸运之星缩减转轮同口径）
     const namedPools = filterGroupRepPoolsWithNames(
       groupsRef.current
-        .map((g) => ({ name: g, pool: wall.filter((u) => u.group === g) }))
+        .map((g) => ({ name: g, pool: source.filter((u) => u.group === g) }))
         .filter((g) => g.pool.length > 0),
       gender,
     );
@@ -952,10 +962,10 @@ const ActivityOnsite: React.FC = () => {
     setTab('groupRep');
     setDrawPhase('cover');
     setDrawWinners([]);
-  }, [clearDrawTimer, wall, buildStrip, groupRepGender]);
+  }, [clearDrawTimer, wall, buildStrip, groupRepGender, fetchWall]);
 
   /** 进入组中抽组（7）/ 单组选人（8）：重置候选池与抽取状态（完全重抽入口；候选仅已签到成员）。编排模式传参覆盖指定组 */
-  const startBlockDraw = useCallback((kind: 'group' | 'person', override?: { group?: string }) => {
+  const startBlockDraw = useCallback(async (kind: 'group' | 'person', override?: { group?: string }) => {
     clearDrawTimer();
     if (kind === 'group') {
       const blocks: BlockItem[] = groupsRef.current.map((g) => ({ key: g, label: g, kind: 'group' }));
@@ -963,7 +973,9 @@ const ActivityOnsite: React.FC = () => {
       blockCandidatesRef.current = blocks.map((b) => b.key);
     } else {
       const g = override?.group || personGroup || groupsRef.current[0] || '';
-      const blocks: BlockItem[] = wall
+      // 进入即刷新签到名单（2026-11-16 用户定：大屏打开后才签到的用户也要进候选池）
+      const source = demoRef.current ? wall : ((await fetchWall()) ?? wall);
+      const blocks: BlockItem[] = source
         .filter((u) => u.group === g)
         .map((u) => ({ key: u.userId || u.regId, label: u.nick, kind: 'person', userId: u.userId, photo: u.photo, number: u.number, gender: u.gender, group: u.group }));
       // 编排模式：指定组暂无已签到成员时提示跳过（按 → 切换步骤）
@@ -979,7 +991,7 @@ const ActivityOnsite: React.FC = () => {
     setBlockPhase('cover');
     blockPhaseRef.current = 'cover';
     setTab(kind === 'group' ? 'groupDraw' : 'personDraw');
-  }, [clearDrawTimer, wall, personGroup]);
+  }, [clearDrawTimer, wall, personGroup, fetchWall]);
 
   /** O：明暗跳动开始（组中抽组/单组选人）——全部候选错落不规律地随机忽明忽暗；done 后按 O 继续下一轮 */
   const beginBlock = useCallback(() => {

@@ -208,7 +208,10 @@ describe('ActivityOnsite 演示模式', () => {
       expect(screen.getByText('各组代表(6)')).toBeInTheDocument();
       expect(screen.getByAltText('张三')).toBeInTheDocument();
     });
+    const callsBefore6 = vi.mocked(activityApi.getRegisters).mock.calls.length;
     fireEvent.keyDown(document.body, { key: '6' });
+    // 6 进入即刷新签到名单（异步），等重拉完成后再开始滚动
+    await waitFor(() => expect(vi.mocked(activityApi.getRegisters).mock.calls.length).toBeGreaterThan(callsBefore6));
     fireEvent.keyDown(document.body, { key: 'o' });
     await waitFor(() => {
       expect(screen.getByText('甲组')).toBeInTheDocument();
@@ -246,6 +249,8 @@ describe('ActivityOnsite 演示模式', () => {
       expect(screen.getByAltText('成员0')).toBeInTheDocument();
     });
     fireEvent.keyDown(document.body, { key: '8' });
+    // 8 进入即刷新签到名单（异步），等封面就绪后再开始跳动
+    await screen.findByText('单组选人', { selector: '.draw-cover-title' });
     fireEvent.keyDown(document.body, { key: 'o' });
     // 13 人 3 排（5+4+4）：卡片区按 86vh 预算等比缩小（1920×1080 下 48.375/52 ≈ 0.930）
     const rows = await screen.findByTestId('block-rows');
@@ -279,6 +284,8 @@ describe('ActivityOnsite 演示模式', () => {
       expect(screen.getByAltText('成员0')).toBeInTheDocument();
     });
     fireEvent.keyDown(document.body, { key: '8' });
+    // 8 进入即刷新签到名单（异步），等封面就绪后再开始跳动
+    await screen.findByText('单组选人', { selector: '.draw-cover-title' });
     fireEvent.keyDown(document.body, { key: 'o' });
     const rows = await screen.findByTestId('block-rows');
     expect(rows.style.transform).toBe('');
