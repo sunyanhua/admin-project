@@ -58,22 +58,24 @@ const MemberCard: React.FC<{
     <span style={{ minWidth: 22, height: 22, borderRadius: '50%', background: info.genderColor, color: '#fff', fontSize: 12, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
       {info.number ?? '-'}
     </span>
-    <div style={{ minWidth: 0 }}>
+    <div style={{ minWidth: 0, flex: 1 }}>
       <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {info.nickname}（{info.genderLabel}）
       </div>
-      <div style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {info.realName || '-'} · {info.age != null ? `${info.age}岁` : '年龄-'}
+      {/* 第二行：姓名 · 年龄 + 签到标记（不挤压第一行昵称与性别，2026-11-16 用户定） */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {info.realName || '-'} · {info.age != null ? `${info.age}岁` : '年龄-'}
+        </span>
+        <Tag
+          color={info.checkedIn ? 'blue' : 'default'}
+          title={info.checkedIn ? '已签到' : '未签到'}
+          style={{ marginLeft: 'auto', marginRight: 0, flexShrink: 0, fontSize: 10, lineHeight: '16px', paddingInline: 4 }}
+        >
+          {info.checkedIn ? '已签到' : '未签到'}
+        </Tag>
       </div>
     </div>
-    {/* 签到标记（与入选名单口径一致：蓝=已签到） */}
-    <Tag
-      color={info.checkedIn ? 'blue' : 'default'}
-      title={info.checkedIn ? '已签到' : '未签到'}
-      style={{ marginLeft: 'auto', marginRight: 0, flexShrink: 0 }}
-    >
-      {info.checkedIn ? '已签到' : '未签到'}
-    </Tag>
   </div>
 );
 
