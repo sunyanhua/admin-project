@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { BlockCard } from '@/components/operation/OnsiteBlockCard';
 import type { BlockItem } from '@/components/operation/OnsiteBlockCard';
 
@@ -16,6 +16,26 @@ describe('OnsiteBlockCard', () => {
     const img = container.querySelector('img') as HTMLImageElement;
     expect(img.style.objectFit).toBe('cover');
     expect(img.style.objectPosition).toBe('top');
+  });
+
+  it('照片加载失败（本地缓存损坏）时带 _cb 参数重试一次，再次失败不重复加参数', () => {
+    const { container } = render(<BlockCard item={personWithPhoto} state="normal" />);
+    const img = container.querySelector('img') as HTMLImageElement;
+    const before = img.src;
+    fireEvent.error(img);
+    expect(img.src).not.toBe(before);
+    expect(img.src).toContain('_cb=');
+    const after = img.src;
+    fireEvent.error(img);
+    expect(img.src).toBe(after);
+  });
+
+  it('带查询参数的地址（可能为签名）不追加缓存击穿参数，避免签名失效', () => {
+    const signed: BlockItem = { ...personWithPhoto, photo: 'https://cdn.example.com/p.jpg?sig=abc' };
+    const { container } = render(<BlockCard item={signed} state="normal" />);
+    const img = container.querySelector('img') as HTMLImageElement;
+    fireEvent.error(img);
+    expect(img.src).toBe('https://cdn.example.com/p.jpg?sig=abc');
   });
 
   it('有照片用户卡·未选中：亮度滤镜压暗（无黑蒙版），昵称条降亮，不显示已抽角标', () => {

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { splitGroupLabel } from '@/components/operation/onsiteGrouping.utils';
 
 /** 组中抽组/单组选人的展示块 */
@@ -16,6 +17,28 @@ export interface BlockItem {
 
 /** 展示块状态：normal/drawn=滤镜压暗 bright=明暗跳动中亮起 win=中奖金色放大 */
 export type BlockCardState = 'normal' | 'bright' | 'win' | 'drawn';
+
+/**
+ * 照片图片（带本地缓存损坏自动重试）：
+ * 长开的大屏窗口可能出现 ERR_CACHE_READ_FAILURE（浏览器缓存条目损坏），
+ * 首次加载失败时换带 _cb 缓存击穿参数的地址重试一次；带查询参数（可能为签名）的地址跳过，避免签名失效。
+ */
+const PhotoImg: React.FC<{ photo: string; alt: string; filter: string; transition: string }> = ({ photo, alt, filter, transition }) => {
+  const [src, setSrc] = useState(photo);
+  const handleError = () => {
+    if (src === photo && !photo.includes('?')) {
+      setSrc(`${photo}?_cb=${Date.now()}`);
+    }
+  };
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={handleError}
+      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', filter, transition: 'filter .3s' }}
+    />
+  );
+};
 
 /**
  * 组中抽组/单组选人展示块：组名方块或用户卡片。
@@ -44,7 +67,7 @@ export const BlockCard = ({ item, state }: { item: BlockItem; state: BlockCardSt
   if (item.photo) {
     return (
       <div style={{ position: 'relative', width: '12vw', aspectRatio: '3 / 4', borderRadius: '1vh', overflow: 'hidden', border, boxShadow: shadow, background: '#fff', boxSizing: 'border-box', transform: scale, transition }}>
-        <img src={item.photo} alt={item.label} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', display: 'block', filter, transition: 'filter .3s' }} />
+        <PhotoImg photo={item.photo} alt={item.label} filter={filter} transition="filter .3s" />
         {drawnTag}
         <span className="onsite-nick" style={{ opacity: nickOpacity, transition: 'opacity .3s, background .3s, color .3s', ...winNickStyle }}>
           <span className={`onsite-number-inline gender-${item.gender}`} style={{ opacity: badgeDim, transition: 'opacity .3s' }}>{item.number || '-'}</span>
