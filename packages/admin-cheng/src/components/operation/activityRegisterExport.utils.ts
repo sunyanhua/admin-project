@@ -13,6 +13,7 @@ import {
   RegisterPayStatusLabels,
 } from '@shared/constants';
 import { MaritalStatusLabels, EducationLabels } from '@/api/types/status';
+import { parseGroupIndex } from './onsiteGrouping.utils';
 
 // 通用 URL/照片工具统一放 excelExport.utils（报名名单与专区用户导出共用）
 import { PROFILE_H5_URL_PREFIX, buildProfileUrl, splitPhotos } from './excelExport.utils';
@@ -139,9 +140,10 @@ export function buildExportRow(item: RegisterRecord, ctx: RegisterExportContext 
   return row;
 }
 
-/** 现场入选名单导出表头：基础列 + 照片（如有）+ 签到状态/签到时间 + 表单配置列 + 个人主页 */
+/** 现场入选名单导出表头：基础列（现场序号后插「分组」）+ 照片（如有）+ 签到状态/签到时间 + 表单配置列 + 个人主页 */
 export function buildOnsiteExportHeaders(formConfig: FormField[], photoCount: number): string[] {
   const headers = [...BASE_HEADERS];
+  headers.splice(1, 0, '分组'); // 现场序号后插入分组列（2026-11-17 用户定）
   if (photoCount > 0) headers.push('照片');
   headers.push('签到状态', '签到时间');
   formConfig.forEach((f) => headers.push(f.label));
@@ -153,6 +155,8 @@ export function buildOnsiteExportHeaders(formConfig: FormField[], photoCount: nu
 export interface OnsiteExportContext {
   idCardMap: Record<string, string>;
   formConfig: FormField[];
+  /** 分组名称列表（onsite_config.groups 解析结果，按 extra_data.group_index 反查分组名） */
+  groups?: string[];
 }
 
 /** 组装现场入选名单导出工作表数据（参考报名名单导出：基础列/照片/表单列/个人主页一致） */
@@ -163,7 +167,8 @@ export function buildOnsiteExportSheet(items: RegisterRecord[], ctx: OnsiteExpor
   return {
     headers,
     rows,
-    photoColStart: BASE_HEADERS.length,
+    // 照片列起始索引 = 基础列数 + 分组列 1（无论是否有照片列，口径一致）
+    photoColStart: BASE_HEADERS.length + 1,
     photoColCount: photoCount,
     profileCol: headers.length - 1,
   };
@@ -172,8 +177,15 @@ export function buildOnsiteExportSheet(items: RegisterRecord[], ctx: OnsiteExpor
 /** 构建单条入选名单记录的数据行（签到状态/签到时间替代报名状态列，其余与报名名单导出一致） */
 export function buildOnsiteExportRow(item: RegisterRecord, ctx: OnsiteExportContext & { photoCount: number }): string[] {
   const checkinAt = item.checkin_at ? item.checkin_at.replace('T', ' ').substring(0, 19) : '';
+  const base = buildUserBaseCells(item, ctx.idCardMap);
+  // 分组名：extra_data.group_index（1 起）→ groups 列表反查；未分组/组已删为空串
+  const groups = ctx.groups || [];
+  const gIdx = parseGroupIndex(item.extra_data);
+  const groupName = gIdx != null ? (groups[gIdx - 1] || '') : '';
   const row = [
-    ...buildUserBaseCells(item, ctx.idCardMap),
+    base[0],
+    groupName,
+    ...base.slice(1),
     ...buildPhotoCells(item, ctx.photoCount),
     item.checkin_at ? '已签到' : '未签到',
     checkinAt,

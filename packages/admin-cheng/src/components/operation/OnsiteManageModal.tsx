@@ -23,6 +23,7 @@ import OnsiteLoveRankTab from '@/components/operation/OnsiteLoveRankTab';
 import OnsiteDeductScoreModal from '@/components/operation/OnsiteDeductScoreModal';
 import { formatDateTime, parseApiTime } from '@/utils/format';
 import { buildOnsiteExportSheet } from './activityRegisterExport.utils';
+import { parseGroupNames } from './onsiteGrouping.utils';
 import { applyLinkColumns } from './excelExport.utils';
 import type { FormField } from './FormConfigEditor';
 
@@ -165,7 +166,13 @@ const ApprovedListTab: React.FC<{
         formConfig = Array.isArray(fc) ? fc : [];
       } catch { /* 配置解析失败按无表单列处理 */ }
 
-      const { headers, rows, photoColStart, photoColCount, profileCol } = buildOnsiteExportSheet(enriched, { idCardMap, formConfig });
+      // 分组名列表（extra_data.group_index → 分组名，导出「分组」列用）
+      let groups: string[] = [];
+      try {
+        const obj = JSON.parse(activity?.onsite_config || '{}');
+        groups = parseGroupNames((obj && typeof obj === 'object' ? obj.groups : '') || '');
+      } catch { /* 配置解析失败按未分组导出 */ }
+      const { headers, rows, photoColStart, photoColCount, profileCol } = buildOnsiteExportSheet(enriched, { idCardMap, formConfig, groups });
 
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
       // 照片列/个人主页列：列宽 + 单元格链接（与报名名单导出一致）

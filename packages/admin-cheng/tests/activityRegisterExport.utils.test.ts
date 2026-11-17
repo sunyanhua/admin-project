@@ -215,10 +215,10 @@ describe('buildRegisterExportSheet', () => {
 });
 
 describe('buildOnsiteExportSheet（现场入选名单导出）', () => {
-  it('表头 = 基础列 + 签到状态/签到时间 + 表单列 + 个人主页（无照片列）', () => {
+  it('表头 = 基础列（现场序号后插分组）+ 签到状态/签到时间 + 表单列 + 个人主页（无照片列）', () => {
     const sheet = buildOnsiteExportSheet([sampleRecord()], { idCardMap: {}, formConfig: sampleFormConfig });
     expect(sheet.headers).toEqual([
-      ...BASE_HEADERS,
+      BASE_HEADERS[0], '分组', ...BASE_HEADERS.slice(1),
       '签到状态', '签到时间',
       '健康承诺',
       '个人主页',
@@ -226,15 +226,28 @@ describe('buildOnsiteExportSheet（现场入选名单导出）', () => {
     expect(sheet.photoColCount).toBe(0);
   });
 
-  it('有照片时追加照片列，行长度与表头一致', () => {
+  it('有照片时追加照片列（分组列后移一位），行长度与表头一致', () => {
     const record = sampleRecord({
       user_match_profile: { photos: ['http://cdn.vbegin.com/a.jpg', 'http://cdn.vbegin.com/b.jpg'] } as any,
     });
     const sheet = buildOnsiteExportSheet([record], { idCardMap: {}, formConfig: [] });
     const idx = (name: string) => sheet.headers.indexOf(name);
-    expect(idx('照片')).toBe(BASE_HEADERS.length);
+    expect(idx('照片')).toBe(BASE_HEADERS.length + 1);
+    expect(sheet.photoColStart).toBe(BASE_HEADERS.length + 1);
     expect(sheet.rows[0].length).toBe(sheet.headers.length);
     expect(sheet.rows[0][idx('照片')]).toBe('http://cdn.vbegin.com/a.jpg');
+  });
+
+  it('分组列按 extra_data.group_index 解析分组名填充，未分组为空串', () => {
+    const grouped = sampleRecord({ extra_data: JSON.stringify({ group_index: 2 }) });
+    const ungrouped = sampleRecord({ id: 'r2', extra_data: '' });
+    const sheet = buildOnsiteExportSheet([grouped, ungrouped], {
+      idCardMap: {}, formConfig: [], groups: ['A组', 'B组', 'C组'],
+    });
+    const idx = (name: string) => sheet.headers.indexOf(name);
+    expect(idx('分组')).toBe(1);
+    expect(sheet.rows[0][idx('分组')]).toBe('B组');
+    expect(sheet.rows[1][idx('分组')]).toBe('');
   });
 
   it('签到状态/签到时间按 checkin_at 填充', () => {
