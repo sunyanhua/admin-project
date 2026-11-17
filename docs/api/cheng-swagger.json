@@ -19702,7 +19702,7 @@
         },
         "/api/v1/activity/{id}": {
             "get": {
-                "description": "按 ID 查询启用状态的活动详情（无需鉴权）",
+                "description": "按 ID 查询启用状态的活动详情（无需鉴权；含 onsite_config）",
                 "produces": [
                     "application/json"
                 ],
@@ -19731,7 +19731,7 @@
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityPublicResponse"
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityPublicDetailResponse"
                                         }
                                     }
                                 }
@@ -21945,7 +21945,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "本活动有现场心动的配对（互心组优先 → 心动次数倒序），需 C 端 JWT；\n查看者须本活动「入选 + 已签到」（否则 40512）。\n条目 = 配对心动计数 + 双方现场编号与完整脱单档案卡片（现场口径，与现场用户列表同款）。",
+                "description": "本活动有现场心动的配对（互心组优先 → 心动次数倒序），需 C 端 JWT；\n查看者须本活动「入选 + 已签到」（否则 40512）。\n条目 = 配对心动计数 + 双方现场编号与完整脱单档案卡片（现场口径，与现场用户列表同款）。\n2026-11-17 起 male/female 双方卡片含 real_name 真实姓名（列表双方恒为已签到人员；无档案/未填写为 null）。",
                 "produces": [
                     "application/json"
                 ],
@@ -22012,7 +22012,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "读取本人本活动的现场活动配对（需 C 端 JWT）。\n门禁：本人本活动「入选 + 已签到」（否则 40512）；无配对 → data=null。\n揭示分级：己方答题提交后可见己方；对方答题与默契度差异总分仅双方均提交后可见。\n返回对方现场签到状态与公开画像卡片（现场口径优先、基础资料兜底；资料缺失为 null）。",
+                "description": "读取本人本活动的现场活动配对（需 C 端 JWT）。\n门禁：本人本活动「入选 + 已签到」（否则 40512）；无配对 → data=null。\n揭示分级：己方答题提交后可见己方；对方答题与默契度差异总分仅双方均提交后可见。\n返回对方现场签到状态与公开画像卡片（现场口径优先、基础资料兜底；资料缺失为 null）。\n2026-11-17 起返回对方真实姓名 partner_real_name（无条件，不受对方签到状态影响；无档案/未填写为 null）。",
                 "produces": [
                     "application/json"
                 ],
@@ -22134,7 +22134,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "查看本活动现场用户（仅入选+签到人员可见，需 C 端 JWT）。只展示入选+签到人员，\n可按性别筛选（1=男 2=女）；条目为基础公开资料+现场编号+签到时间。未入选/未签到报 40512。\n默认按现场编号正序（未分配编号 NULLS LAST，同号以 id 兜底定序）。",
+                "description": "查看本活动现场用户（仅入选+签到人员可见，需 C 端 JWT）。只展示入选+签到人员，\n可按性别筛选（1=男 2=女）；条目为基础公开资料+现场编号+签到时间。未入选/未签到报 40512。\n默认按现场编号正序（未分配编号 NULLS LAST，同号以 id 兜底定序）。\n2026-11-17 起条目含 real_name 真实姓名（列表恒为已签到人员；无档案/未填写为 null）。",
                 "produces": [
                     "application/json"
                 ],
@@ -22207,7 +22207,7 @@
                         "WxaAuth": []
                     }
                 ],
-                "description": "按 user id 读取本活动现场单个用户（需 C 端 JWT，查看者须入选+签到，否则 40512）。\n条目与现场用户列表完全同构（脱单档案卡片+现场编号+签到时间+心动次数）；\n目标只要已入选即可查看（2026-10-19 起不要求已签到）；未入选/资料缺失 → 40514。",
+                "description": "按 user id 读取本活动现场单个用户（需 C 端 JWT，查看者须入选+签到，否则 40512）。\n条目与现场用户列表完全同构（脱单档案卡片+现场编号+签到时间+心动次数）；\n目标只要已入选即可查看（2026-10-19 起不要求已签到）；未入选/资料缺失 → 40514。\n2026-11-17 起含 real_name 真实姓名：仅目标已签到时返回，未签到为 null。",
                 "produces": [
                     "application/json"
                 ],
@@ -30040,7 +30040,7 @@
                     "type": "integer"
                 },
                 "onsite_config": {
-                    "description": "现场配置（仅管理后台可见）",
+                    "description": "现场配置（管理后台与公开详情可见）",
                     "type": "string"
                 },
                 "onsite_loves_chances": {
@@ -30094,6 +30094,136 @@
                 },
                 "warm_up_config": {
                     "description": "预热配置",
+                    "type": "string"
+                },
+                "warm_up_enabled": {
+                    "description": "是否启用预热",
+                    "type": "boolean"
+                },
+                "zone_id": {
+                    "description": "关联专区 ID",
+                    "type": "string"
+                },
+                "zone_only": {
+                    "description": "是否只允许专区用户报名",
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityPublicDetailResponse": {
+            "type": "object",
+            "properties": {
+                "activity_type": {
+                    "type": "integer"
+                },
+                "agreement": {
+                    "description": "用户协议",
+                    "type": "string"
+                },
+                "checkin_enabled": {
+                    "description": "是否启用现场签到",
+                    "type": "boolean"
+                },
+                "checkin_start": {
+                    "description": "现场签到开始时间",
+                    "type": "string"
+                },
+                "cover": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "end_time": {
+                    "type": "string"
+                },
+                "extra_params": {
+                    "type": "string"
+                },
+                "fee": {
+                    "type": "integer"
+                },
+                "female_registered_count": {
+                    "description": "已报名女性人数",
+                    "type": "integer"
+                },
+                "female_slots": {
+                    "description": "女性名额（gender_enabled=true 时有值）",
+                    "type": "integer"
+                },
+                "form_config": {
+                    "type": "string"
+                },
+                "gender_enabled": {
+                    "description": "是否区分性别报名",
+                    "type": "boolean"
+                },
+                "hidden": {
+                    "description": "是否隐藏（列表不显示，详情不受限）",
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "male_registered_count": {
+                    "description": "已报名男性人数",
+                    "type": "integer"
+                },
+                "male_slots": {
+                    "description": "男性名额（gender_enabled=true 时有值）",
+                    "type": "integer"
+                },
+                "onsite_config": {
+                    "description": "现场配置（前端自主控制内容，服务端透明存储；null=未设置）",
+                    "type": "string"
+                },
+                "onsite_loves_chances": {
+                    "description": "现场心动机会数（与用户每日心动次数独立）",
+                    "type": "integer"
+                },
+                "presign_bind_deadline": {
+                    "description": "预报名绑定截止时间（null=永不截止，2026-09-28 老大需求）",
+                    "type": "string"
+                },
+                "register_end": {
+                    "type": "string"
+                },
+                "register_list_enabled": {
+                    "description": "是否开放 C 端报名列表（2026-09-28 裁决点 5——C 端据此显隐入口）",
+                    "type": "boolean"
+                },
+                "register_start": {
+                    "type": "string"
+                },
+                "registered_count": {
+                    "type": "integer"
+                },
+                "require_match_profile": {
+                    "type": "boolean"
+                },
+                "slots": {
+                    "type": "integer"
+                },
+                "sort_order": {
+                    "type": "integer"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.CommonStatus"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "warm_up_config": {
+                    "description": "预热配置（前端自主控制内容）",
                     "type": "string"
                 },
                 "warm_up_enabled": {
@@ -30369,7 +30499,7 @@
                     "type": "integer"
                 },
                 "onsite_config": {
-                    "description": "OnsiteConfig 现场配置（2026-09-15 老大需求）：前端自主控制内容，服务端透明存储（不解析格式）；\n仅管理后台可见——不进 ActivityPublicResponse（C 端/公开接口不返回）。",
+                    "description": "OnsiteConfig 现场配置（2026-09-15 老大需求）：前端自主控制内容，服务端透明存储（不解析格式）；\n管理后台与公开活动详情（GET /api/v1/activity/{id}）可见——公开列表/activity_data 不返回（2026-11-17 修订）。",
                     "type": "string"
                 },
                 "onsite_loves_chances": {
@@ -30596,6 +30726,10 @@
                     "description": "PartnerOnsiteNumber 对方本活动现场编号（取自对方报名记录 onsite_number；\n未分配/无有效报名为 null）。与管理端单条编号调整同步——可与配对 seq 不同。",
                     "type": "integer"
                 },
+                "partner_real_name": {
+                    "description": "PartnerRealName 对方真实姓名（2026-11-17 老大裁决：无条件返回，不受对方签到状态影响；\n无脱单档案/未填写为 null）。",
+                    "type": "string"
+                },
                 "seq": {
                     "description": "配对序号（= 本人现场编号；配对行为唯一事实源）",
                     "type": "integer"
@@ -30710,6 +30844,10 @@
                 "profile": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
                 },
+                "real_name": {
+                    "description": "RealName 真实姓名（2026-11-17 老大需求：列表双方恒为已签到人员，无条件返回；\n无脱单档案/未填写为 null——与现场用户列表条目的 real_name 口径一致）。",
+                    "type": "string"
+                },
                 "user": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
                 }
@@ -30787,6 +30925,10 @@
                 "profile": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicProfileInfo"
                 },
+                "real_name": {
+                    "description": "RealName 真实姓名（2026-11-17 老大需求：仅已签到时返回；未签到/无脱单档案/未填写为 null）。",
+                    "type": "string"
+                },
                 "user": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_model.PublicUserInfo"
                 }
@@ -30839,7 +30981,7 @@
             "type": "object",
             "properties": {
                 "activity_data": {
-                    "description": "ActivityData 活动信息（免二次请求；活动行缺失（已删除）为 null）。\n复用公开活动 DTO——与公开列表/详情/我的报名同一形状，前端一套渲染。",
+                    "description": "ActivityData 活动信息（免二次请求；活动行缺失（已删除）为 null）。\n复用公开活动 DTO——与公开列表/我的报名同一形状（公开详情额外含 onsite_config），前端一套渲染。",
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityPublicResponse"
@@ -31029,7 +31171,7 @@
             "type": "object",
             "properties": {
                 "activity_data": {
-                    "description": "ActivityData 活动信息（2026-09-14 老大需求——我的报名列表卡片需直接渲染活动标题/时间/封面，\n免二次请求）。Service 层批量填充（一次 IN 查询）；活动行缺失（已删除）保持 null。\n复用公开活动 DTO（ActivityPublicResponse）——与公开列表/详情同一形状，前端一套渲染。",
+                    "description": "ActivityData 活动信息（2026-09-14 老大需求——我的报名列表卡片需直接渲染活动标题/时间/封面，\n免二次请求）。Service 层批量填充（一次 IN 查询）；活动行缺失（已删除）保持 null。\n复用公开活动 DTO（ActivityPublicResponse）——与公开列表同一形状（公开详情额外含 onsite_config），前端一套渲染。",
                     "allOf": [
                         {
                             "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_activity_model.ActivityPublicResponse"
@@ -31180,7 +31322,7 @@
                     "type": "integer"
                 },
                 "onsite_config": {
-                    "description": "现场配置（前端自主控制内容，服务端透明存储；仅管理后台可见）",
+                    "description": "现场配置（前端自主控制内容，服务端透明存储；管理后台与公开详情可见）",
                     "type": "string"
                 },
                 "onsite_loves_chances": {
