@@ -171,13 +171,14 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
   };
 
   /**
-   * 全部入选：轮询导入报名列表，对所有「未报名」数据执行免报名入选。
-   * 单条失败不报错仅计数，全部完成后弹窗汇总成功/失败条数并刷新列表。
+   * 全部入选：对导入报名列表中「未报名」数据执行免报名入选。
+   * 每次操作最多 100 人（2026-11-18 用户定），超过 100 请再次执行；
+   * 单条失败不报错仅计数，完成后弹窗汇总成功/失败条数并刷新列表。
    */
   const handleRegisterAll = () => {
     Modal.confirm({
       title: '确认全部入选',
-      content: '将对导入报名列表中所有「未报名」的数据执行免报名入选（生成报名记录并直接审核通过）。此过程不逐一提示，完成后汇总结果。',
+      content: '将对导入报名列表中「未报名」的数据执行免报名入选（生成报名记录并直接审核通过）。每次操作最多 100 人，如需入选的人数超过 100，请再次执行。',
       okText: '确认入选',
       cancelText: '取消',
       onOk: async () => {
@@ -185,23 +186,18 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
         let okCount = 0;
         let failCount = 0;
         try {
-          let page = 1;
-          while (true) {
-            const res: any = await activityApi.getPresigns(activityId, { page, size: 100, status: PresignStatus.NOT_REGISTERED });
-            const list: PresignRecord[] = Array.isArray(res) ? res : (res?.list || []);
-            if (!list.length) break;
-            for (const item of list) {
-              try {
-                await activityApi.registerPresign(activityId, item.id);
-                okCount++;
-              } catch { failCount++; } // 单条失败静默，仅计数
-            }
-            if (list.length < 100) break;
-            page++;
+          // 只处理第一批（≤100 条）：超过 100 的剩余记录请再次执行
+          const res: any = await activityApi.getPresigns(activityId, { page: 1, size: 100, status: PresignStatus.NOT_REGISTERED });
+          const list: PresignRecord[] = Array.isArray(res) ? res : (res?.list || []);
+          for (const item of list) {
+            try {
+              await activityApi.registerPresign(activityId, item.id);
+              okCount++;
+            } catch { failCount++; } // 单条失败静默，仅计数
           }
           Modal.success({
             title: '全部入选完成',
-            content: `已成功执行 ${okCount} 条，失败 ${failCount} 条`,
+            content: `已成功执行 ${okCount} 条，失败 ${failCount} 条${list.length >= 100 ? '；如仍有未入选数据，请再次执行' : ''}`,
           });
           refresh();
         } catch (err: any) {
