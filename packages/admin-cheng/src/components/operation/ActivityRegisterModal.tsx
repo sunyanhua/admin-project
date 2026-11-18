@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { Button, Tag, Space, Tabs, Avatar, App } from 'antd';
-import { ReloadOutlined, EyeOutlined, ExportOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined, CheckSquareOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined, ExportOutlined, UserOutlined, AuditOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import {
@@ -213,34 +213,6 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
   /** 批量审核并发分块大小（对齐仓库内同类逐条批量操作） */
   const BATCH_AUDIT_SIZE = 8;
 
-  /** 执行批量入选（分块并发逐条审核；部分失败提示成功/失败数） */
-  const runBatchApprove = async (pendingIds: string[]) => {
-    setBatchSubmitting(true);
-    try {
-      const results: PromiseSettledResult<any>[] = [];
-      for (let i = 0; i < pendingIds.length; i += BATCH_AUDIT_SIZE) {
-        const chunk = pendingIds.slice(i, i + BATCH_AUDIT_SIZE);
-        const settled = await Promise.allSettled(
-          chunk.map((id) => activityApi.auditRegister(activityId, id, { approved: true })),
-        );
-        results.push(...settled);
-      }
-      const okCount = results.filter((r) => r.status === 'fulfilled').length;
-      const failCount = results.length - okCount;
-      setSelectedIds([]);
-      refresh();
-      if (failCount > 0) {
-        showError(`批量入选完成：成功 ${okCount} 条，失败 ${failCount} 条，失败记录请查看后重试`);
-      } else {
-        success(`已批量入选 ${okCount} 名用户`);
-      }
-    } catch (err: any) {
-      showError(err?.response?.data?.message || '批量入选失败');
-    } finally {
-      setBatchSubmitting(false);
-    }
-  };
-
   /** 批量入选：对勾选记录执行审核通过（先剔除脏选——只保留当前列表中仍为待审核的记录；分块并发，部分失败提示成功/失败数） */
   const handleBatchApprove = () => {
     if (!activityId) return;
@@ -255,27 +227,32 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
       content: `将把已勾选的 ${count} 名用户全部审核通过并入选，确定执行？`,
       okText: '确认入选',
       cancelText: '取消',
-      onOk: () => runBatchApprove(pendingIds),
-    });
-  };
-
-  /** 全部入选：无需勾选，直接入选当前页全部待审核用户（2026-11-18 用户定：每次操作最多 100 人，超出请再次执行） */
-  const handleApproveAll = () => {
-    if (!activityId) return;
-    const pendingIds = data
-      .filter((r) => r.audit_status === RegisterAuditStatus.PENDING)
-      .map((r) => r.id);
-    const count = pendingIds.length;
-    if (!count) {
-      showError('当前页暂无待审核用户');
-      return;
-    }
-    modal.confirm({
-      title: '全部入选确认',
-      content: `将把当前页全部待审核用户审核通过并入选（本次 ${count} 人）。每次操作最多 100 人，如需入选的人数超过 100，请再次执行。`,
-      okText: '确认入选',
-      cancelText: '取消',
-      onOk: () => runBatchApprove(pendingIds),
+      onOk: async () => {
+        setBatchSubmitting(true);
+        try {
+          const results: PromiseSettledResult<any>[] = [];
+          for (let i = 0; i < pendingIds.length; i += BATCH_AUDIT_SIZE) {
+            const chunk = pendingIds.slice(i, i + BATCH_AUDIT_SIZE);
+            const settled = await Promise.allSettled(
+              chunk.map((id) => activityApi.auditRegister(activityId, id, { approved: true })),
+            );
+            results.push(...settled);
+          }
+          const okCount = results.filter((r) => r.status === 'fulfilled').length;
+          const failCount = results.length - okCount;
+          setSelectedIds([]);
+          refresh();
+          if (failCount > 0) {
+            showError(`批量入选完成：成功 ${okCount} 条，失败 ${failCount} 条，失败记录请查看后重试`);
+          } else {
+            success(`已批量入选 ${okCount} 名用户`);
+          }
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '批量入选失败');
+        } finally {
+          setBatchSubmitting(false);
+        }
+      },
     });
   };
 
@@ -434,24 +411,15 @@ const ActivityRegisterModal: React.FC<ActivityRegisterModalProps> = ({
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
       <Space style={{ marginLeft: 12, flexShrink: 0 }}>
         {isFreeReview && isPendingFilter && (
-          <>
-            <Button
-              icon={<CheckSquareOutlined />}
-              loading={batchSubmitting}
-              onClick={handleApproveAll}
-            >
-              全部入选
-            </Button>
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              loading={batchSubmitting}
-              disabled={selectedIds.length === 0}
-              onClick={handleBatchApprove}
-            >
-              批量入选{selectedIds.length > 0 ? `（${selectedIds.length}）` : ''}
-            </Button>
-          </>
+          <Button
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            loading={batchSubmitting}
+            disabled={selectedIds.length === 0}
+            onClick={handleBatchApprove}
+          >
+            批量入选{selectedIds.length > 0 ? `（${selectedIds.length}）` : ''}
+          </Button>
         )}
         <Button icon={<ExportOutlined />} loading={exporting} onClick={handleExport}>导出</Button>
         <Button icon={<ReloadOutlined />} onClick={handleRefresh}>刷新</Button>
