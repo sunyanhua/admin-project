@@ -23830,6 +23830,49 @@
                 }
             }
         },
+        "/api/v1/wxa/idverify/eligibility": {
+            "get": {
+                "security": [
+                    {
+                        "WxaAuth": []
+                    }
+                ],
+                "description": "查询当前用户能否直接进行实人认证：can_certify=true 表示「免费规则可直接认证」或「进行中记录已完成虚拟订单支付」；否则返回 reason_code（1=已实名 2=待支付 3=重试耗尽 4=权益关闭/过期 5=已退款 6=无生效规则）与文案。有进行中记录时返回 active_record（含 paid/order_id/过期时间/剩余重试次数），价格取记录冻结值。只读，但会对账进行中记录的支付订单（微信已扣款而本地未标注时推进为已支付）并关闭已过期记录。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "实人认证"
+                ],
+                "summary": "实人认证资格查询",
+                "responses": {
+                    "200": {
+                        "description": "查询成功",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.EligibilityResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "401": {
+                        "description": "未认证",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/wxa/idverify/quote": {
             "get": {
                 "security": [
@@ -35711,6 +35754,97 @@
                 },
                 "status": {
                     "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.EligibilityActiveRecord": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "description": "ExpiresAt 认证权益过期时间（RFC3339）。",
+                    "type": "string"
+                },
+                "failed_count": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "order_id": {
+                    "description": "OrderID 关联支付订单 ID；免费认证同样有 0 元订单。",
+                    "type": "string"
+                },
+                "paid": {
+                    "description": "Paid 是否已完成虚拟订单支付（status=PendingVerify 时为 true）。",
+                    "type": "boolean"
+                },
+                "remaining_attempts": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_pkg_status.IDVerifyRecordStatus"
+                }
+            }
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.EligibilityReasonCode": {
+            "type": "integer",
+            "enum": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6
+            ],
+            "x-enum-varnames": [
+                "EligibilityReasonOK",
+                "EligibilityReasonVerified",
+                "EligibilityReasonPendingPayment",
+                "EligibilityReasonExhausted",
+                "EligibilityReasonClosed",
+                "EligibilityReasonRefunded",
+                "EligibilityReasonNoRule"
+            ]
+        },
+        "github_com_vbegin_tlnc_v6_internal_module_idverify_model.EligibilityResponse": {
+            "type": "object",
+            "properties": {
+                "active_record": {
+                    "description": "ActiveRecord 进行中的认证记录；无进行中记录时为 null。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.EligibilityActiveRecord"
+                        }
+                    ]
+                },
+                "can_certify": {
+                    "description": "CanCertify 当前是否可「无需再支付」直接进入认证：免费规则，或进行中记录已支付。",
+                    "type": "boolean"
+                },
+                "is_free": {
+                    "description": "IsFree 当前认证是否免费。有进行中记录时取记录冻结价，否则取当前生效规则。",
+                    "type": "boolean"
+                },
+                "is_real_verified": {
+                    "description": "IsRealVerified 是否已完成实名认证。",
+                    "type": "boolean"
+                },
+                "price_coins": {
+                    "description": "PriceCoins 认证价格（代币）；无生效规则且无进行中记录时为 0。",
+                    "type": "integer"
+                },
+                "reason": {
+                    "description": "Reason 面向用户的提示文案；CanCertify=true 时为空串。",
+                    "type": "string"
+                },
+                "reason_code": {
+                    "description": "ReasonCode 状态原因码；CanCertify=true 时恒为 EligibilityReasonOK。",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_module_idverify_model.EligibilityReasonCode"
+                        }
+                    ]
                 }
             }
         },
