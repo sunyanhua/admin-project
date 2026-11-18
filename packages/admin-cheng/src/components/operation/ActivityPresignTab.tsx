@@ -321,9 +321,9 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
         <SearchPanel filters={filters} values={searchValues} onChange={handleSearchChange} onSearch={handleSearch} onReset={handleReset} />
         <Space style={{ marginLeft: 12, flexShrink: 0 }}>
           <Button icon={<CheckSquareOutlined />} loading={bulkRegistering} onClick={handleRegisterAll}>全部入选</Button>
-          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>下载模版</Button>
+          <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate}>模版</Button>
           <Upload accept=".xlsx,.xls" showUploadList={false} beforeUpload={(file) => { handleImportFile(file); return false; }}>
-            <Button icon={<ImportOutlined />} loading={importing}>导入报名</Button>
+            <Button icon={<ImportOutlined />} loading={importing}>导入</Button>
           </Upload>
           <Button icon={<ReloadOutlined />} onClick={refresh}>刷新</Button>
         </Space>
