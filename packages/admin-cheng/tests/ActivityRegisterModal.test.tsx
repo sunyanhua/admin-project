@@ -145,6 +145,26 @@ describe('报名名单批量入选', () => {
     await screen.findByText('已批量入选 2 名用户');
   }, 30000);
 
+  it('全部入选：确认弹窗提示每次最多 100 人，确认后批量审核当前页全部待审核用户', async () => {
+    renderModal();
+    await waitFor(() => expect(screen.getAllByText('张三').length).toBeGreaterThan(0));
+    // 未筛选待审核：无全部入选按钮
+    expect(screen.queryByRole('button', { name: /全部入选/ })).not.toBeInTheDocument();
+
+    await selectStatusFilter('待审核');
+    await waitFor(() => expect(document.querySelector('.ant-table-selection-column')).not.toBeNull());
+
+    fireEvent.click(screen.getByRole('button', { name: /全部入选/ }));
+    await screen.findAllByText('全部入选确认');
+    expect(screen.getByText(/每次操作最多 100 人/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /确认入选/ }));
+    await waitFor(() => expect(auditRegisterMock).toHaveBeenCalledTimes(2));
+    expect(auditRegisterMock).toHaveBeenCalledWith('a1', 'r1', { approved: true });
+    expect(auditRegisterMock).toHaveBeenCalledWith('a1', 'r2', { approved: true });
+    await screen.findByText('已批量入选 2 名用户');
+  }, 30000);
+
   it('切换回全部状态后勾选列与批量入选按钮消失', async () => {
     renderModal();
     await waitFor(() => expect(screen.getAllByText('张三').length).toBeGreaterThan(0));
