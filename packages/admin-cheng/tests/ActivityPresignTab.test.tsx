@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { App } from 'antd';
 import ActivityPresignTab from '@/components/operation/ActivityPresignTab';
 
@@ -35,6 +35,36 @@ beforeEach(() => {
 const renderTab = () => render(<App><ActivityPresignTab activityId="a1" /></App>);
 
 describe('ActivityPresignTab 导入报名·全部入选', () => {
+  it('状态筛选选项：未报名也未入选/已入选未报名/已入选，选中后按对应 status 传参', async () => {
+    renderTab();
+    await waitFor(() => expect(screen.getByText('导入列表')).toBeInTheDocument());
+    // 打开状态下拉
+    fireEvent.mouseDown(document.querySelector('.ant-select-selector')!);
+    const dropdown = await waitFor(() => {
+      const el = document.querySelector('.ant-select-dropdown');
+      expect(el).not.toBeNull();
+      return el as HTMLElement;
+    });
+    expect(within(dropdown).getByText('未报名也未入选')).toBeTruthy();
+    expect(within(dropdown).getByText('已入选未报名')).toBeTruthy();
+    expect(within(dropdown).getByText('已报名或已入选')).toBeTruthy();
+    // 选「已入选未报名」→ status=2
+    getPresignsMock.mockClear();
+    fireEvent.click(within(dropdown).getByText('已入选未报名'));
+    await waitFor(() => {
+      const call = getPresignsMock.mock.calls.find((c: any[]) => c[1]?.status != null);
+      expect(call?.[1].status).toBe(2);
+    });
+    // 选「已报名或已入选」→ status=1
+    fireEvent.mouseDown(document.querySelector('.ant-select-selector')!);
+    const dropdown2 = await waitFor(() => document.querySelector('.ant-select-dropdown') as HTMLElement);
+    fireEvent.click(within(dropdown2).getByText('已报名或已入选'));
+    await waitFor(() => {
+      const call = getPresignsMock.mock.calls.find((c: any[]) => c[1]?.status === 1);
+      expect(call?.[1].status).toBe(1);
+    });
+  }, 30000);
+
   it('全部入选：确认弹窗提示每次最多 100 人，确认后仅处理 100 条未报名记录', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('导入列表')).toBeInTheDocument());

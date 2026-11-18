@@ -41,9 +41,9 @@ function parseGender(v: unknown): number {
 const filters: FilterConfig[] = [
   { name: 'status', placeholder: '全部状态', type: 'select',
     options: [
-      { label: '未报名', value: PresignStatus.NOT_REGISTERED },
-      { label: '已报名', value: PresignStatus.REGISTERED },
-      { label: '已免报名入选', value: PresignStatus.REGISTERED_BY_ADMIN },
+      { label: '未报名也未入选', value: PresignStatus.NOT_REGISTERED },
+      { label: '已入选未报名', value: PresignStatus.REGISTERED_BY_ADMIN },
+      { label: '已报名或已入选', value: PresignStatus.REGISTERED },
     ],
   },
   { name: 'keyword', placeholder: '搜索姓名、手机号', type: 'input' },
