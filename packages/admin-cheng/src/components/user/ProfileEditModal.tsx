@@ -36,7 +36,7 @@ const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, bir
   const [submitting, setSubmitting] = useState(false);
   const { success, error } = useAppNotification();
 
-  // 打开/资料到达时回填（资料可能晚于弹窗到达——详情异步返回的场景；initialValues 只在首挂载生效，故用 setFieldsValue）
+  // 打开/资料到达时先用传入资料立即回填（资料可能晚于弹窗到达——详情异步返回的场景；initialValues 只在首挂载生效，故用 setFieldsValue）
   useEffect(() => {
     if (!open) return;
     form.setFieldsValue({
@@ -46,6 +46,22 @@ const ProfileEditModal: React.FC<Props> = ({ open, userId, nickname, gender, bir
       zodiac: zodiac || undefined,
     });
   }, [open, nickname, gender, birthDate, zodiac, form]);
+
+  // 打开即重拉最新用户资料（系统标准：调用方传的可能是列表行旧数据，弹窗内一律以最新为准）
+  useEffect(() => {
+    if (!open || !userId) return;
+    userApi.getUserDetail(userId)
+      .then((res: any) => {
+        const p = res?.profile || {};
+        form.setFieldsValue({
+          nickname: p.nickname || nickname || '',
+          gender: p.gender ?? gender,
+          birth_date: p.birth_date ? dayjs(p.birth_date) : (birthDate ? dayjs(birthDate) : undefined),
+          zodiac: p.zodiac || zodiac || undefined,
+        });
+      })
+      .catch(() => { /* 拉取失败保留传入资料 */ });
+  }, [open, userId, form, nickname, gender, birthDate, zodiac]);
 
   const handleSubmit = async () => {
     try {

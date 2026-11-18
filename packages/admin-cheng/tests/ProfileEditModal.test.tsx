@@ -4,16 +4,20 @@ import { App } from 'antd';
 import ProfileEditModal from '@/components/user/ProfileEditModal';
 
 const updateBasicProfileMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const getUserDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue({ profile: {} }));
 
 vi.mock('@/api/services/user', () => ({
   userApi: {
     updateBasicProfile: updateBasicProfileMock,
+    getUserDetail: getUserDetailMock,
   },
 }));
 
 beforeEach(() => {
   updateBasicProfileMock.mockReset();
   updateBasicProfileMock.mockResolvedValue({});
+  getUserDetailMock.mockReset();
+  getUserDetailMock.mockResolvedValue({ profile: {} });
 });
 
 const renderModal = (props: Partial<Parameters<typeof ProfileEditModal>[0]> = {}) =>
@@ -47,6 +51,18 @@ describe('ProfileEditModal 编辑基础资料', () => {
     );
     expect(screen.getByDisplayValue('李四')).toBeInTheDocument();
     expect(screen.getByLabelText('女')).toBeChecked();
+  });
+
+  it('打开时自拉最新用户资料回填（调用方传的是列表行旧数据也能显示最新资料）', async () => {
+    getUserDetailMock.mockResolvedValue({
+      user: { user_id: 'u1', phone: '', is_migrated: false },
+      profile: { nickname: '最新昵称', gender: 2, birth_date: '1998-03-20', zodiac: '白羊座' },
+      match_profile: null,
+    });
+    renderModal({ nickname: undefined });
+    expect(await screen.findByDisplayValue('最新昵称')).toBeInTheDocument();
+    expect(screen.getByLabelText('女')).toBeChecked();
+    expect(screen.getByDisplayValue('1998-03-20')).toBeInTheDocument();
   });
 
   it('不显示审核状态字段（审核状态由审核操作处理，编辑基础资料不改动）', () => {
