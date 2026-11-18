@@ -335,7 +335,6 @@ const UserList = () => {
         gender={detailItem?.profile.gender}
         birthDate={detailItem?.profile.birth_date}
         zodiac={detailItem?.profile.zodiac}
-        auditStatus={detailItem?.profile.audit_status}
         onClose={() => setEditProfileOpen(false)}
         onSuccess={(updated) => {
           setDetailItem((prev) => {
@@ -348,7 +347,6 @@ const UserList = () => {
                 gender: updated.gender ?? prev.profile.gender,
                 birth_date: updated.birthDate ?? prev.profile.birth_date,
                 zodiac: updated.zodiac ?? prev.profile.zodiac,
-                audit_status: updated.auditStatus ?? prev.profile.audit_status,
               },
             } as CommunityUserItem;
           });
