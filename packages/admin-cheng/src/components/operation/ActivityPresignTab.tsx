@@ -83,11 +83,16 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
 
   // 挂载时 useListPage 已首拉；活动切换或弹窗重开（reloadKey 变化）时重新拉取
   const prevKeyRef = useRef(activityId ? `${activityId}-${reloadKey}` : '');
+  // 当前筛选条件镜像（reloadKey 重拉时保持筛选，2026-11-18 修复：切走再切回后列表按筛选加载）
+  const searchValuesRef = useRef(searchValues);
+  useEffect(() => {
+    searchValuesRef.current = searchValues;
+  }, [searchValues]);
   useEffect(() => {
     const key = `${activityId}-${reloadKey}`;
     if (activityId && key !== prevKeyRef.current) {
       prevKeyRef.current = key;
-      search({ _t: Date.now() });
+      search({ ...searchValuesRef.current, _t: Date.now() });
     }
   }, [activityId, reloadKey, search]);
 

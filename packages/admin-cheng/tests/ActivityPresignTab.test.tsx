@@ -65,6 +65,31 @@ describe('ActivityPresignTab 导入报名·全部入选', () => {
     });
   }, 30000);
 
+  it('筛选后切走再切回（reloadKey 变化）：列表仍按筛选条件加载，刷新也按筛选', async () => {
+    const { rerender } = render(<App><ActivityPresignTab activityId="a1" reloadKey={0} /></App>);
+    await waitFor(() => expect(screen.getByText('导入列表')).toBeInTheDocument());
+    // 选择筛选「已入选未报名」（status=2）
+    fireEvent.mouseDown(document.querySelector('.ant-select-selector')!);
+    const dropdown = await waitFor(() => document.querySelector('.ant-select-dropdown') as HTMLElement);
+    fireEvent.click(within(dropdown).getByText('已入选未报名'));
+    await waitFor(() => {
+      expect(getPresignsMock.mock.calls.some((c: any[]) => c[1]?.status === 2)).toBe(true);
+    });
+    // 模拟切走再切回：reloadKey +1
+    getPresignsMock.mockClear();
+    rerender(<App><ActivityPresignTab activityId="a1" reloadKey={1} /></App>);
+    // 重拉仍带筛选 status=2
+    await waitFor(() => {
+      expect(getPresignsMock.mock.calls.some((c: any[]) => c[1]?.status === 2)).toBe(true);
+    });
+    // 点刷新也按筛选条件加载
+    getPresignsMock.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: /刷新/ }));
+    await waitFor(() => {
+      expect(getPresignsMock.mock.calls.some((c: any[]) => c[1]?.status === 2)).toBe(true);
+    });
+  }, 90000);
+
   it('全部入选：确认弹窗提示每次最多 100 人，确认后仅处理 100 条未报名记录', async () => {
     renderTab();
     await waitFor(() => expect(screen.getByText('导入列表')).toBeInTheDocument());
