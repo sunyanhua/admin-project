@@ -402,6 +402,11 @@ export const activityApi = {
     return request.post(`/admin/v1/bizops/activity/${activityId}/presign/${presignId}/register`);
   },
 
+  /** 撤销预报名入选：预报名回置未报名（保留 register_id），关联报名改为已拒绝（释放名额、清签到/编号/心动）；撤销后可再次一键报名复用同一条报名 */
+  revokePresign: (activityId: string, presignId: string) => {
+    return request.post(`/admin/v1/bizops/activity/${activityId}/presign/${presignId}/revoke`);
+  },
+
   /** 删除预报名信息（软删；仅未报名且未关联报名记录可删，已报名/已免报名入选 → 40531） */
   deletePresign: (activityId: string, presignId: string) => {
     return request.delete(`/admin/v1/bizops/activity/${activityId}/presign/${presignId}`);

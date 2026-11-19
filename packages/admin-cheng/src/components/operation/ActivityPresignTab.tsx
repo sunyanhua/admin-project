@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Button, Space, Tag, Upload, Modal, DatePicker } from 'antd';
-import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined, ReloadOutlined, CheckSquareOutlined, DeleteOutlined } from '@ant-design/icons';
+import { DownloadOutlined, ImportOutlined, UserAddOutlined, SaveOutlined, ReloadOutlined, CheckSquareOutlined, DeleteOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import * as XLSX from 'xlsx';
 import dayjs from 'dayjs';
@@ -185,6 +185,27 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
     });
   };
 
+  /** 撤销入选（已报名 1/2 可撤销）：预报名回置未报名，关联报名改为已拒绝（释放名额、清签到/编号/心动），撤销后可再次入选 */
+  const handleRevokePresign = (record: PresignRecord) => {
+    const name = record.real_name || record.phone || '';
+    Modal.confirm({
+      title: '确认撤销入选',
+      content: `确认撤销「${name}」的入选？操作后将释放名额、关联报名改为未通过（清理签到/现场编号/现场心动），用户会收到通知；撤销后可重新执行免报名入选。`,
+      okText: '确认撤销',
+      okButtonProps: { danger: true },
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await activityApi.revokePresign(activityId, record.id);
+          success('已撤销入选');
+          refresh();
+        } catch (err: any) {
+          showError(err?.response?.data?.message || '撤销入选失败');
+        }
+      },
+    });
+  };
+
   /** 删除预报名（仅未报名且未关联报名记录可删；软删后同活动同手机号可重新导入） */
   const handleDeletePresign = (record: PresignRecord) => {
     confirmDelete({
@@ -267,17 +288,22 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
       width: 200,
       fixed: 'right' as const,
       render: (_: any, r: PresignRecord) => {
-        // 已报名 / 已免报名入选（register_id 非空或 status 非未报名）：不可操作（后端 40531 也不允许删除）
-        const isRegistered = !!r.register_id || (r.status ?? PresignStatus.NOT_REGISTERED) !== PresignStatus.NOT_REGISTERED;
-        if (isRegistered) {
-          return <span style={{ color: '#999' }}>-</span>;
+        const status = r.status ?? PresignStatus.NOT_REGISTERED;
+        // 已报名（用户主动/后台一键）：可撤销入选
+        if (status === PresignStatus.REGISTERED || status === PresignStatus.REGISTERED_BY_ADMIN) {
+          return (
+            <Button type="link" size="small" danger icon={<UndoOutlined />} onClick={() => handleRevokePresign(r)}>撤销入选</Button>
+          );
         }
+        // 未报名：可免报名入选；已撤销但保留关联（register_id 非空）不可删除（后端 40531）
         return (
           <Space size={0}>
             <Button type="link" size="small" icon={<UserAddOutlined />} loading={registeringIds.has(r.id)}
               onClick={() => handleRegisterPresign(r)}>免报名入选</Button>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}
-              onClick={() => handleDeletePresign(r)}>删除</Button>
+            {!r.register_id && (
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}
+                onClick={() => handleDeletePresign(r)}>删除</Button>
+            )}
           </Space>
         );
       },

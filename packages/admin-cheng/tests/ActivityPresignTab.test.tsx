@@ -13,11 +13,13 @@ const PRESIGNS = vi.hoisted(() =>
 
 const getPresignsMock = vi.hoisted(() => vi.fn().mockResolvedValue(PRESIGNS));
 const registerPresignMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const revokePresignMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 
 vi.mock('@/api/services/activity-v1', () => ({
   activityApi: {
     getPresigns: getPresignsMock,
     registerPresign: registerPresignMock,
+    revokePresign: revokePresignMock,
     getDetail: vi.fn().mockResolvedValue({ presign_bind_deadline: null }),
     update: vi.fn(),
     deletePresign: vi.fn(),
@@ -30,6 +32,7 @@ beforeEach(() => {
     // 列表分页拉取与全部入选拉取共用：按 status 区分
     Promise.resolve(params?.status != null ? PRESIGNS.slice(0, 100) : PRESIGNS.slice(0, 20)));
   registerPresignMock.mockClear();
+  revokePresignMock.mockClear();
 });
 
 const renderTab = () => render(<App><ActivityPresignTab activityId="a1" /></App>);
@@ -89,6 +92,23 @@ describe('ActivityPresignTab 导入报名·全部入选', () => {
       expect(getPresignsMock.mock.calls.some((c: any[]) => c[1]?.status === 2)).toBe(true);
     });
   }, 90000);
+
+  it('已入选未报名行显示撤销入选：确认后调用撤销接口并刷新，未报名行无撤销按钮', async () => {
+    getPresignsMock.mockImplementation(() => Promise.resolve([
+      { id: 'p1', phone: '13800000001', real_name: '张三', status: 2, register_id: 'rr1', created_at: '2026-11-18T09:00:00+08:00' },
+      { id: 'p2', phone: '13800000002', real_name: '李四', status: 0, created_at: '2026-11-18T09:00:00+08:00' },
+    ]));
+    renderTab();
+    await waitFor(() => expect(screen.getByText('张三')).toBeInTheDocument());
+    // 仅已报名行有撤销按钮
+    expect(screen.getAllByRole('button', { name: /撤销入选/ }).length).toBe(1);
+    fireEvent.click(screen.getByRole('button', { name: /撤销入选/ }));
+    await screen.findAllByText('确认撤销入选');
+    const callsBefore = getPresignsMock.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: /确认撤销/ }));
+    await waitFor(() => expect(revokePresignMock).toHaveBeenCalledWith('a1', 'p1'));
+    await waitFor(() => expect(getPresignsMock.mock.calls.length).toBeGreaterThan(callsBefore));
+  }, 30000);
 
   it('全部入选：确认弹窗提示每次最多 100 人，确认后仅处理 100 条未报名记录', async () => {
     renderTab();
