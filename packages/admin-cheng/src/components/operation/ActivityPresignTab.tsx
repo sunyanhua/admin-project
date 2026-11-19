@@ -11,31 +11,14 @@ import { StandardTable } from '@/components/templates/StandardTable';
 import { SearchPanel, FilterConfig } from '@/components/templates/SearchPanel';
 import { dateTimeColumn } from '@/components/templates/ColumnHelpers';
 import { activityApi, PresignRecord, ImportPresignItem } from '@/api/services/activity-v1';
-import { PresignStatus, PresignStatusLabels, UserGender, UserGenderLabels } from '@/api/types/status';
+import { TEMPLATE_HEADERS, rowToImportItem } from './presignImport.utils';
+import { PresignStatus, PresignStatusLabels, UserGenderLabels } from '@/api/types/status';
 import { parseApiTime, dayjsToApi } from '@/utils/format';
 
 interface ActivityPresignTabProps {
   activityId: string;
   /** 报名名单弹窗打开次数（弹窗重开时刷新列表） */
   reloadKey: number;
-}
-
-/** 导入模版表头（与导入解析共用，前 3 列映射接口字段，其余打包进 presign_data） */
-const TEMPLATE_HEADERS = [
-  '姓名', '手机号', '性别', '婚姻状况', '学历', '职业', '工作单位', '身高', '体重',
-  '生肖', '血型', '民族', '所在区县', '户籍', '家乡', '毕业学校', '收入范围', '身份证号',
-  '兴趣爱好', '才艺特长', '自我介绍', '择偶要求',
-] as const;
-
-/** 打包进 presign_data 的列（姓名/手机号/性别之后的所有列） */
-const PRESIGN_DATA_KEYS = TEMPLATE_HEADERS.slice(3);
-
-/** 性别文案 → 接口枚举（男 1 / 女 2 / 其他 0 未设置） */
-function parseGender(v: unknown): number {
-  const s = String(v ?? '').trim();
-  if (s === '男' || s === '1') return UserGender.MALE;
-  if (s === '女' || s === '2') return UserGender.FEMALE;
-  return UserGender.UNSET;
 }
 
 const filters: FilterConfig[] = [
@@ -140,20 +123,8 @@ const ActivityPresignTab: React.FC<ActivityPresignTabProps> = ({ activityId, rel
 
       const items: ImportPresignItem[] = [];
       for (const row of rows) {
-        const phone = String(row['手机号'] ?? '').trim();
-        if (!phone) continue;
-        const extra: Record<string, string> = {};
-        for (const key of PRESIGN_DATA_KEYS) {
-          const val = String(row[key] ?? '').trim();
-          if (val) extra[key] = val;
-        }
-        const realName = String(row['姓名'] ?? '').trim();
-        items.push({
-          phone,
-          real_name: realName || undefined,
-          gender: parseGender(row['性别']),
-          presign_data: Object.keys(extra).length ? JSON.stringify(extra) : undefined,
-        });
+        const item = rowToImportItem(row);
+        if (item) items.push(item);
       }
       if (!items.length) {
         showWarning('没有可导入的数据（手机号列为空）');
