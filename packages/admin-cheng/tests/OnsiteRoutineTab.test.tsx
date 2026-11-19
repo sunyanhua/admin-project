@@ -177,8 +177,8 @@ describe('OnsiteRoutineTab', () => {
     );
     // 回填：多选框中显示已指定的分组
     await waitFor(() => {
-      expect(screen.getByText('一组')).toBeTruthy();
-      expect(screen.getByText('三组')).toBeTruthy();
+      expect(screen.getByText('一')).toBeTruthy();
+      expect(screen.getByText('三')).toBeTruthy();
     });
     await userEvent.click(btnByText('保存'));
     await waitFor(() => {

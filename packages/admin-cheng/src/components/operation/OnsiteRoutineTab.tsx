@@ -166,7 +166,7 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
     setDragIdx(idx);
   };
 
-  const groupOptions = groups.map((g) => ({ value: g, label: `${g}组` }));
+  const groupOptions = groups.map((g) => ({ value: g, label: `${g}` }));
   const groupDrawMax = Math.max(1, groups.length);
 
   return (

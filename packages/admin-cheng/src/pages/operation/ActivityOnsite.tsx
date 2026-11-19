@@ -1702,7 +1702,7 @@ const ActivityOnsite: React.FC = () => {
                 onChange={blurAfter((v: string) => setPersonGroup(v))}
                 onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 88 }}
-                options={groupsRef.current.map((g) => ({ value: g, label: `${g}组` }))}
+                options={groupsRef.current.map((g) => ({ value: g, label: `${g}` }))}
               />
               <span>抽取人数</span>
               <Select
@@ -1832,7 +1832,7 @@ const ActivityOnsite: React.FC = () => {
                 <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '2.8vh' }}>
                   {tab === 'groupDraw'
                     ? `共 ${blockAll.length} 组 · 每轮抽取 ${effGroupDrawCount} 组`
-                    : `「${personGroupName}」组 · 每轮抽取 ${effPersonDrawCount} 人`}
+                    : `「${personGroupName}」 · 每轮抽取 ${effPersonDrawCount} 人`}
                 </div>
               </>
             ) : (

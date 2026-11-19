@@ -479,7 +479,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                   }}
                 >
                   <div style={{ fontWeight: 600, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{name} 组</span>
+                    <span>{name}</span>
                     <span style={{ fontSize: 12, color: '#666', fontWeight: 400 }}>
                       男{stats.males} 女{stats.females} 共{stats.total}
                     </span>
