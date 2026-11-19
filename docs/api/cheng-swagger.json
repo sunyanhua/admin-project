@@ -973,6 +973,59 @@
                 }
             }
         },
+        "/admin/v1/bizops/activity/{id}/presign/{pid}/revoke": {
+            "post": {
+                "security": [
+                    {
+                        "AdminAuth": []
+                    }
+                ],
+                "description": "将预报名回置为未报名（status=0，保留 register_id/user_id），并同步把关联报名改为已拒绝（记录保留、不删除）：\n释放名额、清理签到/现场编号/现场心动已用次数/审核通过时间，写审核站内明细与订阅消息。\n撤销后再次一键报名按 register_id 复用同一条报名（已拒绝则补通过、计数补回），不会产生第二条记录。\n仅「已报名（1/2）」或「已撤销但保留关联（0 且 register_id 非空）」可撤销，其余 → 40536；\n预报名不存在/不属于该活动 → 40515；同一预报名行 5 秒内重复操作 → 40533。",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin-Activity"
+                ],
+                "summary": "撤销预报名入选",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "活动 ID（UUID）",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "预报名信息 ID（UUID）",
+                        "name": "pid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_vbegin_tlnc_v6_internal_gateway.Response"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/v1/bizops/activity/{id}/register": {
             "get": {
                 "security": [
