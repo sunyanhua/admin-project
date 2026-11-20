@@ -11,6 +11,11 @@ export const GROUP_NAME_KEY = 'group_name';
 /** onsite_config 中「人员换组时间戳」键（大屏 10s 轮询据此重建签到墙，2026-11-16 用户定） */
 export const GROUPS_UPDATED_AT_KEY = 'groups_updated_at';
 
+/** 组名显示用（2026-11-20 用户定）：+ 仅用于组中选组方块换行（splitGroupLabel），其余展示处去掉 + 字符 */
+export function displayGroupName(name: string): string {
+  return String(name ?? '').replace(/\+/g, '');
+}
+
 /** 解析分组名称（"A|B|C" → ['A','B','C']；过滤空段） */
 export function parseGroupNames(raw: string): string[] {
   return String(raw || '')

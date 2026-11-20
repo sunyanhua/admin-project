@@ -7,7 +7,7 @@ import { activityApi, RegisterRecord, OnsiteCouple, OnsitePairingAdminItem, Onsi
 import { userApi } from '@/api/services/user';
 import { RegisterAuditStatus } from '@shared/constants';
 import { getFullWidthUrl, getMediumUrl } from '@/utils/imageUtils';
-import { parseGroupIndex, GROUPS_UPDATED_AT_KEY } from '@/components/operation/onsiteGrouping.utils';
+import { parseGroupIndex, GROUPS_UPDATED_AT_KEY, displayGroupName } from '@/components/operation/onsiteGrouping.utils';
 import OnsitePhotoImg from '@/components/operation/OnsitePhotoImg';
 import { BlockCard, BlockItem } from '@/components/operation/OnsiteBlockCard';
 import { chunkBalancedRows } from '@/utils/balancedRows';
@@ -1702,7 +1702,7 @@ const ActivityOnsite: React.FC = () => {
                 onChange={blurAfter((v: string) => setPersonGroup(v))}
                 onDropdownVisibleChange={(open: boolean) => setToolSelectOpen(open)}
                 style={{ width: 88 }}
-                options={groupsRef.current.map((g) => ({ value: g, label: `${g}` }))}
+                options={groupsRef.current.map((g) => ({ value: g, label: displayGroupName(g) }))}
               />
               <span>抽取人数</span>
               <Select
@@ -1790,7 +1790,7 @@ const ActivityOnsite: React.FC = () => {
                           <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1vh' }}>
                             {/* 各组代表：转轮上方显示组名 */}
                             {tab === 'groupRep' && reelGroupNames[i] && (
-                              <div style={{ color: '#ffd700', fontWeight: 700, fontSize: '3vh', letterSpacing: 2, textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>{reelGroupNames[i]}</div>
+                              <div style={{ color: '#ffd700', fontWeight: 700, fontSize: '3vh', letterSpacing: 2, textShadow: '0 2px 12px rgba(0,0,0,.5)' }}>{displayGroupName(reelGroupNames[i])}</div>
                             )}
                             <div className={`draw-reel-frame lucky${drawPhase === 'done' ? ' win' : ''}`} style={{ width: `${luckyReelW}vw` }}>
                               <div className="draw-reel-window" style={{ height: `${luckyReelH}vw` }}>
@@ -1832,7 +1832,7 @@ const ActivityOnsite: React.FC = () => {
                 <div style={{ color: 'rgba(255,255,255,.7)', fontSize: '2.8vh' }}>
                   {tab === 'groupDraw'
                     ? `共 ${blockAll.length} 组 · 每轮抽取 ${effGroupDrawCount} 组`
-                    : `「${personGroupName}」 · 每轮抽取 ${effPersonDrawCount} 人`}
+                    : `「${displayGroupName(personGroupName)}」 · 每轮抽取 ${effPersonDrawCount} 人`}
                 </div>
               </>
             ) : (

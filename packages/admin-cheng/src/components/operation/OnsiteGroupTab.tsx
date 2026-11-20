@@ -7,6 +7,7 @@ import { RegisterAuditStatus, RegisterGenderLabels } from '@shared/constants';
 import {
   parseGroupNames,
   parseGroupIndex,
+  displayGroupName,
   autoAssignGroups,
   stripGroupInfo,
   GROUP_INDEX_KEY,
@@ -479,7 +480,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                   }}
                 >
                   <div style={{ fontWeight: 600, marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{name}</span>
+                    <span>{displayGroupName(name)}</span>
                     <span style={{ fontSize: 12, color: '#666', fontWeight: 400 }}>
                       男{stats.males} 女{stats.females} 共{stats.total}
                     </span>

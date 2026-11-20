@@ -4,7 +4,7 @@ import { SaveOutlined, PlusOutlined, DeleteOutlined, HolderOutlined } from '@ant
 import { useAppNotification } from '@/hooks/useAppNotification';
 import { activityApi, Activity } from '@/api/services/activity-v1';
 import { LUCKY_GENDER_OPTIONS, LuckyGender } from '@/pages/operation/luckyPools.utils';
-import { parseGroupNames } from './onsiteGrouping.utils';
+import { parseGroupNames, displayGroupName } from './onsiteGrouping.utils';
 import {
   parseRoutine,
   findInvalidPersonGroup,
@@ -166,7 +166,7 @@ const OnsiteRoutineTab: React.FC<OnsiteRoutineTabProps> = ({ activityId, activit
     setDragIdx(idx);
   };
 
-  const groupOptions = groups.map((g) => ({ value: g, label: `${g}` }));
+  const groupOptions = groups.map((g) => ({ value: g, label: displayGroupName(g) }));
   const groupDrawMax = Math.max(1, groups.length);
 
   return (

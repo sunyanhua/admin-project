@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { birthDateFromIdCard, rowToImportItem } from '@/components/operation/presignImport.utils';
+import { displayGroupName } from '@/components/operation/onsiteGrouping.utils';
+
+describe('displayGroupName 组名显示（去 + 字符）', () => {
+  it('含 + 的组名去掉 + 显示', () => {
+    expect(displayGroupName('动作+电影')).toBe('动作电影');
+    expect(displayGroupName('A+B+C')).toBe('ABC');
+  });
+
+  it('不含 + 的组名原样返回', () => {
+    expect(displayGroupName('一组')).toBe('一组');
+  });
+});
 
 describe('birthDateFromIdCard 身份证号解析出生日期', () => {
   it('18 位身份证：第 7-14 位解析为 YYYY-MM-DD', () => {
