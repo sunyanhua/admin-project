@@ -48,8 +48,17 @@ const Dashboard = () => {
   }, []);
 
   const logColumns: ColumnsType<any> = [
-    { title: '操作内容', dataIndex: 'summary', key: 'summary', render: (v: string) => <span style={{ color: '#666' }}>{v}</span> },
-    { title: 'IP地址', dataIndex: 'ip', key: 'ip', width: 140 },
+    {
+      title: '操作内容',
+      key: 'action',
+      render: (_: any, r: any) => (
+        <div>
+          <span style={{ color: '#666' }}>{r.action || '-'}</span>
+          <div style={{ fontSize: 12, color: '#999' }}>操作类型及目标ID：{r.target_type ?? '-'}【{r.target_id ?? '-'}】</div>
+        </div>
+      ),
+    },
+    { title: 'IP地址', dataIndex: 'ip_address', key: 'ip_address', width: 140 },
     { title: '时间', dataIndex: 'created_at', key: 'created_at', width: 180, render: (v: string) => formatDateTime(v) },
   ];
 

@@ -12,10 +12,11 @@ const { Title } = Typography;
 
 interface LogItem {
   id: number;
-  name: string;
-  data: string;
-  ip: string;
-  tick: string;
+  action?: string;
+  target_type?: string;
+  target_id?: string;
+  ip_address?: string;
+  created_at?: string;
 }
 
 const filters: FilterConfig[] = [
@@ -55,14 +56,18 @@ const MyLogs = () => {
   const columns: ColumnsType<LogItem> = [
     {
       title: '操作内容',
-      dataIndex: 'summary',
-      key: 'summary',
-      render: (summary: string) => <span style={{ color: '#666' }}>{summary}</span>,
+      key: 'action',
+      render: (_: any, r: LogItem) => (
+        <div>
+          <span style={{ color: '#666' }}>{r.action || '-'}</span>
+          <div style={{ fontSize: 12, color: '#999' }}>操作类型及目标ID：{r.target_type ?? '-'}【{r.target_id ?? '-'}】</div>
+        </div>
+      ),
     },
     {
       title: 'IP地址',
-      dataIndex: 'ip',
-      key: 'ip',
+      dataIndex: 'ip_address',
+      key: 'ip_address',
       width: 140,
     },
     {
