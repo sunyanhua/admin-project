@@ -10,16 +10,17 @@ export interface OnsitePhotoImgProps {
 }
 
 /**
- * 大屏统一照片图片（挂载即带缓存击穿参数 + 失败重试）：
+ * 大屏统一照片图片（稳定缓存击穿参数 + 失败重试）：
  * CDN 裁剪图（...jpg/crop.x.y.w.h.jpg）在 Chrome 下响应 200 但读磁盘缓存报
  * ERR_CACHE_READ_FAILURE（磁盘缓存全局共享，新窗口也复现），因此：
- * - 挂载时直接加 _cb 时间戳绕开磁盘缓存，每次直连取图；
- * - 加载失败再换新时间戳重试一次；
+ * - 同一地址使用稳定的 _cb=1 击穿参数：新 URL 绕开历史坏缓存条目，
+ *   同时浏览器可正常缓存——首次加载后各环节复用，不重复下载；
+ * - 加载失败再换新时间戳重试一次（兜底个别坏条目）；
  * - 带查询参数（可能为签名）的地址不动，避免签名失效；
  * - 空地址不渲染（避免空 src 请求当前页面）。
  */
 export const OnsitePhotoImg: React.FC<OnsitePhotoImgProps> = ({ photo, alt = '', className, style, onLoad }) => {
-  const [src, setSrc] = useState(() => (photo.includes('?') ? photo : `${photo}?_cb=${Date.now()}`));
+  const [src, setSrc] = useState(() => (photo.includes('?') ? photo : `${photo}?_cb=1`));
   if (!photo) return null;
   const handleError = () => {
     if (!photo.includes('?')) setSrc(`${photo}?_cb=${Date.now()}`);

@@ -10,6 +10,14 @@ describe('OnsitePhotoImg 大屏照片图片', () => {
     expect(img.src).toContain('p.jpg');
   });
 
+  it('同一地址的击穿参数稳定（重复挂载复用同一 URL，浏览器可缓存，环节间不重复下载）', () => {
+    const first = render(<OnsitePhotoImg photo="https://img.vbegin.com.cn/p.jpg" alt="甲" />);
+    const second = render(<OnsitePhotoImg photo="https://img.vbegin.com.cn/p.jpg" alt="甲" />);
+    const src1 = (first.container.querySelector('img') as HTMLImageElement).src;
+    const src2 = (second.container.querySelector('img') as HTMLImageElement).src;
+    expect(src1).toBe(src2);
+  });
+
   it('加载失败时换新的 _cb 参数重试', () => {
     const { container } = render(<OnsitePhotoImg photo="https://img.vbegin.com.cn/p.jpg" alt="甲" />);
     const img = container.querySelector('img') as HTMLImageElement;
