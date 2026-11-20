@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
+import { afterEach } from 'vitest';
+
+afterEach(() => { vi.useRealTimers(); });
 import userEvent from '@testing-library/user-event';
 import { App } from 'antd';
 import OnsiteGroupTab from '@/components/operation/OnsiteGroupTab';
@@ -148,6 +151,37 @@ describe('OnsiteGroupTab', () => {
       return obj.group_name === '动作电影';
     });
     expect(plusGroupMember).toBeTruthy();
+  }, 30000);
+
+  it('拖拽贴边时滚动条自动跟随移动（上边缘向上滚），拖放结束后停止', async () => {
+    const { container } = render(
+      <App>
+        <div className="sm-body" style={{ overflowY: 'auto' }}>
+          <OnsiteGroupTab activityId="a1" activity={ACTIVITY as any} />
+        </div>
+      </App>,
+    );
+    await waitFor(() => {
+      expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0);
+    });
+    const scroller = container.querySelector('.sm-body') as HTMLElement;
+    scroller.scrollTop = 200;
+    scroller.getBoundingClientRect = () => ({ top: 0, bottom: 400, left: 0, right: 600, width: 600, height: 400, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect;
+    const dt = { setData: vi.fn(), dropEffect: 'none', effectAllowed: 'all' } as unknown as DataTransfer;
+
+    // 指针停在上边缘区内拖动 → 立即向上滚一步（dragover 同步步进）
+    // jsdom 的 DragEvent 不携带 clientY，手动派发带坐标的 MouseEvent
+    const dragOverAt = (y: number) => {
+      const evt = new MouseEvent('dragover', { clientY: y, bubbles: true, cancelable: true });
+      Object.defineProperty(evt, 'dataTransfer', { value: dt });
+      fireEvent(scroller.querySelector('div')!, evt);
+    };
+    dragOverAt(20);
+    expect(scroller.scrollTop).toBeLessThan(200);
+    const afterScroll = scroller.scrollTop;
+    // 离开边缘区（中间）→ 不再滚动
+    dragOverAt(300);
+    expect(scroller.scrollTop).toBe(afterScroll);
   }, 30000);
 
   it('保存分组名称时 onsite_config 原对象透传——仅更新 groups 键，其他内容保留', async () => {

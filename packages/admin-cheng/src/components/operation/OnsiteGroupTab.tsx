@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button, Form, Input, Select, InputNumber, Space, Empty, Spin, Tag } from 'antd';
 import { SaveOutlined, TeamOutlined, HolderOutlined } from '@ant-design/icons';
 import { useAppNotification } from '@/hooks/useAppNotification';
@@ -8,6 +8,7 @@ import {
   parseGroupNames,
   parseGroupIndex,
   displayGroupName,
+  dragEdgeScrollDir,
   autoAssignGroups,
   stripGroupInfo,
   GROUP_INDEX_KEY,
@@ -120,7 +121,45 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
   const [dragUid, setDragUid] = useState<string | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
 
-  const resetDrag = () => { setDragUid(null); setDragOverIdx(null); };
+  /** 拖拽贴边自动滚动（2026-11-20 用户定：分组多时滚动条随拖动移动，未分组可拖到视口外的第一组） */
+  const dragPointYRef = useRef<number | null>(null);
+  const dragScrollerRef = useRef<HTMLElement | null>(null);
+  const dragRafRef = useRef<number | null>(null);
+  const stopDragAutoScroll = useCallback(() => {
+    if (dragRafRef.current != null) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+    dragPointYRef.current = null;
+  }, []);
+  /** 按当前指针位置执行一步贴边滚动（同步，供测试直接断言；rAF 循环在真实拖动中持续调用） */
+  const scrollOnce = useCallback(() => {
+    const scroller = dragScrollerRef.current;
+    const py = dragPointYRef.current;
+    if (!scroller || py == null) return;
+    const rect = scroller.getBoundingClientRect();
+    const dir = dragEdgeScrollDir(py, rect.top, rect.bottom);
+    if (dir !== 0) scroller.scrollTop += dir * 12;
+  }, []);
+  const handleContainerDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    dragPointYRef.current = e.clientY;
+    if (!dragScrollerRef.current) {
+      dragScrollerRef.current = (e.currentTarget as HTMLElement).closest('.sm-body') as HTMLElement | null;
+    }
+    scrollOnce();
+    if (dragRafRef.current == null) {
+      const loop = () => {
+        scrollOnce();
+        dragRafRef.current = requestAnimationFrame(loop);
+      };
+      dragRafRef.current = requestAnimationFrame(loop);
+    }
+  }, [scrollOnce]);
+  useEffect(() => () => stopDragAutoScroll(), [stopDragAutoScroll]);
+
+  const resetDrag = () => { setDragUid(null); setDragOverIdx(null); stopDragAutoScroll(); };
 
   /** 快速设置：按类型与组数自动生成分组名称（汉字 一|二|三… / 字母 A|B|C… / 数字 1|2|3…） */
   const applyQuickSet = () => {
@@ -393,7 +432,7 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
   };
 
   return (
-    <div>
+    <div onDragOver={handleContainerDragOver}>
       <Form form={form} layout="vertical" style={{ maxWidth: 720 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
           <Form.Item

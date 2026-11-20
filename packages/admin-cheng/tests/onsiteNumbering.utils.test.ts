@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import { compactOnsiteNumbers } from '@/components/operation/onsiteNumbering.utils';
+import { dragEdgeScrollDir } from '@/components/operation/onsiteGrouping.utils';
+
+describe('dragEdgeScrollDir 拖拽贴边滚动方向', () => {
+  it('靠近上边缘 → -1（向上滚）', () => {
+    expect(dragEdgeScrollDir(20, 100, 500)).toBe(-1);
+    expect(dragEdgeScrollDir(159, 100, 500)).toBe(-1); // 上边缘区内（100+60）
+  });
+
+  it('靠近下边缘 → 1（向下滚）', () => {
+    expect(dragEdgeScrollDir(480, 100, 500)).toBe(1);
+    expect(dragEdgeScrollDir(441, 100, 500)).toBe(1); // 下边缘区内（500-60）
+  });
+
+  it('中间区域 → 0（不滚动）', () => {
+    expect(dragEdgeScrollDir(300, 100, 500)).toBe(0);
+  });
+});
 
 describe('compactOnsiteNumbers 现场编号压实补齐', () => {
   it('无空缺：不产生任何改动', () => {

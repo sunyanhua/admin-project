@@ -16,6 +16,13 @@ export function displayGroupName(name: string): string {
   return String(name ?? '').replace(/\+/g, '');
 }
 
+/** 拖拽贴边自动滚动方向：指针进入上/下边缘区（默认 60px）时返回 -1/1，中间返回 0 */
+export function dragEdgeScrollDir(pointerY: number, top: number, bottom: number, zone = 60): -1 | 0 | 1 {
+  if (pointerY < top + zone) return -1;
+  if (pointerY > bottom - zone) return 1;
+  return 0;
+}
+
 /** 解析分组名称（"A|B|C" → ['A','B','C']；过滤空段） */
 export function parseGroupNames(raw: string): string[] {
   return String(raw || '')
