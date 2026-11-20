@@ -118,6 +118,38 @@ describe('OnsiteGroupTab', () => {
     expect(screen.getAllByText('未签到').length).toBeGreaterThan(0);
   });
 
+  it('保存分组时 group_name 按显示标准去 + 写入（+ 仅用于组中选组换行）', async () => {
+    const activityWithPlus = {
+      ...ACTIVITY,
+      onsite_config: JSON.stringify({ bg_screen: 'https://cdn.example.com/bg.png', groups: 'A|动作+电影' }),
+    };
+    render(
+      <App>
+        <OnsiteGroupTab activityId="a1" activity={activityWithPlus as any} />
+      </App>,
+    );
+    await waitFor(() => {
+      expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0);
+    });
+    // 把张三拖入第二组（动作+电影）后保存：使用自动分组更快——直接调自动分组（2 组）再保存
+    await userEvent.click(btnByText('自动分组'));
+    await userEvent.click(btnByText('保存分组'));
+    await waitFor(() => {
+      expect(updateExtraMock).toHaveBeenCalled();
+    });
+    // 所有已分组成员的 group_name 均不含 +
+    for (const call of updateExtraMock.mock.calls) {
+      const obj = JSON.parse(call[2]);
+      expect(obj.group_name).not.toContain('+');
+    }
+    // 至少有一条成员落入了「动作+电影」组，其 group_name 为去 + 的「动作电影」
+    const plusGroupMember = updateExtraMock.mock.calls.find((c: any[]) => {
+      const obj = JSON.parse(c[2]);
+      return obj.group_name === '动作电影';
+    });
+    expect(plusGroupMember).toBeTruthy();
+  }, 30000);
+
   it('保存分组名称时 onsite_config 原对象透传——仅更新 groups 键，其他内容保留', async () => {
     render(
       <App>

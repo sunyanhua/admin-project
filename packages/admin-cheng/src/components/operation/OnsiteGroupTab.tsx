@@ -339,7 +339,8 @@ const OnsiteGroupTab: React.FC<OnsiteGroupTabProps> = ({ activityId, activity: a
                 if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) obj = parsed;
               } catch { /* 原值非法则从空对象开始 */ }
               obj[GROUP_INDEX_KEY] = (m.groupIdx as number) + 1;
-              obj[GROUP_NAME_KEY] = groups[m.groupIdx as number];
+              // 存储的组名快照按显示标准去 +（2026-11-20 用户定：+ 仅用于组中选组换行）
+              obj[GROUP_NAME_KEY] = displayGroupName(groups[m.groupIdx as number]);
               return JSON.stringify(obj);
             })()
           : stripGroupInfo(m.extra_data);
