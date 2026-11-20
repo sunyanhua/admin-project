@@ -74,6 +74,9 @@ const adjustReliabilityMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const updateMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
 const getDetailMock = vi.hoisted(() => vi.fn().mockResolvedValue(ACTIVITY));
 const getOnsiteLovesCouplesMock = vi.hoisted(() => vi.fn().mockResolvedValue([]));
+const assignOnsiteNumbersMock = vi.hoisted(() => vi.fn().mockResolvedValue({ male_count: 0, female_count: 0 }));
+const updateOnsiteNumberMock = vi.hoisted(() => vi.fn().mockResolvedValue({}));
+const getOnsitePairingsMock = vi.hoisted(() => vi.fn().mockResolvedValue([]));
 
 // 阻断真实 API 模块链（src/api/index.ts 顶层依赖 localStorage，jsdom 下不可用）
 vi.mock('@/api/services/user', () => ({
@@ -96,11 +99,11 @@ vi.mock('@/api/services/activity-v1', () => ({
     getRegisterUser: vi.fn(),
     getRegisterUserPrivacy: vi.fn(),
     checkinRegister: vi.fn(),
-    updateOnsiteNumber: vi.fn(),
+    updateOnsiteNumber: updateOnsiteNumberMock,
     clearOnsiteNumber: vi.fn(),
-    assignOnsiteNumbers: vi.fn(),
+    assignOnsiteNumbers: assignOnsiteNumbersMock,
     getOnsiteLovesCouples: getOnsiteLovesCouplesMock,
-    getOnsitePairings: vi.fn().mockResolvedValue([]),
+    getOnsitePairings: getOnsitePairingsMock,
     updateRegisterExtraData: vi.fn().mockResolvedValue({}),
   },
 }));
@@ -120,12 +123,19 @@ beforeAll(() => {
 
 beforeEach(() => {
   getRegistersMock.mockClear();
+  getRegistersMock.mockResolvedValue(REGISTERS);
   adjustReliabilityMock.mockClear();
   updateMock.mockClear();
   getDetailMock.mockClear();
   getDetailMock.mockImplementation(() => Promise.resolve(ACTIVITY));
   getOnsiteLovesCouplesMock.mockClear();
   getOnsiteLovesCouplesMock.mockResolvedValue([]);
+  assignOnsiteNumbersMock.mockClear();
+  assignOnsiteNumbersMock.mockResolvedValue({ male_count: 0, female_count: 0 });
+  updateOnsiteNumberMock.mockClear();
+  updateOnsiteNumberMock.mockResolvedValue({});
+  getOnsitePairingsMock.mockClear();
+  getOnsitePairingsMock.mockResolvedValue([]);
 });
 
 /** 打开签到状态下拉并选择指定选项（rc-select 选项带 title 属性，避开状态列同名 Tag 文本） */
@@ -353,6 +363,43 @@ describe('OnsiteManageModal 跨活动切换', () => {
     );
 
     await waitFor(() => expect(getRegistersMock.mock.calls.length).toBeGreaterThan(callsBefore));
+  }, 30000);
+});
+
+describe('OnsiteManageModal 排序压实补齐', () => {
+  const renderModal = () =>
+    render(
+      <App>
+        <OnsiteManageModal
+          visible
+          activityId="a1"
+          activityTitle="测试活动"
+          activity={{ ...ACTIVITY, onsite_config: JSON.stringify({ groups: 'A|B' }) } as any}
+          onClose={vi.fn()}
+        />
+      </App>,
+    );
+
+  it('排序后同性别空缺编号前移补齐，组CP冻结用户不动', async () => {
+    // 男：1、4（空缺 2/3）；女：2（组CP冻结，保持不动）
+    getRegistersMock.mockResolvedValue([
+      { ...REGISTERS_CHECKED[0], id: 'r1', user_id: 'u1', gender: 1, onsite_number: 1 },
+      { ...REGISTERS_CHECKED[1], id: 'r2', user_id: 'u2', gender: 2, onsite_number: 2, checkin_at: '2026-11-16T14:00:00+08:00' },
+      { id: 'r3', user_id: 'u3', onsite_number: 4, user_profile: { nickname: '王五', gender: 1 }, user_match_profile: { real_name: '王五', is_real_verified: false }, audit_status: 1, checkin_at: '2026-11-16T14:00:00+08:00' },
+    ]);
+    getOnsitePairingsMock.mockResolvedValue([{ id: 'cp1', male: { user: { user_id: 'u-x' } }, female: { user: { user_id: 'u2' } } }]);
+    renderModal();
+    await waitFor(() => expect(screen.getAllByText(/张三/).length).toBeGreaterThan(0));
+
+    fireEvent.click(screen.getByRole('button', { name: /排\s*序/ }));
+    await waitFor(() => expect(assignOnsiteNumbersMock).toHaveBeenCalled());
+    // 男 4 号前移到 2（空缺 2/3 补齐）；女 2 号冻结不变
+    await waitFor(() => {
+      const fix = updateOnsiteNumberMock.mock.calls.find((c: any[]) => c[1] === 'r3' && c[2] === 2);
+      expect(fix).toBeTruthy();
+    });
+    expect(updateOnsiteNumberMock.mock.calls.some((c: any[]) => c[1] === 'r2')).toBe(false);
+    await screen.findByText(/前移补齐 1 个序号/);
   }, 30000);
 });
 

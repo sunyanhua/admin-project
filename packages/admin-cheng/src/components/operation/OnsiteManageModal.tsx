@@ -21,6 +21,7 @@ import OnsiteGroupTab from '@/components/operation/OnsiteGroupTab';
 import OnsiteRoutineTab from '@/components/operation/OnsiteRoutineTab';
 import OnsiteLoveRankTab from '@/components/operation/OnsiteLoveRankTab';
 import OnsiteDeductScoreModal from '@/components/operation/OnsiteDeductScoreModal';
+import { compactOnsiteNumbers } from './onsiteNumbering.utils';
 import { formatDateTime, parseApiTime } from '@/utils/format';
 import { buildOnsiteExportSheet } from './activityRegisterExport.utils';
 import { parseGroupNames } from './onsiteGrouping.utils';
@@ -212,30 +213,38 @@ const ApprovedListTab: React.FC<{
 
   /**
    * 现场编号一键分配（按性别 1..N 自动排序）。
-   * 批量分配完成后补号：对仍无现场序号的已入选用户按男女性别各自最大序号 +1 递增逐条分配（性别未设置不补号）。
+   * ① 后台批量分配接口；② 补号：仍无现场序号的已入选用户按性别最大号 +1 逐条分配；
+   * ③ 压实补齐（2026-11-20 用户定）：取消报名造成的空缺，同性别后面编号依次前移补齐，
+   *    组CP已配对用户的编号冻结不动。
    */
   const handleAssignNumbers = async () => {
     setAssigning(true);
     try {
+      // ① 后台批量分配（append 补号）
       const res: any = await activityApi.assignOnsiteNumbers(activityId);
       const male = res?.male_count ?? 0;
       const female = res?.female_count ?? 0;
 
-      const regs: RegisterRecord[] = [];
-      let page = 1;
-      while (true) {
-        const listRes: any = await activityApi.getRegisters(activityId, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
-        const list: RegisterRecord[] = Array.isArray(listRes) ? listRes : (listRes?.list || []);
-        if (!list.length) break;
-        regs.push(...list);
-        if (list.length < 100) break;
-        page++;
-      }
+      const fetchAllRegs = async (): Promise<RegisterRecord[]> => {
+        const regs: RegisterRecord[] = [];
+        let page = 1;
+        while (true) {
+          const listRes: any = await activityApi.getRegisters(activityId, { page, size: 100, audit_status: RegisterAuditStatus.APPROVED });
+          const list: RegisterRecord[] = Array.isArray(listRes) ? listRes : (listRes?.list || []);
+          if (!list.length) break;
+          regs.push(...list);
+          if (list.length < 100) break;
+          page++;
+        }
+        return regs;
+      };
       const genderOf = (r: RegisterRecord) => r.user_profile?.gender ?? r.gender;
+      const regs = await fetchAllRegs();
       let maxM = Math.max(0, ...regs.filter((r) => genderOf(r) === RegisterGender.MALE).map((r) => r.onsite_number ?? 0));
       let maxF = Math.max(0, ...regs.filter((r) => genderOf(r) === RegisterGender.FEMALE).map((r) => r.onsite_number ?? 0));
       const unnumbered = regs.filter((r) => r.onsite_number == null &&
         (genderOf(r) === RegisterGender.MALE || genderOf(r) === RegisterGender.FEMALE));
+      // ② 补号
       let filled = 0;
       for (let i = 0; i < unnumbered.length; i++) {
         const r = unnumbered[i];
@@ -249,8 +258,40 @@ const ApprovedListTab: React.FC<{
         }
       }
 
-      const extra = filled > 0 ? `，补号 ${filled} 人` : '';
-      success(`编号分配完成：男 ${male} 人，女 ${female} 人${extra}`);
+      // ③ 压实补齐：组CP配对用户冻结，其余同性别按 1..N 递补
+      let moved = 0;
+      try {
+        const frozenIds = new Set<string>();
+        const pairsRes: any = await activityApi.getOnsitePairings(activityId, { page: 1, size: 100 });
+        const pairs = Array.isArray(pairsRes) ? pairsRes : (pairsRes?.list || []);
+        for (const p of pairs) {
+          if (p.male?.user?.user_id) frozenIds.add(p.male.user.user_id);
+          if (p.female?.user?.user_id) frozenIds.add(p.female.user.user_id);
+        }
+        const latest = await fetchAllRegs();
+        const entries = latest.map((r) => ({
+          id: r.id,
+          number: r.onsite_number ?? null,
+          gender: genderOf(r),
+          frozen: frozenIds.has(r.user_id || ''),
+        }));
+        const fixes = compactOnsiteNumbers(entries);
+        for (let i = 0; i < fixes.length; i++) {
+          try {
+            await activityApi.updateOnsiteNumber(activityId, fixes[i].id, fixes[i].number);
+            moved++;
+          } catch (err: any) {
+            showError(`序号前移第 ${i + 1} 条失败：${err?.response?.data?.message || err?.message || '未知错误'}`);
+            break;
+          }
+        }
+      } catch { /* 配对查询/压实失败不阻断——保留前两步结果 */ }
+
+      const extraParts = [
+        filled > 0 ? `补号 ${filled} 人` : '',
+        moved > 0 ? `前移补齐 ${moved} 个序号` : '',
+      ].filter(Boolean);
+      success(`编号分配完成：男 ${male} 人，女 ${female} 人${extraParts.length ? `，${extraParts.join('，')}` : ''}`);
       refresh();
     } catch (err: any) {
       showError(err?.response?.data?.message || '编号分配失败');
