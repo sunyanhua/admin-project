@@ -1,6 +1,32 @@
 import { describe, it, expect } from 'vitest';
 import { compactOnsiteNumbers } from '@/components/operation/onsiteNumbering.utils';
 import { dragEdgeScrollDir } from '@/components/operation/onsiteGrouping.utils';
+import { groupRepCandidates } from '@/pages/operation/luckyPools.utils';
+
+describe('groupRepCandidates 各组代表多轮不重复候选', () => {
+  const pool = [
+    { userId: 'u1', gender: 'male' as const },
+    { userId: 'u2', gender: 'male' as const },
+    { userId: 'u3', gender: 'female' as const },
+  ];
+
+  it('排除已抽中的人（同一次进入内的前几轮）', () => {
+    const { candidates } = groupRepCandidates(pool, 'any', new Set(['u1']));
+    expect(candidates.map((u) => u.userId).sort()).toEqual(['u2', 'u3']);
+  });
+
+  it('抽不到其他人时允许重复（候选耗尽回退全池）', () => {
+    const { candidates } = groupRepCandidates(pool, 'any', new Set(['u1', 'u2', 'u3']));
+    expect(candidates.map((u) => u.userId).sort()).toEqual(['u1', 'u2', 'u3']);
+  });
+
+  it('性别目标：先排除已抽中的，再按目标性别过滤；组内无该性别回退全池', () => {
+    const { candidates: c1 } = groupRepCandidates(pool, 'male', new Set(['u2']));
+    expect(c1.map((u) => u.userId)).toEqual(['u1']);
+    const { candidates: c2 } = groupRepCandidates([pool[2]], 'male', new Set());
+    expect(c2.map((u) => u.userId)).toEqual(['u3']);
+  });
+});
 
 describe('dragEdgeScrollDir 拖拽贴边滚动方向', () => {
   it('靠近上边缘 → -1（向上滚）', () => {

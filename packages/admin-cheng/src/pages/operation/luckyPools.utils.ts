@@ -158,3 +158,24 @@ export function assignGroupRepTargets(
   }
   return assignment;
 }
+
+/**
+ * 各组代表候选（多轮不重复，2026-11-21 用户定）：
+ * 同一次按 6 进入内，后续轮次排除已抽中的人；抽不到其他人时回退全池（允许重复）。
+ * 目标性别过滤在排除之后进行；组内无该性别时回退全池（与原有语义一致）。
+ */
+export function groupRepCandidates<T extends LuckyGuest>(
+  pool: T[],
+  target: 'male' | 'female' | 'any',
+  drawn: ReadonlySet<string>,
+): { candidates: T[] } {
+  const byGender = (arr: T[]): T[] =>
+    target === 'male' ? arr.filter((u) => u.gender === 'male')
+      : target === 'female' ? arr.filter((u) => u.gender === 'female')
+        : arr;
+  const notDrawn = pool.filter((u) => !drawn.has(u.userId));
+  let candidates = byGender(notDrawn);
+  if (!candidates.length) candidates = byGender(pool); // 抽不到其他人 → 允许重复
+  if (!candidates.length) candidates = pool; // 组内无目标性别 → 回退全池（原有语义）
+  return { candidates };
+}

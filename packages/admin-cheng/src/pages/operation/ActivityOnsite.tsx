@@ -11,7 +11,7 @@ import { parseGroupIndex, GROUPS_UPDATED_AT_KEY, displayGroupName } from '@/comp
 import OnsitePhotoImg from '@/components/operation/OnsitePhotoImg';
 import { BlockCard, BlockItem } from '@/components/operation/OnsiteBlockCard';
 import { chunkBalancedRows } from '@/utils/balancedRows';
-import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPoolsWithNames, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
+import { buildLuckyPools, pickGenderedWinners, assignGroupRepTargets, filterGroupRepPoolsWithNames, groupRepCandidates, LUCKY_GENDER_OPTIONS, LuckyGender } from './luckyPools.utils';
 import { parseRoutine, RoutineStep } from '@/components/operation/onsiteRoutine.utils';
 
 // 以种子生成确定性伪随机序列（序号做种子，同一活动每次打开布局一致）——与旧系统 activscreen 一致
@@ -949,9 +949,12 @@ const ActivityOnsite: React.FC = () => {
     };
   };
 
+  /** 同一次进入内已抽中的代表（多轮 O→P 不重复；重新按 6 清零，2026-11-21 用户定） */
+  const groupRepDrawnRef = useRef<Set<string>>(new Set());
   /** 进入各组代表（6）：按分组配置每组一个转轮，组员为候选（仅已签到成员，滚动形式与幸运之星完全一致）。编排模式传参覆盖右上角配置 */
   const startGroupRep = useCallback(async (override?: { gender?: LuckyGender }) => {
     clearDrawTimer();
+    groupRepDrawnRef.current = new Set(); // 重新按 6 进入：多轮不重复清零
     // 仅编排传参时落定覆盖值；手动进入保持 null——按 P 时读取实时配置（与单组选人一致）
     groupRepGenderRef.current = override?.gender ?? null;
     const gender = override?.gender ?? groupRepGender;
@@ -1143,7 +1146,13 @@ const ActivityOnsite: React.FC = () => {
       beginBlock();
       return;
     }
-    if ((tab !== 'lucky' && tab !== 'couple' && tab !== 'groupRep') || drawPhase !== 'cover') return;
+    // 各组代表：done 后再次按 O 按同样条件抽下一轮（2026-11-21 用户定）；其余保持仅 cover 可开
+    if (tab !== 'lucky' && tab !== 'couple' && tab !== 'groupRep') return;
+    if (tab === 'groupRep' && drawPhase === 'done') {
+      // 同条件继续：沿用当前条带与候选池，直接进入滚动
+    } else if (drawPhase !== 'cover') {
+      return;
+    }
     if ((tab === 'lucky' || tab === 'groupRep') && !luckyStripsRef.current.length) return;
     if (tab === 'couple' && (!femaleStripRef.current.length || !maleStripRef.current.length)) return;
     setDrawPhase('rolling');
@@ -1218,20 +1227,17 @@ const ActivityOnsite: React.FC = () => {
         const pool = luckyWinnerPoolsRef.current[i].filter((u) => !picked.has(u.userId));
         let cands: WallUser[];
         if (tab === 'groupRep') {
-          const males = pool.filter((u) => u.gender === 'male');
-          const females = pool.filter((u) => u.gender === 'female');
           const target = groupAssignment[i];
-          // 严格按目标性别抽取（2026-11-10 用户定：无符合条件的组已在进入时过滤，不做跨性别回退）；
-          // 空池兜底 pool 仅防滚动中改性别导致 randOf 空数组
-          cands = target === 'male' ? (males.length ? males : pool)
-            : target === 'female' ? (females.length ? females : pool)
-            : pool;
+          // 多轮不重复（2026-11-21 用户定）：排除本进入内已抽中的代表；
+          // 抽不到其他人时回退全池允许重复；组内无目标性别回退全池（原有语义）
+          cands = groupRepCandidates(pool, target, groupRepDrawnRef.current).candidates;
         } else {
           cands = pool;
         }
         const w = randOf(cands) as WallUser;
         picked.add(w.userId);
         luckyWinners.push(w);
+        if (tab === 'groupRep') groupRepDrawnRef.current.add(w.userId);
         const idx = strip.findIndex((u) => u.userId === w.userId);
         const target = (((strip.length - 1 - idx) % len) + len) % len;
         return stepsTo(luckyOffsetsRef.current[i], target, len) + 1;
