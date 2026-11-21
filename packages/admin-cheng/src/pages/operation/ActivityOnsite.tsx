@@ -773,7 +773,17 @@ const ActivityOnsite: React.FC = () => {
       showHeartPair(c);
       return;
     }
-    // 真实模式：每次 ↓ 都先重拉，保证期间新产生的心动配对即时出现
+    // 真实模式（2026-11-21 用户定）：↑↓ 在已加载的组合间来回切换；
+    // 仅当按 ↓ 已到末尾时才拉取新配对追加，拉到过的都可来回切换显示
+    const history = heartHistoryRef.current;
+    if (history.length > 0 && heartCursorRef.current < history.length - 1) {
+      // 历史内前进：直接显示下一对，不拉新
+      heartCursorRef.current += 1;
+      heartDisplayedRef.current = true;
+      setHeartNoMore(false);
+      showHeartPair(history[heartCursorRef.current]);
+      return;
+    }
     const fresh = await fetchCouples();
     const freshPool = buildHeartPool(fresh, mode);
     heartPoolRef.current = freshPool;
@@ -788,8 +798,8 @@ const ActivityOnsite: React.FC = () => {
     setHeartNoMore(false);
     const c = freshPool[idx];
     heartIdsOf(c).forEach((uid) => shownHeartIdsRef.current.add(uid));
-    heartHistoryRef.current.push(c);
-    heartCursorRef.current = heartHistoryRef.current.length - 1;
+    history.push(c);
+    heartCursorRef.current = history.length - 1;
     heartDisplayedRef.current = true;
     showHeartPair(c);
   }, [tab, fetchCouples]);
